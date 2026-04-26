@@ -1,0 +1,659 @@
+---
+description: CRUD management patterns for WebSerbisyo RSVP admin/client sections
+globs: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/server/**/*.ts"]
+alwaysApply: false
+---
+
+# CRUD Patterns - WebSerbisyo RSVP
+
+Use these patterns for admin/client management sections in the clean RSVP MVP.
+
+Current priority is **Admin-First RSVP MVP**, not full client dashboard, public RSVP, guestbook, gift wallet, or template library.
+
+---
+
+## 1. Default CRUD Strategy
+
+Prefer this stack first:
+
+```txt
+Server Components      -> initial reads
+src/server/queries     -> data fetching
+src/server/actions     -> mutations
+src/server/services    -> workflows/business logic
+Zod                    -> validation
+shadcn/ui              -> tables, dialogs, forms, badges
+URL searchParams       -> filters/pagination
+```
+
+Do not add TanStack Table, TanStack Query, Zustand, or Motion just because a CRUD page exists.
+
+---
+
+## 2. RSVP CRUD Priority
+
+Build CRUD sections in this order:
+
+```txt
+1. Admin applications
+2. Admin clients
+3. Admin payments / manual payment records
+4. Admin email logs
+5. Admin audit logs
+6. Admin Meta Pixel settings
+7. Admin sales summary
+8. Client event setup later
+9. Client responses later
+10. Guestbook/gift wallet later
+```
+
+Do not start later sections without approval.
+
+---
+
+## 3. File Structure
+
+Preferred structure:
+
+```txt
+src/app/(admin)/admin/applications/page.tsx
+src/app/(admin)/admin/applications/[id]/page.tsx
+
+src/components/admin/applications/
+├── applications-table.tsx
+├── applications-filters.tsx
+├── application-status-badge.tsx
+├── application-actions.tsx
+└── application-detail.tsx
+
+src/server/queries/admin-applications.ts
+src/server/actions/applications.ts
+src/server/services/approve-application.ts
+
+src/lib/validations/application.schema.ts
+src/lib/validations/approval.schema.ts
+```
+
+Rules:
+
+- Keep pages thin.
+- Keep database reads in `src/server/queries`.
+- Keep mutations in `src/server/actions`.
+- Keep multi-step workflows in `src/server/services`.
+- Keep reusable UI in `src/components`.
+- Do not put service-role logic in components.
+
+---
+
+## 4. List Page Pattern
+
+Use Server Components for initial CRUD list pages.
+
+```tsx
+type PageProps = {
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    page?: string;
+  }>;
+};
+
+export default async function ApplicationsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+
+  const filters = {
+    search: params.q ?? "",
+    status: params.status ?? "all",
+    page: Number(params.page ?? "1"),
+  };
+
+  const result = await getAdminApplications(filters);
+
+  return (
+    <main className="space-y-6">
+      <ApplicationsFilters filters={filters} />
+      <ApplicationsTable applications={result.data} />
+    </main>
+  );
+}
+```
+
+Rules:
+
+- In Next.js 16, await `searchParams`.
+- Use URL filters for shareable table state.
+- Do not fetch list data in `useEffect` by default.
+- Do not use TanStack Query unless interactive refetch/cache is actually needed.
+
+---
+
+## 5. Query Pattern
+
+```ts
+import "server-only";
+
+import { createClient } from "@/lib/supabase/server";
+
+export type ApplicationFilters = {
+  search?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function getAdminApplications(filters: ApplicationFilters) {
+  const supabase = await createClient();
+
+  const page = Math.max(filters.page ?? 1, 1);
+  const pageSize = Math.min(filters.pageSize ?? 10, 50);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("rsvp_applications")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (filters.status && filters.status !== "all") {
+    query = query.eq("status", filters.status);
+  }
+
+  if (filters.search) {
+    query = query.or(
+      `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
+    );
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw new Error("Failed to load applications.");
+  }
+
+  return {
+    data: data ?? [],
+    total: count ?? 0,
+    page,
+    pageSize,
+  };
+}
+```
+
+Rules:
+
+- Queries must not expose raw Supabase errors to public users.
+- Admin queries still need server-side permission checks once auth is enabled.
+- Use RLS plus app-level permission checks.
+- Keep query return shapes predictable.
+
+---
+
+## 6. Server Action Pattern
+
+```ts
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { approveApplicationSchema } from "@/lib/validations/approval.schema";
+import { approveApplication } from "@/server/services/approve-application";
+
+export type ActionState = {
+  ok: boolean;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export async function approveApplicationAction(
+  prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = approveApplicationSchema.safeParse({
+    applicationId: formData.get("applicationId"),
+    paymentReference: formData.get("paymentReference"),
+    amountPaid: formData.get("amountPaid"),
+  });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Please check the form.",
+      fieldErrors: Object.fromEntries(
+        parsed.error.issues.map((issue) => [
+          issue.path.join("."),
+          issue.message,
+        ]),
+      ),
+    };
+  }
+
+  // Check platform-admin permission here before calling service.
+  await approveApplication(parsed.data);
+
+  revalidatePath("/admin/applications");
+  revalidatePath("/admin/clients");
+
+  return {
+    ok: true,
+    message: "Application approved.",
+  };
+}
+```
+
+Rules:
+
+- Validate with Zod.
+- Check permissions server-side.
+- Call services for workflows.
+- Revalidate affected paths.
+- Do not trust client-provided payment status, role, plan price, or client ID.
+
+---
+
+## 7. Service Pattern
+
+Use services for multi-step workflows.
+
+```ts
+import "server-only";
+
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export async function approveApplication(input: ApproveApplicationInput) {
+  const supabase = createAdminClient();
+
+  /**
+   * This service uses the Supabase service-role client and bypasses RLS.
+   * It must only be called after platform-admin permission has been verified.
+   */
+  // 1. Verify application is approvable.
+  // 2. Record manual payment.
+  // 3. Create client/tenant.
+  // 4. Create draft RSVP event.
+  // 5. Send onboarding email.
+  // 6. Write audit/email logs.
+}
+```
+
+Rules:
+
+- Service-role code must use `server-only`.
+- Services own business workflows.
+- Services should be idempotent where possible.
+- Approval/payment services must write audit logs.
+- Meta CAPI must be non-blocking if used.
+
+---
+
+## 8. Detail Page Pattern
+
+```tsx
+import { notFound } from "next/navigation";
+
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function ApplicationDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  const application = await getAdminApplicationById(id);
+
+  if (!application) {
+    notFound();
+  }
+
+  return <ApplicationDetail application={application} />;
+}
+```
+
+Recommended layout:
+
+```txt
+Header: back button, title, status, primary action
+Summary cards: applicant, event, plan, payment
+Details: message, event date, contact info
+Activity: audit/email logs later
+Danger/reject zone: reject/cancel actions
+```
+
+---
+
+## 9. Table Pattern
+
+Start with shadcn table.
+
+```tsx
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+export function ApplicationsTable({ applications }: Props) {
+  if (applications.length === 0) {
+    return <EmptyState title="No applications yet" />;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Applicant</TableHead>
+          <TableHead>Event type</TableHead>
+          <TableHead>Plan</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Submitted</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {applications.map((application) => (
+          <TableRow key={application.id}>
+            <TableCell>{application.full_name}</TableCell>
+            <TableCell>{application.event_type}</TableCell>
+            <TableCell>{application.preferred_plan}</TableCell>
+            <TableCell>
+              <ApplicationStatusBadge status={application.status} />
+            </TableCell>
+            <TableCell>{application.created_at}</TableCell>
+            <TableCell className="text-right">
+              <ApplicationActions application={application} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+```
+
+Use TanStack Table only when you need:
+
+```txt
+column sorting
+column visibility
+row selection
+bulk actions
+complex client-side filtering
+large reusable table framework
+```
+
+Do not install TanStack Table for simple admin MVP tables.
+
+---
+
+## 10. Filter Pattern
+
+Use URL search params for filters.
+
+```tsx
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+
+export function ApplicationsFilters() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  function setStatus(status: string) {
+    const next = new URLSearchParams(searchParams);
+    next.set("status", status);
+    next.set("page", "1");
+
+    router.push(`/admin/applications?${next.toString()}`);
+  }
+
+  return (
+    <div className="flex gap-2">
+      {/* filter controls */}
+    </div>
+  );
+}
+```
+
+Rules:
+
+- Use URL state for filters/pagination that should be shareable.
+- Reset page to 1 when filters change.
+- Validate filters on the server too.
+- Do not use Zustand for table filters by default.
+
+---
+
+## 11. Status Badge Pattern
+
+```tsx
+import { Badge } from "@/components/ui/badge";
+
+const statusConfig = {
+  submitted: { label: "Submitted", variant: "secondary" },
+  reviewing: { label: "Reviewing", variant: "outline" },
+  approved: { label: "Approved", variant: "default" },
+  rejected: { label: "Rejected", variant: "destructive" },
+  cancelled: { label: "Cancelled", variant: "outline" },
+} as const;
+
+type Status = keyof typeof statusConfig;
+
+export function ApplicationStatusBadge({ status }: { status: Status }) {
+  const config = statusConfig[status];
+
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+}
+```
+
+Rules:
+
+- Keep badge labels user-readable.
+- Do not expose internal enum names directly if they are ugly.
+- Use shadcn variants first before custom colors.
+
+---
+
+## 12. Confirm Dialog Pattern
+
+Use confirm dialogs for destructive or irreversible actions.
+
+```tsx
+<AlertDialog>
+  <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>{title}</AlertDialogTitle>
+      <AlertDialogDescription>{description}</AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancel</AlertDialogCancel>
+      <AlertDialogAction>{confirmText}</AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+```
+
+Required for:
+
+```txt
+reject application
+cancel application
+mark payment as paid
+disable custom frontend
+delete/deactivate records later
+```
+
+---
+
+## 13. Empty, Loading, Error
+
+Use simple reusable states.
+
+Empty state:
+
+```tsx
+export function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+      <h3 className="font-medium">{title}</h3>
+      {description ? (
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      ) : null}
+    </div>
+  );
+}
+```
+
+Route loading:
+
+```tsx
+export default function Loading() {
+  return <div className="space-y-3">{/* skeletons */}</div>;
+}
+```
+
+Route error:
+
+```tsx
+"use client";
+
+export default function Error({ reset }: { reset: () => void }) {
+  return (
+    <main>
+      <h2>Something went wrong.</h2>
+      <button onClick={reset}>Try again</button>
+    </main>
+  );
+}
+```
+
+Rules:
+
+- Do not show raw internal error messages to public users.
+- Admin errors can be more specific but should still avoid leaking secrets.
+- Keep loading states simple until real UI is built.
+
+---
+
+## 14. Activity / Audit Timeline
+
+For admin workflows, prefer audit logs over purely decorative timelines.
+
+Good uses:
+
+```txt
+application submitted
+application reviewed
+payment confirmed
+client provisioned
+onboarding email sent
+Meta CAPI purchase attempted
+custom frontend connected later
+```
+
+Start with a simple list/table. Add animation later only if it improves clarity.
+
+---
+
+## 15. Delete vs Archive
+
+For RSVP MVP, avoid hard delete by default.
+
+Preferred:
+
+```txt
+cancel application
+reject application
+archive event
+disable custom frontend
+expire hosting/access
+```
+
+Hard delete only when:
+
+```txt
+record is a test/dev artifact
+privacy/legal request requires deletion
+admin explicitly confirms permanent removal
+```
+
+Always audit destructive actions.
+
+---
+
+## 16. TanStack Query / Table Escalation Rule
+
+Start simple.
+
+Add TanStack Query only when:
+
+```txt
+client-side refetch/invalidation is needed
+interactive tables become hard with Server Components alone
+dashboard sections need live-ish refresh
+```
+
+Add TanStack Table only when:
+
+```txt
+sorting/filtering/selection/column visibility becomes complex
+same table framework will be reused across several admin pages
+```
+
+Do not add either library during scaffold or first schema planning.
+
+---
+
+## 17. Anti-Patterns
+
+Avoid:
+
+```txt
+route-local actions.ts scattered across every page
+business logic inside components
+service-role Supabase in UI components
+raw Supabase errors shown to public users
+client-provided payment status
+hard delete by default
+TanStack Table for simple tables
+TanStack Query for simple Server Component reads
+Zustand for table filters
+Motion animations in admin CRUD by default
+copying POS CRUD structure into RSVP
+old @webserbisyo/* imports
+```
+
+---
+
+## 18. MVP CRUD Implementation Order
+
+Use this order:
+
+```txt
+1. Applications list
+2. Application detail
+3. Application approve/reject actions
+4. Client list
+5. Client detail
+6. Payment records
+7. Email logs
+8. Audit logs
+9. Meta Pixel settings
+10. Sales summary
+```
+
+After CRUD changes, run:
+
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm run build
+```
