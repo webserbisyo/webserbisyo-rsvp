@@ -134,19 +134,6 @@ using (
   and app_private.current_profile_role() in ('client_owner', 'client_staff')
 );
 
-create policy rsvp_events_client_owner_update
-on public.rsvp_events
-for update
-to authenticated
-using (
-  client_id = app_private.current_client_id()
-  and app_private.current_profile_role() = 'client_owner'
-)
-with check (
-  client_id = app_private.current_client_id()
-  and app_private.current_profile_role() = 'client_owner'
-);
-
 create policy event_content_admin_all
 on public.event_content
 for all
@@ -165,29 +152,6 @@ using (
     where e.id = event_content.event_id
       and e.client_id = app_private.current_client_id()
       and app_private.current_profile_role() in ('client_owner', 'client_staff')
-  )
-);
-
-create policy event_content_client_owner_update
-on public.event_content
-for update
-to authenticated
-using (
-  exists (
-    select 1
-    from public.rsvp_events as e
-    where e.id = event_content.event_id
-      and e.client_id = app_private.current_client_id()
-      and app_private.current_profile_role() = 'client_owner'
-  )
-)
-with check (
-  exists (
-    select 1
-    from public.rsvp_events as e
-    where e.id = event_content.event_id
-      and e.client_id = app_private.current_client_id()
-      and app_private.current_profile_role() = 'client_owner'
   )
 );
 
