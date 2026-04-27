@@ -61,6 +61,11 @@ Explicitly excluded from Phase 1:
 - `public_api_logs`
 - `event_page_sections`
 - `payment_transactions`
+- `plan_catalog`
+
+No `plan_catalog` is created in Phase 1. `payments.amount_due` and `payments.amount_paid`
+store the actual manual Pro/Max package amounts for the approved application. A formal
+`plan_catalog` remains deferred until pricing becomes configurable or automated.
 
 ---
 
@@ -84,6 +89,16 @@ Recommended SQL planning order:
 14. TypeScript database type generation
 
 Phase 2 and Phase 3 migrations must wait until Phase 1 is implemented and verified.
+
+`rsvp_applications.approved_event_id` references `rsvp_events(id)`. Because the recommended
+table order creates `rsvp_applications` before `rsvp_events`, SQL planning must either:
+
+- create `rsvp_applications` first without the `approved_event_id` foreign key, then add that
+  foreign key after `rsvp_events` exists, or
+- adjust the migration order so `rsvp_events` exists before adding the foreign key.
+
+Recommended Phase 1 direction: keep the current table order and add the `approved_event_id`
+foreign key after `rsvp_events` is created.
 
 ---
 
@@ -255,13 +270,9 @@ Stores application leads from `/apply` before a client account exists.
 - `preferred_plan in ('pro','max')`
 - `status in ('submitted','reviewing','approved','rejected','cancelled')`
 - `estimated_guest_count is null or estimated_guest_count > 0`
-- event type values should match product-supported event types
+- `event_type in ('wedding','debut','birthday','baptism','reunion','anniversary','corporate','other')`
 
-Suggested event types:
-
-```txt
-wedding, debut, birthday, baptism, reunion, anniversary, corporate, other
-```
+The same event type list must be used by future Zod/application schemas.
 
 ### Indexes
 
@@ -319,6 +330,7 @@ Represents one RSVP event owned by a client.
 ### Check constraints
 
 - `status in ('draft','setup_in_progress','ready','published','archived')`
+- `event_type in ('wedding','debut','birthday','baptism','reunion','anniversary','corporate','other')`
 - `visibility in ('private','public','unlisted')`
 - `max_guest_count is null or max_guest_count > 0`
 - if both RSVP dates exist, `rsvp_close_at >= rsvp_open_at`
@@ -405,8 +417,8 @@ Gateway/provider/webhook ledger fields are deferred to future `payment_transacti
 | `application_id`      | `uuid references rsvp_applications(id)` | source application             |
 | `event_id`            | `uuid references rsvp_events(id)`       | related event                  |
 | `plan_type`           | `text not null`                         | `pro` or `max`                 |
-| `amount_due`          | `numeric(12,2)`                         | manual invoice amount          |
-| `amount_paid`         | `numeric(12,2)`                         | confirmed amount               |
+| `amount_due`          | `numeric(12,2) not null`                | manual package amount due      |
+| `amount_paid`         | `numeric(12,2) default 0`               | confirmed amount               |
 | `currency`            | `text default 'PHP'`                    | currency                       |
 | `payment_status`      | `text not null default 'pending'`       | workflow                       |
 | `payment_method`      | `text`                                  | GCash, bank, cash, Maya, other |
@@ -425,9 +437,22 @@ Gateway/provider/webhook ledger fields are deferred to future `payment_transacti
 - `plan_type in ('pro','max')`
 - `payment_status in ('pending','paid','failed','refunded','cancelled')`
 - `currency = 'PHP'` for v1, or approved currency list
-- `amount_due is null or amount_due >= 0`
-- `amount_paid is null or amount_paid >= 0`
+- `amount_due >= 0`
+- `amount_paid >= 0`
 - if both hosting dates exist, `hosting_ends_at >= hosting_starts_at`
+
+### FK and amount behavior
+
+- `application_id` should be required because the payment originates from an approved
+  application.
+- `client_id` and `event_id` may be nullable only during initial workflow construction, but
+  should be set by the approval/provisioning service once client and event records exist.
+- If SQL planning can safely create the payment after client and event creation, prefer
+  `client_id` and `event_id` as `not null`.
+- `amount_due` is required when a payment row is created and stores the actual manual Pro/Max
+  package amount.
+- `amount_paid` may default to `0` for pending records, must remain non-negative, and should be
+  set to the actual confirmed amount when `payment_status` becomes `paid`.
 
 ### Indexes
 
@@ -495,6 +520,12 @@ Statuses:
 - `failed`
 - `skipped`
 
+Provider:
+
+- `provider in ('resend')`
+
+Future providers can be added later by extending the check constraint and application schema.
+
 ### Indexes
 
 - `email_logs(client_id)`
@@ -534,6 +565,13 @@ Audit logs must be append-only:
 - admin can SELECT only
 - service role can INSERT
 
+### Entity/action constraints
+
+Keep `entity_type` and `action` as `text` for Phase 1 so new audit events do not require a
+schema change. SQL planning may add CHECK constraints for the known Phase 1 entity/action list
+if the list is not too restrictive, but those constraints must not block future actions
+unnecessarily.
+
 ### Indexes
 
 - `audit_logs(client_id)`
@@ -566,6 +604,13 @@ Stores platform/client/event Meta Pixel configuration. For v1, mainly platform/s
 ### Check constraints
 
 - `tracking_scope in ('platform','client','event')`
+- tracking scope relationship:
+  - `platform` scope: `client_id` and `event_id` may be null
+  - `client` scope: `client_id` should be present
+  - `event` scope: `event_id` should be present
+
+SQL planning should prefer a database CHECK constraint for this relationship if it remains
+simple and safe. Otherwise, enforce it in server-side service validation.
 
 ### Security notes
 
