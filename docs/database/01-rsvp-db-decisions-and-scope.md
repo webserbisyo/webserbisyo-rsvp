@@ -28,7 +28,7 @@ The v1 stack is:
 | App framework       | Next.js 16 App Router + TypeScript        |
 | UI/runtime          | React 19                                  |
 | Database/auth       | Supabase PostgreSQL + Supabase Auth + RLS |
-| Deployment          | Vercel later                              |
+| Deployment          | Deployment target: Vercel                 |
 | Transactional email | Resend                                    |
 | Marketing tracking  | Meta Pixel + optional Meta CAPI           |
 
@@ -56,6 +56,7 @@ Payment model for v1:
 - no payment gateway yet
 - no subscription billing yet
 - no downpayments yet
+- no `plan_catalog` table yet
 
 Important distinction:
 
@@ -63,6 +64,13 @@ Important distinction:
 One-time package payment = delivery/setup package.
 Hosting/access coverage = tracked with dates and may require renewal later.
 ```
+
+Phase 1 stores manual Pro/Max payment amounts directly in:
+
+- `payments.amount_due`
+- `payments.amount_paid`
+
+`plan_catalog` remains deferred until pricing becomes configurable or automated.
 
 ---
 
@@ -504,6 +512,14 @@ Controlled duplication exists for hosting coverage dates:
 
 This mirror must be updated only through the payment/provisioning service.
 
+This mirror is accepted for Phase 1 unless explicitly changed later. For Phase 1:
+
+- `payments` is the source of truth for hosting coverage.
+- `clients.hosting_starts_at` may mirror current coverage for dashboard convenience.
+- `clients.hosting_ends_at` may mirror current coverage for dashboard convenience.
+- `clients.renewal_required_at` may mirror renewal follow-up timing for dashboard convenience.
+- Mirror fields must only be updated through payment/provisioning services.
+
 ---
 
 ### 8.4 Controlled Denormalization Later
@@ -524,7 +540,30 @@ Rules:
 
 ---
 
-## 9. Canonical Entity Flow
+## 9. Database Constraint Decisions
+
+Phase 1 SQL planning must require database-level `CHECK` constraints for:
+
+- status values
+- role values
+- `plan_type`
+- event `visibility`
+- `payment_status`
+- `currency`
+- positive `amount_due` / `amount_paid`
+- future `guest_count > 0` when RSVP responses are introduced
+- slug format for `event_slug`
+
+Exact Phase 1 schema, constraints, indexes, RLS policies, and migration sequencing are handled
+in:
+
+```txt
+docs/database/02-phase-1-schema-and-constraints.md
+```
+
+---
+
+## 10. Canonical Entity Flow
 
 The database should support this flow:
 
@@ -566,7 +605,7 @@ Future custom frontend
 
 ---
 
-## 10. Implementation Phases
+## 11. Implementation Phases
 
 ### Phase 1 — Admin Approval Foundation
 
@@ -634,12 +673,12 @@ Future tables/features:
 
 ---
 
-## 11. Remaining Open Questions
+## 12. Remaining Open Questions
 
 These do not block the trust-boundary corrections, but they should be resolved before or during the relevant phase.
 
 1. **Plan price storage**  
-   Should Pro/Max prices stay free-form in `payments`, or should a future `plan_catalog` table be added?
+   Phase 1 uses manual Pro/Max amounts in `payments.amount_due` and `payments.amount_paid`. `plan_catalog` remains deferred until pricing becomes configurable or automated.
 
 2. **Guest email requirement**  
    Should future RSVP guest email be required or optional?
@@ -651,18 +690,19 @@ These do not block the trust-boundary corrections, but they should be resolved b
    Should gift wallet QR use simple URL for v1 or Supabase Storage later?
 
 5. **Hosting coverage mirror**  
-   Confirm `payments` as source of truth and `clients` as convenience mirror.
+   Accepted for Phase 1: `payments` is the source of truth, and `clients` may mirror `hosting_starts_at`, `hosting_ends_at`, and `renewal_required_at` for dashboard convenience through payment/provisioning services only.
 
 6. **Guest data retention**  
    Draft target: retain guest RSVP/guestbook PII for 12 months after event completion/archive unless deletion is requested.
 
 ---
 
-## 12. Deferred Features
+## 13. Deferred Features
 
 Do not build these during Phase 1:
 
 - Basic/Premium Basic template tiers
+- `plan_catalog`
 - subscription billing
 - payment gateway
 - `payment_transactions`
@@ -686,7 +726,7 @@ Do not build these during Phase 1:
 
 ---
 
-## 13. Codex Usage Rule
+## 14. Codex Usage Rule
 
 For Phase 1 SQL planning, Codex should use this file only as the scope and decision source. It should not write migrations until the Phase 1 SQL plan is reviewed.
 
