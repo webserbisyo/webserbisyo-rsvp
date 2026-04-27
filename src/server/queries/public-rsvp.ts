@@ -1,3 +1,7 @@
-export async function getPublicRsvpData() {
-  throw new Error("Query not implemented.");
+import "server-only";
+
+import { resolvePublicEvent } from "@/server/services/resolve-public-event";
+
+export async function getPublicRsvpData(eventSlug: string) {
+  return resolvePublicEvent(eventSlug);
 }

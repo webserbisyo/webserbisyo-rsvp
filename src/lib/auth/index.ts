@@ -1,3 +1,25 @@
+import "server-only";
+
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+export async function getCurrentUser() {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error) {
+    return null;
+  }
+
+  return data.user;
+}
+
 export async function getCurrentSession() {
-  throw new Error("Auth session helper not implemented.");
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error) {
+    return null;
+  }
+
+  return data.session;
 }

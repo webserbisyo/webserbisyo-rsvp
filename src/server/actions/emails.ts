@@ -1,5 +1,32 @@
 "use server";
 
-export async function sendEmailAction() {
-  throw new Error("Email action not implemented.");
+import { z } from "zod";
+import { requireAdmin } from "@/lib/permissions";
+import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
+import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
+
+const SendOnboardingEmailActionSchema = z.object({
+  applicationId: z.uuid().optional(),
+  clientId: z.uuid(),
+  eventId: z.uuid(),
+  eventSlug: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens."),
+  recipientEmail: z.string().email(),
+  recipientName: z.string().trim().max(200).optional(),
+});
+
+export async function sendEmailAction(input: unknown) {
+  try {
+    await requireAdmin();
+    const payload = parseActionInput(SendOnboardingEmailActionSchema, input);
+    const emailLog = await sendOnboardingEmail(payload);
+
+    return actionSuccess({
+      emailLogId: emailLog.id,
+      status: emailLog.status,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
 }
