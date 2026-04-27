@@ -159,11 +159,13 @@ Not allowed:
 
 `client_staff` is reserved for future role-based access.
 
-For Phase 1:
+Phase 1 decision:
 
-- either treat as read-only or do not actively use
+- do not actively use `client_staff` in product flows
+- if a `client_staff` profile exists, treat it as read-only own-tenant access
 - do not build complex RBAC yet
 - keep role in CHECK constraint for future compatibility
+- do not expand write permissions unless explicitly approved later
 
 ---
 
@@ -237,6 +239,11 @@ Rules:
 - apply rate limiting before ads/production
 - add Turnstile if spam risk appears
 - write only allowed fields
+
+Because v1 avoids broad anonymous INSERT policies, the `/apply` Server Action or Route
+Handler must insert through an isolated server-only admin/service client after validation. An
+anonymous SSR or browser Supabase client will not be able to insert into `rsvp_applications`
+without an anonymous INSERT policy. This is intentional for v1.
 
 Allowed public application fields:
 
@@ -341,6 +348,19 @@ Alternative later:
 
 - public-safe database view/function that exposes only whitelisted fields
 
+If public-safe database views are used, prefer `security_invoker = true` where supported.
+Alternatively, place views/functions in a private or unexposed schema and expose them only
+through route handlers or explicit grants. Avoid broad `SECURITY DEFINER` functions in exposed
+schemas. Public-safe views/functions must expose only whitelisted public fields.
+
+GRANT/Data API posture:
+
+- `anon` and `authenticated` roles should not receive broad base-table privileges beyond the
+  intended policy surface.
+- Public route handlers can avoid direct public Data API exposure by assembling DTOs
+  server-side.
+- Base-table grants and policies must be audited before launch.
+
 ---
 
 ### 5.3 Public-safe event DTO fields
@@ -410,6 +430,12 @@ Never expose publicly:
 ---
 
 ## 6. RLS Policy Planning by Table
+
+### 6.0 RLS helper recursion caution
+
+Policies that query `profiles` from `profiles` policies can recurse. SQL planning should use
+safe non-recursive helper functions or carefully separated profile policies. Platform-admin
+checks must be designed to avoid circular profile policy dependencies.
 
 ### 6.1 `clients`
 

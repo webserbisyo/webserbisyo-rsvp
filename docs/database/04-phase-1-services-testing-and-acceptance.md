@@ -79,6 +79,10 @@ import "server-only";
 
 Some names may already exist in the scaffold; Codex should reuse current names where possible.
 
+`submit-application.ts` must be server-only if it uses the admin/service client. It should
+validate input, strip admin-only fields, and insert the application through the trusted server
+path. It must never expose the service-role client to the browser.
+
 ---
 
 ## 5. Public Application Submission Flow
@@ -160,17 +164,38 @@ Do not hard delete.
 Admin approves application
 → verify platform_admin permission
 → verify application is approvable
-→ record manual payment
 → create client
 → create/link client auth user/profile
 → create draft RSVP event
 → create empty event_content row
+→ create/confirm manual payment with application_id, client_id, and event_id
+→ update client hosting mirror from payment coverage
 → update application with approved_client_id and approved_event_id
 → send onboarding email
 → write email log
 → write audit logs
 → optionally send Meta CAPI Purchase non-blocking
 ```
+
+Create or confirm the manual payment record in an order that satisfies the final FK/nullability
+choices from Doc 2. If `payments.client_id` and `payments.event_id` are `NOT NULL`, create the
+client and draft event before creating the payment row. If a payment record is initially
+created earlier from the application, update it after provisioning to set `client_id` and
+`event_id`.
+
+Preferred Phase 1 service flow:
+
+```txt
+approve application
+→ create client/profile
+→ create draft event/event_content
+→ create/confirm payment with client_id/event_id/application_id
+→ update client hosting mirror
+→ update application approved IDs
+→ send email/log audit
+```
+
+`payments` remains the source of truth for hosting coverage.
 
 ### Idempotency requirement
 
@@ -416,14 +441,26 @@ After migrations and policies, test these states.
 - cannot select payments
 - cannot select logs
 - cannot select raw rsvp_events base rows directly in v1
+- cannot select raw event_content base rows directly in v1
+- cannot direct INSERT into rsvp_applications base table
 - can submit application only through validated server path
 - cannot set admin-only fields in application payload
+
+### Immutability and append-only tests
+
+- `event_slug` cannot be changed after creation
+- `audit_logs` cannot be updated or deleted through normal roles
+- payment confirmation fields cannot be changed by client users
 
 ### Service-role tests
 
 - service-only workflows can provision records
 - service-role code is not imported by client bundle
 - service-role client does not use user cookie SSR client
+- service-role/admin Supabase client is imported only in server-only service files
+- no Client Component imports service-role modules
+- no public or custom frontend bundle includes service-role code
+- use build/static inspection or code search checks where practical
 
 ---
 
