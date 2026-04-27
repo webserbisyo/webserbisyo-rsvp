@@ -1,1 +1,48 @@
-/* Future shared component styles live here. */
+.cn-toast {
+  width: min(24rem, calc(100vw - 1.5rem));
+  border: 1px solid var(--ws-toast-border);
+  border-radius: calc(var(--radius) + 0.25rem);
+  background: var(--ws-toast-bg);
+  color: var(--ws-toast-fg);
+  box-shadow: var(--ws-toast-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.cn-toast [data-icon] {
+  color: var(--ws-toast-muted);
+}
+
+.cn-toast-error {
+  border-color: var(--ws-toast-error-border);
+}
+
+.cn-toast-error [data-icon] {
+  color: var(--ws-toast-error-icon);
+}
+
+.cn-toast-content {
+  gap: 0.2rem;
+}
+
+.cn-toast-title {
+  color: var(--ws-toast-fg);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.cn-toast-description {
+  color: var(--ws-toast-muted);
+  font-size: 0.85rem;
+}
+
+/* Glass Input Autofill Fix for Chrome/WebKit */
+.cn-glass-autofill:-webkit-autofill,
+.cn-glass-autofill:-webkit-autofill:hover,
+.cn-glass-autofill:-webkit-autofill:focus,
+.cn-glass-autofill:-webkit-autofill:active {
+  transition:
+    background-color 9999s ease-in-out 0s,
+    color 9999s ease-in-out 0s;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a;
+}

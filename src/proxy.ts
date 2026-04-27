@@ -3,7 +3,18 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicEnv } from "./lib/supabase/env";
 
 export async function proxy(request: NextRequest) {
-  const env = getSupabasePublicEnv();
+  if (process.env.RSVP_AUTH_GUARD_ENABLED !== "true") {
+    return NextResponse.next({ request });
+  }
+
+  let env: ReturnType<typeof getSupabasePublicEnv>;
+
+  try {
+    env = getSupabasePublicEnv();
+  } catch {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(env.url, env.anonKey, {
@@ -23,11 +34,21 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    const loginUrl = new URL("/login", request.url);
+    const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    loginUrl.searchParams.set("next", nextPath);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|sw.js|manifest.webmanifest).*)"],
+  matcher: ["/admin/:path*", "/dashboard/:path*"],
 };

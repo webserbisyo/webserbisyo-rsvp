@@ -1,7 +1,7 @@
 # WebSerbisyo RSVP - Project Status
 
 > Last Updated: 2026-04-27  
-> Current Phase: Scaffold Verification → Admin-First Backend/Auth Planning  
+> Current Phase: Phase A - Auth Foundation and Login UX  
 > Current Deployment Target: Vercel + Supabase + Resend  
 > Current Package Model: Pro/Max one-time package payment with hosting/access coverage tracking
 
@@ -18,7 +18,7 @@ It is separate from:
 - any future NestJS backend
 - any future template library
 
-The project is currently at scaffold/foundation stage only. No real RSVP business flows, Supabase migrations, admin approval logic, client dashboard logic, public RSVP guest flow, guestbook, gift wallet, payment gateway, or NestJS backend have been implemented yet.
+Phase 1 Supabase foundation is complete, including the RSVP base schema, RLS, and backend service layer. The current active implementation milestone is Phase A auth foundation: shared login UX, auth callback handling, and route protection for admin/client areas.
 
 ---
 
@@ -73,9 +73,18 @@ Custom frontend repos only own public event website design shells and connect by
 ### Database ledger review
 
 - `RSVP_Database_Blueprint_Ledger.md` was reviewed and trust-boundary corrections were applied.
-- No migrations have been created yet.
-- No database changes have been made.
-- Next step is Phase 1 SQL planning after ledger finalization.
+- Phase 1 RSVP migrations are applied in the connected Supabase project.
+- Phase 1 public tables are present: `clients`, `profiles`, `rsvp_applications`, `rsvp_events`, `event_content`, `payments`, `email_logs`, `audit_logs`, `meta_pixels`.
+- Next step is building admin-first authenticated flows on top of the completed Phase 1 foundation.
+
+### Auth foundation implemented
+
+- Shared `/login` route now uses the real Supabase email/password sign-in flow.
+- Signed-in users are redirected server-side based on their active profile role.
+- `/callback` now exchanges auth codes and resolves role-aware redirects safely.
+- `src/proxy.ts` is narrowed to `/admin/*` and `/dashboard/*` session gating only.
+- Admin and dashboard layouts now enforce role checks server-side instead of relying on proxy profile lookups.
+- Google OAuth remains deferred until Supabase dashboard provider configuration is confirmed.
 
 ### Documentation/rules created and committed
 

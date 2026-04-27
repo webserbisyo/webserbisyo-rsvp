@@ -17,7 +17,7 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <TooltipProvider>
       {children}
-      <Toaster richColors />
+      <Toaster />
     </TooltipProvider>
   );
 }
