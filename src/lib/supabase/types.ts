@@ -413,6 +413,82 @@ export type Database = {
           },
         ];
       };
+      platform_payment_options: {
+        Row: {
+          account_name: string | null;
+          account_number: string | null;
+          created_at: string;
+          id: string;
+          is_enabled: boolean;
+          provider: string;
+          qr_image_path: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          account_name?: string | null;
+          account_number?: string | null;
+          created_at?: string;
+          id?: string;
+          is_enabled?: boolean;
+          provider: string;
+          qr_image_path?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          account_name?: string | null;
+          account_number?: string | null;
+          created_at?: string;
+          id?: string;
+          is_enabled?: boolean;
+          provider?: string;
+          qr_image_path?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_payment_options_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_public_settings: {
+        Row: {
+          created_at: string;
+          id: string;
+          messenger_page_url: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          messenger_page_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          messenger_page_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_public_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           client_id: string | null;
@@ -469,7 +545,9 @@ export type Database = {
           id: string;
           message: string | null;
           phone: string | null;
+          preferred_manual_payment_option: string | null;
           preferred_plan: string;
+          reference_code: string;
           rejected_at: string | null;
           review_notes: string | null;
           reviewed_at: string | null;
@@ -491,7 +569,9 @@ export type Database = {
           id?: string;
           message?: string | null;
           phone?: string | null;
+          preferred_manual_payment_option?: string | null;
           preferred_plan: string;
+          reference_code?: string;
           rejected_at?: string | null;
           review_notes?: string | null;
           reviewed_at?: string | null;
@@ -513,7 +593,9 @@ export type Database = {
           id?: string;
           message?: string | null;
           phone?: string | null;
+          preferred_manual_payment_option?: string | null;
           preferred_plan?: string;
+          reference_code?: string;
           rejected_at?: string | null;
           review_notes?: string | null;
           reviewed_at?: string | null;

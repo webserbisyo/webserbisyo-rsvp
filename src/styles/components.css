@@ -46,3 +46,28 @@
   -webkit-text-fill-color: #0f172a !important;
   caret-color: #0f172a;
 }
+
+.rsvp-shell {
+  background:
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--rsvp-accent) 45%, transparent) 0%,
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--rsvp-surface) 88%, white) 0%,
+      var(--background) 100%
+    );
+}
+
+.rsvp-panel {
+  border: 1px solid var(--rsvp-border);
+  background: color-mix(in srgb, var(--rsvp-surface) 94%, white);
+  box-shadow: 0 22px 50px rgb(15 23 42 / 0.08);
+}
+
+.rsvp-panel-muted {
+  border: 1px solid color-mix(in srgb, var(--rsvp-border) 82%, transparent);
+  background: color-mix(in srgb, var(--rsvp-surface-muted) 96%, white);
+}

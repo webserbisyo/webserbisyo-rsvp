@@ -12,6 +12,7 @@ export const EventTypeSchema = z.enum([
 ]);
 
 export const PlanTypeSchema = z.enum(["pro", "max"]);
+export const ManualPaymentOptionSchema = z.enum(["gcash", "maya"]);
 
 const optionalText = (max: number) =>
   z
@@ -37,7 +38,15 @@ export const ApplicationSchema = z.object({
   fullName: z.string().trim().min(2).max(200),
   message: optionalText(2000),
   phone: optionalText(50),
+  preferredManualPaymentOption: ManualPaymentOptionSchema.optional().or(
+    z.literal("").transform(() => undefined),
+  ),
   preferredPlan: PlanTypeSchema,
 });
 
-export type ApplicationInput = z.infer<typeof ApplicationSchema>;
+export type ApplicationInput = z.output<typeof ApplicationSchema>;
+export type ApplicationFormInput = z.input<typeof ApplicationSchema>;
+
+export const EVENT_TYPE_OPTIONS = EventTypeSchema.options;
+export const PLAN_TYPE_OPTIONS = PlanTypeSchema.options;
+export const MANUAL_PAYMENT_OPTIONS = ManualPaymentOptionSchema.options;

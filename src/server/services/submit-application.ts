@@ -21,6 +21,7 @@ export async function submitApplication(input: ApplicationInput) {
       full_name: payload.fullName,
       message: payload.message ?? null,
       phone: payload.phone ?? null,
+      preferred_manual_payment_option: payload.preferredManualPaymentOption ?? null,
       preferred_plan: payload.preferredPlan,
       status: "submitted",
     })
@@ -36,7 +37,9 @@ export async function submitApplication(input: ApplicationInput) {
     entityType: "rsvp_applications",
     metadata: {
       event_type: application.event_type,
+      preferred_manual_payment_option: application.preferred_manual_payment_option,
       preferred_plan: application.preferred_plan,
+      reference_code: application.reference_code,
     },
   });
 

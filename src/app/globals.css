@@ -37,6 +37,16 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-rsvp-accent-foreground: var(--rsvp-accent-foreground);
+  --color-rsvp-accent: var(--rsvp-accent);
+  --color-rsvp-brand-foreground: var(--rsvp-brand-foreground);
+  --color-rsvp-brand: var(--rsvp-brand);
+  --color-rsvp-border: var(--rsvp-border);
+  --color-rsvp-ring: var(--rsvp-ring);
+  --color-rsvp-surface-muted: var(--rsvp-surface-muted);
+  --color-rsvp-surface: var(--rsvp-surface);
+  --color-rsvp-success: var(--rsvp-success);
+  --color-rsvp-warning: var(--rsvp-warning);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);

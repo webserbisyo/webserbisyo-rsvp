@@ -11,6 +11,8 @@ export async function submitApplicationAction(input: unknown) {
 
     return actionSuccess({
       applicationId: application.id,
+      preferredManualPaymentOption: application.preferred_manual_payment_option,
+      referenceCode: application.reference_code,
       status: application.status,
     });
   } catch (error) {
