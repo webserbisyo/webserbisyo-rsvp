@@ -4,17 +4,17 @@ import { PageContainer } from "@/components/app-shell/page-container";
 import { PageHeader } from "@/components/app-shell/page-header";
 
 export const metadata: Metadata = {
-  title: "Meta Pixels",
+  title: "Logs",
 };
 
-export default function AdminMetaPixelsPage() {
+export default function AdminLogsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Meta Pixels"
-        description="Pixel setup remains a placeholder until tracking settings are wired to a reviewed admin workflow."
+        title="Logs"
+        description="Operational email and audit log shell for reviewed admin workflows."
       />
-      <ComingSoonCard description="Meta Pixel CRUD is deferred; this page is a shell-only placeholder." />
+      <ComingSoonCard description="Audit and email log reads remain deferred." />
     </PageContainer>
   );
 }

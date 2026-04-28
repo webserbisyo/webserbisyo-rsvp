@@ -1,0 +1,11 @@
+:root {
+  --admin-sidebar-width: 15rem;
+  --admin-sidebar-width-icon: 3rem;
+  --admin-page-max-width: 80rem;
+  --admin-mobile-nav-height: 4rem;
+  --admin-mobile-header-height: 3.5rem;
+}
+
+.admin-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

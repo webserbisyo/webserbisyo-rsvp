@@ -4,17 +4,17 @@ import { PageContainer } from "@/components/app-shell/page-container";
 import { PageHeader } from "@/components/app-shell/page-header";
 
 export const metadata: Metadata = {
-  title: "Meta Pixels",
+  title: "Events",
 };
 
-export default function AdminMetaPixelsPage() {
+export default function AdminEventsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Meta Pixels"
-        description="Pixel setup remains a placeholder until tracking settings are wired to a reviewed admin workflow."
+        title="Events"
+        description="Admin event inventory shell for future draft and published RSVP events."
       />
-      <ComingSoonCard description="Meta Pixel CRUD is deferred; this page is a shell-only placeholder." />
+      <ComingSoonCard description="Event records are not fetched in this foundation task." />
     </PageContainer>
   );
 }
