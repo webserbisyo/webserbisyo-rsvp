@@ -14,7 +14,7 @@ type ApplySuccessProps = {
   messengerPageUrl: string | null;
   paymentOption: string | null;
   plan: string | null;
-  referenceCode: string;
+  referenceCode: string | null;
 };
 
 type StoredSuccessPayload = {
@@ -30,7 +30,11 @@ function subscribeToStoredSuccessPayload() {
   return () => undefined;
 }
 
-function readStoredSuccessPayload(referenceCode: string): StoredSuccessPayload | null {
+function readStoredSuccessPayload(referenceCode: string | null): StoredSuccessPayload | null {
+  if (!referenceCode) {
+    return null;
+  }
+
   if (typeof window === "undefined") {
     return null;
   }
@@ -65,11 +69,19 @@ export function ApplySuccess({
   const displayPlan = storedPayload?.plan ?? plan;
   const displayPaymentOption = storedPayload?.preferredManualPaymentOption ?? paymentOption;
   const followupMessage = useMemo(
-    () => storedPayload?.followupMessage ?? buildReferenceOnlyFollowupMessage(referenceCode),
+    () =>
+      storedPayload?.followupMessage ??
+      (referenceCode
+        ? buildReferenceOnlyFollowupMessage(referenceCode)
+        : "Hi WebSerbisyo! I need help locating my RSVP application reference."),
     [referenceCode, storedPayload?.followupMessage],
   );
 
   async function copyReference() {
+    if (!referenceCode) {
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(referenceCode);
       toast.success("Reference code copied.");
@@ -102,7 +114,14 @@ export function ApplySuccess({
                 <p className="text-rsvp-brand text-xs font-semibold tracking-[0.22em] uppercase">
                   Reference code
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight">{referenceCode}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">
+                  {referenceCode ?? "Not available"}
+                </p>
+                {!referenceCode ? (
+                  <p className="text-muted-foreground mt-2 text-sm">
+                    If you just submitted, return to the application flow and try again.
+                  </p>
+                ) : null}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="border-border/70 bg-background rounded-3xl border px-4 py-4">
@@ -129,6 +148,7 @@ export function ApplySuccess({
               <Button
                 type="button"
                 onClick={() => void copyReference()}
+                disabled={!referenceCode}
                 className="bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90"
               >
                 <Copy className="size-4" />

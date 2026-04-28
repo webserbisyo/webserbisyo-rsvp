@@ -13,7 +13,7 @@ const optionalText = (max: number) =>
 const optionalUrl = z
   .string()
   .trim()
-  .url("Enter a valid Messenger page URL.")
+  .url("Messenger URL is invalid.")
   .max(500)
   .optional()
   .or(z.literal("").transform(() => undefined));
@@ -30,39 +30,41 @@ const optionalQrFile = z
     return value;
   });
 
-const PaymentProviderSettingsSchema = z
-  .object({
-    accountName: optionalText(160),
-    accountNumber: optionalText(80),
-    isEnabled: z.boolean().default(false),
-    qrFile: optionalQrFile.optional(),
-    qrImagePath: optionalText(500),
-  })
-  .superRefine((value, ctx) => {
-    if (!value.isEnabled) {
-      return;
-    }
+function createPaymentProviderSettingsSchema(providerLabel: string) {
+  return z
+    .object({
+      accountName: optionalText(160),
+      accountNumber: optionalText(80),
+      isEnabled: z.boolean().default(false),
+      qrFile: optionalQrFile.optional(),
+      qrImagePath: optionalText(500),
+    })
+    .superRefine((value, ctx) => {
+      if (!value.isEnabled) {
+        return;
+      }
 
-    if (!value.accountName) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Account name is required before enabling this payment option.",
-        path: ["accountName"],
-      });
-    }
+      if (!value.accountName) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${providerLabel} account name is required when ${providerLabel} is enabled.`,
+          path: ["accountName"],
+        });
+      }
 
-    if (!value.accountNumber) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Account number is required before enabling this payment option.",
-        path: ["accountNumber"],
-      });
-    }
-  });
+      if (!value.accountNumber) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${providerLabel} account number is required when ${providerLabel} is enabled.`,
+          path: ["accountNumber"],
+        });
+      }
+    });
+}
 
 export const PaymentOptionsSchema = z.object({
-  gcash: PaymentProviderSettingsSchema,
-  maya: PaymentProviderSettingsSchema,
+  gcash: createPaymentProviderSettingsSchema("GCash"),
+  maya: createPaymentProviderSettingsSchema("Maya"),
   messengerPageUrl: optionalUrl,
 });
 

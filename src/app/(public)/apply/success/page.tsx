@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { ApplySuccess } from "@/components/apply/apply-success";
 import { isApplicationReferenceCode } from "@/lib/apply/reference";
 import {
@@ -16,15 +15,11 @@ type ApplySuccessPageProps = {
 
 export default async function ApplySuccessPage({ searchParams }: ApplySuccessPageProps) {
   const params = await searchParams;
-  const referenceCode = params.ref;
-
-  if (!isApplicationReferenceCode(referenceCode)) {
-    redirect("/apply");
-  }
+  const referenceCode = isApplicationReferenceCode(params.ref) ? params.ref : null;
 
   const [config, summary] = await Promise.all([
     getPublicApplyConfig(),
-    getPublicApplicationSuccessSummary(referenceCode),
+    referenceCode ? getPublicApplicationSuccessSummary(referenceCode) : Promise.resolve(null),
   ]);
 
   return (

@@ -280,7 +280,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
             />
           ) : (
             <Alert className="border-border/70 rounded-3xl">
-              <AlertTitle>Manual payment details will be confirmed on Messenger.</AlertTitle>
+              <AlertTitle>Payment details will be confirmed through Messenger.</AlertTitle>
               <AlertDescription>
                 The admin has not enabled public wallet details yet. You can still submit your
                 application and follow up manually after you receive your reference code.

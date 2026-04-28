@@ -1,6 +1,8 @@
 import "server-only";
 
 import { z, ZodError } from "zod";
+import { AuthenticationError, PermissionError } from "@/lib/permissions";
+import { ServiceError } from "@/server/services/service-error";
 
 export type ActionResult<T = unknown> =
   | {
@@ -38,6 +40,17 @@ export function actionFailure(error: unknown): ActionResult<never> {
     return {
       error: "Please check the submitted fields.",
       fieldErrors: z.flattenError(error).fieldErrors,
+      ok: false,
+    };
+  }
+
+  if (
+    error instanceof ServiceError ||
+    error instanceof AuthenticationError ||
+    error instanceof PermissionError
+  ) {
+    return {
+      error: error.message,
       ok: false,
     };
   }

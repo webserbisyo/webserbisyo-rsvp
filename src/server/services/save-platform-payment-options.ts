@@ -3,7 +3,7 @@ import "server-only";
 import type { PaymentOptionsInput } from "@/lib/validations/payment-options.schema";
 import { PaymentOptionsSchema } from "@/lib/validations/payment-options.schema";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { assertServiceSuccess } from "./service-error";
+import { ServiceError, assertServiceSuccess } from "./service-error";
 import { uploadPaymentQr } from "./upload-payment-qr";
 import { writeAuditLog } from "./write-audit-log";
 
@@ -49,7 +49,9 @@ export async function savePlatformPaymentOptions(input: PaymentOptionsInput, act
     .select("id")
     .maybeSingle();
 
-  assertServiceSuccess(existingSettingsError, "Failed to load public settings.");
+  if (existingSettingsError) {
+    throw new ServiceError("Failed to load public settings.", existingSettingsError);
+  }
 
   if (existingSettings?.id) {
     const { error: settingsUpdateError } = await supabase
@@ -67,7 +69,35 @@ export async function savePlatformPaymentOptions(input: PaymentOptionsInput, act
       updated_by: actorUserId,
     });
 
-    assertServiceSuccess(settingsInsertError, "Failed to create public settings.");
+    if (settingsInsertError) {
+      const isSingletonConflict =
+        "code" in settingsInsertError &&
+        typeof settingsInsertError.code === "string" &&
+        settingsInsertError.code === "23505";
+
+      if (!isSingletonConflict) {
+        throw new ServiceError("Failed to save public settings.", settingsInsertError);
+      }
+
+      const { data: retriedSettings, error: retriedSettingsError } = await supabase
+        .from("platform_public_settings")
+        .select("id")
+        .maybeSingle();
+
+      if (retriedSettingsError || !retriedSettings?.id) {
+        throw new ServiceError("Failed to save public settings.", retriedSettingsError);
+      }
+
+      const { error: retrySettingsUpdateError } = await supabase
+        .from("platform_public_settings")
+        .update({
+          messenger_page_url: payload.messengerPageUrl ?? null,
+          updated_by: actorUserId,
+        })
+        .eq("id", retriedSettings.id);
+
+      assertServiceSuccess(retrySettingsUpdateError, "Failed to save public settings.");
+    }
   }
 
   await writeAuditLog({

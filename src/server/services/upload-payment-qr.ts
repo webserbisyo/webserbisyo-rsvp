@@ -10,11 +10,11 @@ const ALLOWED_PAYMENT_QR_TYPES = new Set(["image/jpeg", "image/jpg", "image/png"
 
 export async function uploadPaymentQr(file: File, provider: "gcash" | "maya") {
   if (!ALLOWED_PAYMENT_QR_TYPES.has(file.type)) {
-    throw new ServiceError("Upload a PNG, JPG, or WebP QR image.");
+    throw new ServiceError("QR image must be PNG, JPG, or WebP.");
   }
 
   if (file.size > MAX_PAYMENT_QR_SIZE) {
-    throw new ServiceError("Upload a QR image smaller than 5 MB.");
+    throw new ServiceError("QR image is too large. Max size is 5 MB.");
   }
 
   const extension = path.extname(file.name).toLowerCase() || ".png";

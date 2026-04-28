@@ -14,6 +14,13 @@ const EMPTY_PUBLIC_APPLY_CONFIG: PublicApplyConfig = {
   paymentOptions: [],
 };
 
+type SafeSupabaseError = {
+  code?: string;
+  details?: string | null;
+  hint?: string | null;
+  message?: string;
+};
+
 function getPaymentQrPublicUrl(path: string | null) {
   if (!path) {
     return null;
@@ -23,6 +30,36 @@ function getPaymentQrPublicUrl(path: string | null) {
   const { data } = supabase.storage.from(PAYMENT_QR_BUCKET).getPublicUrl(path);
 
   return data.publicUrl;
+}
+
+function isSafeSupabaseError(error: unknown): error is SafeSupabaseError {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  return "message" in error || "code" in error;
+}
+
+function toSafeErrorLog(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+    };
+  }
+
+  if (isSafeSupabaseError(error)) {
+    return {
+      code: error.code,
+      details: error.details ?? null,
+      hint: error.hint ?? null,
+      message: error.message,
+    };
+  }
+
+  return {
+    error,
+  };
 }
 
 export async function getPublicApplyConfig(): Promise<PublicApplyConfig> {
@@ -48,14 +85,16 @@ export async function getPublicApplyConfig(): Promise<PublicApplyConfig> {
       throw settingsError;
     }
 
+    const enabledPaymentOptions = (paymentOptions ?? []).filter((option) => option.is_enabled);
+
     return {
       messengerPageUrl: settings?.messenger_page_url ?? null,
-      paymentOptions: (paymentOptions ?? []).map((option) =>
+      paymentOptions: enabledPaymentOptions.map((option) =>
         toPublicPaymentOptionDto(option, getPaymentQrPublicUrl(option.qr_image_path)),
       ),
     };
   } catch (error) {
-    console.error("Failed to load public apply config.", error);
+    console.error("Failed to load public apply config.", toSafeErrorLog(error));
 
     return EMPTY_PUBLIC_APPLY_CONFIG;
   }
@@ -87,7 +126,7 @@ export async function getPublicApplicationSuccessSummary(
 
     return data;
   } catch (error) {
-    console.error("Failed to load public application success summary.", error);
+    console.error("Failed to load public application success summary.", toSafeErrorLog(error));
 
     return null;
   }
