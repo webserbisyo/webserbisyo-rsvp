@@ -9,6 +9,10 @@ import {
 import { isApplicationReferenceCode } from "@/lib/apply/reference";
 
 const PAYMENT_QR_BUCKET = "payment-qr-images";
+const EMPTY_PUBLIC_APPLY_CONFIG: PublicApplyConfig = {
+  messengerPageUrl: null,
+  paymentOptions: [],
+};
 
 function getPaymentQrPublicUrl(path: string | null) {
   if (!path) {
@@ -22,33 +26,39 @@ function getPaymentQrPublicUrl(path: string | null) {
 }
 
 export async function getPublicApplyConfig(): Promise<PublicApplyConfig> {
-  const supabase = createAdminClient();
-  const [
-    { data: paymentOptions, error: paymentOptionsError },
-    { data: settings, error: settingsError },
-  ] = await Promise.all([
-    supabase
-      .from("platform_payment_options")
-      .select("account_name, account_number, is_enabled, provider, qr_image_path")
-      .eq("is_enabled", true)
-      .order("provider"),
-    supabase.from("platform_public_settings").select("messenger_page_url").maybeSingle(),
-  ]);
+  try {
+    const supabase = createAdminClient();
+    const [
+      { data: paymentOptions, error: paymentOptionsError },
+      { data: settings, error: settingsError },
+    ] = await Promise.all([
+      supabase
+        .from("platform_payment_options")
+        .select("account_name, account_number, is_enabled, provider, qr_image_path")
+        .eq("is_enabled", true)
+        .order("provider"),
+      supabase.from("platform_public_settings").select("messenger_page_url").maybeSingle(),
+    ]);
 
-  if (paymentOptionsError) {
-    throw paymentOptionsError;
+    if (paymentOptionsError) {
+      throw paymentOptionsError;
+    }
+
+    if (settingsError) {
+      throw settingsError;
+    }
+
+    return {
+      messengerPageUrl: settings?.messenger_page_url ?? null,
+      paymentOptions: (paymentOptions ?? []).map((option) =>
+        toPublicPaymentOptionDto(option, getPaymentQrPublicUrl(option.qr_image_path)),
+      ),
+    };
+  } catch (error) {
+    console.error("Failed to load public apply config.", error);
+
+    return EMPTY_PUBLIC_APPLY_CONFIG;
   }
-
-  if (settingsError) {
-    throw settingsError;
-  }
-
-  return {
-    messengerPageUrl: settings?.messenger_page_url ?? null,
-    paymentOptions: (paymentOptions ?? []).map((option) =>
-      toPublicPaymentOptionDto(option, getPaymentQrPublicUrl(option.qr_image_path)),
-    ),
-  };
 }
 
 export type PublicApplicationSuccessSummary = Pick<
@@ -63,16 +73,22 @@ export async function getPublicApplicationSuccessSummary(
     return null;
   }
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("rsvp_applications")
-    .select("preferred_manual_payment_option, preferred_plan, reference_code")
-    .eq("reference_code", referenceCode)
-    .maybeSingle();
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("rsvp_applications")
+      .select("preferred_manual_payment_option, preferred_plan, reference_code")
+      .eq("reference_code", referenceCode)
+      .maybeSingle();
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Failed to load public application success summary.", error);
+
+    return null;
   }
-
-  return data;
 }
