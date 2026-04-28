@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Copy, MessageCircleMore, ReceiptText } from "lucide-react";
 import { toast } from "sonner";
@@ -26,8 +26,21 @@ type StoredSuccessPayload = {
 
 const APPLY_SUCCESS_STORAGE_KEY = "ws-rsvp-apply-success";
 
-function subscribeToStoredSuccessPayload() {
-  return () => undefined;
+function isStoredSuccessPayload(value: unknown): value is StoredSuccessPayload {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const payload = value as Partial<StoredSuccessPayload>;
+
+  return (
+    typeof payload.followupMessage === "string" &&
+    typeof payload.referenceCode === "string" &&
+    (payload.plan === null || typeof payload.plan === "string" || payload.plan === undefined) &&
+    (payload.preferredManualPaymentOption === null ||
+      typeof payload.preferredManualPaymentOption === "string" ||
+      payload.preferredManualPaymentOption === undefined)
+  );
 }
 
 function readStoredSuccessPayload(referenceCode: string | null): StoredSuccessPayload | null {
@@ -46,7 +59,11 @@ function readStoredSuccessPayload(referenceCode: string | null): StoredSuccessPa
       return null;
     }
 
-    const parsed = JSON.parse(raw) as StoredSuccessPayload;
+    const parsed = JSON.parse(raw) as unknown;
+
+    if (!isStoredSuccessPayload(parsed)) {
+      return null;
+    }
 
     return parsed.referenceCode === referenceCode ? parsed : null;
   } catch {
@@ -60,11 +77,11 @@ export function ApplySuccess({
   plan,
   referenceCode,
 }: ApplySuccessProps) {
-  const storedPayload = useSyncExternalStore(
-    subscribeToStoredSuccessPayload,
-    () => readStoredSuccessPayload(referenceCode),
-    () => null,
-  );
+  const storedPayload = useMemo(() => readStoredSuccessPayload(referenceCode), [referenceCode]);
+
+  useEffect(() => {
+    window.sessionStorage.removeItem(APPLY_SUCCESS_STORAGE_KEY);
+  }, [referenceCode]);
 
   const displayPlan = storedPayload?.plan ?? plan;
   const displayPaymentOption = storedPayload?.preferredManualPaymentOption ?? paymentOption;
