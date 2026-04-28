@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useMemo, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,9 +10,10 @@ import { toast } from "sonner";
 import { buildMessengerFollowupMessage } from "@/lib/apply/messenger";
 import type { PublicApplyConfig } from "@/lib/apply/public-payment-option-dto";
 import {
-  ApplicationSchema,
+  type ApplicationInput,
   type ApplicationFormInput,
   EVENT_TYPE_OPTIONS,
+  createApplicationSchema,
 } from "@/lib/validations/application.schema";
 import { submitApplicationAction } from "@/server/actions/applications";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -40,6 +41,11 @@ const APPLY_SUCCESS_STORAGE_KEY = "ws-rsvp-apply-success";
 export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const hasPaymentOptions = config.paymentOptions.length > 0;
+  const validationSchema = useMemo(
+    () => createApplicationSchema({ requireManualPaymentOption: hasPaymentOptions }),
+    [hasPaymentOptions],
+  );
   const {
     control,
     formState: { errors },
@@ -47,8 +53,10 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
     register,
     setError,
     setValue,
-  } = useForm<ApplicationFormInput>({
-    resolver: zodResolver(ApplicationSchema),
+  } = useForm<ApplicationFormInput, unknown, ApplicationInput>({
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       email: "",
       estimatedGuestCount: undefined,
@@ -75,7 +83,6 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
     control,
     name: "eventType",
   });
-  const hasPaymentOptions = config.paymentOptions.length > 0;
 
   function assignServerFieldErrors(fieldErrors: Record<string, string[] | undefined> | undefined) {
     if (!fieldErrors) {
@@ -109,9 +116,14 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
       }
 
       const followupMessage = buildMessengerFollowupMessage({
+        email: values.email,
+        estimatedGuestCount: values.estimatedGuestCount,
         eventDate: values.eventDate ?? null,
+        eventLocation: values.eventLocation ?? null,
         eventType: values.eventType,
         fullName: values.fullName,
+        message: values.message ?? null,
+        phone: values.phone,
         preferredManualPaymentOption: result.data.preferredManualPaymentOption ?? null,
         preferredPlan: values.preferredPlan,
         referenceCode: result.data.referenceCode,
@@ -168,8 +180,15 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone or Messenger contact</Label>
-              <Input id="phone" autoComplete="tel" {...register("phone")} disabled={isPending} />
+              <Label htmlFor="phone">Phone number</Label>
+              <Input
+                id="phone"
+                autoComplete="tel"
+                inputMode="tel"
+                placeholder="09171234567 or +639171234567"
+                {...register("phone")}
+                disabled={isPending}
+              />
               {errors.phone?.message ? (
                 <p className="text-destructive text-sm">{errors.phone.message}</p>
               ) : null}
@@ -181,6 +200,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 value={selectedEventType}
                 onValueChange={(value) =>
                   setValue("eventType", value as ApplicationFormInput["eventType"], {
+                    shouldTouch: true,
                     shouldValidate: true,
                   })
                 }
@@ -223,7 +243,10 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
               <Select
                 value={selectedPlan}
                 onValueChange={(value) =>
-                  setValue("preferredPlan", value as "pro" | "max", { shouldValidate: true })
+                  setValue("preferredPlan", value as "pro" | "max", {
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  })
                 }
                 disabled={isPending}
               >
@@ -246,6 +269,8 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 id="estimatedGuestCount"
                 type="number"
                 min={1}
+                max={1000}
+                step={1}
                 {...register("estimatedGuestCount")}
                 disabled={isPending}
               />
@@ -274,7 +299,10 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
               options={config.paymentOptions}
               value={selectedPaymentOption}
               onValueChange={(value) =>
-                setValue("preferredManualPaymentOption", value, { shouldValidate: true })
+                setValue("preferredManualPaymentOption", value, {
+                  shouldTouch: true,
+                  shouldValidate: true,
+                })
               }
               error={errors.preferredManualPaymentOption}
             />

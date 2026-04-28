@@ -44,7 +44,7 @@ export function PaymentOptionCard({ isSelected, onCopyNumber, option }: PaymentO
           <div className="border-border/80 bg-muted/40 text-muted-foreground flex min-h-44 items-center justify-center rounded-2xl border border-dashed text-sm">
             <div className="flex flex-col items-center gap-2 text-center">
               <QrCode className="size-5" />
-              <p>QR image will appear here once the admin uploads one.</p>
+              <p>QR image not configured yet.</p>
             </div>
           </div>
         )}
