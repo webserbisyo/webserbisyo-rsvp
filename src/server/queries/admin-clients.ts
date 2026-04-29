@@ -1,39 +1,1588 @@
 import "server-only";
 
-import { requireAdmin } from "@/lib/permissions";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Tables } from "@/lib/supabase/types";
 
-export async function getAdminClients() {
-  await requireAdmin();
-  const supabase = await createServerSupabaseClient();
+export const CLIENTS_PAGE_SIZE = 20;
+
+export const PARAM_STATUS = "status";
+export const PARAM_PLAN = "plan";
+export const PARAM_PAYMENT = "payment";
+export const PARAM_HOSTING = "hosting";
+export const PARAM_EVENT = "event";
+export const PARAM_SEARCH = "search";
+export const PARAM_EVENT_FROM = "eventFrom";
+export const PARAM_EVENT_TO = "eventTo";
+export const PARAM_HOSTING_ENDS_FROM = "hostingEndsFrom";
+export const PARAM_HOSTING_ENDS_TO = "hostingEndsTo";
+export const PARAM_APPROVED_FROM = "approvedFrom";
+export const PARAM_APPROVED_TO = "approvedTo";
+export const PARAM_SORT = "sort";
+export const PARAM_PAGE = "page";
+
+export const CLIENT_STATUS_VALUES = [
+  "active",
+  "renewal_needed",
+  "event_passed",
+  "expired",
+  "archived",
+  "paused",
+  "unknown",
+] as const;
+
+export const CLIENT_STATUS_TAB_VALUES = [
+  "active",
+  "renewal_needed",
+  "event_passed",
+  "expired",
+  "archived",
+  "paused",
+] as const;
+
+export const CLIENT_PLAN_VALUES = ["pro", "max"] as const;
+export const CLIENT_PAYMENT_FILTER_VALUES = [
+  "paid",
+  "confirmed",
+  "pending",
+  "failed",
+  "none",
+] as const;
+export const CLIENT_HOSTING_FILTER_VALUES = [
+  "active",
+  "renewal_needed",
+  "expired",
+  "unknown",
+] as const;
+export const CLIENT_EVENT_FILTER_VALUES = ["upcoming", "today", "event_passed", "unknown"] as const;
+export const CLIENT_SORT_VALUES = [
+  "updated_desc",
+  "approved_desc",
+  "event_date_asc",
+  "hosting_ends_asc",
+  "client_name_asc",
+] as const;
+
+export type ClientListStatus = (typeof CLIENT_STATUS_VALUES)[number];
+export type ClientListStatusFilter = ClientListStatus | "all";
+export type ClientPlan = (typeof CLIENT_PLAN_VALUES)[number];
+export type ClientPlanFilter = ClientPlan | "all";
+export type ClientPaymentFilter = (typeof CLIENT_PAYMENT_FILTER_VALUES)[number] | "all";
+export type ClientHostingLifecycle = (typeof CLIENT_HOSTING_FILTER_VALUES)[number];
+export type ClientHostingFilter = ClientHostingLifecycle | "all";
+export type ClientEventLifecycle = (typeof CLIENT_EVENT_FILTER_VALUES)[number];
+export type ClientEventFilter = ClientEventLifecycle | "all";
+export type ClientSort = (typeof CLIENT_SORT_VALUES)[number];
+
+export type AdminClientsSearchParams = {
+  approvedFrom: string;
+  approvedTo: string;
+  event: ClientEventFilter;
+  eventFrom: string;
+  eventTo: string;
+  hosting: ClientHostingFilter;
+  hostingEndsFrom: string;
+  hostingEndsTo: string;
+  page: number;
+  payment: ClientPaymentFilter;
+  plan: ClientPlanFilter;
+  search: string;
+  sort: ClientSort;
+  status: ClientListStatusFilter;
+};
+
+export type ClientListItem = {
+  approvedApplicationId: string | null;
+  approvedApplicationReferenceCode: string | null;
+  approvedAt: string | null;
+  clientName: string;
+  clientStatus: string | null;
+  clientStatusLabel: string;
+  createdAt: string;
+  email: string;
+  eventDate: string | null;
+  eventId: string | null;
+  eventLifecycle: ClientEventLifecycle;
+  eventLifecycleLabel: string;
+  eventSlug: string | null;
+  eventStatus: string | null;
+  eventTitle: string | null;
+  hostingEndsAt: string | null;
+  hostingLifecycle: ClientHostingLifecycle;
+  hostingLifecycleLabel: string;
+  hostingStartsAt: string | null;
+  href: string;
+  id: string;
+  paymentId: string | null;
+  paymentMethod: string | null;
+  paymentReferenceNumber: string | null;
+  paymentStatus: string | null;
+  paymentStatusLabel: string;
+  phone: string | null;
+  plan: string | null;
+  planLabel: string;
+  renewalRequiredAt: string | null;
+  status: ClientListStatus;
+  statusLabel: string;
+  updatedAt: string;
+};
+
+export type ClientStatusCounts = Record<ClientListStatusFilter, number>;
+
+export type ClientListResult = {
+  counts: ClientStatusCounts;
+  error?: string;
+  generatedAt: string;
+  items: ClientListItem[];
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+};
+
+export type ClientActivityItem = {
+  action: string;
+  actionLabel: string;
+  createdAt: string;
+  id: string;
+  source: "audit" | "email";
+};
+
+export type ClientDetailView = {
+  activity: ClientActivityItem[];
+  application: {
+    approvedAt: string | null;
+    href: string | null;
+    id: string | null;
+    referenceCode: string | null;
+    status: string | null;
+    statusLabel: string | null;
+    submittedAt: string | null;
+  };
+  cleanup: {
+    archiveEligible: boolean;
+    deleteEligible: boolean;
+    deleteEligibleAt: string | null;
+    eventPassed: boolean;
+    hostingExpired: boolean;
+  };
+  client: {
+    createdAt: string;
+    customFrontendStatus: string | null;
+    customFrontendStatusLabel: string;
+    customFrontendUrl: string | null;
+    email: string;
+    name: string;
+    phone: string | null;
+    plan: string | null;
+    planLabel: string;
+    status: string | null;
+    statusLabel: string;
+    updatedAt: string;
+  };
+  event: {
+    date: string | null;
+    id: string | null;
+    lifecycle: ClientEventLifecycle;
+    lifecycleLabel: string;
+    publicUrl: string | null;
+    slug: string | null;
+    status: string | null;
+    statusLabel: string | null;
+    title: string | null;
+    type: string | null;
+    visibility: string | null;
+  };
+  hosting: {
+    endsAt: string | null;
+    lifecycle: ClientHostingLifecycle;
+    lifecycleLabel: string;
+    renewalRequiredAt: string | null;
+    startsAt: string | null;
+  };
+  id: string;
+  onboarding: {
+    emailStatus: string | null;
+    lastEmailSentAt: string | null;
+    ownerEmail: string | null;
+    ownerName: string | null;
+    ownerProfileId: string | null;
+    profileRole: string | null;
+  };
+  payment: {
+    amountDue: number | null;
+    amountPaid: number | null;
+    id: string | null;
+    method: string | null;
+    paidAt: string | null;
+    referenceNumber: string | null;
+    status: string | null;
+    statusLabel: string;
+  };
+  status: {
+    label: string;
+    value: ClientListStatus;
+  };
+};
+
+export type ClientDetailResult = {
+  client: ClientDetailView | null;
+  errors?: Partial<Record<"activity" | "application" | "event" | "onboarding" | "payment", string>>;
+  generatedAt: string;
+  notFound?: boolean;
+};
+
+type SearchParamsInput = Record<string, string | string[] | undefined>;
+type ClientRow = Pick<
+  Tables<"clients">,
+  | "contact_email"
+  | "contact_name"
+  | "contact_phone"
+  | "created_at"
+  | "custom_frontend_status"
+  | "custom_frontend_url"
+  | "hosting_ends_at"
+  | "hosting_starts_at"
+  | "id"
+  | "name"
+  | "plan_type"
+  | "renewal_required_at"
+  | "status"
+  | "updated_at"
+>;
+type ApplicationRow = Pick<
+  Tables<"rsvp_applications">,
+  | "approved_at"
+  | "approved_client_id"
+  | "id"
+  | "reference_code"
+  | "status"
+  | "submitted_at"
+  | "updated_at"
+>;
+type EventRow = Pick<
+  Tables<"rsvp_events">,
+  | "client_id"
+  | "event_date"
+  | "event_slug"
+  | "event_type"
+  | "id"
+  | "status"
+  | "title"
+  | "updated_at"
+  | "visibility"
+>;
+type PaymentRow = Pick<
+  Tables<"payments">,
+  | "amount_due"
+  | "amount_paid"
+  | "application_id"
+  | "client_id"
+  | "created_at"
+  | "hosting_ends_at"
+  | "hosting_starts_at"
+  | "id"
+  | "paid_at"
+  | "payment_method"
+  | "payment_status"
+  | "plan_type"
+  | "reference_number"
+  | "renewal_required_at"
+  | "updated_at"
+>;
+type ProfileRow = Pick<
+  Tables<"profiles">,
+  "client_id" | "created_at" | "email" | "full_name" | "id" | "role" | "updated_at"
+>;
+type EmailLogRow = Pick<
+  Tables<"email_logs">,
+  | "application_id"
+  | "client_id"
+  | "created_at"
+  | "email_type"
+  | "error_message"
+  | "event_id"
+  | "id"
+  | "recipient_email"
+  | "sent_at"
+  | "status"
+  | "updated_at"
+>;
+type AuditRow = Pick<
+  Tables<"audit_logs">,
+  "action" | "client_id" | "created_at" | "entity_id" | "entity_type" | "event_id" | "id"
+>;
+
+type ClientSnapshot = {
+  application: ApplicationRow | null;
+  client: ClientRow;
+  event: EventRow | null;
+  eventLifecycle: ClientEventLifecycle;
+  hostingEndsAt: string | null;
+  hostingLifecycle: ClientHostingLifecycle;
+  hostingStartsAt: string | null;
+  payment: PaymentRow | null;
+  plan: string | null;
+  renewalRequiredAt: string | null;
+  status: ClientListStatus;
+};
+
+type EnrichedClientRecord = ClientSnapshot & {
+  applications: ApplicationRow[];
+  events: EventRow[];
+  payments: PaymentRow[];
+};
+
+const LIST_ERROR_MESSAGE = "Clients could not be loaded.";
+const RELATED_APPLICATION_ERROR_MESSAGE = "Linked application could not be loaded.";
+const EVENT_ERROR_MESSAGE = "Linked event could not be loaded.";
+const PAYMENT_ERROR_MESSAGE = "Payment and hosting details could not be loaded.";
+const ONBOARDING_ERROR_MESSAGE = "Onboarding records could not be loaded.";
+const ACTIVITY_ERROR_MESSAGE = "Activity could not be loaded.";
+const ACTIVITY_PREVIEW_LIMIT = 6;
+const MAX_SEARCH_LENGTH = 120;
+
+const EMPTY_COUNTS: ClientStatusCounts = {
+  active: 0,
+  all: 0,
+  archived: 0,
+  event_passed: 0,
+  expired: 0,
+  paused: 0,
+  renewal_needed: 0,
+  unknown: 0,
+};
+
+const CLIENT_COLUMNS =
+  "id, name, contact_name, contact_email, contact_phone, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at, custom_frontend_status, custom_frontend_url, created_at, updated_at";
+const APPLICATION_COLUMNS =
+  "id, approved_client_id, reference_code, status, submitted_at, approved_at, updated_at";
+const EVENT_COLUMNS =
+  "id, client_id, title, event_type, event_date, event_slug, status, visibility, updated_at";
+const PAYMENT_COLUMNS =
+  "id, client_id, application_id, plan_type, amount_due, amount_paid, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, created_at, updated_at";
+const PROFILE_COLUMNS = "id, client_id, email, full_name, role, created_at, updated_at";
+const EMAIL_LOG_COLUMNS =
+  "id, client_id, application_id, event_id, recipient_email, email_type, status, error_message, sent_at, created_at, updated_at";
+const AUDIT_COLUMNS = "id, client_id, event_id, entity_type, entity_id, action, created_at";
+
+export async function getAdminClients(
+  params: AdminClientsSearchParams,
+  supabase: SupabaseClient<Database>,
+): Promise<ClientListResult> {
+  const generatedAt = new Date().toISOString();
+
+  try {
+    const clients = await getClients(supabase);
+    const clientIds = clients.map((client) => client.id);
+    const [applications, events, payments] = await Promise.all([
+      getApprovedApplicationsForClients(supabase, clientIds),
+      getEventsForClients(supabase, clientIds),
+      getPaymentsForClients(supabase, clientIds),
+    ]);
+
+    const enriched = buildEnrichedClientRecords(clients, applications, events, payments);
+    const counts = buildStatusCounts(enriched);
+    const filtered = filterClientRecords(enriched, params);
+    const sorted = sortClientRecords(filtered, params.sort);
+    const total = sorted.length;
+    const pageCount = Math.max(1, Math.ceil(total / CLIENTS_PAGE_SIZE));
+    const page = Math.min(params.page, pageCount);
+    const from = (page - 1) * CLIENTS_PAGE_SIZE;
+    const items = sorted.slice(from, from + CLIENTS_PAGE_SIZE).map(toClientListItem);
+
+    return {
+      counts,
+      generatedAt,
+      items,
+      page,
+      pageCount,
+      pageSize: CLIENTS_PAGE_SIZE,
+      total,
+    };
+  } catch {
+    return {
+      counts: { ...EMPTY_COUNTS },
+      error: LIST_ERROR_MESSAGE,
+      generatedAt,
+      items: [],
+      page: Math.max(params.page, 1),
+      pageCount: 1,
+      pageSize: CLIENTS_PAGE_SIZE,
+      total: 0,
+    };
+  }
+}
+
+export async function getAdminClientDetail(
+  clientId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<ClientDetailResult> {
+  const generatedAt = new Date().toISOString();
+  const errors: Partial<
+    Record<"activity" | "application" | "event" | "onboarding" | "payment", string>
+  > = {};
+
+  try {
+    const { data: client, error } = await supabase
+      .from("clients")
+      .select(CLIENT_COLUMNS)
+      .eq("id", clientId)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        client: null,
+        generatedAt,
+      };
+    }
+
+    if (!client) {
+      return {
+        client: null,
+        generatedAt,
+        notFound: true,
+      };
+    }
+
+    const [
+      applicationsResult,
+      eventsResult,
+      paymentsResult,
+      profilesResult,
+      emailsResult,
+      auditResult,
+    ] = await Promise.allSettled([
+      getApprovedApplicationsForClients(supabase, [client.id]),
+      getEventsForClients(supabase, [client.id]),
+      getPaymentsForClients(supabase, [client.id]),
+      getProfilesForClients(supabase, [client.id]),
+      getEmailLogsForClients(supabase, [client.id]),
+      getAuditLogsForClients(supabase, [client.id]),
+    ]);
+
+    const applications = applicationsResult.status === "fulfilled" ? applicationsResult.value : [];
+    const events = eventsResult.status === "fulfilled" ? eventsResult.value : [];
+    const payments = paymentsResult.status === "fulfilled" ? paymentsResult.value : [];
+    const profiles = profilesResult.status === "fulfilled" ? profilesResult.value : [];
+    const emailLogs = emailsResult.status === "fulfilled" ? emailsResult.value : [];
+    const auditLogs = auditResult.status === "fulfilled" ? auditResult.value : [];
+
+    if (applicationsResult.status === "rejected") {
+      errors.application = RELATED_APPLICATION_ERROR_MESSAGE;
+    }
+
+    if (eventsResult.status === "rejected") {
+      errors.event = EVENT_ERROR_MESSAGE;
+    }
+
+    if (paymentsResult.status === "rejected") {
+      errors.payment = PAYMENT_ERROR_MESSAGE;
+    }
+
+    if (profilesResult.status === "rejected" || emailsResult.status === "rejected") {
+      errors.onboarding = ONBOARDING_ERROR_MESSAGE;
+    }
+
+    if (auditResult.status === "rejected") {
+      errors.activity = ACTIVITY_ERROR_MESSAGE;
+    }
+
+    const snapshot = buildClientSnapshot(client, applications, events, payments);
+    const ownerProfile = selectOwnerProfile(profiles);
+    const onboardingEmail = selectLatestOnboardingEmail(emailLogs);
+    const activity = selectActivityItems(auditLogs, emailLogs);
+
+    return {
+      client: toClientDetailView(snapshot, ownerProfile, onboardingEmail, activity),
+      errors: Object.keys(errors).length > 0 ? errors : undefined,
+      generatedAt,
+    };
+  } catch {
+    return {
+      client: null,
+      generatedAt,
+    };
+  }
+}
+
+export function parseAdminClientsSearchParams(
+  searchParams: SearchParamsInput,
+): AdminClientsSearchParams {
+  return {
+    approvedFrom: normalizeDateParam(getSingleParam(searchParams[PARAM_APPROVED_FROM])),
+    approvedTo: normalizeDateParam(getSingleParam(searchParams[PARAM_APPROVED_TO])),
+    event: normalizeEventFilter(getSingleParam(searchParams[PARAM_EVENT])),
+    eventFrom: normalizeDateParam(getSingleParam(searchParams[PARAM_EVENT_FROM])),
+    eventTo: normalizeDateParam(getSingleParam(searchParams[PARAM_EVENT_TO])),
+    hosting: normalizeHostingFilter(getSingleParam(searchParams[PARAM_HOSTING])),
+    hostingEndsFrom: normalizeDateParam(getSingleParam(searchParams[PARAM_HOSTING_ENDS_FROM])),
+    hostingEndsTo: normalizeDateParam(getSingleParam(searchParams[PARAM_HOSTING_ENDS_TO])),
+    page: normalizePageParam(getSingleParam(searchParams[PARAM_PAGE])),
+    payment: normalizePaymentFilter(getSingleParam(searchParams[PARAM_PAYMENT])),
+    plan: normalizePlanParam(getSingleParam(searchParams[PARAM_PLAN])),
+    search: normalizeSearchParam(getSingleParam(searchParams[PARAM_SEARCH])),
+    sort: normalizeSortParam(getSingleParam(searchParams[PARAM_SORT])),
+    status: normalizeStatusParam(getSingleParam(searchParams[PARAM_STATUS])),
+  };
+}
+
+async function getClients(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("clients")
-    .select(
-      `
-        id,
-        name,
-        contact_email,
-        contact_name,
-        status,
-        plan_type,
-        hosting_starts_at,
-        hosting_ends_at,
-        renewal_required_at,
-        created_at,
-        rsvp_events (
-          id,
-          event_slug,
-          title,
-          status,
-          visibility
-        )
-      `,
-    )
+    .select(CLIENT_COLUMNS)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+async function getApprovedApplicationsForClients(
+  supabase: SupabaseClient<Database>,
+  clientIds: string[],
+) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("rsvp_applications")
+    .select(APPLICATION_COLUMNS)
+    .in("approved_client_id", clientIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+async function getEventsForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("rsvp_events")
+    .select(EVENT_COLUMNS)
+    .in("client_id", clientIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+async function getPaymentsForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("payments")
+    .select(PAYMENT_COLUMNS)
+    .in("client_id", clientIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+async function getProfilesForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(PROFILE_COLUMNS)
+    .in("client_id", clientIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+async function getEmailLogsForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("email_logs")
+    .select(EMAIL_LOG_COLUMNS)
+    .in("client_id", clientIds)
     .order("created_at", { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return data ?? [];
+}
+
+async function getAuditLogsForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("audit_logs")
+    .select(AUDIT_COLUMNS)
+    .in("client_id", clientIds)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+function buildEnrichedClientRecords(
+  clients: ClientRow[],
+  applications: ApplicationRow[],
+  events: EventRow[],
+  payments: PaymentRow[],
+) {
+  const applicationsByClientId = groupBy(
+    applications,
+    (application) => application.approved_client_id,
+  );
+  const eventsByClientId = groupBy(events, (event) => event.client_id);
+  const paymentsByClientId = groupBy(payments, (payment) => payment.client_id);
+
+  return clients.map((client) => {
+    const clientApplications = applicationsByClientId.get(client.id) ?? [];
+    const clientEvents = eventsByClientId.get(client.id) ?? [];
+    const clientPayments = paymentsByClientId.get(client.id) ?? [];
+    const snapshot = buildClientSnapshot(client, clientApplications, clientEvents, clientPayments);
+
+    return {
+      ...snapshot,
+      applications: clientApplications,
+      events: clientEvents,
+      payments: clientPayments,
+    };
+  });
+}
+
+function buildClientSnapshot(
+  client: ClientRow,
+  applications: ApplicationRow[],
+  events: EventRow[],
+  payments: PaymentRow[],
+): ClientSnapshot {
+  const todayInManila = getTodayDateInManila();
+  const now = new Date();
+  const application = selectApprovedApplication(applications);
+  const event = selectSummaryEvent(events, todayInManila);
+  const payment = selectSummaryPayment(payments);
+  const hostingStartsAt = payment?.hosting_starts_at ?? client.hosting_starts_at;
+  const hostingEndsAt = payment?.hosting_ends_at ?? client.hosting_ends_at;
+  const renewalRequiredAt = payment?.renewal_required_at ?? client.renewal_required_at;
+  const eventLifecycle = deriveEventLifecycle(event?.event_date ?? null, todayInManila);
+  const hostingLifecycle = deriveHostingLifecycle(hostingEndsAt, renewalRequiredAt, now);
+  const status = deriveClientListStatus(client.status, eventLifecycle, hostingLifecycle);
+  const plan = client.plan_type ?? payment?.plan_type ?? null;
+
+  return {
+    application,
+    client,
+    event,
+    eventLifecycle,
+    hostingEndsAt,
+    hostingLifecycle,
+    hostingStartsAt,
+    payment,
+    plan,
+    renewalRequiredAt,
+    status,
+  };
+}
+
+function buildStatusCounts(records: EnrichedClientRecord[]): ClientStatusCounts {
+  const counts: ClientStatusCounts = {
+    ...EMPTY_COUNTS,
+    all: records.length,
+  };
+
+  for (const record of records) {
+    counts[record.status] += 1;
+  }
+
+  return counts;
+}
+
+function filterClientRecords(records: EnrichedClientRecord[], params: AdminClientsSearchParams) {
+  return records.filter((record) => matchesClientFilters(record, params));
+}
+
+function matchesClientFilters(record: EnrichedClientRecord, params: AdminClientsSearchParams) {
+  const eventDate = record.event?.event_date ?? null;
+  const approvedAt = record.application?.approved_at ?? null;
+
+  if (params.status !== "all" && record.status !== params.status) {
+    return false;
+  }
+
+  if (params.plan !== "all" && record.plan !== params.plan) {
+    return false;
+  }
+
+  if (
+    params.payment !== "all" &&
+    !matchesPaymentFilter(record.payment?.payment_status ?? null, params.payment)
+  ) {
+    return false;
+  }
+
+  if (params.hosting !== "all" && record.hostingLifecycle !== params.hosting) {
+    return false;
+  }
+
+  if (params.event !== "all" && record.eventLifecycle !== params.event) {
+    return false;
+  }
+
+  if (
+    params.search &&
+    !buildClientSearchBlob(record).includes(normalizeSearchValue(params.search))
+  ) {
+    return false;
+  }
+
+  if (params.eventFrom && compareDateOnly(eventDate, params.eventFrom) < 0) {
+    return false;
+  }
+
+  if (params.eventTo && !eventDate) {
+    return false;
+  }
+
+  if (params.eventTo && compareDateOnly(eventDate, params.eventTo) > 0) {
+    return false;
+  }
+
+  if (
+    params.hostingEndsFrom &&
+    compareIsoDate(record.hostingEndsAt, startOfDate(params.hostingEndsFrom)) < 0
+  ) {
+    return false;
+  }
+
+  if (params.hostingEndsTo && !record.hostingEndsAt) {
+    return false;
+  }
+
+  if (
+    params.hostingEndsTo &&
+    compareIsoDate(record.hostingEndsAt, dayAfter(params.hostingEndsTo)) >= 0
+  ) {
+    return false;
+  }
+
+  if (params.approvedFrom && compareIsoDate(approvedAt, startOfDate(params.approvedFrom)) < 0) {
+    return false;
+  }
+
+  if (params.approvedTo && !approvedAt) {
+    return false;
+  }
+
+  if (params.approvedTo && compareIsoDate(approvedAt, dayAfter(params.approvedTo)) >= 0) {
+    return false;
+  }
+
+  return true;
+}
+
+function sortClientRecords(records: EnrichedClientRecord[], sort: ClientSort) {
+  const next = [...records];
+
+  next.sort((left, right) => {
+    switch (sort) {
+      case "approved_desc":
+        return (
+          compareNullableIsoDesc(
+            left.application?.approved_at ?? null,
+            right.application?.approved_at ?? null,
+          ) || compareNullableIsoDesc(left.client.updated_at, right.client.updated_at)
+        );
+      case "event_date_asc":
+        return (
+          compareNullableDateOnlyAsc(
+            left.event?.event_date ?? null,
+            right.event?.event_date ?? null,
+          ) || compareNullableIsoDesc(left.client.updated_at, right.client.updated_at)
+        );
+      case "hosting_ends_asc":
+        return (
+          compareNullableIsoAsc(left.hostingEndsAt, right.hostingEndsAt) ||
+          compareNullableIsoDesc(left.client.updated_at, right.client.updated_at)
+        );
+      case "client_name_asc":
+        return (
+          left.client.name.localeCompare(right.client.name, "en", { sensitivity: "base" }) ||
+          compareNullableIsoDesc(left.client.updated_at, right.client.updated_at)
+        );
+      case "updated_desc":
+      default:
+        return compareNullableIsoDesc(left.client.updated_at, right.client.updated_at);
+    }
+  });
+
+  return next;
+}
+
+function toClientListItem(record: EnrichedClientRecord): ClientListItem {
+  return {
+    approvedApplicationId: record.application?.id ?? null,
+    approvedApplicationReferenceCode: record.application?.reference_code ?? null,
+    approvedAt: record.application?.approved_at ?? null,
+    clientName: record.client.name,
+    clientStatus: record.client.status,
+    clientStatusLabel: formatClientStoredStatusLabel(record.client.status),
+    createdAt: record.client.created_at,
+    email: record.client.contact_email,
+    eventDate: record.event?.event_date ?? null,
+    eventId: record.event?.id ?? null,
+    eventLifecycle: record.eventLifecycle,
+    eventLifecycleLabel: formatEventLifecycleLabel(record.eventLifecycle),
+    eventSlug: record.event?.event_slug ?? null,
+    eventStatus: record.event?.status ?? null,
+    eventTitle: getEventDisplayTitle(record.event),
+    hostingEndsAt: record.hostingEndsAt,
+    hostingLifecycle: record.hostingLifecycle,
+    hostingLifecycleLabel: formatHostingLifecycleLabel(record.hostingLifecycle),
+    hostingStartsAt: record.hostingStartsAt,
+    href: `/admin/clients/${record.client.id}`,
+    id: record.client.id,
+    paymentId: record.payment?.id ?? null,
+    paymentMethod: record.payment?.payment_method ?? null,
+    paymentReferenceNumber: record.payment?.reference_number ?? null,
+    paymentStatus: record.payment?.payment_status ?? null,
+    paymentStatusLabel: formatPaymentStatusLabel(record.payment?.payment_status ?? null),
+    phone: record.client.contact_phone,
+    plan: record.plan,
+    planLabel: formatPlanLabel(record.plan),
+    renewalRequiredAt: record.renewalRequiredAt,
+    status: record.status,
+    statusLabel: formatClientListStatusLabel(record.status),
+    updatedAt: record.client.updated_at,
+  };
+}
+
+function toClientDetailView(
+  snapshot: ClientSnapshot,
+  ownerProfile: ProfileRow | null,
+  onboardingEmail: EmailLogRow | null,
+  activity: ClientActivityItem[],
+): ClientDetailView {
+  const paymentStatus = snapshot.payment?.payment_status ?? null;
+  const applicationStatus = snapshot.application?.status ?? null;
+
+  return {
+    activity,
+    application: {
+      approvedAt: snapshot.application?.approved_at ?? null,
+      href: snapshot.application ? `/admin/applications/${snapshot.application.id}` : null,
+      id: snapshot.application?.id ?? null,
+      referenceCode: snapshot.application?.reference_code ?? null,
+      status: applicationStatus,
+      statusLabel: applicationStatus ? formatApplicationStatusLabel(applicationStatus) : null,
+      submittedAt: snapshot.application?.submitted_at ?? null,
+    },
+    cleanup: {
+      archiveEligible:
+        snapshot.status !== "archived" &&
+        (snapshot.eventLifecycle === "event_passed" || snapshot.hostingLifecycle === "expired"),
+      deleteEligible: false,
+      deleteEligibleAt: null,
+      eventPassed: snapshot.eventLifecycle === "event_passed",
+      hostingExpired: snapshot.hostingLifecycle === "expired",
+    },
+    client: {
+      createdAt: snapshot.client.created_at,
+      customFrontendStatus: snapshot.client.custom_frontend_status,
+      customFrontendStatusLabel: formatFrontendStatusLabel(snapshot.client.custom_frontend_status),
+      customFrontendUrl: snapshot.client.custom_frontend_url,
+      email: snapshot.client.contact_email,
+      name: snapshot.client.name,
+      phone: snapshot.client.contact_phone,
+      plan: snapshot.plan,
+      planLabel: formatPlanLabel(snapshot.plan),
+      status: snapshot.client.status,
+      statusLabel: formatClientStoredStatusLabel(snapshot.client.status),
+      updatedAt: snapshot.client.updated_at,
+    },
+    event: {
+      date: snapshot.event?.event_date ?? null,
+      id: snapshot.event?.id ?? null,
+      lifecycle: snapshot.eventLifecycle,
+      lifecycleLabel: formatEventLifecycleLabel(snapshot.eventLifecycle),
+      publicUrl: snapshot.event?.event_slug ? `/r/${snapshot.event.event_slug}` : null,
+      slug: snapshot.event?.event_slug ?? null,
+      status: snapshot.event?.status ?? null,
+      statusLabel: snapshot.event?.status ? formatEventStatusLabel(snapshot.event.status) : null,
+      title: getEventDisplayTitle(snapshot.event),
+      type: snapshot.event?.event_type ? formatEventTypeLabel(snapshot.event.event_type) : null,
+      visibility: snapshot.event?.visibility ?? null,
+    },
+    hosting: {
+      endsAt: snapshot.hostingEndsAt,
+      lifecycle: snapshot.hostingLifecycle,
+      lifecycleLabel: formatHostingLifecycleLabel(snapshot.hostingLifecycle),
+      renewalRequiredAt: snapshot.renewalRequiredAt,
+      startsAt: snapshot.hostingStartsAt,
+    },
+    id: snapshot.client.id,
+    onboarding: {
+      emailStatus: onboardingEmail?.status ?? null,
+      lastEmailSentAt: onboardingEmail?.sent_at ?? null,
+      ownerEmail: ownerProfile?.email ?? onboardingEmail?.recipient_email ?? null,
+      ownerName: ownerProfile?.full_name ?? null,
+      ownerProfileId: ownerProfile?.id ?? null,
+      profileRole: ownerProfile?.role ?? null,
+    },
+    payment: {
+      amountDue: snapshot.payment?.amount_due ?? null,
+      amountPaid: snapshot.payment?.amount_paid ?? null,
+      id: snapshot.payment?.id ?? null,
+      method: snapshot.payment?.payment_method ?? null,
+      paidAt: snapshot.payment?.paid_at ?? null,
+      referenceNumber: snapshot.payment?.reference_number ?? null,
+      status: paymentStatus,
+      statusLabel: formatPaymentStatusLabel(paymentStatus),
+    },
+    status: {
+      label: formatClientListStatusLabel(snapshot.status),
+      value: snapshot.status,
+    },
+  };
+}
+
+function selectApprovedApplication(applications: ApplicationRow[]) {
+  return (
+    [...applications].sort((left, right) => {
+      return (
+        compareNullableIsoDesc(left.approved_at, right.approved_at) ||
+        compareNullableIsoDesc(left.updated_at, right.updated_at)
+      );
+    })[0] ?? null
+  );
+}
+
+function selectSummaryEvent(events: EventRow[], todayInManila: string) {
+  const upcoming = [...events]
+    .filter(
+      (event) =>
+        event.status !== "archived" && event.event_date && event.event_date >= todayInManila,
+    )
+    .sort((left, right) => {
+      return (
+        compareNullableDateOnlyAsc(left.event_date, right.event_date) ||
+        compareNullableIsoDesc(left.updated_at, right.updated_at)
+      );
+    });
+
+  if (upcoming.length > 0) {
+    return upcoming[0] ?? null;
+  }
+
+  return (
+    [...events].sort((left, right) => {
+      return (
+        compareNullableDateOnlyDesc(left.event_date, right.event_date) ||
+        compareNullableIsoDesc(left.updated_at, right.updated_at)
+      );
+    })[0] ?? null
+  );
+}
+
+function selectSummaryPayment(payments: PaymentRow[]) {
+  const paidFirst = [...payments]
+    .filter((payment) => isPaidLikeStatus(payment.payment_status))
+    .sort((left, right) => {
+      return (
+        compareNullableIsoDesc(left.paid_at, right.paid_at) ||
+        compareNullableIsoDesc(left.updated_at, right.updated_at) ||
+        compareNullableIsoDesc(left.created_at, right.created_at)
+      );
+    });
+
+  if (paidFirst.length > 0) {
+    return paidFirst[0] ?? null;
+  }
+
+  return (
+    [...payments].sort((left, right) => {
+      return (
+        compareNullableIsoDesc(left.updated_at, right.updated_at) ||
+        compareNullableIsoDesc(left.created_at, right.created_at)
+      );
+    })[0] ?? null
+  );
+}
+
+function selectOwnerProfile(profiles: ProfileRow[]) {
+  return (
+    [...profiles].sort((left, right) => {
+      return (
+        compareOwnerRole(left.role, right.role) ||
+        compareNullableIsoDesc(left.updated_at, right.updated_at) ||
+        compareNullableIsoDesc(left.created_at, right.created_at)
+      );
+    })[0] ?? null
+  );
+}
+
+function selectLatestOnboardingEmail(emailLogs: EmailLogRow[]) {
+  return (
+    [...emailLogs]
+      .filter((log) => log.email_type === "client_onboarding")
+      .sort((left, right) => {
+        return (
+          compareNullableIsoDesc(left.sent_at, right.sent_at) ||
+          compareNullableIsoDesc(left.updated_at, right.updated_at) ||
+          compareNullableIsoDesc(left.created_at, right.created_at)
+        );
+      })[0] ?? null
+  );
+}
+
+function selectActivityItems(auditLogs: AuditRow[], emailLogs: EmailLogRow[]) {
+  const auditItems = auditLogs.map(toAuditActivityItem);
+  const emailItems = emailLogs
+    .filter((log) => log.email_type === "client_onboarding")
+    .map(toEmailActivityItem);
+
+  return [...auditItems, ...emailItems]
+    .sort((left, right) => compareNullableIsoDesc(left.createdAt, right.createdAt))
+    .slice(0, ACTIVITY_PREVIEW_LIMIT);
+}
+
+function toAuditActivityItem(log: AuditRow): ClientActivityItem {
+  return {
+    action: log.action,
+    actionLabel: formatAuditActionLabel(log.action),
+    createdAt: log.created_at,
+    id: log.id,
+    source: "audit",
+  };
+}
+
+function toEmailActivityItem(log: EmailLogRow): ClientActivityItem {
+  return {
+    action: log.status,
+    actionLabel: formatEmailActivityLabel(log.status),
+    createdAt: log.sent_at ?? log.updated_at ?? log.created_at,
+    id: log.id,
+    source: "email",
+  };
+}
+
+function buildClientSearchBlob(record: EnrichedClientRecord) {
+  const values = [
+    record.client.name,
+    record.client.contact_name,
+    record.client.contact_email,
+    record.client.contact_phone,
+    record.application?.reference_code ?? "",
+    ...record.applications.map((application) => application.reference_code),
+    ...record.events.flatMap((event) => [event.title, event.event_slug, event.event_type]),
+  ];
+
+  return normalizeSearchValue(values.filter(Boolean).join(" "));
+}
+
+function matchesPaymentFilter(status: string | null, filter: ClientPaymentFilter) {
+  if (filter === "none") {
+    return !status;
+  }
+
+  if (filter === "confirmed") {
+    return isPaidLikeStatus(status);
+  }
+
+  return status === filter;
+}
+
+function deriveEventLifecycle(
+  eventDate: string | null,
+  todayInManila: string,
+): ClientEventLifecycle {
+  if (!eventDate) {
+    return "unknown";
+  }
+
+  if (eventDate < todayInManila) {
+    return "event_passed";
+  }
+
+  if (eventDate === todayInManila) {
+    return "today";
+  }
+
+  return "upcoming";
+}
+
+function deriveHostingLifecycle(
+  hostingEndsAt: string | null,
+  renewalRequiredAt: string | null,
+  now: Date,
+): ClientHostingLifecycle {
+  if (hostingEndsAt && new Date(hostingEndsAt).getTime() < now.getTime()) {
+    return "expired";
+  }
+
+  if (renewalRequiredAt && new Date(renewalRequiredAt).getTime() <= now.getTime()) {
+    return "renewal_needed";
+  }
+
+  if (hostingEndsAt || renewalRequiredAt) {
+    return "active";
+  }
+
+  return "unknown";
+}
+
+function deriveClientListStatus(
+  storedStatus: string | null,
+  eventLifecycle: ClientEventLifecycle,
+  hostingLifecycle: ClientHostingLifecycle,
+): ClientListStatus {
+  if (storedStatus === "archived") {
+    return "archived";
+  }
+
+  if (storedStatus === "paused") {
+    return "paused";
+  }
+
+  if (storedStatus === "expired" || hostingLifecycle === "expired") {
+    return "expired";
+  }
+
+  if (hostingLifecycle === "renewal_needed") {
+    return "renewal_needed";
+  }
+
+  if (eventLifecycle === "event_passed") {
+    return "event_passed";
+  }
+
+  if (storedStatus === "active") {
+    return "active";
+  }
+
+  return "unknown";
+}
+
+export function formatPlanLabel(plan: string | null) {
+  switch (plan) {
+    case "pro":
+      return "Pro";
+    case "max":
+      return "Max";
+    default:
+      return "—";
+  }
+}
+
+export function formatPaymentStatusLabel(status: string | null) {
+  switch (status) {
+    case "paid":
+      return "Paid";
+    case "confirmed":
+      return "Confirmed";
+    case "pending":
+      return "Pending";
+    case "failed":
+      return "Failed";
+    case "refunded":
+      return "Refunded";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return "None";
+  }
+}
+
+export function formatClientStoredStatusLabel(status: string | null) {
+  switch (status) {
+    case "active":
+      return "Active";
+    case "paused":
+      return "Paused";
+    case "expired":
+      return "Expired";
+    case "archived":
+      return "Archived";
+    default:
+      return "Unknown";
+  }
+}
+
+export function formatClientListStatusLabel(status: ClientListStatus) {
+  switch (status) {
+    case "active":
+      return "Active";
+    case "renewal_needed":
+      return "Renewal Needed";
+    case "event_passed":
+      return "Event Passed";
+    case "expired":
+      return "Expired";
+    case "archived":
+      return "Archived";
+    case "paused":
+      return "Paused";
+    case "unknown":
+    default:
+      return "Unknown";
+  }
+}
+
+export function formatEventLifecycleLabel(lifecycle: ClientEventLifecycle) {
+  switch (lifecycle) {
+    case "upcoming":
+      return "Upcoming";
+    case "today":
+      return "Today";
+    case "event_passed":
+      return "Event Passed";
+    case "unknown":
+    default:
+      return "Unknown";
+  }
+}
+
+export function formatHostingLifecycleLabel(lifecycle: ClientHostingLifecycle) {
+  switch (lifecycle) {
+    case "active":
+      return "Hosting Active";
+    case "renewal_needed":
+      return "Renewal Needed";
+    case "expired":
+      return "Hosting Expired";
+    case "unknown":
+    default:
+      return "Unknown";
+  }
+}
+
+export function formatApplicationStatusLabel(status: string) {
+  switch (status) {
+    case "submitted":
+      return "Pending Review";
+    case "reviewing":
+      return "In Review";
+    case "approved":
+      return "Approved";
+    case "rejected":
+      return "Rejected";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
+  }
+}
+
+export function formatEventStatusLabel(status: string) {
+  return formatWords(status);
+}
+
+export function formatFrontendStatusLabel(status: string | null) {
+  switch (status) {
+    case "not_started":
+      return "Not started";
+    case "in_progress":
+      return "In progress";
+    case "connected":
+      return "Connected";
+    case "maintenance":
+      return "Maintenance";
+    case "disabled":
+      return "Disabled";
+    default:
+      return "Not configured";
+  }
+}
+
+function formatEventTypeLabel(value: string) {
+  return formatWords(value);
+}
+
+function formatAuditActionLabel(value: string) {
+  return formatWords(value);
+}
+
+function formatEmailActivityLabel(status: string) {
+  switch (status) {
+    case "sent":
+      return "Onboarding email sent";
+    case "queued":
+      return "Onboarding email queued";
+    case "failed":
+      return "Onboarding email failed";
+    case "skipped":
+      return "Onboarding email skipped";
+    default:
+      return `Onboarding email ${status}`;
+  }
+}
+
+function formatWords(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getEventDisplayTitle(event: EventRow | null) {
+  if (!event) {
+    return null;
+  }
+
+  return event.title || formatEventTypeLabel(event.event_type);
+}
+
+function getSingleParam(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
+function normalizeStatusParam(value: string | undefined): ClientListStatusFilter {
+  if (value && CLIENT_STATUS_VALUES.includes(value as ClientListStatus)) {
+    return value as ClientListStatus;
+  }
+
+  return "all";
+}
+
+function normalizePlanParam(value: string | undefined): ClientPlanFilter {
+  if (value && CLIENT_PLAN_VALUES.includes(value as ClientPlan)) {
+    return value as ClientPlan;
+  }
+
+  return "all";
+}
+
+function normalizePaymentFilter(value: string | undefined): ClientPaymentFilter {
+  if (
+    value &&
+    CLIENT_PAYMENT_FILTER_VALUES.includes(value as (typeof CLIENT_PAYMENT_FILTER_VALUES)[number])
+  ) {
+    return value as ClientPaymentFilter;
+  }
+
+  return "all";
+}
+
+function normalizeHostingFilter(value: string | undefined): ClientHostingFilter {
+  if (
+    value &&
+    CLIENT_HOSTING_FILTER_VALUES.includes(value as (typeof CLIENT_HOSTING_FILTER_VALUES)[number])
+  ) {
+    return value as ClientHostingFilter;
+  }
+
+  return "all";
+}
+
+function normalizeEventFilter(value: string | undefined): ClientEventFilter {
+  if (
+    value &&
+    CLIENT_EVENT_FILTER_VALUES.includes(value as (typeof CLIENT_EVENT_FILTER_VALUES)[number])
+  ) {
+    return value as ClientEventFilter;
+  }
+
+  return "all";
+}
+
+function normalizeSortParam(value: string | undefined): ClientSort {
+  if (value && CLIENT_SORT_VALUES.includes(value as ClientSort)) {
+    return value as ClientSort;
+  }
+
+  return "updated_desc";
+}
+
+function normalizePageParam(value: string | undefined) {
+  const page = Number.parseInt(value ?? "", 10);
+
+  if (Number.isNaN(page) || page < 1) {
+    return 1;
+  }
+
+  return page;
+}
+
+function normalizeSearchParam(value: string | undefined) {
+  return (value ?? "").trim().slice(0, MAX_SEARCH_LENGTH);
+}
+
+function normalizeDateParam(value: string | undefined) {
+  const trimmed = (value ?? "").trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return "";
+  }
+
+  return trimmed;
+}
+
+function normalizeSearchValue(value: string) {
+  return value.toLowerCase().replaceAll(/\s+/g, " ").trim();
+}
+
+function groupBy<T, K extends string | null>(values: T[], getKey: (value: T) => K) {
+  const map = new Map<string, T[]>();
+
+  for (const value of values) {
+    const key = getKey(value);
+
+    if (!key) {
+      continue;
+    }
+
+    const current = map.get(key) ?? [];
+    current.push(value);
+    map.set(key, current);
+  }
+
+  return map;
+}
+
+function compareOwnerRole(left: string, right: string) {
+  return getOwnerRoleRank(left) - getOwnerRoleRank(right);
+}
+
+function getOwnerRoleRank(role: string) {
+  switch (role) {
+    case "client_owner":
+      return 0;
+    case "client_staff":
+      return 1;
+    default:
+      return 2;
+  }
+}
+
+function compareDateOnly(value: string | null, against: string) {
+  if (!value) {
+    return -1;
+  }
+
+  return value.localeCompare(against);
+}
+
+function compareIsoDate(value: string | null, against: string) {
+  if (!value) {
+    return -1;
+  }
+
+  return new Date(value).getTime() - new Date(against).getTime();
+}
+
+function compareNullableIsoDesc(left: string | null, right: string | null) {
+  if (!left && !right) {
+    return 0;
+  }
+
+  if (!left) {
+    return 1;
+  }
+
+  if (!right) {
+    return -1;
+  }
+
+  return new Date(right).getTime() - new Date(left).getTime();
+}
+
+function compareNullableIsoAsc(left: string | null, right: string | null) {
+  if (!left && !right) {
+    return 0;
+  }
+
+  if (!left) {
+    return 1;
+  }
+
+  if (!right) {
+    return -1;
+  }
+
+  return new Date(left).getTime() - new Date(right).getTime();
+}
+
+function compareNullableDateOnlyAsc(left: string | null, right: string | null) {
+  if (!left && !right) {
+    return 0;
+  }
+
+  if (!left) {
+    return 1;
+  }
+
+  if (!right) {
+    return -1;
+  }
+
+  return left.localeCompare(right);
+}
+
+function compareNullableDateOnlyDesc(left: string | null, right: string | null) {
+  if (!left && !right) {
+    return 0;
+  }
+
+  if (!left) {
+    return 1;
+  }
+
+  if (!right) {
+    return -1;
+  }
+
+  return right.localeCompare(left);
+}
+
+function isPaidLikeStatus(status: string | null) {
+  return status === "paid" || status === "confirmed";
+}
+
+function getTodayDateInManila() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Manila",
+    year: "numeric",
+  });
+
+  return formatter.format(new Date());
+}
+
+function startOfDate(date: string) {
+  return `${date}T00:00:00.000Z`;
+}
+
+function dayAfter(date: string) {
+  const nextDate = new Date(`${date}T00:00:00.000Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  return nextDate.toISOString();
 }
