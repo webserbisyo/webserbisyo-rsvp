@@ -71,3 +71,103 @@
   border: 1px solid color-mix(in srgb, var(--rsvp-border) 82%, transparent);
   background: color-mix(in srgb, var(--rsvp-surface-muted) 96%, white);
 }
+
+/* ─── Landing page animations ────────────────────────────────────────────── */
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes landing-scroll-bounce {
+  0%,
+  100% {
+    transform: translateY(0px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 0.8;
+  }
+}
+
+/* Nav entrance */
+.landing-nav-enter {
+  animation: landing-fade-up 0.4s ease-out both;
+}
+
+/* Hero background slow scale */
+.landing-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  animation: landing-bg-scale 18s ease-out forwards;
+}
+
+@keyframes landing-bg-scale {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Hero object float */
+.hero-object-float {
+  animation: landing-float 6s ease-in-out infinite;
+}
+
+/* Microcopy fade-up */
+.hero-microcopy {
+  animation: landing-fade-up 0.6s ease-out 0.5s both;
+}
+
+/* Scroll cue bounce */
+.hero-scroll-cue {
+  animation: landing-scroll-bounce 2s ease-in-out infinite;
+}
+
+/* ─── Reduced motion overrides ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-nav-enter,
+  .hero-microcopy {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .hero-object-float {
+    animation: none;
+    transform: none;
+  }
+
+  .hero-scroll-cue {
+    animation: none;
+    opacity: 0.5;
+    transform: none;
+  }
+
+  .landing-hero::before {
+    animation: none;
+    transform: none;
+  }
+}
