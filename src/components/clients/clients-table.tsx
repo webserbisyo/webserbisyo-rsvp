@@ -1,23 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ColumnDef,
+  type RowSelectionState,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import Link from "next/link";
+import { useMemo } from "react";
 import type { ClientListItem } from "@/server/queries/admin-clients";
 import {
-  ClientLifecycleStatusBadge,
   ClientPaymentStatusBadge,
   ClientPlanBadge,
+  ClientStoredStatusBadge,
 } from "@/components/clients/client-badges";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { AdminDataTable } from "@/components/admin-data-table/admin-data-table";
+import { SelectionToolbar } from "@/components/admin-data-table/selection-toolbar";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAdminWorkflowUiStore } from "@/stores/admin-workflow-ui-store";
 
 type ClientsTableProps = {
   hasActiveFilters: boolean;
@@ -25,210 +26,149 @@ type ClientsTableProps = {
 };
 
 export function ClientsTable({ hasActiveFilters, items }: ClientsTableProps) {
-  const selectionScopeKey = useMemo(() => items.map((client) => client.id).join("|"), [items]);
+  "use no memo";
 
-  return (
-    <ClientsTableContent
-      key={selectionScopeKey}
-      hasActiveFilters={hasActiveFilters}
-      items={items}
-    />
+  const rowSelection = useAdminWorkflowUiStore((state) => state.rowSelections.clients);
+  const setRowSelection = useAdminWorkflowUiStore((state) => state.setRowSelection);
+
+  const columns = useMemo<ColumnDef<ClientListItem>[]>(
+    () => [
+      {
+        cell: ({ row }) => (
+          <Checkbox
+            aria-label={`Select client ${row.original.clientName}`}
+            checked={row.getIsSelected()}
+            onCheckedChange={(checked) => row.toggleSelected(Boolean(checked))}
+          />
+        ),
+        enableSorting: false,
+        header: ({ table }) => (
+          <Checkbox
+            aria-label="Select all clients on this page"
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(checked) => table.toggleAllPageRowsSelected(Boolean(checked))}
+          />
+        ),
+        id: "select",
+        meta: {
+          cellClassName: "px-3 align-top",
+          className: "w-11 px-3",
+        },
+      },
+      {
+        cell: ({ row }) => (
+          <div className="min-w-0 space-y-1">
+            <p className="truncate font-medium">{row.original.clientName}</p>
+            <p className="text-muted-foreground truncate text-xs">{row.original.email}</p>
+          </div>
+        ),
+        header: "Client",
+        id: "client",
+        meta: {
+          cellClassName: "max-w-0 align-top whitespace-normal",
+        },
+      },
+      {
+        cell: ({ row }) => (
+          <div className="min-w-0 space-y-1">
+            <p className="truncate font-medium">{row.original.eventTypeLabel ?? "No event yet"}</p>
+            {row.original.eventDate ? (
+              <p className="text-muted-foreground text-xs">{formatDate(row.original.eventDate)}</p>
+            ) : null}
+          </div>
+        ),
+        header: "Event",
+        id: "event",
+        meta: {
+          cellClassName: "max-w-0 align-top whitespace-normal",
+        },
+      },
+      {
+        cell: ({ row }) => (
+          <ClientPlanBadge label={row.original.planLabel} plan={row.original.plan} />
+        ),
+        header: "Package",
+        id: "package",
+        meta: {
+          cellClassName: "align-top",
+          className: "w-24",
+        },
+      },
+      {
+        cell: ({ row }) => (
+          <ClientPaymentStatusBadge
+            label={row.original.paymentStatusLabel}
+            status={row.original.paymentStatus}
+          />
+        ),
+        header: "Payment Status",
+        id: "payment",
+        meta: {
+          cellClassName: "align-top",
+          className: "w-36",
+        },
+      },
+      {
+        cell: ({ row }) => (
+          <ClientStoredStatusBadge
+            label={row.original.clientStatusLabel}
+            status={row.original.clientStatus}
+          />
+        ),
+        header: "Client Status",
+        id: "status",
+        meta: {
+          cellClassName: "align-top",
+          className: "w-32",
+        },
+      },
+      {
+        cell: ({ row }) => (
+          <Button asChild size="sm" variant="outline">
+            <Link href={row.original.href}>View</Link>
+          </Button>
+        ),
+        header: "Action",
+        id: "action",
+        meta: {
+          cellClassName: "text-right align-top",
+          className: "w-24 text-right",
+        },
+      },
+    ],
+    [],
   );
-}
 
-function ClientsTableContent({ hasActiveFilters, items }: ClientsTableProps) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const allIds = useMemo(() => items.map((client) => client.id), [items]);
-  const allSelected = items.length > 0 && selectedIds.size === items.length;
-  const someSelected = selectedIds.size > 0 && !allSelected;
+  const table = useReactTable({
+    columns,
+    data: items,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.id,
+    onRowSelectionChange: (updater) => {
+      const nextValue =
+        typeof updater === "function" ? updater(rowSelection as RowSelectionState) : updater;
 
-  function toggleAll(checked: boolean) {
-    setSelectedIds(checked ? new Set(allIds) : new Set());
-  }
-
-  function toggleOne(id: string, checked: boolean) {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-
-      if (checked) {
-        next.add(id);
-      } else {
-        next.delete(id);
-      }
-
-      return next;
-    });
-  }
+      setRowSelection("clients", nextValue);
+    },
+    state: {
+      rowSelection,
+    },
+  });
 
   return (
     <section className="hidden space-y-3 xl:block">
-      {selectedIds.size > 0 ? (
-        <div className="bg-muted/30 flex items-center justify-between rounded-lg border px-4 py-3">
-          <p className="text-sm font-medium">{selectedIds.size} selected</p>
-          <p className="text-muted-foreground text-sm">Bulk actions coming later</p>
-        </div>
-      ) : null}
-
-      <div className="bg-card overflow-hidden rounded-lg border">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-11 px-3">
-                <HeaderCheckbox
-                  checked={allSelected}
-                  indeterminate={someSelected}
-                  onCheckedChange={toggleAll}
-                />
-              </TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead className="w-24">Package</TableHead>
-              <TableHead className="w-28">Payment</TableHead>
-              <TableHead className="w-32">Hosting</TableHead>
-              <TableHead className="w-32">Status</TableHead>
-              <TableHead className="w-24 text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-10">
-                  <EmptyState
-                    title={hasActiveFilters ? "No matching clients" : "No clients yet"}
-                    description={
-                      hasActiveFilters
-                        ? "Try clearing filters or changing the lifecycle tab."
-                        : "Approved and provisioned client records will appear here."
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((client) => {
-                const isSelected = selectedIds.has(client.id);
-
-                return (
-                  <TableRow key={client.id} data-state={isSelected ? "selected" : undefined}>
-                    <TableCell className="px-3 align-top">
-                      <RowCheckbox
-                        checked={isSelected}
-                        label={`Select client ${client.clientName}`}
-                        onCheckedChange={(checked) => toggleOne(client.id, checked)}
-                      />
-                    </TableCell>
-                    <TableCell className="max-w-0 align-top whitespace-normal">
-                      <div className="min-w-0 space-y-1">
-                        <p className="truncate font-medium">{client.clientName}</p>
-                        <p className="text-muted-foreground truncate text-xs">{client.email}</p>
-                        {client.phone ? (
-                          <p className="text-muted-foreground truncate text-xs">{client.phone}</p>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-0 align-top whitespace-normal">
-                      <div className="min-w-0 space-y-1">
-                        <p className="truncate font-medium">
-                          {client.eventTitle ?? "No event yet"}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {client.eventDate ? formatDate(client.eventDate) : "No event date"}
-                        </p>
-                        <p className="text-muted-foreground truncate text-xs">
-                          {client.eventSlug ? `Slug: ${client.eventSlug}` : "No event slug"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <ClientPlanBadge label={client.planLabel} plan={client.plan} />
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <ClientPaymentStatusBadge
-                        label={client.paymentStatusLabel}
-                        status={client.paymentStatus}
-                      />
-                    </TableCell>
-                    <TableCell className="align-top whitespace-normal">
-                      <div className="space-y-1 text-xs">
-                        <p>
-                          {client.hostingEndsAt
-                            ? `Ends ${formatDateTime(client.hostingEndsAt)}`
-                            : "No hosting date"}
-                        </p>
-                        <p className="text-muted-foreground">
-                          {client.renewalRequiredAt
-                            ? `Renewal ${formatDateTime(client.renewalRequiredAt)}`
-                            : "No renewal date"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <ClientLifecycleStatusBadge
-                        label={client.statusLabel}
-                        status={client.status}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right align-top">
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={client.href}>View</Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <SelectionToolbar count={table.getSelectedRowModel().rows.length} />
+      <AdminDataTable
+        colSpan={7}
+        emptyState={{
+          description: hasActiveFilters
+            ? "Try clearing filters or changing the lifecycle tab."
+            : "Approved and provisioned client records will appear here.",
+          title: hasActiveFilters ? "No matching clients" : "No clients yet",
+        }}
+        table={table}
+      />
     </section>
-  );
-}
-
-function HeaderCheckbox({
-  checked,
-  indeterminate,
-  onCheckedChange,
-}: {
-  checked: boolean;
-  indeterminate: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  const ref = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.indeterminate = indeterminate;
-    }
-  }, [indeterminate]);
-
-  return (
-    <input
-      ref={ref}
-      type="checkbox"
-      aria-label="Select all clients on this page"
-      checked={checked}
-      className="border-border text-rsvp-brand focus:ring-rsvp-brand/20 size-4 rounded"
-      onChange={(event) => onCheckedChange(event.currentTarget.checked)}
-    />
-  );
-}
-
-function RowCheckbox({
-  checked,
-  label,
-  onCheckedChange,
-}: {
-  checked: boolean;
-  label: string;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <input
-      type="checkbox"
-      aria-label={label}
-      checked={checked}
-      className="border-border text-rsvp-brand focus:ring-rsvp-brand/20 size-4 rounded"
-      onChange={(event) => onCheckedChange(event.currentTarget.checked)}
-    />
   );
 }
 
@@ -237,11 +177,4 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeZone: "Asia/Manila",
   }).format(new Date(`${value}T00:00:00.000Z`));
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeZone: "Asia/Manila",
-  }).format(new Date(value));
 }

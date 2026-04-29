@@ -1,8 +1,8 @@
 # WebSerbisyo RSVP - Project Status
 
-> Last Updated: 2026-04-27  
-> Current Phase: Phase A - Auth Foundation and Login UX  
-> Current Deployment Target: Vercel + Supabase + Resend  
+> Last Updated: 2026-04-29
+> Current Phase: Phase E.2B complete — Admin Shell, Admin Home, and Applications Read-Only Workflow
+> Current Deployment Target: Vercel + Supabase + Resend
 > Current Package Model: Pro/Max one-time package payment with hosting/access coverage tracking
 
 ---
@@ -311,3 +311,38 @@ Build confirms these runtime routes exist:
 - Google OAuth is not implemented yet.
 - No client dashboard UI, public RSVP guest submission, guestbook, gift wallets, realtime, push notifications, payment gateway, NestJS, or custom frontend delivery was built in this phase.
 - Next roadmap target: Phase B/Admin Shell Foundation or the admin-first application workflow, depending on the next implementation plan.
+
+## Completed Today — 2026-04-29
+
+### Phase E.1 — Minimal Platform Admin Shell
+- Built the protected `/admin` shell foundation for platform-admin use.
+- Added reusable admin shell structure with desktop sidebar, mobile navigation, page container, page header, feedback states, and shared cards/badges.
+- Added safe placeholder admin routes for Events, Payments, Logs, Settings, More, and Offline.
+- Preserved `src/proxy.ts` route protection and the server-side admin layout guard.
+- Added shell styling through `src/styles/admin-shell.css` and global CSS integration.
+- Added shadcn sidebar/avatar primitives and supporting mobile hook.
+- Confirmed admin routes remain focused on platform-admin operations only, with no client dashboard UI.
+
+### Phase E.2A — Admin Home Operational Snapshot
+- Wired `/admin` to a real read-only operational snapshot pattern.
+- Added server-side admin home query structure through `src/server/queries/admin-home.ts`.
+- Added Admin Home stat cards, Needs Attention list, Recent Applications grid, and Quick Actions.
+- Kept the home page concise and operational rather than turning it into an analytics dashboard.
+- Kept counts and summaries read-only and safe for the current phase.
+
+### Phase E.2B — Applications List + Detail Read-Only Workflow
+- Finalized `/admin/applications` as the real read-only application review queue.
+- Finalized `/admin/applications/[id]` as the real read-only application detail page.
+- Added server-only application queries through `src/server/queries/admin-applications.ts`.
+- Added typed DTO-style mapping instead of passing raw Supabase rows directly to UI components.
+- Implemented status tabs, search, plan/payment filters, sort, pagination, empty/error/loading states, desktop table, and mobile card list.
+- Added consistent badges for Pro, Max, GCash, Maya, Not selected, and application statuses.
+- Added detail sections for applicant summary, event request, plan/payment preference, review state, activity/audit preview, linked records, and future action context.
+- Kept approval, rejection, payment confirmation, provisioning, email sending, audit mutations, and Meta CAPI calls intentionally out of this phase.
+- Preserved server-side auth/RLS boundaries with no service-role exposure and no schema/RLS changes.
+
+### Checkpoint Commit
+- Created checkpoint commit:
+
+```text
+d8e38c0 feat: finalize RSVP admin shell and applications read-only workflow

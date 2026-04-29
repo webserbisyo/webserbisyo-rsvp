@@ -6,6 +6,7 @@ import type { Database, Tables } from "@/lib/supabase/types";
 export const APPLICATIONS_PAGE_SIZE = 20;
 
 export const PARAM_STATUS = "status";
+export const PARAM_APPLICATION_ID = "applicationId";
 export const PARAM_PLAN = "plan";
 export const PARAM_PAYMENT = "payment";
 export const PARAM_SEARCH = "search";
@@ -15,14 +16,6 @@ export const PARAM_EVENT_FROM = "eventFrom";
 export const PARAM_EVENT_TO = "eventTo";
 export const PARAM_SORT = "sort";
 export const PARAM_PAGE = "page";
-
-export const APPLICATION_STATUS_VALUES = [
-  "submitted",
-  "reviewing",
-  "approved",
-  "rejected",
-  "cancelled",
-] as const;
 
 export const APPLICATION_PLAN_VALUES = ["pro", "max"] as const;
 export const APPLICATION_PAYMENT_VALUES = ["gcash", "maya"] as const;
@@ -34,8 +27,8 @@ export const APPLICATION_SORT_VALUES = [
   "event_date_asc",
 ] as const;
 
-export type ApplicationStatus = (typeof APPLICATION_STATUS_VALUES)[number];
-export type ApplicationStatusFilter = ApplicationStatus | "all";
+export type ApplicationStatus = "submitted" | "reviewing" | "approved" | "rejected" | "cancelled";
+export type ApplicationStatusFilter = "all" | "pending" | "approved";
 export type ApplicationPlan = (typeof APPLICATION_PLAN_VALUES)[number];
 export type ApplicationPlanFilter = ApplicationPlan | "all";
 export type ApplicationPaymentPreference = (typeof APPLICATION_PAYMENT_VALUES)[number];
@@ -175,10 +168,7 @@ const MAX_SEARCH_LENGTH = 120;
 const EMPTY_COUNTS: ApplicationStatusCounts = {
   all: 0,
   approved: 0,
-  cancelled: 0,
-  rejected: 0,
-  reviewing: 0,
-  submitted: 0,
+  pending: 0,
 };
 
 const APPLICATION_LIST_COLUMNS =
@@ -317,34 +307,25 @@ export function parseAdminApplicationsSearchParams(
 async function getStatusCounts(
   supabase: SupabaseClient<Database>,
 ): Promise<ApplicationStatusCounts> {
-  const [all, submitted, reviewing, approved, rejected, cancelled] = await Promise.all([
-    countApplicationsByStatus(supabase),
-    countApplicationsByStatus(supabase, "submitted"),
-    countApplicationsByStatus(supabase, "reviewing"),
-    countApplicationsByStatus(supabase, "approved"),
-    countApplicationsByStatus(supabase, "rejected"),
-    countApplicationsByStatus(supabase, "cancelled"),
+  const [all, pending, approved] = await Promise.all([
+    countApplicationsByFilter(supabase, "all"),
+    countApplicationsByFilter(supabase, "pending"),
+    countApplicationsByFilter(supabase, "approved"),
   ]);
 
   return {
     all,
     approved,
-    cancelled,
-    rejected,
-    reviewing,
-    submitted,
+    pending,
   };
 }
 
-async function countApplicationsByStatus(
+async function countApplicationsByFilter(
   supabase: SupabaseClient<Database>,
-  status?: ApplicationStatus,
+  status: ApplicationStatusFilter,
 ) {
   let query = supabase.from("rsvp_applications").select("id", { count: "exact", head: true });
-
-  if (status) {
-    query = query.eq("status", status);
-  }
+  query = applyVisibleStatusFilter(query, status);
 
   const { count, error } = await query;
 
@@ -360,10 +341,7 @@ async function getFilteredApplicationCount(
   params: AdminApplicationsSearchParams,
 ) {
   let query = supabase.from("rsvp_applications").select("id", { count: "exact", head: true });
-
-  if (params.status !== "all") {
-    query = query.eq("status", params.status);
-  }
+  query = applyVisibleStatusFilter(query, params.status);
 
   if (params.plan !== "all") {
     query = query.eq("preferred_plan", params.plan);
@@ -411,10 +389,7 @@ async function getFilteredApplications(
   to: number,
 ) {
   let query = supabase.from("rsvp_applications").select(APPLICATION_LIST_COLUMNS).range(from, to);
-
-  if (params.status !== "all") {
-    query = query.eq("status", params.status);
-  }
+  query = applyVisibleStatusFilter(query, params.status);
 
   if (params.plan !== "all") {
     query = query.eq("preferred_plan", params.plan);
@@ -601,7 +576,7 @@ function toApplicationListItem(
     eventLocation: application.event_location,
     eventType: formatEventTypeLabel(application.event_type),
     fullName: application.full_name,
-    href: `/admin/applications/${application.id}`,
+    href: buildApplicationSheetHref(application.id),
     id: application.id,
     linkedClientId: application.approved_client_id,
     linkedEventId: application.approved_event_id,
@@ -694,9 +669,9 @@ function toActivityItem(row: AuditRow): ApplicationActivityItem {
 export function formatApplicationStatusLabel(status: string) {
   switch (status) {
     case "submitted":
-      return "Pending Review";
+      return "Pending";
     case "reviewing":
-      return "In Review";
+      return "Pending";
     case "approved":
       return "Approved";
     case "rejected":
@@ -801,11 +776,39 @@ function getSingleParam(value: string | string[] | undefined) {
 }
 
 function normalizeStatusParam(value: string | undefined): ApplicationStatusFilter {
-  if (value && APPLICATION_STATUS_VALUES.includes(value as ApplicationStatus)) {
-    return value as ApplicationStatus;
+  if (value === "submitted" || value === "reviewing" || value === "pending") {
+    return "pending";
+  }
+
+  if (value === "approved") {
+    return "approved";
   }
 
   return "all";
+}
+
+type StatusFilterQuery<TQuery> = {
+  eq: (column: string, value: string) => TQuery;
+  in: (column: string, values: string[]) => TQuery;
+};
+
+function applyVisibleStatusFilter<TQuery extends StatusFilterQuery<TQuery>>(
+  query: TQuery,
+  status: ApplicationStatusFilter,
+) {
+  switch (status) {
+    case "pending":
+      return query.in("status", ["submitted", "reviewing"]);
+    case "approved":
+      return query.eq("status", "approved");
+    case "all":
+    default:
+      return query.in("status", ["submitted", "reviewing", "approved"]);
+  }
+}
+
+function buildApplicationSheetHref(applicationId: string) {
+  return `/admin/applications?${PARAM_APPLICATION_ID}=${applicationId}`;
 }
 
 function normalizePlanParam(value: string | undefined): ApplicationPlanFilter {

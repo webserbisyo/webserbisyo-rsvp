@@ -45,7 +45,7 @@ export function NeedsAttentionList({ errorMessage, items }: NeedsAttentionListPr
                 </p>
               </div>
               <Button asChild variant="outline" size="sm" className="sm:self-center">
-                <Link href={item.href}>Review</Link>
+                <Link href={item.href}>View</Link>
               </Button>
             </div>
           ))}
@@ -53,7 +53,7 @@ export function NeedsAttentionList({ errorMessage, items }: NeedsAttentionListPr
       ) : (
         <EmptyState
           title="No items need attention right now."
-          description="Submitted applications and manual payment follow-ups will appear here."
+          description="Pending applications will appear here."
           icon={<AlertCircle className="size-5" />}
         />
       )}

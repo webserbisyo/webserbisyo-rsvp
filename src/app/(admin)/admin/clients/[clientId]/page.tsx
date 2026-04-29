@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ClientLifecycleActions } from "@/components/admin-workflow/client-lifecycle-actions";
 import { ClientDetailHeader } from "@/components/clients/client-detail-header";
 import { ClientDetailSections } from "@/components/clients/client-detail-sections";
-import { ClientFutureActionsCard } from "@/components/clients/client-future-actions-card";
 import { PageContainer } from "@/components/app-shell/page-container";
 import { ErrorState } from "@/components/feedback/error-state";
 import { getAdminClientDetail } from "@/server/queries/admin-clients";
@@ -52,7 +52,7 @@ export default async function AdminClientDetailPage({ params }: AdminClientDetai
 
       <ClientDetailSections client={result.client} errors={result.errors} />
 
-      <ClientFutureActionsCard />
+      <ClientLifecycleActions client={result.client} />
 
       <p className="text-muted-foreground text-xs">
         Last updated {formatDateTime(result.generatedAt)}

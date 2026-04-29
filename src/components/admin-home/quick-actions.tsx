@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CreditCard, FileText, ListChecks, Settings2, Users } from "lucide-react";
+import { FileText, ListChecks, Settings2, Users } from "lucide-react";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 
@@ -13,11 +13,6 @@ const quickActions = [
     href: "/admin/clients",
     icon: Users,
     label: "View Clients",
-  },
-  {
-    href: "/admin/payments",
-    icon: CreditCard,
-    label: "Manual Payments",
   },
   {
     href: "/admin/payment-options",
@@ -35,7 +30,7 @@ export function QuickActions() {
   return (
     <SectionCard
       title="Quick Actions"
-      description="Read-only navigation shortcuts for the main admin work areas."
+      description="Navigation shortcuts for the main admin workflow areas."
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
         {quickActions.map((action) => (

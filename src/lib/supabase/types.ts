@@ -323,11 +323,11 @@ export type Database = {
           amount_due: number;
           amount_paid: number;
           application_id: string;
-          client_id: string;
+          client_id: string | null;
           confirmed_by: string | null;
           created_at: string;
           currency: string;
-          event_id: string;
+          event_id: string | null;
           hosting_ends_at: string | null;
           hosting_starts_at: string | null;
           id: string;
@@ -344,11 +344,11 @@ export type Database = {
           amount_due: number;
           amount_paid?: number;
           application_id: string;
-          client_id: string;
+          client_id?: string | null;
           confirmed_by?: string | null;
           created_at?: string;
           currency?: string;
-          event_id: string;
+          event_id?: string | null;
           hosting_ends_at?: string | null;
           hosting_starts_at?: string | null;
           id?: string;
@@ -365,11 +365,11 @@ export type Database = {
           amount_due?: number;
           amount_paid?: number;
           application_id?: string;
-          client_id?: string;
+          client_id?: string | null;
           confirmed_by?: string | null;
           created_at?: string;
           currency?: string;
-          event_id?: string;
+          event_id?: string | null;
           hosting_ends_at?: string | null;
           hosting_starts_at?: string | null;
           id?: string;
@@ -482,6 +482,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "platform_public_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_package_settings: {
+        Row: {
+          created_at: string;
+          currency: string;
+          default_amount: number | null;
+          default_hosting_days: number | null;
+          id: string;
+          is_active: boolean;
+          plan_type: string;
+          renewal_notice_days: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          currency?: string;
+          default_amount?: number | null;
+          default_hosting_days?: number | null;
+          id?: string;
+          is_active?: boolean;
+          plan_type: string;
+          renewal_notice_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          currency?: string;
+          default_amount?: number | null;
+          default_hosting_days?: number | null;
+          id?: string;
+          is_active?: boolean;
+          plan_type?: string;
+          renewal_notice_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_package_settings_updated_by_fkey";
             columns: ["updated_by"];
             isOneToOne: false;
             referencedRelation: "profiles";

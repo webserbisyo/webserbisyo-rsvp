@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { ClientListItem } from "@/server/queries/admin-clients";
 import {
-  ClientLifecycleStatusBadge,
   ClientPaymentStatusBadge,
   ClientPlanBadge,
+  ClientStoredStatusBadge,
 } from "@/components/clients/client-badges";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Button } from "@/components/ui/button";
@@ -38,19 +38,13 @@ export function ClientCardList({ hasActiveFilters, items }: ClientCardListProps)
             <div className="min-w-0 space-y-1">
               <p className="truncate font-medium">{client.clientName}</p>
               <p className="text-muted-foreground text-sm break-all">{client.email}</p>
-              {client.phone ? (
-                <p className="text-muted-foreground text-xs break-words">{client.phone}</p>
-              ) : null}
             </div>
 
             <div className="min-w-0 space-y-1">
-              <p className="font-medium">{client.eventTitle ?? "No event yet"}</p>
-              <p className="text-muted-foreground text-xs">
-                {client.eventDate ? formatDate(client.eventDate) : "No event date"}
-              </p>
-              <p className="text-muted-foreground text-xs break-all">
-                {client.eventSlug ? `Slug: ${client.eventSlug}` : "No event slug"}
-              </p>
+              <p className="font-medium">{client.eventTypeLabel ?? "No event yet"}</p>
+              {client.eventDate ? (
+                <p className="text-muted-foreground text-xs">{formatDate(client.eventDate)}</p>
+              ) : null}
             </div>
 
             <div className="flex min-w-0 flex-wrap gap-2">
@@ -59,20 +53,10 @@ export function ClientCardList({ hasActiveFilters, items }: ClientCardListProps)
                 label={client.paymentStatusLabel}
                 status={client.paymentStatus}
               />
-              <ClientLifecycleStatusBadge label={client.statusLabel} status={client.status} />
-            </div>
-
-            <div className="grid min-w-0 gap-1 text-sm">
-              <p className="text-muted-foreground">
-                {client.hostingEndsAt
-                  ? `Hosting ends ${formatDateTime(client.hostingEndsAt)}`
-                  : "No hosting date"}
-              </p>
-              <p className="text-muted-foreground">
-                {client.renewalRequiredAt
-                  ? `Renewal ${formatDateTime(client.renewalRequiredAt)}`
-                  : "No renewal date"}
-              </p>
+              <ClientStoredStatusBadge
+                label={client.clientStatusLabel}
+                status={client.clientStatus}
+              />
             </div>
 
             <Button asChild variant="outline">
@@ -90,11 +74,4 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeZone: "Asia/Manila",
   }).format(new Date(`${value}T00:00:00.000Z`));
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeZone: "Asia/Manila",
-  }).format(new Date(value));
 }

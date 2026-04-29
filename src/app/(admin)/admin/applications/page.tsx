@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ApplicationCardList } from "@/components/applications/application-card-list";
+import { ApplicationDetailSheet } from "@/components/applications/application-detail-sheet";
 import { ApplicationStatusTabs } from "@/components/applications/application-status-tabs";
 import { ApplicationsFilterBar } from "@/components/applications/applications-filter-bar";
 import { ApplicationsPagination } from "@/components/applications/applications-pagination";
@@ -11,6 +12,7 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { ErrorState } from "@/components/feedback/error-state";
 import { SectionCard } from "@/components/shared/section-card";
 import {
+  getAdminApplicationDetail,
   getAdminApplications,
   parseAdminApplicationsSearchParams,
 } from "@/server/queries/admin-applications";
@@ -30,9 +32,16 @@ export const metadata: Metadata = {
 export default async function AdminApplicationsPage({ searchParams }: AdminApplicationsPageProps) {
   await requireAdmin();
 
+  const resolvedSearchParams = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const filters = parseAdminApplicationsSearchParams(await searchParams);
-  const result = await getAdminApplications(filters, supabase);
+  const filters = parseAdminApplicationsSearchParams(resolvedSearchParams);
+  const selectedApplicationId = getApplicationId(resolvedSearchParams.applicationId);
+  const [result, detailResult] = await Promise.all([
+    getAdminApplications(filters, supabase),
+    selectedApplicationId
+      ? getAdminApplicationDetail(selectedApplicationId, supabase)
+      : Promise.resolve(null),
+  ]);
   const hasActiveFilters = hasListFilters(filters);
 
   return (
@@ -73,6 +82,10 @@ export default async function AdminApplicationsPage({ searchParams }: AdminAppli
 
       <ApplicationsTable hasActiveFilters={hasActiveFilters} items={result.items} />
       <ApplicationCardList hasActiveFilters={hasActiveFilters} items={result.items} />
+      <ApplicationDetailSheet
+        application={detailResult?.application ?? null}
+        open={selectedApplicationId !== null}
+      />
 
       <ApplicationsPagination
         filters={filters}
@@ -108,4 +121,12 @@ function formatDateTime(value: string) {
     timeStyle: "short",
     timeZone: "Asia/Manila",
   }).format(new Date(value));
+}
+
+function getApplicationId(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ClientDetailResult, ClientDetailView } from "@/server/queries/admin-clients";
 import {
   ClientEventLifecycleBadge,
+  ClientEventSetupStatusBadge,
   ClientHostingLifecycleBadge,
   ClientLifecycleStatusBadge,
   ClientPaymentStatusBadge,
@@ -52,8 +53,6 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
                 status={client.status.value}
               />,
             ],
-            ["Website access", client.client.customFrontendStatusLabel],
-            ["Website URL", client.client.customFrontendUrl ?? "—"],
             ["Created at", formatDateTime(client.client.createdAt)],
             ["Updated at", formatDateTime(client.client.updatedAt)],
           ]}
@@ -92,7 +91,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
         )}
       </SectionCard>
 
-      <SectionCard className="h-fit" title="Event">
+      <SectionCard className="h-fit" title="Event Setup">
         {errors?.event ? (
           <ErrorState
             title="Linked event could not be loaded"
@@ -102,10 +101,10 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
           <div className="space-y-4">
             <DefinitionList
               rows={[
-                ["Event name", client.event.title ?? "—"],
                 ["Event type", client.event.type ?? "—"],
                 ["Event date", formatDate(client.event.date)],
-                ["Event slug", client.event.slug ?? "—"],
+                ["Location", client.event.location ?? "—"],
+                ["Guest count", formatNumber(client.event.guestCount)],
                 [
                   "Event status",
                   client.event.statusLabel ? (
@@ -115,6 +114,14 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
                   ) : (
                     "—"
                   ),
+                ],
+                [
+                  "Setup status",
+                  <ClientEventSetupStatusBadge
+                    key="event-setup"
+                    label={client.event.setupStatusLabel}
+                    status={client.event.setupStatus}
+                  />,
                 ],
                 [
                   "Event lifecycle",
@@ -139,9 +146,10 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
                       {client.event.publicUrl}
                     </Link>
                   ) : (
-                    "—"
+                    client.event.publicPreviewLabel
                   ),
                 ],
+                ["Reserved slug", client.event.slug ?? "—"],
               ]}
             />
           </div>
@@ -150,7 +158,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
         )}
       </SectionCard>
 
-      <SectionCard className="h-fit" title="Payment and Hosting">
+      <SectionCard className="h-fit" title="Payment and Website Access">
         {errors?.payment ? (
           <ErrorState
             title="Payment and hosting details could not be loaded"
@@ -170,7 +178,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
                 rows={[
                   ["Amount due", formatCurrency(client.payment.amountDue)],
                   ["Amount paid", formatCurrency(client.payment.amountPaid)],
-                  ["Method", client.payment.method ?? "—"],
+                  ["Method", client.payment.methodLabel],
                   ["Reference", client.payment.referenceNumber ?? "—"],
                   ["Paid at", formatDateTime(client.payment.paidAt)],
                 ]}
@@ -187,9 +195,14 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
               </div>
               <DefinitionList
                 rows={[
+                  ["Website access", client.client.customFrontendStatusLabel],
+                  ["Website URL", client.client.customFrontendUrl ?? "—"],
                   ["Hosting starts", formatDateTime(client.hosting.startsAt)],
                   ["Hosting ends", formatDateTime(client.hosting.endsAt)],
-                  ["Renewal required", formatDateTime(client.hosting.renewalRequiredAt)],
+                  [
+                    "Renewal required",
+                    formatDateTime(client.hosting.renewalRequiredAt, "Not scheduled"),
+                  ],
                 ]}
               />
             </div>
@@ -197,7 +210,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
         )}
       </SectionCard>
 
-      <SectionCard className="h-fit" title="Onboarding">
+      <SectionCard className="h-fit" title="Owner / Onboarding">
         {errors?.onboarding ? (
           <ErrorState
             title="Onboarding records could not be loaded"
@@ -295,9 +308,9 @@ function DefinitionList({ rows }: { rows: Array<[string, ReactNode]> }) {
   );
 }
 
-function formatDateTime(value: string | null) {
+function formatDateTime(value: string | null, fallback = "—") {
   if (!value) {
-    return "—";
+    return fallback;
   }
 
   return new Intl.DateTimeFormat("en-PH", {
@@ -327,6 +340,14 @@ function formatCurrency(value: number | null) {
     currency: "PHP",
     style: "currency",
   }).format(value);
+}
+
+function formatNumber(value: number | null) {
+  if (value === null) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("en-PH").format(value);
 }
 
 function formatWords(value: string) {

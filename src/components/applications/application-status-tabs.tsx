@@ -1,11 +1,10 @@
 import Link from "next/link";
 import type {
   AdminApplicationsSearchParams,
-  ApplicationStatusFilter,
   ApplicationStatusCounts,
+  ApplicationStatusFilter,
 } from "@/server/queries/admin-applications";
 import {
-  APPLICATION_STATUS_VALUES,
   PARAM_EVENT_FROM,
   PARAM_EVENT_TO,
   PARAM_PAYMENT,
@@ -29,11 +28,7 @@ const tabs: Array<{
   value: ApplicationStatusFilter;
 }> = [
   { label: "All", value: "all" },
-  { label: "Submitted", value: "submitted" },
-  { label: "Reviewing", value: "reviewing" },
-  { label: "Approved", value: "approved" },
-  { label: "Rejected", value: "rejected" },
-  { label: "Cancelled", value: "cancelled" },
+  { label: "Pending", value: "pending" },
 ];
 
 export function ApplicationStatusTabs({ counts, filters }: ApplicationStatusTabsProps) {
@@ -71,7 +66,7 @@ export function ApplicationStatusTabs({ counts, filters }: ApplicationStatusTabs
 function buildStatusHref(status: ApplicationStatusFilter, filters: AdminApplicationsSearchParams) {
   const params = new URLSearchParams();
 
-  if (status !== "all" && APPLICATION_STATUS_VALUES.includes(status)) {
+  if (status !== "all") {
     params.set(PARAM_STATUS, status);
   }
 

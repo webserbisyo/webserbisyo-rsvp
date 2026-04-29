@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/supabase/types";
 import { assertServiceData, assertServiceSuccess } from "./service-error";
 
@@ -13,7 +13,7 @@ export type ProvisionClientInput = {
 };
 
 export async function provisionClient(input: ProvisionClientInput) {
-  const supabase = createAdminClient();
+  const supabase = await createServerSupabaseClient();
   const row: TablesInsert<"clients"> = {
     contact_email: input.contactEmail,
     contact_name: input.contactName ?? null,

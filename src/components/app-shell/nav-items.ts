@@ -1,15 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  CalendarDays,
-  CreditCard,
-  FileText,
-  Home,
-  ListChecks,
-  MonitorOff,
-  ScrollText,
-  Settings,
-  Users,
-} from "lucide-react";
+import { FileText, Home, ListChecks, Settings, Users } from "lucide-react";
 
 export type AdminNavItem = {
   href: string;
@@ -38,27 +28,6 @@ const clientsNavItem: AdminNavItem = {
   title: "Clients",
 };
 
-const paymentsNavItem: AdminNavItem = {
-  href: "/admin/payments",
-  icon: CreditCard,
-  match: ["/admin/payments", "/admin/sales"],
-  title: "Payments",
-};
-
-const eventsNavItem: AdminNavItem = {
-  href: "/admin/events",
-  icon: CalendarDays,
-  match: ["/admin/events"],
-  title: "Events",
-};
-
-const logsNavItem: AdminNavItem = {
-  href: "/admin/logs",
-  icon: ScrollText,
-  match: ["/admin/logs"],
-  title: "Logs",
-};
-
 const settingsNavItem: AdminNavItem = {
   href: "/admin/settings",
   icon: Settings,
@@ -77,44 +46,25 @@ export const desktopAdminNavItems: AdminNavItem[] = [
   homeNavItem,
   applicationsNavItem,
   clientsNavItem,
-  paymentsNavItem,
-  eventsNavItem,
-  logsNavItem,
-  settingsNavItem,
   metaPixelsNavItem,
+  settingsNavItem,
 ];
 
 export const mobilePrimaryNavItems: AdminNavItem[] = [
   homeNavItem,
   applicationsNavItem,
-  paymentsNavItem,
-  {
-    href: "/admin/more",
-    icon: FileText,
-    match: ["/admin/more", "/admin/clients", "/admin/events", "/admin/logs", "/admin/settings"],
-    title: "More",
-  },
+  clientsNavItem,
+  metaPixelsNavItem,
+  settingsNavItem,
 ];
 
-export const adminMoreNavItems: AdminNavItem[] = [
-  clientsNavItem,
-  eventsNavItem,
-  logsNavItem,
-  settingsNavItem,
-  metaPixelsNavItem,
-  {
-    href: "/admin/offline",
-    icon: MonitorOff,
-    match: ["/admin/offline"],
-    title: "Offline",
-  },
-];
+export const adminMoreNavItems: AdminNavItem[] = [];
 
 const pageTitles: Array<[string, string]> = [
   ["/admin/applications/", "Application detail"],
   ["/admin/applications", "Applications"],
   ["/admin/clients", "Clients"],
-  ["/admin/payments", "Payments"],
+  ["/admin/payments", "Sales"],
   ["/admin/sales", "Sales"],
   ["/admin/events", "Events"],
   ["/admin/logs", "Logs"],

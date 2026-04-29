@@ -55,11 +55,10 @@ const planOptions = [
 ];
 
 const paymentOptions = [
-  { label: "All payment states", value: "all" },
-  { label: "Paid", value: "paid" },
+  { label: "All payment statuses", value: "all" },
   { label: "Pending", value: "pending" },
-  { label: "Failed", value: "failed" },
-  { label: "None", value: "none" },
+  { label: "Paid", value: "paid" },
+  { label: "Cancelled", value: "cancelled" },
 ];
 
 const sortOptions = [
@@ -118,7 +117,7 @@ export function ClientsFilterBar({ filters }: ClientsFilterBarProps) {
             className="h-10 pl-9"
             defaultValue={filters.search}
             name={PARAM_SEARCH}
-            placeholder="Search client, email, phone, event, slug, reference"
+            placeholder="Search client, email, event, reference"
           />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/app-shell/admin-shell";
+import { AdminQueryProvider } from "@/components/providers/admin-query-provider";
 import { AuthenticationError, PermissionError, requireAdmin } from "@/lib/permissions";
 
 type AdminLayoutProps = {
@@ -43,7 +44,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         role: profile.role,
       }}
     >
-      {children}
+      <AdminQueryProvider>{children}</AdminQueryProvider>
     </AdminShell>
   );
 }

@@ -238,14 +238,7 @@ async function getRevenueThisMonth(supabase: SupabaseClient<Database>) {
 async function getNeedsAttention(
   supabase: SupabaseClient<Database>,
 ): Promise<AdminHomeQueueItem[]> {
-  const [applicationRows, approvedApplications] = await Promise.all([
-    getApplicationsForNeedsAttention(supabase),
-    getApprovedApplications(supabase),
-  ]);
-  const paymentRows = await getPaymentsByApplicationIds(
-    supabase,
-    approvedApplications.map((application) => application.id),
-  );
+  const applicationRows = await getApplicationsForNeedsAttention(supabase);
 
   const submittedItems = applicationRows
     .filter((application) => application.status === "submitted")
@@ -262,37 +255,7 @@ async function getNeedsAttention(
     )
     .map((application) => toApplicationQueueItem(application));
 
-  const paymentMap = new Map(paymentRows.map((payment) => [payment.application_id, payment]));
-
-  const approvedWithoutPaymentItems = approvedApplications
-    .filter((application) => !paymentMap.has(application.id))
-    .sort((left, right) =>
-      compareAscending(
-        left.approved_at ?? left.updated_at ?? left.submitted_at,
-        right.approved_at ?? right.updated_at ?? right.submitted_at,
-      ),
-    )
-    .map((application) => toAwaitingPaymentQueueItem(application));
-
-  const pendingPaymentItems = approvedApplications
-    .map((application) => {
-      const payment = paymentMap.get(application.id);
-
-      if (!payment || payment.payment_status !== PENDING_PAYMENT_STATUS) {
-        return null;
-      }
-
-      return toPendingPaymentQueueItem(application, payment);
-    })
-    .filter((item): item is AdminHomeQueueItem => item !== null)
-    .sort((left, right) => compareAscending(left.updatedAt, right.updatedAt));
-
-  return [
-    ...submittedItems,
-    ...reviewingItems,
-    ...approvedWithoutPaymentItems,
-    ...pendingPaymentItems,
-  ].slice(0, ADMIN_HOME_NEEDS_ATTENTION_LIMIT);
+  return [...submittedItems, ...reviewingItems].slice(0, ADMIN_HOME_NEEDS_ATTENTION_LIMIT);
 }
 
 async function getRecentApplications(
@@ -310,7 +273,7 @@ async function getRecentApplications(
 
   return (data ?? []).map((application) => ({
     email: application.email,
-    href: `/admin/applications/${application.id}`,
+    href: buildApplicationSheetHref(application.id),
     id: application.id,
     name: application.full_name,
     plan: formatPlanLabel(application.preferred_plan),
@@ -386,7 +349,7 @@ function toApplicationQueueItem(
   >,
 ) {
   return {
-    href: `/admin/applications/${application.id}`,
+    href: buildApplicationSheetHref(application.id),
     id: application.id,
     statusLabel: formatApplicationStatusLabel(application.status),
     statusTone: mapApplicationStatusTone(application.status),
@@ -400,57 +363,12 @@ function toApplicationQueueItem(
   };
 }
 
-function toAwaitingPaymentQueueItem(
-  application: Pick<
-    ApplicationRow,
-    | "approved_at"
-    | "email"
-    | "full_name"
-    | "id"
-    | "preferred_manual_payment_option"
-    | "preferred_plan"
-    | "submitted_at"
-    | "updated_at"
-  >,
-): AdminHomeQueueItem {
-  const paymentOption = application.preferred_manual_payment_option
-    ? ` · ${application.preferred_manual_payment_option.toUpperCase()}`
-    : "";
-
-  return {
-    href: `/admin/applications/${application.id}`,
-    id: application.id,
-    statusLabel: "Awaiting payment",
-    statusTone: "warning",
-    subtitle: `${formatPlanLabel(application.preferred_plan)} application${paymentOption} · ${application.email}`,
-    title: application.full_name,
-    type: "payment",
-    updatedAt: application.approved_at ?? application.updated_at ?? application.submitted_at,
-  };
-}
-
-function toPendingPaymentQueueItem(
-  application: Pick<ApplicationRow, "email" | "full_name" | "id" | "preferred_plan">,
-  payment: PaymentStatusRow,
-): AdminHomeQueueItem {
-  return {
-    href: `/admin/applications/${application.id}`,
-    id: application.id,
-    statusLabel: "Payment pending",
-    statusTone: "warning",
-    subtitle: `${formatPlanLabel(application.preferred_plan)} payment record · ${application.email}`,
-    title: application.full_name,
-    type: "payment",
-    updatedAt: payment.updated_at ?? payment.created_at,
-  };
-}
-
 function formatApplicationStatusLabel(status: string) {
   switch (status) {
     case "submitted":
-      return "Submitted";
+      return "Pending";
     case "reviewing":
-      return "Reviewing";
+      return "Pending";
     case "approved":
       return "Approved";
     case "rejected":
@@ -501,4 +419,8 @@ function getCurrentMonthWindow() {
     startOfMonth: start.toISOString(),
     startOfNextMonth: next.toISOString(),
   };
+}
+
+function buildApplicationSheetHref(applicationId: string) {
+  return `/admin/applications?applicationId=${applicationId}`;
 }

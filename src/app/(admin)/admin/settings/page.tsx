@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PackageSettingsForm } from "@/components/admin/settings/package-settings-form";
 import { PageContainer } from "@/components/app-shell/page-container";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/permissions";
 import { SectionCard } from "@/components/shared/section-card";
+import { getAdminPackageSettings } from "@/server/queries/platform-package-settings";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -12,12 +14,13 @@ export const metadata: Metadata = {
 
 export default async function AdminSettingsPage() {
   const profile = await requireAdmin();
+  const packageSettings = await getAdminPackageSettings();
 
   return (
     <PageContainer>
       <PageHeader
         title="Settings"
-        description="Profile and platform settings shell. Real configuration remains behind dedicated workflows."
+        description="Manage platform defaults and payment configuration used by the admin workflow."
       />
 
       <SectionCard
@@ -47,6 +50,13 @@ export default async function AdminSettingsPage() {
         <Button asChild variant="outline">
           <Link href="/admin/payment-options">Open payment options</Link>
         </Button>
+      </SectionCard>
+
+      <SectionCard
+        title="Package defaults"
+        description="Configure the database-backed Pro and Max pricing defaults used by approvals and payment confirmation."
+      >
+        <PackageSettingsForm initialData={packageSettings} />
       </SectionCard>
     </PageContainer>
   );

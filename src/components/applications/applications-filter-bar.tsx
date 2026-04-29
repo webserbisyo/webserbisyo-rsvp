@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarRange, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ const PARAM_PAGE = "page";
 const DEFAULT_PLAN = "all";
 const DEFAULT_PAYMENT = "all";
 const DEFAULT_SORT = "submitted_desc";
+const SEARCH_DEBOUNCE_MS = 300;
 
 const planOptions = [
   { label: "All plans", value: "all" },
@@ -69,71 +70,88 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
   const advancedFilterCount = getAdvancedFilterCount(filters);
   const hasActiveFilters = hasNonDefaultFilters(filters);
   const [showAdvanced, setShowAdvanced] = useState(advancedFilterCount > 0);
+  const searchTimeoutRef = useRef<number | null>(null);
 
-  function replaceParam(key: string, value: string, defaultValue = "") {
-    const params = new URLSearchParams(searchParams.toString());
+  function clearFilters() {
+    setShowAdvanced(false);
 
-    if (value && value !== defaultValue) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+    if (searchTimeoutRef.current !== null) {
+      window.clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
     }
 
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.delete(PARAM_PLAN);
+    params.delete(PARAM_PAYMENT);
+    params.delete(PARAM_SEARCH);
+    params.delete(PARAM_SUBMITTED_FROM);
+    params.delete(PARAM_SUBMITTED_TO);
+    params.delete(PARAM_EVENT_FROM);
+    params.delete(PARAM_EVENT_TO);
+    params.delete(PARAM_SORT);
     params.delete(PARAM_PAGE);
 
     const queryString = params.toString();
     router.replace(queryString ? `${pathname}?${queryString}` : pathname);
   }
 
-  function clearFilters() {
-    setShowAdvanced(false);
-    router.replace(pathname);
-  }
-
-  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    replaceParam(PARAM_SEARCH, String(formData.get(PARAM_SEARCH) ?? "").trim());
-  }
-
   return (
     <div className="space-y-3">
-      <form
-        onSubmit={handleSearchSubmit}
-        className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center"
-      >
+      <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center">
         <div className="relative min-w-0 flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
+            key={filters.search}
             aria-label="Search applicants"
             className="h-10 pl-9"
             defaultValue={filters.search}
-            name={PARAM_SEARCH}
+            onChange={(event) => {
+              if (searchTimeoutRef.current !== null) {
+                window.clearTimeout(searchTimeoutRef.current);
+              }
+
+              const nextValue = event.currentTarget.value;
+
+              searchTimeoutRef.current = window.setTimeout(() => {
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  defaultValue: "",
+                  key: PARAM_SEARCH,
+                  pathname,
+                  router,
+                  value: nextValue.trim(),
+                });
+              }, SEARCH_DEBOUNCE_MS);
+            }}
             placeholder="Search name, email, phone, event"
           />
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button type="submit" variant="outline" className="sm:w-auto">
-            Search
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="sm:w-auto"
-            onClick={() => setShowAdvanced((current) => !current)}
-          >
-            <SlidersHorizontal className="size-4" />
-            {showAdvanced ? "Hide advanced filters" : "Advanced filters"}
-            {advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ""}
-          </Button>
-        </div>
-      </form>
+        <Button
+          type="button"
+          variant="outline"
+          className="sm:w-auto"
+          onClick={() => setShowAdvanced((current) => !current)}
+        >
+          <SlidersHorizontal className="size-4" />
+          {showAdvanced ? "Hide advanced filters" : "Advanced filters"}
+          {advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ""}
+        </Button>
+      </div>
 
       <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,12rem))_auto]">
         <Select
           value={filters.plan}
-          onValueChange={(value) => replaceParam(PARAM_PLAN, value, DEFAULT_PLAN)}
+          onValueChange={(value) =>
+            replaceParam({
+              currentSearch: searchParams.toString(),
+              defaultValue: DEFAULT_PLAN,
+              key: PARAM_PLAN,
+              pathname,
+              router,
+              value,
+            })
+          }
         >
           <SelectTrigger aria-label="Filter by plan" className="h-10 w-full">
             <SelectValue placeholder="Plan" />
@@ -149,7 +167,16 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
 
         <Select
           value={filters.payment}
-          onValueChange={(value) => replaceParam(PARAM_PAYMENT, value, DEFAULT_PAYMENT)}
+          onValueChange={(value) =>
+            replaceParam({
+              currentSearch: searchParams.toString(),
+              defaultValue: DEFAULT_PAYMENT,
+              key: PARAM_PAYMENT,
+              pathname,
+              router,
+              value,
+            })
+          }
         >
           <SelectTrigger aria-label="Filter by payment preference" className="h-10 w-full">
             <SelectValue placeholder="Payment" />
@@ -165,7 +192,16 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
 
         <Select
           value={filters.sort}
-          onValueChange={(value) => replaceParam(PARAM_SORT, value, DEFAULT_SORT)}
+          onValueChange={(value) =>
+            replaceParam({
+              currentSearch: searchParams.toString(),
+              defaultValue: DEFAULT_SORT,
+              key: PARAM_SORT,
+              pathname,
+              router,
+              value,
+            })
+          }
         >
           <SelectTrigger aria-label="Sort applications" className="h-10 w-full">
             <SelectValue placeholder="Sort" />
@@ -201,26 +237,30 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
             <FilterDateField
               id={PARAM_SUBMITTED_FROM}
               label="Submitted from"
+              pathname={pathname}
+              search={searchParams.toString()}
               value={filters.submittedFrom}
-              onChange={(value) => replaceParam(PARAM_SUBMITTED_FROM, value)}
             />
             <FilterDateField
               id={PARAM_SUBMITTED_TO}
               label="Submitted to"
+              pathname={pathname}
+              search={searchParams.toString()}
               value={filters.submittedTo}
-              onChange={(value) => replaceParam(PARAM_SUBMITTED_TO, value)}
             />
             <FilterDateField
               id={PARAM_EVENT_FROM}
               label="Event from"
+              pathname={pathname}
+              search={searchParams.toString()}
               value={filters.eventFrom}
-              onChange={(value) => replaceParam(PARAM_EVENT_FROM, value)}
             />
             <FilterDateField
               id={PARAM_EVENT_TO}
               label="Event to"
+              pathname={pathname}
+              search={searchParams.toString()}
               value={filters.eventTo}
-              onChange={(value) => replaceParam(PARAM_EVENT_TO, value)}
             />
           </div>
         </section>
@@ -232,14 +272,18 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
 function FilterDateField({
   id,
   label,
-  onChange,
+  pathname,
+  search,
   value,
 }: {
   id: string;
   label: string;
-  onChange: (value: string) => void;
+  pathname: string;
+  search: string;
   value: string;
 }) {
+  const router = useRouter();
+
   return (
     <div className="min-w-0 space-y-2">
       <Label htmlFor={id}>{label}</Label>
@@ -247,12 +291,55 @@ function FilterDateField({
         id={id}
         aria-label={label}
         className="h-10"
-        defaultValue={value}
-        onChange={(event) => onChange(event.currentTarget.value)}
+        value={value}
+        onChange={(event) =>
+          replaceParam({
+            currentSearch: search,
+            defaultValue: "",
+            key: id,
+            pathname,
+            router,
+            value: event.currentTarget.value,
+          })
+        }
         type="date"
       />
     </div>
   );
+}
+
+function replaceParam({
+  currentSearch,
+  defaultValue = "",
+  key,
+  pathname,
+  router,
+  value,
+}: {
+  currentSearch: string;
+  defaultValue?: string;
+  key: string;
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+  value: string;
+}) {
+  const params = new URLSearchParams(currentSearch);
+  const currentValue = params.get(key) ?? "";
+
+  if ((value || "") === currentValue || (!value && currentValue === defaultValue)) {
+    return;
+  }
+
+  if (value && value !== defaultValue) {
+    params.set(key, value);
+  } else {
+    params.delete(key);
+  }
+
+  params.delete(PARAM_PAGE);
+
+  const queryString = params.toString();
+  router.replace(queryString ? `${pathname}?${queryString}` : pathname);
 }
 
 function getAdvancedFilterCount(filters: ApplicationsFilterBarProps["filters"]) {
@@ -263,11 +350,14 @@ function getAdvancedFilterCount(filters: ApplicationsFilterBarProps["filters"]) 
 
 function hasNonDefaultFilters(filters: ApplicationsFilterBarProps["filters"]) {
   return (
-    filters.status !== "all" ||
     filters.plan !== DEFAULT_PLAN ||
+    filters.status !== "all" ||
     filters.payment !== DEFAULT_PAYMENT ||
-    filters.sort !== DEFAULT_SORT ||
     filters.search !== "" ||
-    getAdvancedFilterCount(filters) > 0
+    filters.sort !== DEFAULT_SORT ||
+    filters.submittedFrom !== "" ||
+    filters.submittedTo !== "" ||
+    filters.eventFrom !== "" ||
+    filters.eventTo !== ""
   );
 }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/supabase/types";
 import { assertServiceData, assertServiceSuccess, ServiceError } from "./service-error";
 
@@ -24,7 +24,7 @@ function slugify(value: string): string {
 }
 
 async function resolveUniqueSlug(baseSlug: string): Promise<string> {
-  const supabase = createAdminClient();
+  const supabase = await createServerSupabaseClient();
   const safeBase = slugify(baseSlug);
 
   if (!safeBase) {
@@ -50,7 +50,7 @@ async function resolveUniqueSlug(baseSlug: string): Promise<string> {
 }
 
 export async function createDraftEvent(input: CreateDraftEventInput) {
-  const supabase = createAdminClient();
+  const supabase = await createServerSupabaseClient();
   const slug = await resolveUniqueSlug(
     input.eventSlug ?? `${input.title}-${input.eventDate ?? input.eventType}`,
   );

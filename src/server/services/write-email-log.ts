@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/supabase/types";
 import { assertServiceData, assertServiceSuccess } from "./service-error";
 
@@ -19,7 +19,7 @@ export type WriteEmailLogInput = {
 };
 
 export async function writeEmailLog(input: WriteEmailLogInput) {
-  const supabase = createAdminClient();
+  const supabase = await createServerSupabaseClient();
   const row: TablesInsert<"email_logs"> = {
     application_id: input.applicationId ?? null,
     client_id: input.clientId ?? null,

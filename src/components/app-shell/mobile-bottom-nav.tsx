@@ -10,7 +10,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/86 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden">
-      <div className="admin-safe-bottom grid min-h-[var(--admin-mobile-nav-height)] grid-cols-4">
+      <div className="admin-safe-bottom grid min-h-[var(--admin-mobile-nav-height)] grid-cols-5">
         {mobilePrimaryNavItems.map((item) => {
           const isActive = isAdminNavItemActive(item, pathname);
 

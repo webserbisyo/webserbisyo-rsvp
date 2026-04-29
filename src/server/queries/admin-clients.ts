@@ -27,6 +27,7 @@ export const CLIENT_STATUS_VALUES = [
   "expired",
   "archived",
   "paused",
+  "cancelled",
   "unknown",
 ] as const;
 
@@ -40,13 +41,7 @@ export const CLIENT_STATUS_TAB_VALUES = [
 ] as const;
 
 export const CLIENT_PLAN_VALUES = ["pro", "max"] as const;
-export const CLIENT_PAYMENT_FILTER_VALUES = [
-  "paid",
-  "confirmed",
-  "pending",
-  "failed",
-  "none",
-] as const;
+export const CLIENT_PAYMENT_FILTER_VALUES = ["paid", "pending", "cancelled"] as const;
 export const CLIENT_HOSTING_FILTER_VALUES = [
   "active",
   "renewal_needed",
@@ -66,11 +61,13 @@ export type ClientListStatus = (typeof CLIENT_STATUS_VALUES)[number];
 export type ClientListStatusFilter = ClientListStatus | "all";
 export type ClientPlan = (typeof CLIENT_PLAN_VALUES)[number];
 export type ClientPlanFilter = ClientPlan | "all";
+export type ClientPaymentStatus = (typeof CLIENT_PAYMENT_FILTER_VALUES)[number];
 export type ClientPaymentFilter = (typeof CLIENT_PAYMENT_FILTER_VALUES)[number] | "all";
 export type ClientHostingLifecycle = (typeof CLIENT_HOSTING_FILTER_VALUES)[number];
 export type ClientHostingFilter = ClientHostingLifecycle | "all";
 export type ClientEventLifecycle = (typeof CLIENT_EVENT_FILTER_VALUES)[number];
 export type ClientEventFilter = ClientEventLifecycle | "all";
+export type ClientEventSetupStatus = "not_configured" | "published" | "setup_pending";
 export type ClientSort = (typeof CLIENT_SORT_VALUES)[number];
 
 export type AdminClientsSearchParams = {
@@ -106,6 +103,7 @@ export type ClientListItem = {
   eventSlug: string | null;
   eventStatus: string | null;
   eventTitle: string | null;
+  eventTypeLabel: string | null;
   hostingEndsAt: string | null;
   hostingLifecycle: ClientHostingLifecycle;
   hostingLifecycleLabel: string;
@@ -115,7 +113,7 @@ export type ClientListItem = {
   paymentId: string | null;
   paymentMethod: string | null;
   paymentReferenceNumber: string | null;
-  paymentStatus: string | null;
+  paymentStatus: ClientPaymentStatus;
   paymentStatusLabel: string;
   phone: string | null;
   plan: string | null;
@@ -151,8 +149,11 @@ export type ClientDetailView = {
   activity: ClientActivityItem[];
   application: {
     approvedAt: string | null;
+    estimatedGuestCount: number | null;
+    eventLocation: string | null;
     href: string | null;
     id: string | null;
+    preferredPaymentMethod: string | null;
     referenceCode: string | null;
     status: string | null;
     statusLabel: string | null;
@@ -185,6 +186,11 @@ export type ClientDetailView = {
     lifecycle: ClientEventLifecycle;
     lifecycleLabel: string;
     publicUrl: string | null;
+    publicPreviewLabel: string;
+    setupStatus: ClientEventSetupStatus;
+    setupStatusLabel: string;
+    guestCount: number | null;
+    location: string | null;
     slug: string | null;
     status: string | null;
     statusLabel: string | null;
@@ -213,9 +219,10 @@ export type ClientDetailView = {
     amountPaid: number | null;
     id: string | null;
     method: string | null;
+    methodLabel: string;
     paidAt: string | null;
     referenceNumber: string | null;
-    status: string | null;
+    status: ClientPaymentStatus;
     statusLabel: string;
   };
   status: {
@@ -253,7 +260,10 @@ type ApplicationRow = Pick<
   Tables<"rsvp_applications">,
   | "approved_at"
   | "approved_client_id"
+  | "estimated_guest_count"
+  | "event_location"
   | "id"
+  | "preferred_manual_payment_option"
   | "reference_code"
   | "status"
   | "submitted_at"
@@ -266,9 +276,13 @@ type EventRow = Pick<
   | "event_slug"
   | "event_type"
   | "id"
+  | "max_guest_count"
+  | "published_at"
   | "status"
   | "title"
   | "updated_at"
+  | "venue_address"
+  | "venue_name"
   | "visibility"
 >;
 type PaymentRow = Pick<
@@ -321,6 +335,7 @@ type ClientSnapshot = {
   hostingLifecycle: ClientHostingLifecycle;
   hostingStartsAt: string | null;
   payment: PaymentRow | null;
+  paymentStatus: ClientPaymentStatus;
   plan: string | null;
   renewalRequiredAt: string | null;
   status: ClientListStatus;
@@ -345,6 +360,7 @@ const EMPTY_COUNTS: ClientStatusCounts = {
   active: 0,
   all: 0,
   archived: 0,
+  cancelled: 0,
   event_passed: 0,
   expired: 0,
   paused: 0,
@@ -355,9 +371,9 @@ const EMPTY_COUNTS: ClientStatusCounts = {
 const CLIENT_COLUMNS =
   "id, name, contact_name, contact_email, contact_phone, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at, custom_frontend_status, custom_frontend_url, created_at, updated_at";
 const APPLICATION_COLUMNS =
-  "id, approved_client_id, reference_code, status, submitted_at, approved_at, updated_at";
+  "id, approved_client_id, reference_code, status, submitted_at, approved_at, updated_at, event_location, estimated_guest_count, preferred_manual_payment_option";
 const EVENT_COLUMNS =
-  "id, client_id, title, event_type, event_date, event_slug, status, visibility, updated_at";
+  "id, client_id, title, event_type, event_date, event_slug, status, visibility, venue_name, venue_address, max_guest_count, published_at, updated_at";
 const PAYMENT_COLUMNS =
   "id, client_id, application_id, plan_type, amount_due, amount_paid, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, created_at, updated_at";
 const PROFILE_COLUMNS = "id, client_id, email, full_name, role, created_at, updated_at";
@@ -692,6 +708,7 @@ function buildClientSnapshot(
   const eventLifecycle = deriveEventLifecycle(event?.event_date ?? null, todayInManila);
   const hostingLifecycle = deriveHostingLifecycle(hostingEndsAt, renewalRequiredAt, now);
   const status = deriveClientListStatus(client.status, eventLifecycle, hostingLifecycle);
+  const paymentStatus = derivePaymentStatus(payment, client.status);
   const plan = client.plan_type ?? payment?.plan_type ?? null;
 
   return {
@@ -703,6 +720,7 @@ function buildClientSnapshot(
     hostingLifecycle,
     hostingStartsAt,
     payment,
+    paymentStatus,
     plan,
     renewalRequiredAt,
     status,
@@ -738,10 +756,7 @@ function matchesClientFilters(record: EnrichedClientRecord, params: AdminClients
     return false;
   }
 
-  if (
-    params.payment !== "all" &&
-    !matchesPaymentFilter(record.payment?.payment_status ?? null, params.payment)
-  ) {
+  if (params.payment !== "all" && !matchesPaymentFilter(record.paymentStatus, params.payment)) {
     return false;
   }
 
@@ -860,6 +875,7 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
     eventSlug: record.event?.event_slug ?? null,
     eventStatus: record.event?.status ?? null,
     eventTitle: getEventDisplayTitle(record.event),
+    eventTypeLabel: record.event?.event_type ? formatEventTypeLabel(record.event.event_type) : null,
     hostingEndsAt: record.hostingEndsAt,
     hostingLifecycle: record.hostingLifecycle,
     hostingLifecycleLabel: formatHostingLifecycleLabel(record.hostingLifecycle),
@@ -869,8 +885,8 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
     paymentId: record.payment?.id ?? null,
     paymentMethod: record.payment?.payment_method ?? null,
     paymentReferenceNumber: record.payment?.reference_number ?? null,
-    paymentStatus: record.payment?.payment_status ?? null,
-    paymentStatusLabel: formatPaymentStatusLabel(record.payment?.payment_status ?? null),
+    paymentStatus: record.paymentStatus,
+    paymentStatusLabel: formatPaymentStatusLabel(record.paymentStatus),
     phone: record.client.contact_phone,
     plan: record.plan,
     planLabel: formatPlanLabel(record.plan),
@@ -887,15 +903,27 @@ function toClientDetailView(
   onboardingEmail: EmailLogRow | null,
   activity: ClientActivityItem[],
 ): ClientDetailView {
-  const paymentStatus = snapshot.payment?.payment_status ?? null;
+  const paymentStatus = snapshot.paymentStatus;
   const applicationStatus = snapshot.application?.status ?? null;
+  const eventSetupStatus = deriveEventSetupStatus(snapshot.event);
+  const publicUrl = getPublishedEventPublicUrl(snapshot.event);
+  const eventLocation = getEventLocation(snapshot.event, snapshot.application);
+  const guestCount =
+    snapshot.event?.max_guest_count ?? snapshot.application?.estimated_guest_count ?? null;
+  const paymentMethod =
+    snapshot.payment?.payment_method ??
+    snapshot.application?.preferred_manual_payment_option ??
+    null;
 
   return {
     activity,
     application: {
       approvedAt: snapshot.application?.approved_at ?? null,
+      estimatedGuestCount: snapshot.application?.estimated_guest_count ?? null,
+      eventLocation: snapshot.application?.event_location ?? null,
       href: snapshot.application ? `/admin/applications/${snapshot.application.id}` : null,
       id: snapshot.application?.id ?? null,
+      preferredPaymentMethod: snapshot.application?.preferred_manual_payment_option ?? null,
       referenceCode: snapshot.application?.reference_code ?? null,
       status: applicationStatus,
       statusLabel: applicationStatus ? formatApplicationStatusLabel(applicationStatus) : null,
@@ -929,7 +957,12 @@ function toClientDetailView(
       id: snapshot.event?.id ?? null,
       lifecycle: snapshot.eventLifecycle,
       lifecycleLabel: formatEventLifecycleLabel(snapshot.eventLifecycle),
-      publicUrl: snapshot.event?.event_slug ? `/r/${snapshot.event.event_slug}` : null,
+      publicUrl,
+      publicPreviewLabel: formatPublicPreviewLabel(snapshot.event, publicUrl),
+      setupStatus: eventSetupStatus,
+      setupStatusLabel: formatEventSetupStatusLabel(eventSetupStatus),
+      guestCount,
+      location: eventLocation,
       slug: snapshot.event?.event_slug ?? null,
       status: snapshot.event?.status ?? null,
       statusLabel: snapshot.event?.status ? formatEventStatusLabel(snapshot.event.status) : null,
@@ -957,7 +990,8 @@ function toClientDetailView(
       amountDue: snapshot.payment?.amount_due ?? null,
       amountPaid: snapshot.payment?.amount_paid ?? null,
       id: snapshot.payment?.id ?? null,
-      method: snapshot.payment?.payment_method ?? null,
+      method: paymentMethod,
+      methodLabel: formatPaymentMethodLabel(paymentMethod),
       paidAt: snapshot.payment?.paid_at ?? null,
       referenceNumber: snapshot.payment?.reference_number ?? null,
       status: paymentStatus,
@@ -1009,24 +1043,11 @@ function selectSummaryEvent(events: EventRow[], todayInManila: string) {
 }
 
 function selectSummaryPayment(payments: PaymentRow[]) {
-  const paidFirst = [...payments]
-    .filter((payment) => isPaidLikeStatus(payment.payment_status))
-    .sort((left, right) => {
-      return (
-        compareNullableIsoDesc(left.paid_at, right.paid_at) ||
-        compareNullableIsoDesc(left.updated_at, right.updated_at) ||
-        compareNullableIsoDesc(left.created_at, right.created_at)
-      );
-    });
-
-  if (paidFirst.length > 0) {
-    return paidFirst[0] ?? null;
-  }
-
   return (
     [...payments].sort((left, right) => {
       return (
         compareNullableIsoDesc(left.updated_at, right.updated_at) ||
+        compareNullableIsoDesc(left.paid_at, right.paid_at) ||
         compareNullableIsoDesc(left.created_at, right.created_at)
       );
     })[0] ?? null
@@ -1104,16 +1125,23 @@ function buildClientSearchBlob(record: EnrichedClientRecord) {
   return normalizeSearchValue(values.filter(Boolean).join(" "));
 }
 
-function matchesPaymentFilter(status: string | null, filter: ClientPaymentFilter) {
-  if (filter === "none") {
-    return !status;
-  }
-
-  if (filter === "confirmed") {
-    return isPaidLikeStatus(status);
-  }
-
+function matchesPaymentFilter(status: ClientPaymentStatus, filter: ClientPaymentFilter) {
   return status === filter;
+}
+
+function derivePaymentStatus(
+  payment: PaymentRow | null,
+  clientStatus: string | null,
+): ClientPaymentStatus {
+  if (clientStatus === "cancelled" || payment?.payment_status === "cancelled") {
+    return "cancelled";
+  }
+
+  if (isPaidLikeStatus(payment?.payment_status ?? null)) {
+    return "paid";
+  }
+
+  return "pending";
 }
 
 function deriveEventLifecycle(
@@ -1160,6 +1188,10 @@ function deriveClientListStatus(
   eventLifecycle: ClientEventLifecycle,
   hostingLifecycle: ClientHostingLifecycle,
 ): ClientListStatus {
+  if (storedStatus === "cancelled") {
+    return "cancelled";
+  }
+
   if (storedStatus === "archived") {
     return "archived";
   }
@@ -1202,18 +1234,11 @@ export function formatPaymentStatusLabel(status: string | null) {
   switch (status) {
     case "paid":
       return "Paid";
-    case "confirmed":
-      return "Confirmed";
-    case "pending":
-      return "Pending";
-    case "failed":
-      return "Failed";
-    case "refunded":
-      return "Refunded";
     case "cancelled":
       return "Cancelled";
+    case "pending":
     default:
-      return "None";
+      return "Pending";
   }
 }
 
@@ -1227,8 +1252,10 @@ export function formatClientStoredStatusLabel(status: string | null) {
       return "Expired";
     case "archived":
       return "Archived";
+    case "cancelled":
+      return "Cancelled";
     default:
-      return "Unknown";
+      return "Active";
   }
 }
 
@@ -1246,9 +1273,11 @@ export function formatClientListStatusLabel(status: ClientListStatus) {
       return "Archived";
     case "paused":
       return "Paused";
+    case "cancelled":
+      return "Cancelled";
     case "unknown":
     default:
-      return "Unknown";
+      return "Active";
   }
 }
 
@@ -1262,7 +1291,7 @@ export function formatEventLifecycleLabel(lifecycle: ClientEventLifecycle) {
       return "Event Passed";
     case "unknown":
     default:
-      return "Unknown";
+      return "No Event";
   }
 }
 
@@ -1276,7 +1305,19 @@ export function formatHostingLifecycleLabel(lifecycle: ClientHostingLifecycle) {
       return "Hosting Expired";
     case "unknown":
     default:
-      return "Unknown";
+      return "Not Configured";
+  }
+}
+
+export function formatEventSetupStatusLabel(status: ClientEventSetupStatus) {
+  switch (status) {
+    case "published":
+      return "Published";
+    case "setup_pending":
+      return "Setup Pending";
+    case "not_configured":
+    default:
+      return "Not Configured";
   }
 }
 
@@ -1304,7 +1345,7 @@ export function formatEventStatusLabel(status: string) {
 export function formatFrontendStatusLabel(status: string | null) {
   switch (status) {
     case "not_started":
-      return "Not started";
+      return "Not configured";
     case "in_progress":
       return "In progress";
     case "connected":
@@ -1315,6 +1356,65 @@ export function formatFrontendStatusLabel(status: string | null) {
       return "Disabled";
     default:
       return "Not configured";
+  }
+}
+
+function deriveEventSetupStatus(event: EventRow | null): ClientEventSetupStatus {
+  if (!event) {
+    return "not_configured";
+  }
+
+  if (getPublishedEventPublicUrl(event)) {
+    return "published";
+  }
+
+  return "setup_pending";
+}
+
+function getPublishedEventPublicUrl(event: EventRow | null) {
+  if (
+    !event?.event_slug ||
+    event.status !== "published" ||
+    !event.published_at ||
+    !["public", "unlisted"].includes(event.visibility)
+  ) {
+    return null;
+  }
+
+  return `/r/${event.event_slug}`;
+}
+
+function formatPublicPreviewLabel(event: EventRow | null, publicUrl: string | null) {
+  if (publicUrl) {
+    return "Published";
+  }
+
+  if (!event) {
+    return "Not configured";
+  }
+
+  return "Not published yet";
+}
+
+function getEventLocation(event: EventRow | null, application: ApplicationRow | null) {
+  const location = [event?.venue_name, event?.venue_address]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  return location || application?.event_location || null;
+}
+
+function formatPaymentMethodLabel(method: string | null) {
+  switch (method) {
+    case "gcash":
+      return "GCash";
+    case "maya":
+      return "Maya";
+    case "manual":
+      return "Manual";
+    default:
+      return "Not selected";
   }
 }
 
