@@ -1,5 +1,3 @@
-import "server-only";
-
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/supabase/types";
 
@@ -302,6 +300,26 @@ export function parseAdminApplicationsSearchParams(
     submittedFrom: normalizeDateParam(getSingleParam(searchParams[PARAM_SUBMITTED_FROM])),
     submittedTo: normalizeDateParam(getSingleParam(searchParams[PARAM_SUBMITTED_TO])),
   };
+}
+
+export function createAdminApplicationsListSearch(filters: AdminApplicationsSearchParams) {
+  const params = new URLSearchParams();
+
+  setIfPresent(params, PARAM_STATUS, filters.status, "pending");
+  setIfPresent(params, PARAM_PLAN, filters.plan, "all");
+  setIfPresent(params, PARAM_PAYMENT, filters.payment, "all");
+  setIfPresent(params, PARAM_SEARCH, filters.search, "");
+  setIfPresent(params, PARAM_SUBMITTED_FROM, filters.submittedFrom, "");
+  setIfPresent(params, PARAM_SUBMITTED_TO, filters.submittedTo, "");
+  setIfPresent(params, PARAM_EVENT_FROM, filters.eventFrom, "");
+  setIfPresent(params, PARAM_EVENT_TO, filters.eventTo, "");
+  setIfPresent(params, PARAM_SORT, filters.sort, "submitted_desc");
+
+  if (filters.page > 1) {
+    params.set(PARAM_PAGE, String(filters.page));
+  }
+
+  return params.toString();
 }
 
 async function getStatusCounts(
@@ -764,6 +782,8 @@ function buildSearchFilter(search: string) {
     `phone.ilike.${value}`,
     `event_type.ilike.${value}`,
     `event_location.ilike.${value}`,
+    `preferred_plan.ilike.${value}`,
+    `reference_code.ilike.${value}`,
   ].join(",");
 }
 
@@ -776,15 +796,15 @@ function getSingleParam(value: string | string[] | undefined) {
 }
 
 function normalizeStatusParam(value: string | undefined): ApplicationStatusFilter {
-  if (value === "submitted" || value === "reviewing" || value === "pending") {
-    return "pending";
+  if (value === "all") {
+    return "all";
   }
 
   if (value === "approved") {
     return "approved";
   }
 
-  return "all";
+  return "pending";
 }
 
 type StatusFilterQuery<TQuery> = {
@@ -872,4 +892,10 @@ function dayAfter(date: string) {
   const nextDate = new Date(`${date}T00:00:00.000Z`);
   nextDate.setUTCDate(nextDate.getUTCDate() + 1);
   return nextDate.toISOString();
+}
+
+function setIfPresent(params: URLSearchParams, key: string, value: string, defaultValue: string) {
+  if (value && value !== defaultValue) {
+    params.set(key, value);
+  }
 }

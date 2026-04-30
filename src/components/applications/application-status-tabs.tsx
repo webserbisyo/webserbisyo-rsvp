@@ -66,7 +66,7 @@ export function ApplicationStatusTabs({ counts, filters }: ApplicationStatusTabs
 function buildStatusHref(status: ApplicationStatusFilter, filters: AdminApplicationsSearchParams) {
   const params = new URLSearchParams();
 
-  if (status !== "all") {
+  if (status !== "pending") {
     params.set(PARAM_STATUS, status);
   }
 

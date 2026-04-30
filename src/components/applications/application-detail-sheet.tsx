@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -11,6 +11,7 @@ import {
   approveApplicationAction,
   rejectAndDeleteApplicationAction,
 } from "@/server/actions/admin-applications";
+import { ADMIN_APPLICATIONS_QUERY_KEY } from "@/components/applications/use-applications-query";
 import {
   ApplicationPlanBadge,
   ApplicationStatusBadge,
@@ -48,6 +49,7 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
@@ -66,7 +68,8 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
       }
 
       toast.success("Application approved. Client workspace created.");
-      router.push(result.data.href);
+      void queryClient.invalidateQueries({ queryKey: ADMIN_APPLICATIONS_QUERY_KEY });
+      router.push(result.data.href, { scroll: false });
     },
     onError: () => {
       toast.error("Could not approve this application. Client provisioning failed.");
@@ -88,8 +91,9 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
       toast.success("Application deleted from the queue.");
       setDeleteConfirmation("");
       setRejectDialogOpen(false);
-      router.replace(closeSheetHref);
-      router.refresh();
+
+      void queryClient.invalidateQueries({ queryKey: ADMIN_APPLICATIONS_QUERY_KEY });
+      router.replace(closeSheetHref, { scroll: false });
     },
     onError: () => {
       toast.error("The application could not be deleted.");
@@ -125,7 +129,9 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
     <>
       <Sheet
         open={open}
-        onOpenChange={(nextOpen) => (!nextOpen ? router.replace(closeSheetHref) : null)}
+        onOpenChange={(nextOpen) =>
+          !nextOpen ? router.replace(closeSheetHref, { scroll: false }) : null
+        }
       >
         <SheetContent className="w-full overflow-y-auto sm:max-w-2xl lg:max-w-3xl">
           <SheetHeader className="space-y-2 border-b px-6 pt-6 pr-16 pb-5">

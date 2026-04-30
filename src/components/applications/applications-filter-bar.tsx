@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarRange, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,18 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
   const [showAdvanced, setShowAdvanced] = useState(advancedFilterCount > 0);
   const searchTimeoutRef = useRef<number | null>(null);
 
+  const [searchValue, setSearchValue] = useState(filters.search);
+
+  // Sync external changes (e.g., Clear Filters)
+  useEffect(() => {
+    if (filters.search !== searchValue && searchTimeoutRef.current === null) {
+      setSearchValue(filters.search);
+    }
+  }, [filters.search, searchValue]);
+
   function clearFilters() {
     setShowAdvanced(false);
+    setSearchValue("");
 
     if (searchTimeoutRef.current !== null) {
       window.clearTimeout(searchTimeoutRef.current);
@@ -102,18 +112,19 @@ export function ApplicationsFilterBar({ filters }: ApplicationsFilterBarProps) {
         <div className="relative min-w-0 flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
-            key={filters.search}
             aria-label="Search applicants"
             className="h-10 pl-9"
-            defaultValue={filters.search}
+            value={searchValue}
             onChange={(event) => {
               if (searchTimeoutRef.current !== null) {
                 window.clearTimeout(searchTimeoutRef.current);
               }
 
               const nextValue = event.currentTarget.value;
+              setSearchValue(nextValue);
 
               searchTimeoutRef.current = window.setTimeout(() => {
+                searchTimeoutRef.current = null;
                 replaceParam({
                   currentSearch: searchParams.toString(),
                   defaultValue: "",
@@ -339,7 +350,7 @@ function replaceParam({
   params.delete(PARAM_PAGE);
 
   const queryString = params.toString();
-  router.replace(queryString ? `${pathname}?${queryString}` : pathname);
+  router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
 }
 
 function getAdvancedFilterCount(filters: ApplicationsFilterBarProps["filters"]) {
@@ -351,7 +362,7 @@ function getAdvancedFilterCount(filters: ApplicationsFilterBarProps["filters"]) 
 function hasNonDefaultFilters(filters: ApplicationsFilterBarProps["filters"]) {
   return (
     filters.plan !== DEFAULT_PLAN ||
-    filters.status !== "all" ||
+    filters.status !== "pending" ||
     filters.payment !== DEFAULT_PAYMENT ||
     filters.search !== "" ||
     filters.sort !== DEFAULT_SORT ||

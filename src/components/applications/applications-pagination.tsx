@@ -71,7 +71,7 @@ export function ApplicationsPagination({
 function buildPageHref(filters: AdminApplicationsSearchParams, page: number) {
   const params = new URLSearchParams();
 
-  setIfPresent(params, PARAM_STATUS, filters.status, "all");
+  setIfPresent(params, PARAM_STATUS, filters.status, "pending");
   setIfPresent(params, PARAM_PLAN, filters.plan, "all");
   setIfPresent(params, PARAM_PAYMENT, filters.payment, "all");
   setIfPresent(params, PARAM_SEARCH, filters.search, "");

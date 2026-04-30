@@ -77,7 +77,9 @@ export function ApplicationCardList({ hasActiveFilters, items }: ApplicationCard
             </div>
 
             <Button asChild variant="outline">
-              <Link href={application.href}>View</Link>
+              <Link href={application.href} scroll={false}>
+                View
+              </Link>
             </Button>
           </CardContent>
         </Card>

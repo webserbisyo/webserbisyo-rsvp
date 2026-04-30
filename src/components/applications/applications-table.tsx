@@ -149,7 +149,9 @@ export function ApplicationsTable({ hasActiveFilters, items }: ApplicationsTable
       {
         cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
-            <Link href={row.original.href}>View</Link>
+            <Link href={row.original.href} scroll={false}>
+              View
+            </Link>
           </Button>
         ),
         header: "View",

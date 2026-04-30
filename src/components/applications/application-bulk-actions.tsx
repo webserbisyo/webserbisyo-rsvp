@@ -1,14 +1,14 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
   approveApplicationsBulkAction,
   rejectAndDeleteApplicationsBulkAction,
 } from "@/server/actions/admin-applications";
+import { ADMIN_APPLICATIONS_QUERY_KEY } from "@/components/applications/use-applications-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,7 @@ export function ApplicationBulkActions({
   applicationIds,
   onClearSelection,
 }: ApplicationBulkActionsProps) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
@@ -45,7 +45,7 @@ export function ApplicationBulkActions({
 
       showBulkToast("approved", result.data.succeeded, result.data.failed);
       onClearSelection();
-      router.refresh();
+      void queryClient.invalidateQueries({ queryKey: ADMIN_APPLICATIONS_QUERY_KEY });
     },
     onError: () => {
       toast.error("The selected applications could not be approved.");
@@ -64,7 +64,7 @@ export function ApplicationBulkActions({
       setDeleteConfirmation("");
       setRejectDialogOpen(false);
       onClearSelection();
-      router.refresh();
+      void queryClient.invalidateQueries({ queryKey: ADMIN_APPLICATIONS_QUERY_KEY });
     },
     onError: () => {
       toast.error("The selected applications could not be deleted.");
