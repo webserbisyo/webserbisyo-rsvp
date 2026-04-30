@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarRange, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ const PARAM_PAGE = "page";
 const DEFAULT_PLAN = "all";
 const DEFAULT_PAYMENT = "all";
 const DEFAULT_SORT = "updated_desc";
+const SEARCH_DEBOUNCE_MS = 300;
 
 const planOptions = [
   { label: "All plans", value: "all" },
@@ -77,71 +78,99 @@ export function ClientsFilterBar({ filters }: ClientsFilterBarProps) {
   const advancedFilterCount = getAdvancedFilterCount(filters);
   const hasActiveFilters = hasNonDefaultFilters(filters);
   const [showAdvanced, setShowAdvanced] = useState(advancedFilterCount > 0);
+  const searchTimeoutRef = useRef<number | null>(null);
+  const [searchValue, setSearchValue] = useState(filters.search);
 
-  function replaceParam(key: string, value: string, defaultValue = "") {
-    const params = new URLSearchParams(searchParams.toString());
+  useEffect(() => {
+    if (filters.search !== searchValue && searchTimeoutRef.current === null) {
+      setSearchValue(filters.search);
+    }
+  }, [filters.search, searchValue]);
 
-    if (value && value !== defaultValue) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+  function clearFilters() {
+    setShowAdvanced(false);
+    setSearchValue("");
+
+    if (searchTimeoutRef.current !== null) {
+      window.clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
     }
 
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.delete(PARAM_PLAN);
+    params.delete(PARAM_PAYMENT);
+    params.delete(PARAM_SEARCH);
+    params.delete(PARAM_EVENT_FROM);
+    params.delete(PARAM_EVENT_TO);
+    params.delete(PARAM_HOSTING_ENDS_FROM);
+    params.delete(PARAM_HOSTING_ENDS_TO);
+    params.delete(PARAM_APPROVED_FROM);
+    params.delete(PARAM_APPROVED_TO);
+    params.delete(PARAM_SORT);
     params.delete(PARAM_PAGE);
 
     const queryString = params.toString();
     router.replace(queryString ? `${pathname}?${queryString}` : pathname);
   }
 
-  function clearFilters() {
-    setShowAdvanced(false);
-    router.replace(pathname);
-  }
-
-  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    replaceParam(PARAM_SEARCH, String(formData.get(PARAM_SEARCH) ?? "").trim());
-  }
-
   return (
     <div className="space-y-3">
-      <form
-        onSubmit={handleSearchSubmit}
-        className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center"
-      >
+      <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center">
         <div className="relative min-w-0 flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             aria-label="Search clients"
             className="h-10 pl-9"
-            defaultValue={filters.search}
-            name={PARAM_SEARCH}
+            value={searchValue}
+            onChange={(event) => {
+              if (searchTimeoutRef.current !== null) {
+                window.clearTimeout(searchTimeoutRef.current);
+              }
+
+              const nextValue = event.currentTarget.value;
+              setSearchValue(nextValue);
+
+              searchTimeoutRef.current = window.setTimeout(() => {
+                searchTimeoutRef.current = null;
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  defaultValue: "",
+                  key: PARAM_SEARCH,
+                  pathname,
+                  router,
+                  value: nextValue.trim(),
+                });
+              }, SEARCH_DEBOUNCE_MS);
+            }}
             placeholder="Search client, email, event, reference"
           />
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button type="submit" variant="outline" className="sm:w-auto">
-            Search
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="sm:w-auto"
-            onClick={() => setShowAdvanced((current) => !current)}
-          >
-            <SlidersHorizontal className="size-4" />
-            {showAdvanced ? "Hide advanced filters" : "Advanced filters"}
-            {advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ""}
-          </Button>
-        </div>
-      </form>
+        <Button
+          type="button"
+          variant="outline"
+          className="sm:w-auto"
+          onClick={() => setShowAdvanced((current) => !current)}
+        >
+          <SlidersHorizontal className="size-4" />
+          {showAdvanced ? "Hide advanced filters" : "Advanced filters"}
+          {advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ""}
+        </Button>
+      </div>
 
       <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,12rem))_auto]">
         <Select
           value={filters.plan}
-          onValueChange={(value) => replaceParam(PARAM_PLAN, value, DEFAULT_PLAN)}
+          onValueChange={(value) =>
+            replaceParam({
+              currentSearch: searchParams.toString(),
+              defaultValue: DEFAULT_PLAN,
+              key: PARAM_PLAN,
+              pathname,
+              router,
+              value,
+            })
+          }
         >
           <SelectTrigger aria-label="Filter by plan" className="h-10 w-full">
             <SelectValue placeholder="Plan" />
@@ -157,7 +186,16 @@ export function ClientsFilterBar({ filters }: ClientsFilterBarProps) {
 
         <Select
           value={filters.payment}
-          onValueChange={(value) => replaceParam(PARAM_PAYMENT, value, DEFAULT_PAYMENT)}
+          onValueChange={(value) =>
+            replaceParam({
+              currentSearch: searchParams.toString(),
+              defaultValue: DEFAULT_PAYMENT,
+              key: PARAM_PAYMENT,
+              pathname,
+              router,
+              value,
+            })
+          }
         >
           <SelectTrigger aria-label="Filter by payment status" className="h-10 w-full">
             <SelectValue placeholder="Payment" />
@@ -173,7 +211,16 @@ export function ClientsFilterBar({ filters }: ClientsFilterBarProps) {
 
         <Select
           value={filters.sort}
-          onValueChange={(value) => replaceParam(PARAM_SORT, value, DEFAULT_SORT)}
+          onValueChange={(value) =>
+            replaceParam({
+              currentSearch: searchParams.toString(),
+              defaultValue: DEFAULT_SORT,
+              key: PARAM_SORT,
+              pathname,
+              router,
+              value,
+            })
+          }
         >
           <SelectTrigger aria-label="Sort clients" className="h-10 w-full">
             <SelectValue placeholder="Sort" />
@@ -210,43 +257,120 @@ export function ClientsFilterBar({ filters }: ClientsFilterBarProps) {
               id={PARAM_EVENT_FROM}
               label="Event date from"
               value={filters.eventFrom}
-              onChange={(value) => replaceParam(PARAM_EVENT_FROM, value)}
+              onChange={(value) =>
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  key: PARAM_EVENT_FROM,
+                  pathname,
+                  router,
+                  value,
+                })
+              }
             />
             <FilterDateField
               id={PARAM_EVENT_TO}
               label="Event date to"
               value={filters.eventTo}
-              onChange={(value) => replaceParam(PARAM_EVENT_TO, value)}
+              onChange={(value) =>
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  key: PARAM_EVENT_TO,
+                  pathname,
+                  router,
+                  value,
+                })
+              }
             />
             <FilterDateField
               id={PARAM_HOSTING_ENDS_FROM}
               label="Access end from"
               value={filters.hostingEndsFrom}
-              onChange={(value) => replaceParam(PARAM_HOSTING_ENDS_FROM, value)}
+              onChange={(value) =>
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  key: PARAM_HOSTING_ENDS_FROM,
+                  pathname,
+                  router,
+                  value,
+                })
+              }
             />
             <FilterDateField
               id={PARAM_HOSTING_ENDS_TO}
               label="Access end to"
               value={filters.hostingEndsTo}
-              onChange={(value) => replaceParam(PARAM_HOSTING_ENDS_TO, value)}
+              onChange={(value) =>
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  key: PARAM_HOSTING_ENDS_TO,
+                  pathname,
+                  router,
+                  value,
+                })
+              }
             />
             <FilterDateField
               id={PARAM_APPROVED_FROM}
               label="Approved date from"
               value={filters.approvedFrom}
-              onChange={(value) => replaceParam(PARAM_APPROVED_FROM, value)}
+              onChange={(value) =>
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  key: PARAM_APPROVED_FROM,
+                  pathname,
+                  router,
+                  value,
+                })
+              }
             />
             <FilterDateField
               id={PARAM_APPROVED_TO}
               label="Approved date to"
               value={filters.approvedTo}
-              onChange={(value) => replaceParam(PARAM_APPROVED_TO, value)}
+              onChange={(value) =>
+                replaceParam({
+                  currentSearch: searchParams.toString(),
+                  key: PARAM_APPROVED_TO,
+                  pathname,
+                  router,
+                  value,
+                })
+              }
             />
           </div>
         </section>
       ) : null}
     </div>
   );
+}
+
+function replaceParam({
+  currentSearch,
+  defaultValue = "",
+  key,
+  pathname,
+  router,
+  value,
+}: {
+  currentSearch: string;
+  defaultValue?: string;
+  key: string;
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+  value: string;
+}) {
+  const params = new URLSearchParams(currentSearch);
+
+  if (value && value !== defaultValue) {
+    params.set(key, value);
+  } else {
+    params.delete(key);
+  }
+
+  params.delete(PARAM_PAGE);
+
+  const queryString = params.toString();
+  router.replace(queryString ? `${pathname}?${queryString}` : pathname);
 }
 
 function FilterDateField({

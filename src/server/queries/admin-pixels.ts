@@ -31,27 +31,71 @@ export type AdminMetaPixelEventOption = {
   label: string;
 };
 
+export type AdminMetaConversionItem = {
+  amount: number;
+  capiDetail: string;
+  capiStatus: "failed" | "not_configured" | "sent" | "skipped" | "unknown";
+  capiStatusLabel: string;
+  clientName: string;
+  confirmedAt: string;
+  eventLabel: string;
+  href: string;
+  id: string;
+  packageLabel: string;
+  paymentMethodLabel: string;
+  paymentStatusLabel: string;
+};
+
+export type AdminMetaPixelsCapiSummary = {
+  hasAccessToken: boolean;
+  hasEligiblePixelSource: boolean;
+  isReady: boolean;
+};
+
 export type AdminMetaPixelsResult = {
+  capi: AdminMetaPixelsCapiSummary;
   eventOptions: AdminMetaPixelEventOption[];
   generatedAt: string;
+  paidConversions: AdminMetaConversionItem[];
   pixels: AdminMetaPixelItem[];
 };
 
 export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
   await requireAdmin();
   const supabase = await createServerSupabaseClient();
-  const [pixelsResult, eventsResult] = await Promise.all([
-    supabase
-      .from("meta_pixels")
-      .select(
-        "id, event_id, name, notes, pixel_id, is_active, tracking_scope, created_at, updated_at",
-      )
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("rsvp_events")
-      .select("id, title, event_slug, event_date")
-      .order("event_date", { ascending: false }),
-  ]);
+  const [pixelsResult, eventsResult, paymentsResult, clientsResult, auditLogsResult] =
+    await Promise.all([
+      supabase
+        .from("meta_pixels")
+        .select(
+          "id, event_id, name, notes, pixel_id, is_active, tracking_scope, created_at, updated_at",
+        )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("rsvp_events")
+        .select("id, title, event_slug, event_date")
+        .order("event_date", { ascending: false }),
+      supabase
+        .from("payments")
+        .select(
+          "id, client_id, event_id, amount_paid, payment_method, payment_status, plan_type, paid_at, updated_at",
+        )
+        .eq("payment_status", "paid")
+        .order("paid_at", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false })
+        .limit(20),
+      supabase.from("clients").select("id, name"),
+      supabase
+        .from("audit_logs")
+        .select("action, entity_id, created_at")
+        .in("action", [
+          "meta_capi_purchase_failed",
+          "meta_capi_purchase_sent",
+          "meta_capi_purchase_skipped",
+        ])
+        .order("created_at", { ascending: false })
+        .limit(100),
+    ]);
 
   if (pixelsResult.error) {
     throw pixelsResult.error;
@@ -61,29 +105,86 @@ export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
     throw eventsResult.error;
   }
 
+  if (paymentsResult.error) {
+    throw paymentsResult.error;
+  }
+
+  if (clientsResult.error) {
+    throw clientsResult.error;
+  }
+
+  if (auditLogsResult.error) {
+    throw auditLogsResult.error;
+  }
+
   const eventOptions = (eventsResult.data ?? []).map((event) => ({
     id: event.id,
     label: buildEventLabel(event),
   }));
   const eventLabelById = new Map(eventOptions.map((event) => [event.id, event.label]));
+  const clientNameById = new Map(
+    (clientsResult.data ?? []).map((client) => [client.id, client.name]),
+  );
+  const latestCapiAuditByPaymentId = new Map<
+    string,
+    { action: string; created_at: string; entity_id: string }
+  >();
+
+  for (const log of auditLogsResult.data ?? []) {
+    if (!log.entity_id) {
+      continue;
+    }
+
+    if (!latestCapiAuditByPaymentId.has(log.entity_id)) {
+      latestCapiAuditByPaymentId.set(log.entity_id, {
+        action: log.action,
+        created_at: log.created_at,
+        entity_id: log.entity_id,
+      });
+    }
+  }
+  const pixels = (pixelsResult.data ?? []).map((pixel) => ({
+    createdAt: pixel.created_at,
+    eventId: pixel.event_id,
+    eventLabel: pixel.event_id ? (eventLabelById.get(pixel.event_id) ?? null) : null,
+    id: pixel.id,
+    isActive: pixel.is_active,
+    maskedPixelId: maskPixelId(pixel.pixel_id),
+    name: pixel.name,
+    notes: pixel.notes,
+    pixelId: pixel.pixel_id,
+    trackingScope: normalizeScope(pixel.tracking_scope),
+    trackingScopeLabel: formatScopeLabel(pixel.tracking_scope),
+    updatedAt: pixel.updated_at,
+  }));
+  const capi = getCapiSummary(pixelsResult.data ?? []);
 
   return {
+    capi,
     eventOptions,
     generatedAt: new Date().toISOString(),
-    pixels: (pixelsResult.data ?? []).map((pixel) => ({
-      createdAt: pixel.created_at,
-      eventId: pixel.event_id,
-      eventLabel: pixel.event_id ? (eventLabelById.get(pixel.event_id) ?? null) : null,
-      id: pixel.id,
-      isActive: pixel.is_active,
-      maskedPixelId: maskPixelId(pixel.pixel_id),
-      name: pixel.name,
-      notes: pixel.notes,
-      pixelId: pixel.pixel_id,
-      trackingScope: normalizeScope(pixel.tracking_scope),
-      trackingScopeLabel: formatScopeLabel(pixel.tracking_scope),
-      updatedAt: pixel.updated_at,
-    })),
+    paidConversions: (paymentsResult.data ?? []).map((payment) => {
+      const capiAudit = latestCapiAuditByPaymentId.get(payment.id);
+      const capiStatus = getCapiStatus(capiAudit?.action ?? null, capi.isReady);
+
+      return {
+        amount: Number(payment.amount_paid ?? 0),
+        capiDetail: getCapiDetail(capiStatus, capiAudit?.created_at ?? null),
+        capiStatus,
+        capiStatusLabel: formatCapiStatusLabel(capiStatus),
+        clientName: clientNameById.get(payment.client_id ?? "") ?? "Client record",
+        confirmedAt: payment.paid_at ?? payment.updated_at,
+        eventLabel: payment.event_id
+          ? (eventLabelById.get(payment.event_id) ?? "Event record")
+          : "No event linked",
+        href: payment.client_id ? `/admin/clients/${payment.client_id}` : "/admin/clients",
+        id: payment.id,
+        packageLabel: formatPlanLabel(payment.plan_type),
+        paymentMethodLabel: formatPaymentMethodLabel(payment.payment_method),
+        paymentStatusLabel: formatPaymentStatusLabel(payment.payment_status),
+      };
+    }),
+    pixels,
   };
 }
 
@@ -127,4 +228,108 @@ function maskPixelId(pixelId: string) {
 function buildEventLabel(event: { event_date: string | null; event_slug: string; title: string }) {
   const suffix = event.event_date ? ` · ${event.event_date}` : "";
   return `${event.title || event.event_slug}${suffix}`;
+}
+
+function formatPlanLabel(plan: string | null) {
+  switch (plan) {
+    case "pro":
+      return "Pro";
+    case "max":
+      return "Max";
+    default:
+      return "Unknown package";
+  }
+}
+
+function formatPaymentMethodLabel(method: string | null) {
+  switch (method) {
+    case "gcash":
+      return "GCash";
+    case "maya":
+      return "Maya";
+    default:
+      return "Manual payment";
+  }
+}
+
+function formatPaymentStatusLabel(status: string) {
+  switch (status) {
+    case "paid":
+      return "Paid";
+    case "refunded":
+      return "Refunded";
+    case "cancelled":
+      return "Cancelled";
+    case "failed":
+      return "Failed";
+    default:
+      return "Pending";
+  }
+}
+
+function getCapiSummary(
+  pixels: Array<{ is_active: boolean; tracking_scope: string }>,
+): AdminMetaPixelsCapiSummary {
+  const hasAccessToken = Boolean(process.env.META_CAPI_ACCESS_TOKEN);
+  const hasEligiblePixelSource =
+    Boolean(process.env.META_PIXEL_ID) ||
+    pixels.some(
+      (pixel) =>
+        pixel.is_active &&
+        ["application", "global_public", "rsvp_submit"].includes(pixel.tracking_scope),
+    );
+
+  return {
+    hasAccessToken,
+    hasEligiblePixelSource,
+    isReady: hasAccessToken && hasEligiblePixelSource,
+  };
+}
+
+function getCapiStatus(
+  action: string | null,
+  isCapiReady: boolean,
+): AdminMetaConversionItem["capiStatus"] {
+  switch (action) {
+    case "meta_capi_purchase_sent":
+      return "sent";
+    case "meta_capi_purchase_failed":
+      return "failed";
+    case "meta_capi_purchase_skipped":
+      return "skipped";
+    default:
+      return isCapiReady ? "unknown" : "not_configured";
+  }
+}
+
+function formatCapiStatusLabel(status: AdminMetaConversionItem["capiStatus"]) {
+  switch (status) {
+    case "sent":
+      return "Sent";
+    case "failed":
+      return "Failed";
+    case "skipped":
+      return "Not sent";
+    case "not_configured":
+      return "Not configured";
+    case "unknown":
+    default:
+      return "No delivery log";
+  }
+}
+
+function getCapiDetail(status: AdminMetaConversionItem["capiStatus"], createdAt: string | null) {
+  switch (status) {
+    case "sent":
+      return createdAt ? `Logged ${createdAt}` : "Delivery logged in audit trail.";
+    case "failed":
+      return createdAt ? `Failed ${createdAt}` : "Latest server-side send failed.";
+    case "skipped":
+      return createdAt ? `Skipped ${createdAt}` : "Server-side send was skipped.";
+    case "not_configured":
+      return "Server-side Purchase is not configured for new paid confirmations.";
+    case "unknown":
+    default:
+      return "Paid record exists, but no durable CAPI delivery log was found.";
+  }
 }

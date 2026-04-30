@@ -15,9 +15,9 @@ const quickActions = [
     label: "View Clients",
   },
   {
-    href: "/admin/payment-options",
+    href: "/admin/settings",
     icon: Settings2,
-    label: "Payment Options",
+    label: "Package Settings",
   },
   {
     href: "/admin/meta-pixels",
@@ -31,8 +31,9 @@ export function QuickActions() {
     <SectionCard
       title="Quick Actions"
       description="Navigation shortcuts for the main admin workflow areas."
+      className="h-full"
     >
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+      <div className="grid min-h-[15.5rem] gap-3 sm:grid-cols-2 xl:grid-cols-1">
         {quickActions.map((action) => (
           <Button key={action.href} asChild variant="outline" className="justify-start">
             <Link href={action.href}>

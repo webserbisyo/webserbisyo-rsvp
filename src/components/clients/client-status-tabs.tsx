@@ -1,31 +1,47 @@
 import Link from "next/link";
-import type {
-  AdminClientsSearchParams,
-  ClientListStatusFilter,
-  ClientStatusCounts,
-} from "@/server/queries/admin-clients";
-import {
-  PARAM_APPROVED_FROM,
-  PARAM_APPROVED_TO,
-  PARAM_EVENT,
-  PARAM_EVENT_FROM,
-  PARAM_EVENT_TO,
-  PARAM_HOSTING,
-  PARAM_HOSTING_ENDS_FROM,
-  PARAM_HOSTING_ENDS_TO,
-  PARAM_PAYMENT,
-  PARAM_PLAN,
-  PARAM_SEARCH,
-  PARAM_SORT,
-  PARAM_STATUS,
-} from "@/server/queries/admin-clients";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type ClientStatusTabsProps = {
-  counts: ClientStatusCounts;
-  filters: AdminClientsSearchParams;
+  counts: Record<string, number>;
+  filters: {
+    approvedFrom: string;
+    approvedTo: string;
+    event: string;
+    eventFrom: string;
+    eventTo: string;
+    hosting: string;
+    hostingEndsFrom: string;
+    hostingEndsTo: string;
+    payment: string;
+    plan: string;
+    search: string;
+    sort: string;
+    status: string;
+  };
 };
+
+type ClientListStatusFilter =
+  | "active"
+  | "all"
+  | "archived"
+  | "cleanup_eligible"
+  | "event_passed"
+  | "event_soon";
+
+const PARAM_STATUS = "status";
+const PARAM_PLAN = "plan";
+const PARAM_PAYMENT = "payment";
+const PARAM_HOSTING = "hosting";
+const PARAM_EVENT = "event";
+const PARAM_SEARCH = "search";
+const PARAM_EVENT_FROM = "eventFrom";
+const PARAM_EVENT_TO = "eventTo";
+const PARAM_HOSTING_ENDS_FROM = "hostingEndsFrom";
+const PARAM_HOSTING_ENDS_TO = "hostingEndsTo";
+const PARAM_APPROVED_FROM = "approvedFrom";
+const PARAM_APPROVED_TO = "approvedTo";
+const PARAM_SORT = "sort";
 
 const tabs: Array<{
   label: string;
@@ -71,7 +87,10 @@ export function ClientStatusTabs({ counts, filters }: ClientStatusTabsProps) {
   );
 }
 
-function buildStatusHref(status: ClientListStatusFilter, filters: AdminClientsSearchParams) {
+function buildStatusHref(
+  status: ClientListStatusFilter,
+  filters: ClientStatusTabsProps["filters"],
+) {
   const params = new URLSearchParams();
 
   setIfPresent(params, PARAM_STATUS, status, "all");

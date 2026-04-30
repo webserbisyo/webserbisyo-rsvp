@@ -3,6 +3,7 @@
 import { type ColumnDef, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
@@ -11,6 +12,7 @@ import {
   toggleMetaPixelAction,
 } from "@/server/actions/meta-pixels";
 import type {
+  AdminMetaConversionItem,
   AdminMetaPixelItem,
   AdminMetaPixelsResult,
   AdminMetaPixelScope,
@@ -18,6 +20,7 @@ import type {
 import { AdminDataTable } from "@/components/admin-data-table/admin-data-table";
 import { ErrorState } from "@/components/feedback/error-state";
 import { SectionCard } from "@/components/shared/section-card";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   ADMIN_META_PIXELS_QUERY_KEY,
   useMetaPixelsQuery,
@@ -52,6 +55,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
 type MetaPixelsClientPageProps = {
@@ -96,6 +107,8 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
   const [form, setForm] = useState<PixelFormState>(EMPTY_FORM);
   const pixels = data?.pixels ?? [];
   const eventOptions = data?.eventOptions ?? initialData.eventOptions;
+  const paidConversions = data?.paidConversions ?? initialData.paidConversions;
+  const capi = data?.capi ?? initialData.capi;
 
   const saveMutation = useMutation({
     mutationFn: saveMetaPixelAction,
@@ -175,7 +188,7 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
             ) : null}
           </div>
         ),
-        header: "Scope",
+        header: "Browser Pixel Scope",
         id: "scope",
         meta: {
           cellClassName: "max-w-0 align-top whitespace-normal",
@@ -294,6 +307,60 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
   return (
     <>
       <SectionCard
+        title="How tracking works"
+        description="Browser Pixel scopes public page injection. Mark as Paid conversions are sent server-side through Meta CAPI when configured."
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border p-4">
+            <p className="text-sm font-semibold">1. Public pages</p>
+            <p className="text-muted-foreground mt-2 text-sm leading-6">
+              <code>/apply</code>, <code>/apply/start</code>, <code>/apply/success</code>, and
+              public RSVP event pages can load the browser Meta Pixel based on the selected Browser
+              Pixel Scope.
+            </p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-sm font-semibold">2. Admin payment confirmation</p>
+            <p className="text-muted-foreground mt-2 text-sm leading-6">
+              Mark as Paid does not use the browser Pixel. After a successful payment confirmation,
+              the server can send a Meta CAPI Purchase event using the confirmed payment amount in
+              PHP.
+            </p>
+          </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-sm font-semibold">3. Meta reporting</p>
+            <p className="text-muted-foreground mt-2 text-sm leading-6">
+              Browser events and server-side Purchase events appear in Meta Events Manager when
+              configuration is available. CAPI failures are non-blocking and never undo payment
+              confirmation.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-muted/25 mt-4 grid gap-3 rounded-xl border p-4 lg:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Current server-side CAPI readiness</p>
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge tone={capi.hasAccessToken ? "success" : "muted"}>
+                {capi.hasAccessToken ? "CAPI token available" : "No CAPI token"}
+              </StatusBadge>
+              <StatusBadge tone={capi.hasEligiblePixelSource ? "success" : "muted"}>
+                {capi.hasEligiblePixelSource ? "Pixel source available" : "No Pixel source"}
+              </StatusBadge>
+              <StatusBadge tone={capi.isReady ? "success" : "warning"}>
+                {capi.isReady ? "Ready for server-side Purchase" : "Not configured for Purchase"}
+              </StatusBadge>
+            </div>
+          </div>
+          <div className="text-muted-foreground space-y-1 text-sm leading-6">
+            <p>Browser Pixel Scope controls public-page script injection only.</p>
+            <p>Mark as Paid conversions are handled server-side through CAPI.</p>
+            <p>CAPI tokens remain server-only and are never exposed in browser code.</p>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
         title="Pixel configurations"
         description="Store public tracking configuration only. Browser Pixel scripts are never fired from admin pages."
         actions={
@@ -339,7 +406,7 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
             <SheetHeader>
               <SheetTitle>{editingPixel ? "Edit Meta Pixel" : "Add Meta Pixel"}</SheetTitle>
               <SheetDescription>
-                Configure browser Pixel scope for public pages. Mark as Paid conversions are handled
+                Configure Browser Pixel Scope for public pages. Mark as Paid conversions are handled
                 server-side through CAPI when enabled.
               </SheetDescription>
             </SheetHeader>
@@ -373,7 +440,7 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
               </div>
 
               <div className="space-y-2">
-                <Label>Tracking scope</Label>
+                <Label>Browser Pixel Scope</Label>
                 <Select
                   value={form.trackingScope}
                   onValueChange={(value) => {
@@ -396,6 +463,10 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-muted-foreground text-xs">
+                  Controls where the browser Pixel script is injected on public pages. Mark as Paid
+                  conversions are handled server-side through CAPI.
+                </p>
               </div>
 
               {form.trackingScope === "event" ? (
@@ -491,6 +562,75 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SectionCard
+        title="Paid Conversion Records"
+        description="Recent paid confirmations relevant to the server-side Meta CAPI Purchase flow."
+      >
+        {paidConversions.length > 0 ? (
+          <div className="overflow-hidden rounded-lg border">
+            <div className="max-h-[24rem] overflow-y-auto">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Package</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Payment Method</TableHead>
+                    <TableHead>Confirmed At</TableHead>
+                    <TableHead>Payment Status</TableHead>
+                    <TableHead>CAPI Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paidConversions.map((conversion) => (
+                    <TableRow key={conversion.id}>
+                      <TableCell className="align-top">
+                        <div className="min-w-0 space-y-1">
+                          <p className="truncate font-medium">{conversion.clientName}</p>
+                          <p className="text-muted-foreground text-xs">{conversion.capiDetail}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <p className="truncate text-sm">{conversion.eventLabel}</p>
+                      </TableCell>
+                      <TableCell className="align-top">{conversion.packageLabel}</TableCell>
+                      <TableCell className="align-top">
+                        {formatCurrency(conversion.amount)}
+                      </TableCell>
+                      <TableCell className="align-top">{conversion.paymentMethodLabel}</TableCell>
+                      <TableCell className="align-top">
+                        {formatDateTime(conversion.confirmedAt)}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <StatusBadge tone={getPaymentTone(conversion.paymentStatusLabel)}>
+                          {conversion.paymentStatusLabel}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <StatusBadge tone={getCapiTone(conversion.capiStatus)}>
+                          {conversion.capiStatusLabel}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell className="text-right align-top">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={conversion.href}>View</Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        ) : (
+          <div className="text-muted-foreground rounded-lg border border-dashed p-6 text-sm">
+            Paid confirmations will appear here after the next successful Mark as Paid action.
+          </div>
+        )}
+      </SectionCard>
     </>
   );
 
@@ -508,4 +648,46 @@ function formatDateTime(value: string) {
     timeStyle: "short",
     timeZone: "Asia/Manila",
   }).format(new Date(value));
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-PH", {
+    currency: "PHP",
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    style: "currency",
+  }).format(value);
+}
+
+function getCapiTone(
+  status: AdminMetaConversionItem["capiStatus"],
+): "danger" | "muted" | "success" | "warning" {
+  switch (status) {
+    case "sent":
+      return "success";
+    case "failed":
+      return "danger";
+    case "not_configured":
+      return "muted";
+    case "skipped":
+    case "unknown":
+    default:
+      return "warning";
+  }
+}
+
+function getPaymentTone(statusLabel: string): "danger" | "muted" | "success" | "warning" {
+  switch (statusLabel) {
+    case "Paid":
+      return "success";
+    case "Refunded":
+      return "muted";
+    case "Cancelled":
+      return "muted";
+    case "Failed":
+      return "danger";
+    case "Pending":
+    default:
+      return "warning";
+  }
 }

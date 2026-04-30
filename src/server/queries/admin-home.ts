@@ -9,17 +9,11 @@ import {
 
 export const ADMIN_HOME_NEEDS_ATTENTION_LIMIT = 5;
 export const ADMIN_HOME_RECENT_APPLICATIONS_LIMIT = 6;
-export const ADMIN_HOME_RECENT_LIST_LIMIT = 5;
+export const ADMIN_HOME_RECENT_LIST_LIMIT = 8;
 
 type AdminHomeStatusTone = "warning" | "success" | "danger" | "neutral";
 
-type AdminHomeErrorKey =
-  | "stats"
-  | "needsAttention"
-  | "recentApplications"
-  | "recentClients"
-  | "recentPayments"
-  | "recentActivity";
+type AdminHomeErrorKey = "stats" | "needsAttention" | "recentRecords";
 
 type AdminHomeStats = {
   activeClients: number | null;
@@ -55,10 +49,7 @@ export type AdminHomeSummary = {
   errors?: Partial<Record<AdminHomeErrorKey, string>>;
   generatedAt: string;
   needsAttention: AdminHomeQueueItem[];
-  recentActivity: AdminHomeRecentItem[];
-  recentApplications: AdminHomeRecentItem[];
-  recentClients: AdminHomeRecentItem[];
-  recentPayments: AdminHomeRecentItem[];
+  recentRecords: AdminHomeRecentItem[];
   stats: AdminHomeStats;
 };
 
@@ -143,10 +134,7 @@ const PENDING_PAYMENT_STATUS = "pending";
 
 const STATS_ERROR_MESSAGE = "Some summary metrics are unavailable right now.";
 const NEEDS_ATTENTION_ERROR_MESSAGE = "Unable to load priority items right now.";
-const RECENT_APPLICATIONS_ERROR_MESSAGE = "Unable to load recent applications right now.";
-const RECENT_CLIENTS_ERROR_MESSAGE = "Unable to load recent clients right now.";
-const RECENT_PAYMENTS_ERROR_MESSAGE = "Unable to load recent payments right now.";
-const RECENT_ACTIVITY_ERROR_MESSAGE = "Unable to load recent activity right now.";
+const RECENT_RECORDS_ERROR_MESSAGE = "Unable to load recent records right now.";
 
 export async function getAdminHomeSummary(
   supabase: SupabaseClient<Database>,
@@ -190,31 +178,25 @@ export async function getAdminHomeSummary(
     errors.needsAttention = NEEDS_ATTENTION_ERROR_MESSAGE;
   }
 
-  if (recentApplicationsResult.status === "rejected") {
-    errors.recentApplications = RECENT_APPLICATIONS_ERROR_MESSAGE;
-  }
-
-  if (recentClientsResult.status === "rejected") {
-    errors.recentClients = RECENT_CLIENTS_ERROR_MESSAGE;
-  }
-
-  if (recentPaymentsResult.status === "rejected") {
-    errors.recentPayments = RECENT_PAYMENTS_ERROR_MESSAGE;
-  }
-
-  if (recentActivityResult.status === "rejected") {
-    errors.recentActivity = RECENT_ACTIVITY_ERROR_MESSAGE;
+  if (
+    recentApplicationsResult.status === "rejected" ||
+    recentClientsResult.status === "rejected" ||
+    recentPaymentsResult.status === "rejected" ||
+    recentActivityResult.status === "rejected"
+  ) {
+    errors.recentRecords = RECENT_RECORDS_ERROR_MESSAGE;
   }
 
   return {
     errors: Object.keys(errors).length > 0 ? errors : undefined,
     generatedAt,
     needsAttention: needsAttentionResult.status === "fulfilled" ? needsAttentionResult.value : [],
-    recentApplications:
+    recentRecords: buildRecentRecords([
       recentApplicationsResult.status === "fulfilled" ? recentApplicationsResult.value : [],
-    recentActivity: recentActivityResult.status === "fulfilled" ? recentActivityResult.value : [],
-    recentClients: recentClientsResult.status === "fulfilled" ? recentClientsResult.value : [],
-    recentPayments: recentPaymentsResult.status === "fulfilled" ? recentPaymentsResult.value : [],
+      recentClientsResult.status === "fulfilled" ? recentClientsResult.value : [],
+      recentPaymentsResult.status === "fulfilled" ? recentPaymentsResult.value : [],
+      recentActivityResult.status === "fulfilled" ? recentActivityResult.value : [],
+    ]),
     stats,
   };
 }
@@ -376,7 +358,7 @@ async function getNeedsAttention(
     ...cleanupEligibleItems,
     ...paymentIssueItems,
   ]
-    .sort((left, right) => compareAscending(left.updatedAt, right.updatedAt))
+    .sort(compareNeedsAttentionItems)
     .slice(0, ADMIN_HOME_NEEDS_ATTENTION_LIMIT);
 }
 
@@ -750,6 +732,13 @@ function toApplicationQueueItem(
   };
 }
 
+function buildRecentRecords(groups: AdminHomeRecentItem[][]) {
+  return groups
+    .flat()
+    .sort((left, right) => compareDescending(left.timestamp, right.timestamp))
+    .slice(0, 24);
+}
+
 function formatApplicationStatusLabel(status: string) {
   switch (status) {
     case "submitted":
@@ -929,6 +918,35 @@ function selectPrimaryHomeEvent(events: HomeEventRow[]) {
 
 function compareAscending(left: string, right: string) {
   return new Date(left).getTime() - new Date(right).getTime();
+}
+
+function compareDescending(left: string, right: string) {
+  return new Date(right).getTime() - new Date(left).getTime();
+}
+
+function compareNeedsAttentionItems(left: AdminHomeQueueItem, right: AdminHomeQueueItem) {
+  return (
+    getNeedsAttentionPriority(right.statusLabel) - getNeedsAttentionPriority(left.statusLabel) ||
+    compareDescending(left.updatedAt, right.updatedAt)
+  );
+}
+
+function getNeedsAttentionPriority(statusLabel: string) {
+  switch (statusLabel) {
+    case "Refund Issue":
+      return 5;
+    case "Payment Issue":
+      return 4;
+    case "Awaiting Payment":
+      return 3;
+    case "Pending":
+      return 2;
+    case "Event Passed":
+      return 1;
+    case "Cleanup Eligible":
+    default:
+      return 0;
+  }
 }
 
 function compareNullableDateOnlyDesc(left: string | null, right: string | null) {

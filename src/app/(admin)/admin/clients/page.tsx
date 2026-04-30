@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ClientCardList } from "@/components/clients/client-card-list";
-import { ClientStatusTabs } from "@/components/clients/client-status-tabs";
-import { ClientsFilterBar } from "@/components/clients/clients-filter-bar";
-import { ClientsPagination } from "@/components/clients/clients-pagination";
-import { ClientsTable } from "@/components/clients/clients-table";
+import { ClientsClientPage } from "@/components/clients/clients-client-page";
 import { PageContainer } from "@/components/app-shell/page-container";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { ErrorState } from "@/components/feedback/error-state";
-import { SectionCard } from "@/components/shared/section-card";
 import { getAdminClients, parseAdminClientsSearchParams } from "@/server/queries/admin-clients";
 import { getAdminPackageSettings } from "@/server/queries/platform-package-settings";
 
@@ -34,11 +28,11 @@ export default async function AdminClientsPage({ searchParams }: AdminClientsPag
     getAdminClients(filters, supabase),
     getAdminPackageSettings(),
   ]);
-  const hasActiveFilters = hasListFilters(filters);
   const packageDefaultAvailability = {
     max: Boolean(packageSettings.max.isActive && packageSettings.max.defaultAmount !== null),
     pro: Boolean(packageSettings.pro.isActive && packageSettings.pro.defaultAmount !== null),
   };
+  const initialListSearch = buildInitialListSearch(filters);
 
   return (
     <PageContainer>
@@ -47,66 +41,74 @@ export default async function AdminClientsPage({ searchParams }: AdminClientsPag
         description="Manage approved RSVP clients, payment state, event lifecycle, website access, and cleanup readiness."
       />
 
-      <SectionCard
-        title="Client lifecycle"
-        description="Status counts reflect all approved client records. List totals update with your current filters."
-      >
-        <div className="space-y-4">
-          <ClientStatusTabs counts={result.counts} filters={filters} />
-          <ClientsFilterBar filters={filters} />
-        </div>
-      </SectionCard>
-
-      {result.error ? (
-        <ErrorState
-          title="Clients could not be loaded"
-          description="Refresh the page or try again."
-        />
-      ) : null}
-
-      <ClientsTable
-        hasActiveFilters={hasActiveFilters}
-        items={result.items}
+      <ClientsClientPage
+        initialData={result}
+        initialFilters={filters}
+        initialListSearch={initialListSearch}
         packageDefaultAvailability={packageDefaultAvailability}
       />
-      <ClientCardList hasActiveFilters={hasActiveFilters} items={result.items} />
-
-      <ClientsPagination
-        filters={filters}
-        page={result.page}
-        pageCount={result.pageCount}
-        pageSize={result.pageSize}
-        total={result.total}
-      />
-
-      <p className="text-muted-foreground text-xs">
-        Last updated {formatDateTime(result.generatedAt)}
-      </p>
     </PageContainer>
   );
 }
 
-function hasListFilters(filters: ReturnType<typeof parseAdminClientsSearchParams>) {
-  return (
-    filters.status !== "all" ||
-    filters.plan !== "all" ||
-    filters.payment !== "all" ||
-    filters.hosting !== "all" ||
-    filters.event !== "all" ||
-    filters.search !== "" ||
-    filters.eventFrom !== "" ||
-    filters.eventTo !== "" ||
-    filters.hostingEndsFrom !== "" ||
-    filters.hostingEndsTo !== "" ||
-    filters.approvedFrom !== "" ||
-    filters.approvedTo !== ""
-  );
-}
+function buildInitialListSearch(filters: ReturnType<typeof parseAdminClientsSearchParams>) {
+  const params = new URLSearchParams();
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Manila",
-  }).format(new Date(value));
+  if (filters.status !== "all") {
+    params.set("status", filters.status);
+  }
+
+  if (filters.plan !== "all") {
+    params.set("plan", filters.plan);
+  }
+
+  if (filters.payment !== "all") {
+    params.set("payment", filters.payment);
+  }
+
+  if (filters.hosting !== "all") {
+    params.set("hosting", filters.hosting);
+  }
+
+  if (filters.event !== "all") {
+    params.set("event", filters.event);
+  }
+
+  if (filters.search) {
+    params.set("search", filters.search);
+  }
+
+  if (filters.eventFrom) {
+    params.set("eventFrom", filters.eventFrom);
+  }
+
+  if (filters.eventTo) {
+    params.set("eventTo", filters.eventTo);
+  }
+
+  if (filters.hostingEndsFrom) {
+    params.set("hostingEndsFrom", filters.hostingEndsFrom);
+  }
+
+  if (filters.hostingEndsTo) {
+    params.set("hostingEndsTo", filters.hostingEndsTo);
+  }
+
+  if (filters.approvedFrom) {
+    params.set("approvedFrom", filters.approvedFrom);
+  }
+
+  if (filters.approvedTo) {
+    params.set("approvedTo", filters.approvedTo);
+  }
+
+  if (filters.sort !== "updated_desc") {
+    params.set("sort", filters.sort);
+  }
+
+  if (filters.page !== 1) {
+    params.set("page", String(filters.page));
+  }
+
+  return params.toString();
 }

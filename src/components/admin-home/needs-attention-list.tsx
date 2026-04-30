@@ -15,8 +15,9 @@ type NeedsAttentionListProps = {
 export function NeedsAttentionList({ errorMessage, items }: NeedsAttentionListProps) {
   return (
     <SectionCard
-      title="Needs Attention"
+      title={`Needs Attention (${items.length})`}
       description="Priority items that need review in the current admin workflow."
+      className="h-full"
     >
       {errorMessage ? (
         <ErrorState
@@ -24,31 +25,33 @@ export function NeedsAttentionList({ errorMessage, items }: NeedsAttentionListPr
           description="This section is temporarily unavailable. Other admin summary sections may still be current."
         />
       ) : items.length > 0 ? (
-        <div className="divide-border divide-y">
-          {items.map((item) => (
-            <div
-              key={`${item.type}-${item.id}`}
-              className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
-            >
-              <div className="min-w-0 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="min-w-0 truncate text-sm font-semibold">{item.title}</h2>
-                  <StatusBadge tone={toStatusBadgeTone(item.statusTone)}>
-                    {item.statusLabel}
-                  </StatusBadge>
+        <div className="max-h-[15.5rem] overflow-y-auto pr-1">
+          <div className="divide-border divide-y">
+            {items.map((item) => (
+              <div
+                key={`${item.type}-${item.id}`}
+                className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div className="min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="min-w-0 truncate text-sm font-semibold">{item.title}</h2>
+                    <StatusBadge tone={toStatusBadgeTone(item.statusTone)}>
+                      {item.statusLabel}
+                    </StatusBadge>
+                  </div>
+                  <p className="text-muted-foreground line-clamp-2 text-sm leading-6">
+                    {item.subtitle}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Updated {formatDateTime(item.updatedAt)}
+                  </p>
                 </div>
-                <p className="text-muted-foreground line-clamp-2 text-sm leading-6">
-                  {item.subtitle}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Updated {formatDateTime(item.updatedAt)}
-                </p>
+                <Button asChild variant="outline" size="sm" className="sm:self-center">
+                  <Link href={item.href}>View</Link>
+                </Button>
               </div>
-              <Button asChild variant="outline" size="sm" className="sm:self-center">
-                <Link href={item.href}>View</Link>
-              </Button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
         <EmptyState

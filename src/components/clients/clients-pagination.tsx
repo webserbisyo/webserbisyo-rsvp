@@ -1,30 +1,42 @@
 import Link from "next/link";
-import type { AdminClientsSearchParams } from "@/server/queries/admin-clients";
-import {
-  PARAM_APPROVED_FROM,
-  PARAM_APPROVED_TO,
-  PARAM_EVENT,
-  PARAM_EVENT_FROM,
-  PARAM_EVENT_TO,
-  PARAM_HOSTING,
-  PARAM_HOSTING_ENDS_FROM,
-  PARAM_HOSTING_ENDS_TO,
-  PARAM_PAGE,
-  PARAM_PAYMENT,
-  PARAM_PLAN,
-  PARAM_SEARCH,
-  PARAM_SORT,
-  PARAM_STATUS,
-} from "@/server/queries/admin-clients";
 import { Button } from "@/components/ui/button";
 
 type ClientsPaginationProps = {
-  filters: AdminClientsSearchParams;
+  filters: {
+    approvedFrom: string;
+    approvedTo: string;
+    event: string;
+    eventFrom: string;
+    eventTo: string;
+    hosting: string;
+    hostingEndsFrom: string;
+    hostingEndsTo: string;
+    payment: string;
+    plan: string;
+    search: string;
+    sort: string;
+    status: string;
+  };
   page: number;
   pageCount: number;
   pageSize: number;
   total: number;
 };
+
+const PARAM_STATUS = "status";
+const PARAM_PLAN = "plan";
+const PARAM_PAYMENT = "payment";
+const PARAM_HOSTING = "hosting";
+const PARAM_EVENT = "event";
+const PARAM_SEARCH = "search";
+const PARAM_EVENT_FROM = "eventFrom";
+const PARAM_EVENT_TO = "eventTo";
+const PARAM_HOSTING_ENDS_FROM = "hostingEndsFrom";
+const PARAM_HOSTING_ENDS_TO = "hostingEndsTo";
+const PARAM_APPROVED_FROM = "approvedFrom";
+const PARAM_APPROVED_TO = "approvedTo";
+const PARAM_SORT = "sort";
+const PARAM_PAGE = "page";
 
 export function ClientsPagination({
   filters,
@@ -72,7 +84,7 @@ export function ClientsPagination({
   );
 }
 
-function buildPageHref(filters: AdminClientsSearchParams, page: number) {
+function buildPageHref(filters: ClientsPaginationProps["filters"], page: number) {
   const params = new URLSearchParams();
 
   setIfPresent(params, PARAM_STATUS, filters.status, "all");
