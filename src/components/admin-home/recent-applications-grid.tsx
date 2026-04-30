@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Inbox } from "lucide-react";
-import type { AdminHomeApplicationItem } from "@/server/queries/admin-home";
+import type { AdminHomeRecentItem } from "@/server/queries/admin-home";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorState } from "@/components/feedback/error-state";
 import { SectionCard } from "@/components/shared/section-card";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 type RecentApplicationsGridProps = {
   errorMessage?: string;
-  items: AdminHomeApplicationItem[];
+  items: AdminHomeRecentItem[];
 };
 
 export function RecentApplicationsGrid({ errorMessage, items }: RecentApplicationsGridProps) {
@@ -38,19 +38,19 @@ export function RecentApplicationsGrid({ errorMessage, items }: RecentApplicatio
             >
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="min-w-0 truncate text-sm font-semibold">{item.name}</h2>
+                  <h2 className="min-w-0 truncate text-sm font-semibold">{item.title}</h2>
                   <Badge variant="outline" className="shrink-0">
-                    {item.plan}
+                    {item.meta}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground truncate text-sm">{item.email}</p>
+                <p className="text-muted-foreground truncate text-sm">{item.caption}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge tone={toStatusBadgeTone(item.statusTone)}>
                   {item.statusLabel}
                 </StatusBadge>
                 <span className="text-muted-foreground text-xs">
-                  Submitted {formatDateTime(item.submittedAt)}
+                  Submitted {formatDateTime(item.timestamp)}
                 </span>
               </div>
               <Button asChild variant="outline" size="sm" className="w-fit">
@@ -78,7 +78,7 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function toStatusBadgeTone(tone: AdminHomeApplicationItem["statusTone"]) {
+function toStatusBadgeTone(tone: AdminHomeRecentItem["statusTone"]) {
   switch (tone) {
     case "warning":
       return "warning";

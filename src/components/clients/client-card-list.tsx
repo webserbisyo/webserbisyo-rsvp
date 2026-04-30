@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ClientListItem } from "@/server/queries/admin-clients";
 import {
+  ClientLifecycleStatusBadge,
   ClientPaymentStatusBadge,
   ClientPlanBadge,
   ClientStoredStatusBadge,
@@ -57,6 +58,7 @@ export function ClientCardList({ hasActiveFilters, items }: ClientCardListProps)
                 label={client.clientStatusLabel}
                 status={client.clientStatus}
               />
+              <ClientLifecycleStatusBadge label={client.statusLabel} status={client.status} />
             </div>
 
             <Button asChild variant="outline">

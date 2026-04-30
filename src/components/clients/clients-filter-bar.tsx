@@ -66,7 +66,7 @@ const sortOptions = [
   { label: "Recently updated", value: "updated_desc" },
   { label: "Newest approved", value: "approved_desc" },
   { label: "Event date soonest", value: "event_date_asc" },
-  { label: "Hosting ending soon", value: "hosting_ends_asc" },
+  { label: "Access ending soon", value: "access_ends_asc" },
   { label: "Client name A-Z", value: "client_name_asc" },
 ];
 
@@ -220,13 +220,13 @@ export function ClientsFilterBar({ filters }: ClientsFilterBarProps) {
             />
             <FilterDateField
               id={PARAM_HOSTING_ENDS_FROM}
-              label="Hosting end from"
+              label="Access end from"
               value={filters.hostingEndsFrom}
               onChange={(value) => replaceParam(PARAM_HOSTING_ENDS_FROM, value)}
             />
             <FilterDateField
               id={PARAM_HOSTING_ENDS_TO}
-              label="Hosting end to"
+              label="Access end to"
               value={filters.hostingEndsTo}
               onChange={(value) => replaceParam(PARAM_HOSTING_ENDS_TO, value)}
             />

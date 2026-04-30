@@ -22,6 +22,7 @@ import {
   assertServiceSuccess,
 } from "@/server/services/service-error";
 import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
+import { sendMetaCapiPurchase } from "@/server/services/send-meta-capi-purchase";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import { calculateHostingCoverage } from "./hosting";
 import {
@@ -175,7 +176,7 @@ export async function markClientAsPaid(
 
   if (!coverage) {
     warnings.push(
-      "Package hosting duration is not configured, so website access remains Not configured.",
+      "Package access duration is not configured, so website access remains Not configured.",
     );
   }
 
@@ -260,6 +261,20 @@ export async function markClientAsPaid(
 
   if (auditWarning) {
     warnings.push(auditWarning);
+  }
+
+  const capiWarning = await safeSendMetaCapiPurchase({
+    actorUserId,
+    amount: payment.amount_paid,
+    clientId: client.id,
+    customerEmail: application.email,
+    customerPhone: application.phone,
+    eventId: event.id,
+    paymentId: payment.id,
+  });
+
+  if (capiWarning) {
+    warnings.push(capiWarning);
   }
 
   return {
@@ -1186,7 +1201,9 @@ async function getApprovedApplicationForClient(clientId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("rsvp_applications")
-    .select("id, approved_at, email, full_name, preferred_manual_payment_option, preferred_plan")
+    .select(
+      "id, approved_at, email, full_name, phone, preferred_manual_payment_option, preferred_plan",
+    )
     .eq("approved_client_id", clientId)
     .order("approved_at", { ascending: false, nullsFirst: false })
     .limit(1)
@@ -1293,6 +1310,20 @@ async function safeWriteAuditLog(input: Parameters<typeof writeAuditLog>[0]) {
     return error instanceof Error
       ? `Audit log could not be written: ${error.message}`
       : "Audit log could not be written.";
+  }
+}
+
+async function safeSendMetaCapiPurchase(input: Parameters<typeof sendMetaCapiPurchase>[0]) {
+  try {
+    const result = await sendMetaCapiPurchase(input);
+
+    if (result.status === "failed") {
+      return "Meta CAPI delivery failed after payment confirmation.";
+    }
+
+    return null;
+  } catch {
+    return "Meta CAPI delivery failed after payment confirmation.";
   }
 }
 

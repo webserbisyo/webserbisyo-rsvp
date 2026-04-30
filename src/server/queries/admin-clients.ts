@@ -25,41 +25,40 @@ export const PARAM_APPROVED_FROM = "approvedFrom";
 export const PARAM_APPROVED_TO = "approvedTo";
 export const PARAM_SORT = "sort";
 export const PARAM_PAGE = "page";
+export const CLIENT_EVENT_SOON_WINDOW_DAYS = 30;
 
 export const CLIENT_STATUS_VALUES = [
   "active",
-  "renewal_needed",
+  "event_soon",
   "event_passed",
-  "expired",
   "archived",
-  "paused",
+  "cleanup_eligible",
   "cancelled",
   "unknown",
 ] as const;
 
 export const CLIENT_STATUS_TAB_VALUES = [
   "active",
-  "renewal_needed",
+  "event_soon",
   "event_passed",
-  "expired",
   "archived",
-  "paused",
+  "cleanup_eligible",
 ] as const;
 
 export const CLIENT_PLAN_VALUES = ["pro", "max"] as const;
 export const CLIENT_PAYMENT_FILTER_VALUES = ["paid", "pending", "cancelled", "refunded"] as const;
-export const CLIENT_HOSTING_FILTER_VALUES = [
-  "active",
-  "renewal_needed",
-  "expired",
+export const CLIENT_HOSTING_FILTER_VALUES = ["active", "expired", "unknown"] as const;
+export const CLIENT_EVENT_FILTER_VALUES = [
+  "event_soon",
+  "upcoming",
+  "event_passed",
   "unknown",
 ] as const;
-export const CLIENT_EVENT_FILTER_VALUES = ["upcoming", "today", "event_passed", "unknown"] as const;
 export const CLIENT_SORT_VALUES = [
   "updated_desc",
   "approved_desc",
   "event_date_asc",
-  "hosting_ends_asc",
+  "access_ends_asc",
   "client_name_asc",
 ] as const;
 
@@ -373,6 +372,7 @@ type ClientSnapshot = {
   hostingEndsAt: string | null;
   hostingLifecycle: ClientHostingLifecycle;
   hostingStartsAt: string | null;
+  isCleanupEligible: boolean;
   payment: PaymentRow | null;
   refund: RefundRow | null;
   paymentStatus: ClientPaymentStatus;
@@ -391,7 +391,7 @@ type EnrichedClientRecord = ClientSnapshot & {
 const LIST_ERROR_MESSAGE = "Clients could not be loaded.";
 const RELATED_APPLICATION_ERROR_MESSAGE = "Linked application could not be loaded.";
 const EVENT_ERROR_MESSAGE = "Linked event could not be loaded.";
-const PAYMENT_ERROR_MESSAGE = "Payment and hosting details could not be loaded.";
+const PAYMENT_ERROR_MESSAGE = "Payment and access details could not be loaded.";
 const ONBOARDING_ERROR_MESSAGE = "Onboarding records could not be loaded.";
 const ACTIVITY_ERROR_MESSAGE = "Activity could not be loaded.";
 const ACTIVITY_PREVIEW_LIMIT = 6;
@@ -402,10 +402,9 @@ const EMPTY_COUNTS: ClientStatusCounts = {
   all: 0,
   archived: 0,
   cancelled: 0,
+  cleanup_eligible: 0,
+  event_soon: 0,
   event_passed: 0,
-  expired: 0,
-  paused: 0,
-  renewal_needed: 0,
   unknown: 0,
 };
 
@@ -787,7 +786,6 @@ function buildClientSnapshot(
   const renewalRequiredAt = payment?.renewal_required_at ?? client.renewal_required_at;
   const eventLifecycle = deriveEventLifecycle(event?.event_date ?? null, todayInManila);
   const hostingLifecycle = deriveHostingLifecycle(hostingEndsAt, renewalRequiredAt, now);
-  const status = deriveClientListStatus(client.status, eventLifecycle, hostingLifecycle);
   const rawPaymentStatus =
     payment?.payment_status === "refunded" || refund?.id
       ? "refunded"
@@ -798,6 +796,34 @@ function buildClientSnapshot(
     paymentStatus: rawPaymentStatus,
   });
   const plan = client.plan_type ?? payment?.plan_type ?? null;
+  const deleteEligibility = deriveDeleteEligibility({
+    archivedAt: client.archived_at,
+    cancelledAt: client.cancelled_at,
+    clientCustomFrontendStatus: client.custom_frontend_status,
+    clientCustomFrontendUrl: client.custom_frontend_url,
+    clientStatus: client.status,
+    eventCustomFrontendEnabled: event?.custom_frontend_enabled ?? false,
+    eventCustomFrontendUrl: event?.custom_frontend_url ?? null,
+    eventDate: event?.event_date ?? null,
+    eventPublishedAt: event?.published_at ?? null,
+    eventStatus: event?.status ?? null,
+    eventVisibility: event?.visibility ?? null,
+    hasPaidNonRefundedPayment: payments.some((payment) => payment.payment_status === "paid"),
+    hasRefundedPaymentHistory:
+      payments.some((payment) => payment.payment_status === "refunded") || refunds.length > 0,
+    hasUnpublishedSetupWork: events.some((event) =>
+      ["setup_in_progress", "ready"].includes(event.status),
+    ),
+    hostingEndsAt,
+    lastActivityAt: client.last_activity_at ?? client.updated_at,
+    latestPaymentStatus: payment?.payment_status ?? null,
+    now,
+  });
+  const status = deriveClientListStatus(
+    client.status,
+    eventLifecycle,
+    deleteEligibility.deleteEligible,
+  );
 
   return {
     application,
@@ -807,6 +833,7 @@ function buildClientSnapshot(
     hostingEndsAt,
     hostingLifecycle,
     hostingStartsAt,
+    isCleanupEligible: deleteEligibility.deleteEligible,
     payment,
     refund,
     paymentStatus,
@@ -823,7 +850,11 @@ function buildStatusCounts(records: EnrichedClientRecord[]): ClientStatusCounts 
   };
 
   for (const record of records) {
-    counts[record.status] += 1;
+    for (const status of CLIENT_STATUS_VALUES) {
+      if (matchesClientStatusFilter(record, status)) {
+        counts[status] += 1;
+      }
+    }
   }
 
   return counts;
@@ -837,7 +868,7 @@ function matchesClientFilters(record: EnrichedClientRecord, params: AdminClients
   const eventDate = record.event?.event_date ?? null;
   const approvedAt = record.application?.approved_at ?? null;
 
-  if (params.status !== "all" && record.status !== params.status) {
+  if (params.status !== "all" && !matchesClientStatusFilter(record, params.status)) {
     return false;
   }
 
@@ -909,6 +940,30 @@ function matchesClientFilters(record: EnrichedClientRecord, params: AdminClients
   return true;
 }
 
+function matchesClientStatusFilter(record: EnrichedClientRecord, status: ClientListStatus) {
+  switch (status) {
+    case "active":
+      return record.client.status === "active";
+    case "event_soon":
+      return (
+        record.eventLifecycle === "event_soon" &&
+        !["archived", "cancelled"].includes(record.client.status ?? "")
+      );
+    case "event_passed":
+      return record.eventLifecycle === "event_passed" && record.client.status !== "archived";
+    case "archived":
+      return record.client.status === "archived";
+    case "cleanup_eligible":
+      return record.isCleanupEligible;
+    case "cancelled":
+      return record.client.status === "cancelled";
+    case "unknown":
+      return record.status === "unknown";
+    default:
+      return false;
+  }
+}
+
 function sortClientRecords(records: EnrichedClientRecord[], sort: ClientSort) {
   const next = [...records];
 
@@ -928,7 +983,7 @@ function sortClientRecords(records: EnrichedClientRecord[], sort: ClientSort) {
             right.event?.event_date ?? null,
           ) || compareNullableIsoDesc(left.client.updated_at, right.client.updated_at)
         );
-      case "hosting_ends_asc":
+      case "access_ends_asc":
         return (
           compareNullableIsoAsc(left.hostingEndsAt, right.hostingEndsAt) ||
           compareNullableIsoDesc(left.client.updated_at, right.client.updated_at)
@@ -1308,8 +1363,8 @@ function deriveEventLifecycle(
     return "event_passed";
   }
 
-  if (eventDate === todayInManila) {
-    return "today";
+  if (eventDate <= addDaysToDateOnly(todayInManila, CLIENT_EVENT_SOON_WINDOW_DAYS)) {
+    return "event_soon";
   }
 
   return "upcoming";
@@ -1324,10 +1379,6 @@ function deriveHostingLifecycle(
     return "expired";
   }
 
-  if (renewalRequiredAt && new Date(renewalRequiredAt).getTime() <= now.getTime()) {
-    return "renewal_needed";
-  }
-
   if (hostingEndsAt || renewalRequiredAt) {
     return "active";
   }
@@ -1338,8 +1389,12 @@ function deriveHostingLifecycle(
 function deriveClientListStatus(
   storedStatus: string | null,
   eventLifecycle: ClientEventLifecycle,
-  hostingLifecycle: ClientHostingLifecycle,
+  isCleanupEligible: boolean,
 ): ClientListStatus {
+  if (isCleanupEligible) {
+    return "cleanup_eligible";
+  }
+
   if (storedStatus === "cancelled") {
     return "cancelled";
   }
@@ -1348,16 +1403,8 @@ function deriveClientListStatus(
     return "archived";
   }
 
-  if (storedStatus === "paused") {
-    return "paused";
-  }
-
-  if (storedStatus === "expired" || hostingLifecycle === "expired") {
-    return "expired";
-  }
-
-  if (hostingLifecycle === "renewal_needed") {
-    return "renewal_needed";
+  if (eventLifecycle === "event_soon") {
+    return "event_soon";
   }
 
   if (eventLifecycle === "event_passed") {
@@ -1403,7 +1450,7 @@ export function formatClientStoredStatusLabel(status: string | null) {
     case "paused":
       return "Paused";
     case "expired":
-      return "Expired";
+      return "Access Expired";
     case "archived":
       return "Archived";
     case "cancelled":
@@ -1417,16 +1464,14 @@ export function formatClientListStatusLabel(status: ClientListStatus) {
   switch (status) {
     case "active":
       return "Active";
-    case "renewal_needed":
-      return "Renewal Needed";
+    case "event_soon":
+      return "Event Soon";
     case "event_passed":
       return "Event Passed";
-    case "expired":
-      return "Expired";
     case "archived":
       return "Archived";
-    case "paused":
-      return "Paused";
+    case "cleanup_eligible":
+      return "Cleanup Eligible";
     case "cancelled":
       return "Cancelled";
     case "unknown":
@@ -1437,10 +1482,10 @@ export function formatClientListStatusLabel(status: ClientListStatus) {
 
 export function formatEventLifecycleLabel(lifecycle: ClientEventLifecycle) {
   switch (lifecycle) {
+    case "event_soon":
+      return "Event Soon";
     case "upcoming":
       return "Upcoming";
-    case "today":
-      return "Today";
     case "event_passed":
       return "Event Passed";
     case "unknown":
@@ -1452,11 +1497,9 @@ export function formatEventLifecycleLabel(lifecycle: ClientEventLifecycle) {
 export function formatHostingLifecycleLabel(lifecycle: ClientHostingLifecycle) {
   switch (lifecycle) {
     case "active":
-      return "Hosting Active";
-    case "renewal_needed":
-      return "Renewal Needed";
+      return "Access Active";
     case "expired":
-      return "Hosting Expired";
+      return "Access Expired";
     case "unknown":
     default:
       return "Not Configured";
@@ -1668,6 +1711,10 @@ function normalizeEventFilter(value: string | undefined): ClientEventFilter {
 }
 
 function normalizeSortParam(value: string | undefined): ClientSort {
+  if (value === "hosting_ends_asc") {
+    return "access_ends_asc";
+  }
+
   if (value && CLIENT_SORT_VALUES.includes(value as ClientSort)) {
     return value as ClientSort;
   }
@@ -1825,6 +1872,12 @@ function getTodayDateInManila() {
   });
 
   return formatter.format(new Date());
+}
+
+function addDaysToDateOnly(date: string, days: number) {
+  const nextDate = new Date(`${date}T00:00:00.000Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  return nextDate.toISOString().slice(0, 10);
 }
 
 function startOfDate(date: string) {

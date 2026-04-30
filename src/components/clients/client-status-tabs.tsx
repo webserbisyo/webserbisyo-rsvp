@@ -33,11 +33,10 @@ const tabs: Array<{
 }> = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
-  { label: "Renewal Needed", value: "renewal_needed" },
+  { label: "Event Soon", value: "event_soon" },
   { label: "Event Passed", value: "event_passed" },
-  { label: "Expired", value: "expired" },
   { label: "Archived", value: "archived" },
-  { label: "Paused", value: "paused" },
+  { label: "Cleanup Eligible", value: "cleanup_eligible" },
 ];
 
 export function ClientStatusTabs({ counts, filters }: ClientStatusTabsProps) {

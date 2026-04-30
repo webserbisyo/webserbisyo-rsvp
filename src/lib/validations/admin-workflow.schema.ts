@@ -186,9 +186,9 @@ export const ResendOnboardingSchema = z.object({
 
 const PackagePlanSettingsSchema = z.object({
   defaultAmount: PositiveMoneySchema,
-  defaultHostingDays: z.coerce.number().int().positive("Enter a valid hosting duration."),
+  defaultHostingDays: z.coerce.number().int().positive("Enter a valid access duration."),
   isActive: z.boolean().default(true),
-  renewalNoticeDays: z.coerce.number().int().nonnegative("Enter a valid renewal notice."),
+  renewalNoticeDays: z.coerce.number().int().nonnegative("Enter a valid access ending notice."),
 });
 
 export const SavePackageSettingsSchema = z.object({

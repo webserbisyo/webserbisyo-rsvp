@@ -1,20 +1,29 @@
 import type { Metadata } from "next";
-import { ComingSoonCard } from "@/components/feedback/coming-soon-card";
+import { requireAdmin } from "@/lib/permissions";
+import { MetaPixelsClientPage } from "@/components/meta-pixels/meta-pixels-client-page";
 import { PageContainer } from "@/components/app-shell/page-container";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { getAdminPixels } from "@/server/queries/admin-pixels";
 
 export const metadata: Metadata = {
+  robots: {
+    follow: false,
+    index: false,
+  },
   title: "Meta Pixels",
 };
 
-export default function AdminMetaPixelsPage() {
+export default async function AdminMetaPixelsPage() {
+  await requireAdmin();
+  const initialData = await getAdminPixels();
+
   return (
     <PageContainer>
       <PageHeader
         title="Meta Pixels"
-        description="Pixel setup remains a placeholder until tracking settings are wired to a reviewed admin workflow."
+        description="Manage public Meta Pixel configuration for application and RSVP tracking scopes."
       />
-      <ComingSoonCard description="Meta Pixel CRUD is deferred; this page is a shell-only placeholder." />
+      <MetaPixelsClientPage initialData={initialData} />
     </PageContainer>
   );
 }

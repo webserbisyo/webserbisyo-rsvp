@@ -34,16 +34,15 @@ const lifecycleStatusBadgeClasses: Record<ClientListStatus, string> = {
   active: "border-emerald-200 bg-emerald-50 text-emerald-700",
   archived: "border-slate-200 bg-slate-100 text-slate-700",
   cancelled: "border-slate-200 bg-slate-100 text-slate-700",
+  cleanup_eligible: "border-sky-200 bg-sky-50 text-sky-700",
+  event_soon: "border-amber-200 bg-amber-50 text-amber-700",
   event_passed: "border-purple-200 bg-purple-50 text-purple-700",
-  expired: "border-rose-200 bg-rose-50 text-rose-700",
-  paused: "border-slate-200 bg-slate-100 text-slate-700",
-  renewal_needed: "border-amber-200 bg-amber-50 text-amber-700",
   unknown: "border-border bg-muted text-muted-foreground",
 };
 
 const eventLifecycleBadgeClasses: Record<ClientEventLifecycle, string> = {
+  event_soon: "border-amber-200 bg-amber-50 text-amber-700",
   event_passed: "border-purple-200 bg-purple-50 text-purple-700",
-  today: "border-amber-200 bg-amber-50 text-amber-700",
   unknown: "border-border bg-muted text-muted-foreground",
   upcoming: "border-sky-200 bg-sky-50 text-sky-700",
 };
@@ -51,7 +50,6 @@ const eventLifecycleBadgeClasses: Record<ClientEventLifecycle, string> = {
 const hostingLifecycleBadgeClasses: Record<ClientHostingLifecycle, string> = {
   active: "border-emerald-200 bg-emerald-50 text-emerald-700",
   expired: "border-rose-200 bg-rose-50 text-rose-700",
-  renewal_needed: "border-amber-200 bg-amber-50 text-amber-700",
   unknown: "border-border bg-muted text-muted-foreground",
 };
 

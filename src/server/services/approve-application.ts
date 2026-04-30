@@ -103,6 +103,8 @@ export async function approveApplication(input: ApprovalInput, actorUserId: stri
     actorUserId,
     amount: payment.amount_paid,
     clientId: client.id,
+    customerEmail: application.email,
+    customerPhone: application.phone,
     eventId: eventBundle.event.id,
     paymentId: payment.id,
   });

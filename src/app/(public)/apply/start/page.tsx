@@ -1,5 +1,7 @@
 import { ApplyForm } from "@/components/apply/apply-form";
+import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
+import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,10 @@ function normalizePlan(plan: string | undefined): "pro" | "max" {
 
 export default async function ApplyStartPage({ searchParams }: ApplyStartPageProps) {
   const params = await searchParams;
-  const config = await getPublicApplyConfig();
+  const [config, pixels] = await Promise.all([
+    getPublicApplyConfig(),
+    getPublicMetaPixelsForRoute({ route: "application" }),
+  ]);
   const initialPlan = normalizePlan(params.plan);
 
   return (
@@ -35,6 +40,7 @@ export default async function ApplyStartPage({ searchParams }: ApplyStartPagePro
         </section>
         <ApplyForm config={config} initialPlan={initialPlan} />
       </div>
+      <PublicMetaPixelScripts pixels={pixels} />
     </main>
   );
 }

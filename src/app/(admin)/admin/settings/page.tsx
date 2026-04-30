@@ -20,7 +20,7 @@ export default async function AdminSettingsPage() {
     <PageContainer>
       <PageHeader
         title="Settings"
-        description="Manage platform defaults and payment configuration used by the admin workflow."
+        description="Manage platform defaults, event access windows, and payment configuration used by the admin workflow."
       />
 
       <SectionCard
@@ -54,7 +54,7 @@ export default async function AdminSettingsPage() {
 
       <SectionCard
         title="Package defaults"
-        description="Configure the database-backed Pro and Max pricing defaults used by approvals and payment confirmation."
+        description="Configure the database-backed Pro and Max pricing and access defaults used by approvals and payment confirmation."
       >
         <PackageSettingsForm initialData={packageSettings} />
       </SectionCard>

@@ -7,7 +7,7 @@ export default function AdminClientsLoading() {
     <PageContainer>
       <PageHeader
         title="Clients"
-        description="Manage approved RSVP clients, hosting coverage, event lifecycle, and cleanup readiness."
+        description="Manage approved RSVP clients, payment state, event lifecycle, website access, and cleanup readiness."
       />
       <LoadingSkeleton rows={4} variant="list" />
     </PageContainer>

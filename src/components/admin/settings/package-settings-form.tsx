@@ -123,8 +123,8 @@ export function PackageSettingsForm({ initialData }: PackageSettingsFormProps) {
       <Alert className="rounded-3xl">
         <AlertTitle>Workflow dependency</AlertTitle>
         <AlertDescription>
-          Applications can only be approved for payment and payments can only be confirmed after
-          these defaults are configured for the plan in use.
+          Applications can only be approved and manual payments can only be confirmed after these
+          pricing and access defaults are configured for the plan in use.
         </AlertDescription>
       </Alert>
 
@@ -165,7 +165,8 @@ function PlanSettingsCard({
       <CardHeader className="space-y-2">
         <CardTitle className="text-xl">{title}</CardTitle>
         <p className="text-muted-foreground text-sm leading-6">
-          These defaults power pending manual payments and hosting coverage after confirmation.
+          These defaults power pending manual payments and the RSVP website access window after
+          confirmation.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -199,11 +200,11 @@ function PlanSettingsCard({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={`${planKey}-defaultHostingDays`}>Default hosting days</Label>
+          <Label htmlFor={`${planKey}-defaultHostingDays`}>Default access days</Label>
           <Input
             id={`${planKey}-defaultHostingDays`}
             inputMode="numeric"
-            placeholder="365"
+            placeholder="90"
             {...register(`${planKey}.defaultHostingDays`, { required: true })}
           />
           {errors?.defaultHostingDays?.message ? (
@@ -212,11 +213,11 @@ function PlanSettingsCard({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={`${planKey}-renewalNoticeDays`}>Renewal notice days</Label>
+          <Label htmlFor={`${planKey}-renewalNoticeDays`}>Access ending notice days</Label>
           <Input
             id={`${planKey}-renewalNoticeDays`}
             inputMode="numeric"
-            placeholder="30"
+            placeholder="14"
             {...register(`${planKey}.renewalNoticeDays`, { required: true })}
           />
           {errors?.renewalNoticeDays?.message ? (

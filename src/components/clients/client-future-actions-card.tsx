@@ -7,7 +7,7 @@ export function ClientFutureActionsCard() {
       <Info className="size-4" />
       <AlertTitle>Client lifecycle actions are coming later</AlertTitle>
       <AlertDescription>
-        Archive, restore, renewal, resend onboarding, edit slug, and delete-after-retention
+        Archive, restore, access follow-up, resend onboarding, edit slug, and delete-after-retention
         workflows will be added in later admin phases.
       </AlertDescription>
     </Alert>

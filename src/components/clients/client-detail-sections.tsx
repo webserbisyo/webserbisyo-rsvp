@@ -161,7 +161,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
       <SectionCard className="h-fit" title="Payment and Website Access">
         {errors?.payment ? (
           <ErrorState
-            title="Payment and hosting details could not be loaded"
+            title="Payment and access details could not be loaded"
             description="Refresh the page or try again."
           />
         ) : (
@@ -198,7 +198,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <p className="text-muted-foreground text-xs font-medium">Hosting</p>
+                <p className="text-muted-foreground text-xs font-medium">Website access</p>
                 <ClientHostingLifecycleBadge
                   label={client.hosting.lifecycleLabel}
                   lifecycle={client.hosting.lifecycle}
@@ -208,10 +208,10 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
                 rows={[
                   ["Website access", client.client.customFrontendStatusLabel],
                   ["Website URL", client.client.customFrontendUrl ?? "—"],
-                  ["Hosting starts", formatDateTime(client.hosting.startsAt)],
-                  ["Hosting ends", formatDateTime(client.hosting.endsAt)],
+                  ["Access starts", formatDateTime(client.hosting.startsAt)],
+                  ["Access ends", formatDateTime(client.hosting.endsAt)],
                   [
-                    "Renewal required",
+                    "Access ending notice",
                     formatDateTime(client.hosting.renewalRequiredAt, "Not scheduled"),
                   ],
                 ]}
@@ -269,7 +269,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
               />,
             ],
             ["Event passed", client.cleanup.eventPassed ? "Yes" : "No"],
-            ["Hosting expired", client.cleanup.hostingExpired ? "Yes" : "No"],
+            ["Access expired", client.cleanup.hostingExpired ? "Yes" : "No"],
             ["Archive eligible", client.cleanup.archiveEligible ? "Yes" : "No"],
             ["Delete eligible", client.cleanup.deleteEligible ? "Yes" : "Not yet"],
             ["Delete rule", formatWords(client.cleanup.deleteEligibilityReasonCode)],

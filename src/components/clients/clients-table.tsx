@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { ClientListItem } from "@/server/queries/admin-clients";
 import {
+  ClientLifecycleStatusBadge,
   ClientPaymentStatusBadge,
   ClientPlanBadge,
   ClientStoredStatusBadge,
@@ -129,6 +130,20 @@ export function ClientsTable({
       },
       {
         cell: ({ row }) => (
+          <ClientLifecycleStatusBadge
+            label={row.original.statusLabel}
+            status={row.original.status}
+          />
+        ),
+        header: "Lifecycle",
+        id: "lifecycle",
+        meta: {
+          cellClassName: "align-top",
+          className: "w-40",
+        },
+      },
+      {
+        cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
             <Link href={row.original.href}>View</Link>
           </Button>
@@ -169,7 +184,7 @@ export function ClientsTable({
         onClearSelection={() => setRowSelection("clients", {})}
       />
       <AdminDataTable
-        colSpan={7}
+        colSpan={8}
         emptyState={{
           description: hasActiveFilters
             ? "Try clearing filters or changing the lifecycle tab."

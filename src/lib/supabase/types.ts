@@ -346,6 +346,8 @@ export type Database = {
           event_id: string | null;
           id: string;
           is_active: boolean;
+          name: string;
+          notes: string | null;
           pixel_id: string;
           tracking_scope: string;
           updated_at: string;
@@ -357,6 +359,8 @@ export type Database = {
           event_id?: string | null;
           id?: string;
           is_active?: boolean;
+          name: string;
+          notes?: string | null;
           pixel_id: string;
           tracking_scope?: string;
           updated_at?: string;
@@ -368,6 +372,8 @@ export type Database = {
           event_id?: string | null;
           id?: string;
           is_active?: boolean;
+          name?: string;
+          notes?: string | null;
           pixel_id?: string;
           tracking_scope?: string;
           updated_at?: string;

@@ -258,7 +258,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
             <DialogDescription>
               {dialogMode === "archive"
                 ? "Archive keeps the record intact while removing it from the active lifecycle."
-                : "Restore returns the client to the active or expired lifecycle based on current hosting coverage."}
+                : "Restore returns the client to the active lifecycle while preserving current access coverage."}
             </DialogDescription>
           </DialogHeader>
 
