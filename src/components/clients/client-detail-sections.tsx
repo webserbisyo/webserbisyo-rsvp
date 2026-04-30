@@ -272,6 +272,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
             ["Hosting expired", client.cleanup.hostingExpired ? "Yes" : "No"],
             ["Archive eligible", client.cleanup.archiveEligible ? "Yes" : "No"],
             ["Delete eligible", client.cleanup.deleteEligible ? "Yes" : "Not yet"],
+            ["Delete rule", formatWords(client.cleanup.deleteEligibilityReasonCode)],
             ["Delete reason", client.cleanup.deleteEligibilityReason],
           ]}
         />

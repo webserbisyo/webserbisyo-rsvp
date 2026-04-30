@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/supabase/types";
 import {
   type ClientPaymentDisplayStatus,
+  type DeleteEligibilityReasonCode,
   deriveClientPaymentStatus,
   deriveDeleteEligibility,
 } from "@/server/services/admin-workflow/client-rules";
@@ -101,6 +102,7 @@ export type ClientListItem = {
   clientStatusLabel: string;
   createdAt: string;
   deleteEligible: boolean;
+  deleteEligibilityReasonCode: DeleteEligibilityReasonCode;
   deleteEligibilityReason: string;
   email: string;
   eventDate: string | null;
@@ -170,6 +172,7 @@ export type ClientDetailView = {
     archiveEligible: boolean;
     deleteEligible: boolean;
     deleteEligibleAt: string | null;
+    deleteEligibilityReasonCode: DeleteEligibilityReasonCode;
     deleteEligibilityReason: string;
     eventPassed: boolean;
     hostingExpired: boolean;
@@ -294,6 +297,8 @@ type ApplicationRow = Pick<
 type EventRow = Pick<
   Tables<"rsvp_events">,
   | "client_id"
+  | "custom_frontend_enabled"
+  | "custom_frontend_url"
   | "event_date"
   | "event_slug"
   | "event_type"
@@ -409,7 +414,7 @@ const CLIENT_COLUMNS =
 const APPLICATION_COLUMNS =
   "id, approved_client_id, reference_code, status, submitted_at, approved_at, updated_at, event_location, estimated_guest_count, preferred_manual_payment_option";
 const EVENT_COLUMNS =
-  "id, client_id, title, event_type, event_date, event_slug, status, visibility, venue_name, venue_address, max_guest_count, published_at, updated_at";
+  "id, client_id, title, event_type, event_date, event_slug, status, visibility, venue_name, venue_address, max_guest_count, published_at, custom_frontend_enabled, custom_frontend_url, updated_at";
 const PAYMENT_COLUMNS =
   "id, client_id, application_id, plan_type, amount_due, amount_paid, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, created_at, updated_at";
 const REFUND_COLUMNS =
@@ -946,13 +951,17 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
   const deleteEligibility = deriveDeleteEligibility({
     archivedAt: record.client.archived_at,
     cancelledAt: record.client.cancelled_at,
+    clientCustomFrontendStatus: record.client.custom_frontend_status,
+    clientCustomFrontendUrl: record.client.custom_frontend_url,
     clientStatus: record.client.status,
+    eventCustomFrontendEnabled: record.event?.custom_frontend_enabled ?? false,
+    eventCustomFrontendUrl: record.event?.custom_frontend_url ?? null,
     eventDate: record.event?.event_date ?? null,
     eventPublishedAt: record.event?.published_at ?? null,
     eventStatus: record.event?.status ?? null,
     eventVisibility: record.event?.visibility ?? null,
-    hasPaidPayment: record.payments.some((payment) => payment.payment_status === "paid"),
-    hasRefundedPayment:
+    hasPaidNonRefundedPayment: record.payments.some((payment) => payment.payment_status === "paid"),
+    hasRefundedPaymentHistory:
       record.payments.some((payment) => payment.payment_status === "refunded") ||
       record.refunds.length > 0,
     hasUnpublishedSetupWork: record.events.some((event) =>
@@ -960,6 +969,7 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
     ),
     hostingEndsAt: record.hostingEndsAt,
     lastActivityAt: record.client.last_activity_at ?? record.client.updated_at,
+    latestPaymentStatus: record.payment?.payment_status ?? null,
     now: new Date(),
   });
 
@@ -972,6 +982,7 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
     clientStatusLabel: formatClientStoredStatusLabel(record.client.status),
     createdAt: record.client.created_at,
     deleteEligible: deleteEligibility.deleteEligible,
+    deleteEligibilityReasonCode: deleteEligibility.reasonCode,
     deleteEligibilityReason: deleteEligibility.reason,
     email: record.client.contact_email,
     eventDate: record.event?.event_date ?? null,
@@ -1023,16 +1034,21 @@ function toClientDetailView(
   const deleteEligibility = deriveDeleteEligibility({
     archivedAt: snapshot.client.archived_at,
     cancelledAt: snapshot.client.cancelled_at,
+    clientCustomFrontendStatus: snapshot.client.custom_frontend_status,
+    clientCustomFrontendUrl: snapshot.client.custom_frontend_url,
     clientStatus: snapshot.client.status,
+    eventCustomFrontendEnabled: snapshot.event?.custom_frontend_enabled ?? false,
+    eventCustomFrontendUrl: snapshot.event?.custom_frontend_url ?? null,
     eventDate: snapshot.event?.event_date ?? null,
     eventPublishedAt: snapshot.event?.published_at ?? null,
     eventStatus: snapshot.event?.status ?? null,
     eventVisibility: snapshot.event?.visibility ?? null,
-    hasPaidPayment: snapshot.payment?.payment_status === "paid",
-    hasRefundedPayment: paymentStatus === "refunded",
+    hasPaidNonRefundedPayment: snapshot.payment?.payment_status === "paid",
+    hasRefundedPaymentHistory: paymentStatus === "refunded",
     hasUnpublishedSetupWork: ["setup_in_progress", "ready"].includes(snapshot.event?.status ?? ""),
     hostingEndsAt: snapshot.hostingEndsAt,
     lastActivityAt: snapshot.client.last_activity_at ?? snapshot.client.updated_at,
+    latestPaymentStatus: snapshot.payment?.payment_status ?? null,
     now: new Date(),
   });
 
@@ -1056,6 +1072,7 @@ function toClientDetailView(
         (snapshot.eventLifecycle === "event_passed" || snapshot.hostingLifecycle === "expired"),
       deleteEligible: deleteEligibility.deleteEligible,
       deleteEligibleAt: deleteEligibility.deleteEligibleAt,
+      deleteEligibilityReasonCode: deleteEligibility.reasonCode,
       deleteEligibilityReason: deleteEligibility.reason,
       eventPassed: snapshot.eventLifecycle === "event_passed",
       hostingExpired: snapshot.hostingLifecycle === "expired",

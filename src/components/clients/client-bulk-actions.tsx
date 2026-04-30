@@ -87,6 +87,8 @@ export function ClientBulkActions({
   const archiveEligible = selectedClients.filter((client) => client.clientStatus !== "archived");
   const refundEligible = selectedClients.filter((client) => client.paymentStatus === "paid");
   const deleteEligible = selectedClients.filter((client) => client.deleteEligible);
+  const deleteSkipped = selectedClients.filter((client) => !client.deleteEligible);
+  const deleteReasonGroups = groupDeleteReasons(deleteSkipped);
   const markDefaultMissing = markEligible.some(
     (client) =>
       (client.plan !== "max" && client.plan !== "pro") ||
@@ -255,7 +257,7 @@ export function ClientBulkActions({
             type="button"
             size="sm"
             variant="outline"
-            disabled={isPending || deleteEligible.length === 0}
+            disabled={isPending}
             title={
               deleteEligible.length === 0
                 ? "Selected clients are not yet delete-eligible."
@@ -522,13 +524,66 @@ export function ClientBulkActions({
           <DialogHeader>
             <DialogTitle>Delete selected clients</DialogTitle>
             <DialogDescription>
-              {deleteEligible.length} eligible, {selectedClients.length - deleteEligible.length}{" "}
-              will be skipped. Only archived/cancelled, inactive, safe-to-delete client records are
-              removed.
+              {deleteEligible.length} eligible, {deleteSkipped.length} will be skipped. The same
+              server-side rules are re-checked for every client during execution.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            <div className="grid gap-3 rounded-md border px-3 py-3 text-sm sm:grid-cols-3">
+              <div>
+                <p className="text-muted-foreground text-xs font-medium">Selected</p>
+                <p className="font-medium">{selectedClients.length}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs font-medium">Eligible</p>
+                <p className="font-medium">{deleteEligible.length}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs font-medium">Skipped</p>
+                <p className="font-medium">{deleteSkipped.length}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>What will be deleted</Label>
+              <div className="rounded-md border px-3 py-2 text-sm">
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>Eligible client records only</li>
+                  <li>Draft/private RSVP events and linked event content for eligible clients</li>
+                  <li>
+                    Non-paid payments, plus refunded payment rows only after tombstone proof is
+                    preserved
+                  </li>
+                  <li>Linked Meta Pixel records for eligible clients</li>
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>What will be preserved</Label>
+              <div className="rounded-md border px-3 py-2 text-sm">
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>Client deletion tombstone written before each final delete</li>
+                  <li>Audit/email/application/profile history through FK nulling</li>
+                  <li>
+                    Paid non-refunded clients, live RSVP clients, and active hosting/access clients
+                    remain blocked
+                  </li>
+                </ul>
+              </div>
+            </div>
+            {deleteReasonGroups.length > 0 ? (
+              <div className="space-y-2">
+                <Label>Skipped clients by reason</Label>
+                <div className="space-y-2 rounded-md border px-3 py-2 text-sm">
+                  {deleteReasonGroups.map((group) => (
+                    <div key={group.reason} className="space-y-1">
+                      <p className="font-medium">{group.reason}</p>
+                      <p className="text-muted-foreground text-xs">{group.clients.join(", ")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="bulk-delete-confirmation">Type DELETE to confirm</Label>
               <Input
@@ -554,7 +609,11 @@ export function ClientBulkActions({
             </Button>
             <Button
               type="button"
-              disabled={deleteMutation.isPending || deleteConfirmation !== "DELETE"}
+              disabled={
+                deleteMutation.isPending ||
+                deleteConfirmation !== "DELETE" ||
+                deleteEligible.length === 0
+              }
               onClick={() => deleteMutation.mutate()}
             >
               {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -595,6 +654,21 @@ function buildBulkMessage(
   }
 
   return reasons ? `${base} ${reasons}.` : base;
+}
+
+function groupDeleteReasons(selectedClients: ClientListItem[]) {
+  const groups = new Map<string, string[]>();
+
+  for (const client of selectedClients) {
+    const existing = groups.get(client.deleteEligibilityReason) ?? [];
+    existing.push(client.clientName);
+    groups.set(client.deleteEligibilityReason, existing);
+  }
+
+  return Array.from(groups.entries()).map(([reason, clients]) => ({
+    clients,
+    reason,
+  }));
 }
 
 function toDateTimeLocalValue(value: string) {

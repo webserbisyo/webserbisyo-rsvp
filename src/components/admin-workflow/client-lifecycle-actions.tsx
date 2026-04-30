@@ -168,6 +168,8 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
   );
   const canRefund = client.payment.status === "paid";
   const canDelete = client.cleanup.deleteEligible;
+  const deleteReason = client.cleanup.deleteEligibilityReason;
+  const deletePreview = buildDeletePreview(client);
 
   function submitLifecycleAction() {
     if (dialogMode === "archive" && !note.trim()) {
@@ -226,8 +228,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
             <Button
               type="button"
               variant="outline"
-              disabled={!canDelete}
-              title={!canDelete ? client.cleanup.deleteEligibilityReason : undefined}
+              title={!canDelete ? deleteReason : undefined}
               onClick={() => setDeleteOpen(true)}
             >
               Delete client
@@ -241,7 +242,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
         <AlertDescription>
           {client.cleanup.deleteEligible
             ? "This client meets the current guarded delete rules."
-            : client.cleanup.deleteEligibilityReason}
+            : deleteReason}
         </AlertDescription>
       </Alert>
 
@@ -408,15 +409,39 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
           <DialogHeader>
             <DialogTitle>Delete client</DialogTitle>
             <DialogDescription>
-              This permanently removes only safe-to-delete client records and preserves a deletion
-              tombstone.
+              Review the current eligibility, deletion scope, and preserved records before
+              confirming this permanent cleanup action.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Eligibility</Label>
-              <Input value={client.cleanup.deleteEligibilityReason} readOnly />
+              <Label>Eligibility state</Label>
+              <Input value={canDelete ? "Eligible for deletion" : "Not eligible"} readOnly />
+            </div>
+            <div className="space-y-2">
+              <Label>Current rule result</Label>
+              <Input value={deleteReason} readOnly />
+            </div>
+            <div className="space-y-2">
+              <Label>What will be deleted</Label>
+              <div className="rounded-md border px-3 py-2 text-sm">
+                <ul className="list-disc space-y-1 pl-5">
+                  {deletePreview.deletes.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>What will be preserved</Label>
+              <div className="rounded-md border px-3 py-2 text-sm">
+                <ul className="list-disc space-y-1 pl-5">
+                  {deletePreview.preserves.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="client-delete-confirmation">Type DELETE to confirm</Label>
@@ -472,4 +497,37 @@ function formatCurrency(value: number | null) {
     currency: "PHP",
     style: "currency",
   }).format(value);
+}
+
+function buildDeletePreview(client: ClientDetailView) {
+  const deletes = ["Client record"];
+  const preserves = [
+    "Deletion tombstone with client, event, and payment summary",
+    "Audit trail entries with client/event references nulled by foreign keys",
+    "Approved application history with client/event references nulled by foreign keys",
+  ];
+
+  if (client.event.id) {
+    deletes.push("Draft/private RSVP event and linked event content");
+  }
+
+  if (client.payment.id) {
+    if (client.payment.status === "paid") {
+      preserves.push("Paid non-refunded payment history, which currently blocks deletion");
+    } else if (client.payment.status === "refunded" || client.payment.refund) {
+      deletes.push("Refunded payment rows after refund proof is copied into the tombstone");
+      preserves.push("Refund proof captured in tombstone metadata before row deletion");
+    } else {
+      deletes.push("Non-paid payment rows linked to this client");
+    }
+  }
+
+  if (client.client.customFrontendUrl || client.client.customFrontendStatus === "connected") {
+    preserves.push("Live website access remains blocked until disabled first");
+  }
+
+  return {
+    deletes,
+    preserves,
+  };
 }

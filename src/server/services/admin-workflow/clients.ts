@@ -26,6 +26,7 @@ import { writeAuditLog } from "@/server/services/write-audit-log";
 import { calculateHostingCoverage } from "./hosting";
 import {
   type ClientPaymentDisplayStatus,
+  type DeleteEligibilityReasonCode,
   deriveClientPaymentStatus,
   deriveDeleteEligibility,
 } from "./client-rules";
@@ -70,9 +71,10 @@ type DeleteEligibilitySnapshot = {
   deleteEligible: boolean;
   deleteEligibleAt: string | null;
   eventPassed: boolean;
-  hasPaidPayment: boolean;
-  hasRefundedPayment: boolean;
+  hasPaidNonRefundedPayment: boolean;
+  hasRefundedPaymentHistory: boolean;
   hostingExpired: boolean;
+  reasonCode: DeleteEligibilityReasonCode;
   reason: string;
 };
 
@@ -800,10 +802,11 @@ export async function deleteClient(
   const supabase = createAdminClient();
   const warnings: string[] = [];
   const client = await getClientForLifecycle(input.clientId);
-  const [application, events, payments, eligibility, paymentStatus] = await Promise.all([
+  const [application, events, payments, refunds, eligibility, paymentStatus] = await Promise.all([
     getApprovedApplicationForClient(client.id),
     getEventsForClient(client.id),
     getPaymentsForClientOrApplication(client.id, null),
+    getRefundsForClient(client.id),
     getDeleteEligibilityForClient(client.id),
     getLatestPaymentDisplayStatusForClient(client.id),
   ]);
@@ -828,12 +831,34 @@ export async function deleteClient(
       archived_at: client.archived_at,
       cancelled_at: client.cancelled_at,
       delete_eligible_at: eligibility.deleteEligibleAt,
+      delete_eligibility_reason_code: eligibility.reasonCode,
+      payments: payments.map((payment) => ({
+        amount_due: payment.amount_due,
+        amount_paid: payment.amount_paid,
+        hosting_ends_at: payment.hosting_ends_at,
+        hosting_starts_at: payment.hosting_starts_at,
+        id: payment.id,
+        paid_at: payment.paid_at,
+        payment_method: payment.payment_method,
+        payment_status: payment.payment_status,
+        reference_number: payment.reference_number,
+      })),
+      refunds: refunds.map((refund) => ({
+        amount: refund.amount,
+        confirmed_at: refund.confirmed_at,
+        id: refund.id,
+        method: refund.method,
+        payment_id: refund.payment_id,
+        reason_note: refund.reason_note,
+        reference_number: refund.reference_number,
+      })),
     },
     original_client_id: client.id,
     payment_status: paymentStatus,
     payment_summary: {
       count: payments.length,
       ids: payments.map((payment) => payment.id),
+      refunds_count: refunds.length,
       statuses: payments.map((payment) => payment.payment_status),
     },
   };
@@ -847,8 +872,8 @@ export async function deleteClient(
   assertServiceSuccess(tombstoneError, "Failed to write the client deletion tombstone.");
   assertServiceData(tombstone, "Deletion tombstone insert returned no row.");
 
-  const deletablePayments = payments.filter(
-    (payment) => payment.payment_status !== "paid" && payment.payment_status !== "refunded",
+  const deletablePayments = payments.filter((payment) =>
+    ["pending", "cancelled", "failed", "refunded"].includes(payment.payment_status),
   );
   if (deletablePayments.length > 0) {
     const { error: paymentDeleteError } = await supabase
@@ -862,10 +887,15 @@ export async function deleteClient(
     assertServiceSuccess(paymentDeleteError, "Failed to delete linked non-paid payments.");
   }
 
+  const eventIds = events.map((event) => event.id);
+  const metaPixelFilter =
+    eventIds.length > 0
+      ? `client_id.eq.${client.id},event_id.in.(${eventIds.join(",")})`
+      : `client_id.eq.${client.id}`;
   const { error: metaPixelDeleteError } = await supabase
     .from("meta_pixels")
     .delete()
-    .eq("client_id", client.id);
+    .or(metaPixelFilter);
 
   assertServiceSuccess(metaPixelDeleteError, "Failed to delete linked Meta Pixel records.");
 
@@ -888,9 +918,10 @@ export async function deleteClient(
     clientId: null,
     entityId: tombstone.id,
     entityType: "client_deletion_tombstones",
-    eventId: primaryEvent?.id ?? null,
+    eventId: null,
     metadata: {
       deleted_client_id: client.id,
+      deleted_event_id: primaryEvent?.id ?? null,
       reason: input.note ?? null,
       tombstone_id: tombstone.id,
     },
@@ -919,6 +950,16 @@ export async function bulkDeleteClients(
 
   for (const clientId of clientIds) {
     try {
+      const eligibility = await getDeleteEligibilityForClient(clientId);
+
+      if (!eligibility.deleteEligible) {
+        result.skipped.push({
+          clientId,
+          reason: eligibility.reason,
+        });
+        continue;
+      }
+
       const deleted = await deleteClient(
         {
           clientId,
@@ -934,14 +975,6 @@ export async function bulkDeleteClients(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Bulk delete failed.";
-      if (isDeleteEligibilityReason(message)) {
-        result.skipped.push({
-          clientId,
-          reason: message,
-        });
-        continue;
-      }
-
       result.failed.push({
         clientId,
         error: message,
@@ -964,23 +997,30 @@ export async function getDeleteEligibilityForClient(
   const latestPayment = selectLatestPayment(payments);
   const hostingEndsAt = latestPayment?.hosting_ends_at ?? client.hosting_ends_at;
   const paymentStatus = latestPayment?.payment_status ?? null;
-  const hasPaidPayment = payments.some((payment) => payment.payment_status === "paid");
-  const hasRefundedPayment = payments.some((payment) => payment.payment_status === "refunded");
+  const refunds = await getRefundsForClient(client.id);
+  const hasPaidNonRefundedPayment = payments.some((payment) => payment.payment_status === "paid");
+  const hasRefundedPaymentHistory =
+    payments.some((payment) => payment.payment_status === "refunded") || refunds.length > 0;
   const result = deriveDeleteEligibility({
     archivedAt: client.archived_at,
     cancelledAt: client.cancelled_at,
+    clientCustomFrontendStatus: client.custom_frontend_status,
+    clientCustomFrontendUrl: client.custom_frontend_url,
     clientStatus: client.status,
+    eventCustomFrontendEnabled: primaryEvent?.custom_frontend_enabled ?? false,
+    eventCustomFrontendUrl: primaryEvent?.custom_frontend_url ?? null,
     eventDate: primaryEvent?.event_date ?? null,
     eventPublishedAt: primaryEvent?.published_at ?? null,
     eventStatus: primaryEvent?.status ?? null,
     eventVisibility: primaryEvent?.visibility ?? null,
-    hasPaidPayment,
-    hasRefundedPayment,
+    hasPaidNonRefundedPayment,
+    hasRefundedPaymentHistory,
     hasUnpublishedSetupWork: events.some((event) =>
       ["setup_in_progress", "ready"].includes(event.status),
     ),
     hostingEndsAt,
     lastActivityAt: client.last_activity_at ?? client.updated_at,
+    latestPaymentStatus: paymentStatus,
     now: new Date(),
   });
 
@@ -990,10 +1030,11 @@ export async function getDeleteEligibilityForClient(
     eventPassed: Boolean(
       primaryEvent?.event_date && primaryEvent.event_date < getTodayDateInManila(),
     ),
-    hasPaidPayment,
-    hasRefundedPayment,
+    hasPaidNonRefundedPayment,
+    hasRefundedPaymentHistory,
     hostingExpired: Boolean(hostingEndsAt && new Date(hostingEndsAt).getTime() < Date.now()),
-    reason: normalizeDeleteReason(result.reason, paymentStatus),
+    reasonCode: result.reasonCode,
+    reason: result.reason,
   };
 }
 
@@ -1117,11 +1158,26 @@ async function getEventsForClient(clientId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("rsvp_events")
-    .select("id, event_slug, event_type, event_date, status, visibility, published_at, updated_at")
+    .select(
+      "id, event_slug, event_type, event_date, status, visibility, published_at, custom_frontend_enabled, custom_frontend_url, updated_at",
+    )
     .eq("client_id", clientId)
     .order("updated_at", { ascending: false });
 
   assertServiceSuccess(error, "Failed to load the client events.");
+
+  return data ?? [];
+}
+
+async function getRefundsForClient(clientId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("payment_refunds")
+    .select("*")
+    .eq("client_id", clientId)
+    .order("confirmed_at", { ascending: false, nullsFirst: false });
+
+  assertServiceSuccess(error, "Failed to load client refunds.");
 
   return data ?? [];
 }
@@ -1265,27 +1321,6 @@ function buildBulkPaymentSkipReason(status: ClientPaymentDisplayStatus) {
     default:
       return "Client payment is not eligible.";
   }
-}
-
-function isDeleteEligibilityReason(message: string) {
-  return (
-    message.includes("archived or cancelled") ||
-    message.includes("Event must be passed") ||
-    message.includes("inactive for at least 30 days") ||
-    message.includes("Hosting/access period") ||
-    message.includes("Published or public RSVP") ||
-    message.includes("Paid clients must be retained") ||
-    message.includes("Refunded clients must be retained") ||
-    message.includes("active onboarding or setup work")
-  );
-}
-
-function normalizeDeleteReason(reason: string, paymentStatus: string | null) {
-  if (paymentStatus === "paid") {
-    return "Paid clients must be retained or refunded before deletion.";
-  }
-
-  return reason;
 }
 
 function getTodayDateInManila() {
