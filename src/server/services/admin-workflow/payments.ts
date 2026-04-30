@@ -195,6 +195,26 @@ export async function transitionPaymentStatus(
     );
   }
 
+  if (input.status === "refunded") {
+    const refundPayload = {
+      amount: payment.amount_paid,
+      client_id: payment.client_id,
+      confirmed_at: new Date().toISOString(),
+      created_by: actorUserId,
+      method: payment.payment_method,
+      metadata: {
+        payment_status_before: payment.payment_status,
+      },
+      payment_id: payment.id,
+      reason_note: input.note,
+      reference_number: null,
+    };
+
+    const { error: refundError } = await supabase.from("payment_refunds").insert(refundPayload);
+
+    assertServiceSuccess(refundError, "Failed to record the refund.");
+  }
+
   const { data, error } = await supabase
     .from("payments")
     .update({
@@ -207,6 +227,15 @@ export async function transitionPaymentStatus(
 
   assertServiceSuccess(error, "Failed to update the payment status.");
   assertServiceData(data, "Payment status update returned no row.");
+
+  if (payment.client_id) {
+    const { error: clientError } = await supabase
+      .from("clients")
+      .update({ last_activity_at: new Date().toISOString() })
+      .eq("id", payment.client_id);
+
+    assertServiceSuccess(clientError, "Failed to update the client activity timestamp.");
+  }
 
   await writeAuditLog({
     action: `payment_${input.status}`,

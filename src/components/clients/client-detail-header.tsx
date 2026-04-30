@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { ClientDetailView } from "@/server/queries/admin-clients";
+import type { AdminPackageSettingsView } from "@/server/queries/platform-package-settings";
 import {
   ClientEventLifecycleBadge,
   ClientEventSetupStatusBadge,
@@ -8,17 +9,15 @@ import {
   ClientPlanBadge,
   ClientStoredStatusBadge,
 } from "@/components/clients/client-badges";
+import { ClientPrimaryActions } from "@/components/admin-workflow/client-primary-actions";
 import { Button } from "@/components/ui/button";
 
 type ClientDetailHeaderProps = {
   client: ClientDetailView;
+  packageSettings: AdminPackageSettingsView;
 };
 
-export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
-  const isPaymentPending = client.payment.status === "pending";
-  const canCancelClient =
-    isPaymentPending && client.client.status !== "archived" && client.client.status !== "cancelled";
-
+export function ClientDetailHeader({ client, packageSettings }: ClientDetailHeaderProps) {
   return (
     <div className="space-y-4">
       <Button asChild variant="ghost" className="w-fit">
@@ -61,24 +60,7 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
-          <Button
-            type="button"
-            disabled
-            title={isPaymentPending ? "Enabled in Checkpoint C3" : "Payment is not pending"}
-            className="bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90"
-          >
-            Mark as Paid
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled
-            title={canCancelClient ? "Enabled in Checkpoint C3" : "Client cannot be cancelled"}
-          >
-            Cancel
-          </Button>
-        </div>
+        <ClientPrimaryActions client={client} packageSettings={packageSettings} />
       </div>
     </div>
   );

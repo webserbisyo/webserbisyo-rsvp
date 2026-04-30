@@ -180,9 +180,20 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
                   ["Amount paid", formatCurrency(client.payment.amountPaid)],
                   ["Method", client.payment.methodLabel],
                   ["Reference", client.payment.referenceNumber ?? "—"],
-                  ["Paid at", formatDateTime(client.payment.paidAt)],
+                  ["Confirmed at", formatDateTime(client.payment.paidAt)],
                 ]}
               />
+              {client.payment.refund ? (
+                <DefinitionList
+                  rows={[
+                    ["Refund amount", formatCurrency(client.payment.refund.amount)],
+                    ["Refund method", client.payment.refund.methodLabel],
+                    ["Refund reference", client.payment.refund.referenceNumber ?? "—"],
+                    ["Refunded at", formatDateTime(client.payment.refund.confirmedAt)],
+                    ["Refund note", client.payment.refund.note ?? "—"],
+                  ]}
+                />
+              ) : null}
             </div>
 
             <div className="space-y-3">
@@ -260,7 +271,8 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
             ["Event passed", client.cleanup.eventPassed ? "Yes" : "No"],
             ["Hosting expired", client.cleanup.hostingExpired ? "Yes" : "No"],
             ["Archive eligible", client.cleanup.archiveEligible ? "Yes" : "No"],
-            ["Delete eligible", "Not yet"],
+            ["Delete eligible", client.cleanup.deleteEligible ? "Yes" : "Not yet"],
+            ["Delete reason", client.cleanup.deleteEligibilityReason],
           ]}
         />
       </SectionCard>

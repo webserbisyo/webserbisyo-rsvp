@@ -1,18 +1,38 @@
 import "server-only";
 
+import { generateApplicationReferenceCode } from "@/lib/apply/reference";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import type { ApplicationInput } from "@/lib/validations/application.schema";
 import { ApplicationSchema } from "@/lib/validations/application.schema";
 import { assertServiceData, assertServiceSuccess } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
+type SafeSupabaseError = {
+  code?: string;
+  message?: string;
+};
+
+function isReferenceCodeConflict(error: unknown): error is SafeSupabaseError {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as SafeSupabaseError;
+
+  return (
+    candidate.code === "23505" &&
+    typeof candidate.message === "string" &&
+    candidate.message.includes("rsvp_applications_reference_code_key")
+  );
+}
+
 export async function submitApplication(input: ApplicationInput) {
   const payload = ApplicationSchema.parse(input);
-  const supabase = createAdminClient();
+  let application: Tables<"rsvp_applications"> | null = null;
 
-  const { data: application, error } = await supabase
-    .from("rsvp_applications")
-    .insert({
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const result = await insertApplication({
       email: payload.email,
       estimated_guest_count: payload.estimatedGuestCount ?? null,
       event_date: payload.eventDate ?? null,
@@ -23,12 +43,20 @@ export async function submitApplication(input: ApplicationInput) {
       phone: payload.phone ?? null,
       preferred_manual_payment_option: payload.preferredManualPaymentOption ?? null,
       preferred_plan: payload.preferredPlan,
+      reference_code: generateApplicationReferenceCode(),
       status: "submitted",
-    })
-    .select("*")
-    .single();
+    });
 
-  assertServiceSuccess(error, "Failed to submit RSVP application.");
+    if (!result.error) {
+      application = result.data;
+      break;
+    }
+
+    if (!isReferenceCodeConflict(result.error)) {
+      assertServiceSuccess(result.error, "Failed to submit RSVP application.");
+    }
+  }
+
   assertServiceData(application, "RSVP application insert returned no row.");
 
   await writeAuditLog({
@@ -45,3 +73,11 @@ export async function submitApplication(input: ApplicationInput) {
 
   return application;
 }
+
+async function insertApplication(payload: ApplicationInsertPayload) {
+  const supabase = createAdminClient();
+
+  return supabase.from("rsvp_applications").insert(payload).select("*").single();
+}
+
+type ApplicationInsertPayload = TablesInsert<"rsvp_applications">;

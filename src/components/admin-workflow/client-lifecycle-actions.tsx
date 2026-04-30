@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import type { ClientDetailView } from "@/server/queries/admin-clients";
 import {
   archiveClientAction,
+  deleteClientAction,
+  refundClientPaymentAction,
   resendClientOnboardingAction,
   restoreClientAction,
 } from "@/server/actions/admin-clients";
@@ -21,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -33,7 +36,21 @@ type LifecycleDialogMode = "archive" | "restore" | null;
 export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) {
   const router = useRouter();
   const [dialogMode, setDialogMode] = useState<LifecycleDialogMode>(null);
+  const [resendOpen, setResendOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [resendRecipientEmail, setResendRecipientEmail] = useState(
+    client.onboarding.ownerEmail ?? client.client.email,
+  );
+  const [resendNote, setResendNote] = useState("");
+  const [refundConfirmedAt, setRefundConfirmedAt] = useState(
+    toDateTimeLocalValue(new Date().toISOString()),
+  );
+  const [refundReference, setRefundReference] = useState("");
+  const [refundNote, setRefundNote] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteNote, setDeleteNote] = useState("");
 
   const mutation = useMutation({
     mutationFn: async (mode: Exclude<LifecycleDialogMode, null>) => {
@@ -66,7 +83,15 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
   });
 
   const resendMutation = useMutation({
-    mutationFn: () => resendClientOnboardingAction({ clientId: client.id }),
+    mutationFn: () =>
+      resendClientOnboardingAction({
+        clientId: client.id,
+        note: resendNote || undefined,
+        recipientEmail:
+          resendRecipientEmail && resendRecipientEmail !== client.onboarding.ownerEmail
+            ? resendRecipientEmail
+            : undefined,
+      }),
     onSuccess: (result) => {
       if (!result.ok) {
         toast.error(result.error);
@@ -74,6 +99,11 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
       }
 
       toast.success("Onboarding email flow triggered.");
+      for (const warning of result.data.warnings ?? []) {
+        toast.warning(warning);
+      }
+      setResendOpen(false);
+      setResendNote("");
       router.refresh();
     },
     onError: () => {
@@ -81,9 +111,63 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
     },
   });
 
+  const refundMutation = useMutation({
+    mutationFn: () =>
+      refundClientPaymentAction({
+        clientId: client.id,
+        confirmedAt: refundConfirmedAt ? new Date(refundConfirmedAt).toISOString() : undefined,
+        note: refundNote,
+        referenceNumber: refundReference || undefined,
+      }),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Client refund recorded.");
+      for (const warning of result.data.warnings ?? []) {
+        toast.warning(warning);
+      }
+      setRefundOpen(false);
+      setRefundNote("");
+      setRefundReference("");
+      router.refresh();
+    },
+    onError: () => {
+      toast.error("The refund could not be recorded.");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      deleteClientAction({
+        clientId: client.id,
+        confirmation: deleteConfirmation,
+        note: deleteNote || undefined,
+      }),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Client deleted.");
+      router.push("/admin/clients");
+      router.refresh();
+    },
+    onError: () => {
+      toast.error("The client could not be deleted.");
+    },
+  });
+
   const canArchive = client.client.status !== "archived";
   const canRestore = client.client.status === "archived";
-  const canResendOnboarding = Boolean(client.onboarding.ownerEmail && client.event.id);
+  const canResendOnboarding = Boolean(
+    (client.onboarding.ownerEmail || client.client.email) && client.event.id,
+  );
+  const canRefund = client.payment.status === "paid";
+  const canDelete = client.cleanup.deleteEligible;
 
   function submitLifecycleAction() {
     if (dialogMode === "archive" && !note.trim()) {
@@ -108,7 +192,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
               type="button"
               variant="outline"
               disabled={!canResendOnboarding || resendMutation.isPending}
-              onClick={() => resendMutation.mutate()}
+              onClick={() => setResendOpen(true)}
             >
               {resendMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Resend onboarding
@@ -130,7 +214,22 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
               </Button>
             ) : null}
 
-            <Button type="button" variant="outline" disabled>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!canRefund}
+              onClick={() => setRefundOpen(true)}
+            >
+              Refund client
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!canDelete}
+              title={!canDelete ? client.cleanup.deleteEligibilityReason : undefined}
+              onClick={() => setDeleteOpen(true)}
+            >
               Delete client
             </Button>
           </div>
@@ -138,10 +237,11 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
       </Alert>
 
       <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-        <AlertTitle>Hard delete is deferred</AlertTitle>
+        <AlertTitle>Delete eligibility</AlertTitle>
         <AlertDescription>
-          Paid clients and linked RSVP events must be retained for record integrity. This phase
-          keeps deletion disabled and uses archive-only lifecycle control instead.
+          {client.cleanup.deleteEligible
+            ? "This client meets the current guarded delete rules."
+            : client.cleanup.deleteEligibilityReason}
         </AlertDescription>
       </Alert>
 
@@ -193,6 +293,183 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={resendOpen} onOpenChange={setResendOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Resend onboarding</DialogTitle>
+            <DialogDescription>
+              Send the onboarding email again. A custom recipient receives an email copy only; this
+              does not create RBAC access or a new user.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client-onboarding-recipient">Recipient email</Label>
+              <Input
+                id="client-onboarding-recipient"
+                type="email"
+                value={resendRecipientEmail}
+                onChange={(event) => setResendRecipientEmail(event.currentTarget.value)}
+                placeholder={client.onboarding.ownerEmail ?? "client@example.com"}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-onboarding-note">Optional note</Label>
+              <Textarea
+                id="client-onboarding-note"
+                value={resendNote}
+                onChange={(event) => setResendNote(event.currentTarget.value)}
+                placeholder="Optional message for this resend"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setResendOpen(false)}>
+              Back
+            </Button>
+            <Button
+              type="button"
+              disabled={resendMutation.isPending || !resendRecipientEmail}
+              className="bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90"
+              onClick={() => resendMutation.mutate()}
+            >
+              {resendMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Resend onboarding
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Refund client payment</DialogTitle>
+            <DialogDescription>
+              This records a full refund against the confirmed client payment and preserves the
+              payment history.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Refund amount</Label>
+              <Input value={formatCurrency(client.payment.amountPaid)} readOnly />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-refund-confirmed-at">Confirmed at</Label>
+              <Input
+                id="client-refund-confirmed-at"
+                type="datetime-local"
+                value={refundConfirmedAt}
+                onChange={(event) => setRefundConfirmedAt(event.currentTarget.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-refund-reference">Reference number</Label>
+              <Input
+                id="client-refund-reference"
+                value={refundReference}
+                onChange={(event) => setRefundReference(event.currentTarget.value)}
+                placeholder="Optional"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-refund-note">Refund note</Label>
+              <Textarea
+                id="client-refund-note"
+                value={refundNote}
+                onChange={(event) => setRefundNote(event.currentTarget.value)}
+                placeholder="Explain why this payment is being refunded."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRefundOpen(false)}>
+              Back
+            </Button>
+            <Button
+              type="button"
+              disabled={refundMutation.isPending || !refundNote.trim()}
+              onClick={() => refundMutation.mutate()}
+            >
+              {refundMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Confirm refund
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Delete client</DialogTitle>
+            <DialogDescription>
+              This permanently removes only safe-to-delete client records and preserves a deletion
+              tombstone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Eligibility</Label>
+              <Input value={client.cleanup.deleteEligibilityReason} readOnly />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-delete-confirmation">Type DELETE to confirm</Label>
+              <Input
+                id="client-delete-confirmation"
+                value={deleteConfirmation}
+                onChange={(event) => setDeleteConfirmation(event.currentTarget.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client-delete-note">Optional note</Label>
+              <Textarea
+                id="client-delete-note"
+                value={deleteNote}
+                onChange={(event) => setDeleteNote(event.currentTarget.value)}
+                placeholder="Optional deletion note"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
+              Back
+            </Button>
+            <Button
+              type="button"
+              disabled={deleteMutation.isPending || deleteConfirmation !== "DELETE" || !canDelete}
+              onClick={() => deleteMutation.mutate()}
+            >
+              {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Delete client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
+}
+
+function toDateTimeLocalValue(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function formatCurrency(value: number | null) {
+  if (value === null) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat("en-PH", {
+    currency: "PHP",
+    style: "currency",
+  }).format(value);
 }

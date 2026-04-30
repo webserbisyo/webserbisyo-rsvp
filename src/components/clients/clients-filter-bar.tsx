@@ -59,6 +59,7 @@ const paymentOptions = [
   { label: "Pending", value: "pending" },
   { label: "Paid", value: "paid" },
   { label: "Cancelled", value: "cancelled" },
+  { label: "Refunded", value: "refunded" },
 ];
 
 const sortOptions = [

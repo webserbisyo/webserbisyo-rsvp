@@ -14,8 +14,8 @@ import {
   ClientPlanBadge,
   ClientStoredStatusBadge,
 } from "@/components/clients/client-badges";
+import { ClientBulkActions } from "@/components/clients/client-bulk-actions";
 import { AdminDataTable } from "@/components/admin-data-table/admin-data-table";
-import { SelectionToolbar } from "@/components/admin-data-table/selection-toolbar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAdminWorkflowUiStore } from "@/stores/admin-workflow-ui-store";
@@ -23,9 +23,14 @@ import { useAdminWorkflowUiStore } from "@/stores/admin-workflow-ui-store";
 type ClientsTableProps = {
   hasActiveFilters: boolean;
   items: ClientListItem[];
+  packageDefaultAvailability: Record<"max" | "pro", boolean>;
 };
 
-export function ClientsTable({ hasActiveFilters, items }: ClientsTableProps) {
+export function ClientsTable({
+  hasActiveFilters,
+  items,
+  packageDefaultAvailability,
+}: ClientsTableProps) {
   "use no memo";
 
   const rowSelection = useAdminWorkflowUiStore((state) => state.rowSelections.clients);
@@ -154,10 +159,15 @@ export function ClientsTable({ hasActiveFilters, items }: ClientsTableProps) {
       rowSelection,
     },
   });
+  const selectedClients = table.getSelectedRowModel().rows.map((row) => row.original);
 
   return (
     <section className="hidden space-y-3 xl:block">
-      <SelectionToolbar count={table.getSelectedRowModel().rows.length} />
+      <ClientBulkActions
+        packageDefaultAvailability={packageDefaultAvailability}
+        selectedClients={selectedClients}
+        onClearSelection={() => setRowSelection("clients", {})}
+      />
       <AdminDataTable
         colSpan={7}
         emptyState={{

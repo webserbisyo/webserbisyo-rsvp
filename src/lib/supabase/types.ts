@@ -72,8 +72,72 @@ export type Database = {
           },
         ];
       };
+      client_deletion_tombstones: {
+        Row: {
+          client_email: string;
+          client_name: string;
+          client_status: string | null;
+          deleted_at: string;
+          deleted_by: string | null;
+          deleted_reason: string | null;
+          event_date: string | null;
+          event_id: string | null;
+          event_slug: string | null;
+          event_type: string | null;
+          id: string;
+          metadata: Json;
+          original_client_id: string | null;
+          payment_status: string | null;
+          payment_summary: Json;
+        };
+        Insert: {
+          client_email: string;
+          client_name: string;
+          client_status?: string | null;
+          deleted_at?: string;
+          deleted_by?: string | null;
+          deleted_reason?: string | null;
+          event_date?: string | null;
+          event_id?: string | null;
+          event_slug?: string | null;
+          event_type?: string | null;
+          id?: string;
+          metadata?: Json;
+          original_client_id?: string | null;
+          payment_status?: string | null;
+          payment_summary?: Json;
+        };
+        Update: {
+          client_email?: string;
+          client_name?: string;
+          client_status?: string | null;
+          deleted_at?: string;
+          deleted_by?: string | null;
+          deleted_reason?: string | null;
+          event_date?: string | null;
+          event_id?: string | null;
+          event_slug?: string | null;
+          event_type?: string | null;
+          id?: string;
+          metadata?: Json;
+          original_client_id?: string | null;
+          payment_status?: string | null;
+          payment_summary?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_deletion_tombstones_deleted_by_fkey";
+            columns: ["deleted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       clients: {
         Row: {
+          archived_at: string | null;
+          cancelled_at: string | null;
           contact_email: string;
           contact_name: string | null;
           contact_phone: string | null;
@@ -83,6 +147,7 @@ export type Database = {
           hosting_ends_at: string | null;
           hosting_starts_at: string | null;
           id: string;
+          last_activity_at: string;
           name: string;
           notes: string | null;
           plan_type: string;
@@ -91,6 +156,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          archived_at?: string | null;
+          cancelled_at?: string | null;
           contact_email: string;
           contact_name?: string | null;
           contact_phone?: string | null;
@@ -100,6 +167,7 @@ export type Database = {
           hosting_ends_at?: string | null;
           hosting_starts_at?: string | null;
           id?: string;
+          last_activity_at?: string;
           name: string;
           notes?: string | null;
           plan_type: string;
@@ -108,6 +176,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          archived_at?: string | null;
+          cancelled_at?: string | null;
           contact_email?: string;
           contact_name?: string | null;
           contact_phone?: string | null;
@@ -117,6 +187,7 @@ export type Database = {
           hosting_ends_at?: string | null;
           hosting_starts_at?: string | null;
           id?: string;
+          last_activity_at?: string;
           name?: string;
           notes?: string | null;
           plan_type?: string;
@@ -318,6 +389,70 @@ export type Database = {
           },
         ];
       };
+      payment_refunds: {
+        Row: {
+          amount: number;
+          client_id: string | null;
+          confirmed_at: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          metadata: Json;
+          method: string | null;
+          payment_id: string;
+          reason_note: string | null;
+          reference_number: string | null;
+        };
+        Insert: {
+          amount: number;
+          client_id?: string | null;
+          confirmed_at: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          metadata?: Json;
+          method?: string | null;
+          payment_id: string;
+          reason_note?: string | null;
+          reference_number?: string | null;
+        };
+        Update: {
+          amount?: number;
+          client_id?: string | null;
+          confirmed_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          metadata?: Json;
+          method?: string | null;
+          payment_id?: string;
+          reason_note?: string | null;
+          reference_number?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_refunds_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_refunds_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_refunds_payment_id_fkey";
+            columns: ["payment_id"];
+            isOneToOne: false;
+            referencedRelation: "payments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       payments: {
         Row: {
           amount_due: number;
@@ -413,6 +548,53 @@ export type Database = {
           },
         ];
       };
+      platform_package_settings: {
+        Row: {
+          created_at: string;
+          currency: string;
+          default_amount: number | null;
+          default_hosting_days: number | null;
+          id: string;
+          is_active: boolean;
+          plan_type: string;
+          renewal_notice_days: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          currency?: string;
+          default_amount?: number | null;
+          default_hosting_days?: number | null;
+          id?: string;
+          is_active?: boolean;
+          plan_type: string;
+          renewal_notice_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          currency?: string;
+          default_amount?: number | null;
+          default_hosting_days?: number | null;
+          id?: string;
+          is_active?: boolean;
+          plan_type?: string;
+          renewal_notice_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_package_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       platform_payment_options: {
         Row: {
           account_name: string | null;
@@ -482,53 +664,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "platform_public_settings_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      platform_package_settings: {
-        Row: {
-          created_at: string;
-          currency: string;
-          default_amount: number | null;
-          default_hosting_days: number | null;
-          id: string;
-          is_active: boolean;
-          plan_type: string;
-          renewal_notice_days: number | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          currency?: string;
-          default_amount?: number | null;
-          default_hosting_days?: number | null;
-          id?: string;
-          is_active?: boolean;
-          plan_type: string;
-          renewal_notice_days?: number | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          currency?: string;
-          default_amount?: number | null;
-          default_hosting_days?: number | null;
-          id?: string;
-          is_active?: boolean;
-          plan_type?: string;
-          renewal_notice_days?: number | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "platform_package_settings_updated_by_fkey";
             columns: ["updated_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -618,7 +753,7 @@ export type Database = {
           phone?: string | null;
           preferred_manual_payment_option?: string | null;
           preferred_plan: string;
-          reference_code?: string;
+          reference_code: string;
           rejected_at?: string | null;
           review_notes?: string | null;
           reviewed_at?: string | null;

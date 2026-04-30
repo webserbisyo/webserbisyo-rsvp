@@ -8,6 +8,7 @@ import { ClientDetailSections } from "@/components/clients/client-detail-section
 import { PageContainer } from "@/components/app-shell/page-container";
 import { ErrorState } from "@/components/feedback/error-state";
 import { getAdminClientDetail } from "@/server/queries/admin-clients";
+import { getAdminPackageSettings } from "@/server/queries/platform-package-settings";
 
 type AdminClientDetailPageProps = {
   params: Promise<{
@@ -29,7 +30,10 @@ export default async function AdminClientDetailPage({ params }: AdminClientDetai
   await requireAdmin();
 
   const supabase = await createServerSupabaseClient();
-  const result = await getAdminClientDetail(clientId, supabase);
+  const [result, packageSettings] = await Promise.all([
+    getAdminClientDetail(clientId, supabase),
+    getAdminPackageSettings(),
+  ]);
 
   if (result.notFound) {
     notFound();
@@ -48,7 +52,7 @@ export default async function AdminClientDetailPage({ params }: AdminClientDetai
 
   return (
     <PageContainer>
-      <ClientDetailHeader client={result.client} />
+      <ClientDetailHeader client={result.client} packageSettings={packageSettings} />
 
       <ClientDetailSections client={result.client} errors={result.errors} />
 

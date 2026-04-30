@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/supabase/types";
+import {
+  type ClientPaymentDisplayStatus,
+  deriveClientPaymentStatus,
+  deriveDeleteEligibility,
+} from "@/server/services/admin-workflow/client-rules";
 
 export const CLIENTS_PAGE_SIZE = 20;
 
@@ -41,7 +46,7 @@ export const CLIENT_STATUS_TAB_VALUES = [
 ] as const;
 
 export const CLIENT_PLAN_VALUES = ["pro", "max"] as const;
-export const CLIENT_PAYMENT_FILTER_VALUES = ["paid", "pending", "cancelled"] as const;
+export const CLIENT_PAYMENT_FILTER_VALUES = ["paid", "pending", "cancelled", "refunded"] as const;
 export const CLIENT_HOSTING_FILTER_VALUES = [
   "active",
   "renewal_needed",
@@ -61,7 +66,7 @@ export type ClientListStatus = (typeof CLIENT_STATUS_VALUES)[number];
 export type ClientListStatusFilter = ClientListStatus | "all";
 export type ClientPlan = (typeof CLIENT_PLAN_VALUES)[number];
 export type ClientPlanFilter = ClientPlan | "all";
-export type ClientPaymentStatus = (typeof CLIENT_PAYMENT_FILTER_VALUES)[number];
+export type ClientPaymentStatus = ClientPaymentDisplayStatus;
 export type ClientPaymentFilter = (typeof CLIENT_PAYMENT_FILTER_VALUES)[number] | "all";
 export type ClientHostingLifecycle = (typeof CLIENT_HOSTING_FILTER_VALUES)[number];
 export type ClientHostingFilter = ClientHostingLifecycle | "all";
@@ -95,6 +100,8 @@ export type ClientListItem = {
   clientStatus: string | null;
   clientStatusLabel: string;
   createdAt: string;
+  deleteEligible: boolean;
+  deleteEligibilityReason: string;
   email: string;
   eventDate: string | null;
   eventId: string | null;
@@ -163,10 +170,13 @@ export type ClientDetailView = {
     archiveEligible: boolean;
     deleteEligible: boolean;
     deleteEligibleAt: string | null;
+    deleteEligibilityReason: string;
     eventPassed: boolean;
     hostingExpired: boolean;
   };
   client: {
+    archivedAt: string | null;
+    cancelledAt: string | null;
     createdAt: string;
     customFrontendStatus: string | null;
     customFrontendStatusLabel: string;
@@ -222,6 +232,15 @@ export type ClientDetailView = {
     methodLabel: string;
     paidAt: string | null;
     referenceNumber: string | null;
+    refund: {
+      amount: number | null;
+      confirmedAt: string | null;
+      id: string | null;
+      method: string | null;
+      methodLabel: string;
+      note: string | null;
+      referenceNumber: string | null;
+    } | null;
     status: ClientPaymentStatus;
     statusLabel: string;
   };
@@ -241,6 +260,8 @@ export type ClientDetailResult = {
 type SearchParamsInput = Record<string, string | string[] | undefined>;
 type ClientRow = Pick<
   Tables<"clients">,
+  | "archived_at"
+  | "cancelled_at"
   | "contact_email"
   | "contact_name"
   | "contact_phone"
@@ -250,6 +271,7 @@ type ClientRow = Pick<
   | "hosting_ends_at"
   | "hosting_starts_at"
   | "id"
+  | "last_activity_at"
   | "name"
   | "plan_type"
   | "renewal_required_at"
@@ -307,6 +329,18 @@ type ProfileRow = Pick<
   Tables<"profiles">,
   "client_id" | "created_at" | "email" | "full_name" | "id" | "role" | "updated_at"
 >;
+type RefundRow = Pick<
+  Tables<"payment_refunds">,
+  | "amount"
+  | "client_id"
+  | "confirmed_at"
+  | "created_at"
+  | "id"
+  | "method"
+  | "payment_id"
+  | "reason_note"
+  | "reference_number"
+>;
 type EmailLogRow = Pick<
   Tables<"email_logs">,
   | "application_id"
@@ -335,6 +369,7 @@ type ClientSnapshot = {
   hostingLifecycle: ClientHostingLifecycle;
   hostingStartsAt: string | null;
   payment: PaymentRow | null;
+  refund: RefundRow | null;
   paymentStatus: ClientPaymentStatus;
   plan: string | null;
   renewalRequiredAt: string | null;
@@ -345,6 +380,7 @@ type EnrichedClientRecord = ClientSnapshot & {
   applications: ApplicationRow[];
   events: EventRow[];
   payments: PaymentRow[];
+  refunds: RefundRow[];
 };
 
 const LIST_ERROR_MESSAGE = "Clients could not be loaded.";
@@ -369,13 +405,15 @@ const EMPTY_COUNTS: ClientStatusCounts = {
 };
 
 const CLIENT_COLUMNS =
-  "id, name, contact_name, contact_email, contact_phone, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at, custom_frontend_status, custom_frontend_url, created_at, updated_at";
+  "id, name, contact_name, contact_email, contact_phone, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at, custom_frontend_status, custom_frontend_url, archived_at, cancelled_at, last_activity_at, created_at, updated_at";
 const APPLICATION_COLUMNS =
   "id, approved_client_id, reference_code, status, submitted_at, approved_at, updated_at, event_location, estimated_guest_count, preferred_manual_payment_option";
 const EVENT_COLUMNS =
   "id, client_id, title, event_type, event_date, event_slug, status, visibility, venue_name, venue_address, max_guest_count, published_at, updated_at";
 const PAYMENT_COLUMNS =
   "id, client_id, application_id, plan_type, amount_due, amount_paid, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, created_at, updated_at";
+const REFUND_COLUMNS =
+  "id, client_id, payment_id, amount, method, reference_number, confirmed_at, reason_note, created_at";
 const PROFILE_COLUMNS = "id, client_id, email, full_name, role, created_at, updated_at";
 const EMAIL_LOG_COLUMNS =
   "id, client_id, application_id, event_id, recipient_email, email_type, status, error_message, sent_at, created_at, updated_at";
@@ -390,13 +428,14 @@ export async function getAdminClients(
   try {
     const clients = await getClients(supabase);
     const clientIds = clients.map((client) => client.id);
-    const [applications, events, payments] = await Promise.all([
+    const [applications, events, payments, refunds] = await Promise.all([
       getApprovedApplicationsForClients(supabase, clientIds),
       getEventsForClients(supabase, clientIds),
       getPaymentsForClients(supabase, clientIds),
+      getRefundsForClients(supabase, clientIds),
     ]);
 
-    const enriched = buildEnrichedClientRecords(clients, applications, events, payments);
+    const enriched = buildEnrichedClientRecords(clients, applications, events, payments, refunds);
     const counts = buildStatusCounts(enriched);
     const filtered = filterClientRecords(enriched, params);
     const sorted = sortClientRecords(filtered, params.sort);
@@ -464,6 +503,7 @@ export async function getAdminClientDetail(
       applicationsResult,
       eventsResult,
       paymentsResult,
+      refundsResult,
       profilesResult,
       emailsResult,
       auditResult,
@@ -471,6 +511,7 @@ export async function getAdminClientDetail(
       getApprovedApplicationsForClients(supabase, [client.id]),
       getEventsForClients(supabase, [client.id]),
       getPaymentsForClients(supabase, [client.id]),
+      getRefundsForClients(supabase, [client.id]),
       getProfilesForClients(supabase, [client.id]),
       getEmailLogsForClients(supabase, [client.id]),
       getAuditLogsForClients(supabase, [client.id]),
@@ -479,6 +520,7 @@ export async function getAdminClientDetail(
     const applications = applicationsResult.status === "fulfilled" ? applicationsResult.value : [];
     const events = eventsResult.status === "fulfilled" ? eventsResult.value : [];
     const payments = paymentsResult.status === "fulfilled" ? paymentsResult.value : [];
+    const refunds = refundsResult.status === "fulfilled" ? refundsResult.value : [];
     const profiles = profilesResult.status === "fulfilled" ? profilesResult.value : [];
     const emailLogs = emailsResult.status === "fulfilled" ? emailsResult.value : [];
     const auditLogs = auditResult.status === "fulfilled" ? auditResult.value : [];
@@ -495,6 +537,10 @@ export async function getAdminClientDetail(
       errors.payment = PAYMENT_ERROR_MESSAGE;
     }
 
+    if (refundsResult.status === "rejected") {
+      errors.payment = PAYMENT_ERROR_MESSAGE;
+    }
+
     if (profilesResult.status === "rejected" || emailsResult.status === "rejected") {
       errors.onboarding = ONBOARDING_ERROR_MESSAGE;
     }
@@ -503,7 +549,7 @@ export async function getAdminClientDetail(
       errors.activity = ACTIVITY_ERROR_MESSAGE;
     }
 
-    const snapshot = buildClientSnapshot(client, applications, events, payments);
+    const snapshot = buildClientSnapshot(client, applications, events, payments, refunds);
     const ownerProfile = selectOwnerProfile(profiles);
     const onboardingEmail = selectLatestOnboardingEmail(emailLogs);
     const activity = selectActivityItems(auditLogs, emailLogs);
@@ -609,6 +655,23 @@ async function getPaymentsForClients(supabase: SupabaseClient<Database>, clientI
   return data ?? [];
 }
 
+async function getRefundsForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("payment_refunds")
+    .select(REFUND_COLUMNS)
+    .in("client_id", clientIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
 async function getProfilesForClients(supabase: SupabaseClient<Database>, clientIds: string[]) {
   if (clientIds.length === 0) {
     return [];
@@ -668,6 +731,7 @@ function buildEnrichedClientRecords(
   applications: ApplicationRow[],
   events: EventRow[],
   payments: PaymentRow[],
+  refunds: RefundRow[],
 ) {
   const applicationsByClientId = groupBy(
     applications,
@@ -675,18 +739,27 @@ function buildEnrichedClientRecords(
   );
   const eventsByClientId = groupBy(events, (event) => event.client_id);
   const paymentsByClientId = groupBy(payments, (payment) => payment.client_id);
+  const refundsByClientId = groupBy(refunds, (refund) => refund.client_id);
 
   return clients.map((client) => {
     const clientApplications = applicationsByClientId.get(client.id) ?? [];
     const clientEvents = eventsByClientId.get(client.id) ?? [];
     const clientPayments = paymentsByClientId.get(client.id) ?? [];
-    const snapshot = buildClientSnapshot(client, clientApplications, clientEvents, clientPayments);
+    const clientRefunds = refundsByClientId.get(client.id) ?? [];
+    const snapshot = buildClientSnapshot(
+      client,
+      clientApplications,
+      clientEvents,
+      clientPayments,
+      clientRefunds,
+    );
 
     return {
       ...snapshot,
       applications: clientApplications,
       events: clientEvents,
       payments: clientPayments,
+      refunds: clientRefunds,
     };
   });
 }
@@ -696,19 +769,29 @@ function buildClientSnapshot(
   applications: ApplicationRow[],
   events: EventRow[],
   payments: PaymentRow[],
+  refunds: RefundRow[],
 ): ClientSnapshot {
   const todayInManila = getTodayDateInManila();
   const now = new Date();
   const application = selectApprovedApplication(applications);
   const event = selectSummaryEvent(events, todayInManila);
   const payment = selectSummaryPayment(payments);
+  const refund = selectLatestRefund(refunds, payment?.id ?? null);
   const hostingStartsAt = payment?.hosting_starts_at ?? client.hosting_starts_at;
   const hostingEndsAt = payment?.hosting_ends_at ?? client.hosting_ends_at;
   const renewalRequiredAt = payment?.renewal_required_at ?? client.renewal_required_at;
   const eventLifecycle = deriveEventLifecycle(event?.event_date ?? null, todayInManila);
   const hostingLifecycle = deriveHostingLifecycle(hostingEndsAt, renewalRequiredAt, now);
   const status = deriveClientListStatus(client.status, eventLifecycle, hostingLifecycle);
-  const paymentStatus = derivePaymentStatus(payment, client.status);
+  const rawPaymentStatus =
+    payment?.payment_status === "refunded" || refund?.id
+      ? "refunded"
+      : (payment?.payment_status ?? null);
+  const paymentStatus = deriveClientPaymentStatus({
+    clientCancelledAt: client.cancelled_at,
+    clientStatus: client.status,
+    paymentStatus: rawPaymentStatus,
+  });
   const plan = client.plan_type ?? payment?.plan_type ?? null;
 
   return {
@@ -720,6 +803,7 @@ function buildClientSnapshot(
     hostingLifecycle,
     hostingStartsAt,
     payment,
+    refund,
     paymentStatus,
     plan,
     renewalRequiredAt,
@@ -859,6 +943,26 @@ function sortClientRecords(records: EnrichedClientRecord[], sort: ClientSort) {
 }
 
 function toClientListItem(record: EnrichedClientRecord): ClientListItem {
+  const deleteEligibility = deriveDeleteEligibility({
+    archivedAt: record.client.archived_at,
+    cancelledAt: record.client.cancelled_at,
+    clientStatus: record.client.status,
+    eventDate: record.event?.event_date ?? null,
+    eventPublishedAt: record.event?.published_at ?? null,
+    eventStatus: record.event?.status ?? null,
+    eventVisibility: record.event?.visibility ?? null,
+    hasPaidPayment: record.payments.some((payment) => payment.payment_status === "paid"),
+    hasRefundedPayment:
+      record.payments.some((payment) => payment.payment_status === "refunded") ||
+      record.refunds.length > 0,
+    hasUnpublishedSetupWork: record.events.some((event) =>
+      ["setup_in_progress", "ready"].includes(event.status),
+    ),
+    hostingEndsAt: record.hostingEndsAt,
+    lastActivityAt: record.client.last_activity_at ?? record.client.updated_at,
+    now: new Date(),
+  });
+
   return {
     approvedApplicationId: record.application?.id ?? null,
     approvedApplicationReferenceCode: record.application?.reference_code ?? null,
@@ -867,6 +971,8 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
     clientStatus: record.client.status,
     clientStatusLabel: formatClientStoredStatusLabel(record.client.status),
     createdAt: record.client.created_at,
+    deleteEligible: deleteEligibility.deleteEligible,
+    deleteEligibilityReason: deleteEligibility.reason,
     email: record.client.contact_email,
     eventDate: record.event?.event_date ?? null,
     eventId: record.event?.id ?? null,
@@ -914,6 +1020,21 @@ function toClientDetailView(
     snapshot.payment?.payment_method ??
     snapshot.application?.preferred_manual_payment_option ??
     null;
+  const deleteEligibility = deriveDeleteEligibility({
+    archivedAt: snapshot.client.archived_at,
+    cancelledAt: snapshot.client.cancelled_at,
+    clientStatus: snapshot.client.status,
+    eventDate: snapshot.event?.event_date ?? null,
+    eventPublishedAt: snapshot.event?.published_at ?? null,
+    eventStatus: snapshot.event?.status ?? null,
+    eventVisibility: snapshot.event?.visibility ?? null,
+    hasPaidPayment: snapshot.payment?.payment_status === "paid",
+    hasRefundedPayment: paymentStatus === "refunded",
+    hasUnpublishedSetupWork: ["setup_in_progress", "ready"].includes(snapshot.event?.status ?? ""),
+    hostingEndsAt: snapshot.hostingEndsAt,
+    lastActivityAt: snapshot.client.last_activity_at ?? snapshot.client.updated_at,
+    now: new Date(),
+  });
 
   return {
     activity,
@@ -933,12 +1054,15 @@ function toClientDetailView(
       archiveEligible:
         snapshot.status !== "archived" &&
         (snapshot.eventLifecycle === "event_passed" || snapshot.hostingLifecycle === "expired"),
-      deleteEligible: false,
-      deleteEligibleAt: null,
+      deleteEligible: deleteEligibility.deleteEligible,
+      deleteEligibleAt: deleteEligibility.deleteEligibleAt,
+      deleteEligibilityReason: deleteEligibility.reason,
       eventPassed: snapshot.eventLifecycle === "event_passed",
       hostingExpired: snapshot.hostingLifecycle === "expired",
     },
     client: {
+      archivedAt: snapshot.client.archived_at,
+      cancelledAt: snapshot.client.cancelled_at,
       createdAt: snapshot.client.created_at,
       customFrontendStatus: snapshot.client.custom_frontend_status,
       customFrontendStatusLabel: formatFrontendStatusLabel(snapshot.client.custom_frontend_status),
@@ -994,6 +1118,17 @@ function toClientDetailView(
       methodLabel: formatPaymentMethodLabel(paymentMethod),
       paidAt: snapshot.payment?.paid_at ?? null,
       referenceNumber: snapshot.payment?.reference_number ?? null,
+      refund: snapshot.refund
+        ? {
+            amount: snapshot.refund.amount,
+            confirmedAt: snapshot.refund.confirmed_at,
+            id: snapshot.refund.id,
+            method: snapshot.refund.method,
+            methodLabel: formatPaymentMethodLabel(snapshot.refund.method),
+            note: snapshot.refund.reason_note,
+            referenceNumber: snapshot.refund.reference_number,
+          }
+        : null,
       status: paymentStatus,
       statusLabel: formatPaymentStatusLabel(paymentStatus),
     },
@@ -1048,6 +1183,21 @@ function selectSummaryPayment(payments: PaymentRow[]) {
       return (
         compareNullableIsoDesc(left.updated_at, right.updated_at) ||
         compareNullableIsoDesc(left.paid_at, right.paid_at) ||
+        compareNullableIsoDesc(left.created_at, right.created_at)
+      );
+    })[0] ?? null
+  );
+}
+
+function selectLatestRefund(refunds: RefundRow[], paymentId: string | null) {
+  const candidates = paymentId
+    ? refunds.filter((refund) => refund.payment_id === paymentId)
+    : refunds;
+
+  return (
+    [...candidates].sort((left, right) => {
+      return (
+        compareNullableIsoDesc(left.confirmed_at, right.confirmed_at) ||
         compareNullableIsoDesc(left.created_at, right.created_at)
       );
     })[0] ?? null
@@ -1127,21 +1277,6 @@ function buildClientSearchBlob(record: EnrichedClientRecord) {
 
 function matchesPaymentFilter(status: ClientPaymentStatus, filter: ClientPaymentFilter) {
   return status === filter;
-}
-
-function derivePaymentStatus(
-  payment: PaymentRow | null,
-  clientStatus: string | null,
-): ClientPaymentStatus {
-  if (clientStatus === "cancelled" || payment?.payment_status === "cancelled") {
-    return "cancelled";
-  }
-
-  if (isPaidLikeStatus(payment?.payment_status ?? null)) {
-    return "paid";
-  }
-
-  return "pending";
 }
 
 function deriveEventLifecycle(
@@ -1234,6 +1369,8 @@ export function formatPaymentStatusLabel(status: string | null) {
   switch (status) {
     case "paid":
       return "Paid";
+    case "refunded":
+      return "Refunded";
     case "cancelled":
       return "Cancelled";
     case "pending":
@@ -1660,10 +1797,6 @@ function compareNullableDateOnlyDesc(left: string | null, right: string | null) 
   }
 
   return right.localeCompare(left);
-}
-
-function isPaidLikeStatus(status: string | null) {
-  return status === "paid" || status === "confirmed";
 }
 
 function getTodayDateInManila() {

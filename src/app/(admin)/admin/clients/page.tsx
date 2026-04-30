@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { ErrorState } from "@/components/feedback/error-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { getAdminClients, parseAdminClientsSearchParams } from "@/server/queries/admin-clients";
+import { getAdminPackageSettings } from "@/server/queries/platform-package-settings";
 
 type AdminClientsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -29,8 +30,15 @@ export default async function AdminClientsPage({ searchParams }: AdminClientsPag
 
   const supabase = await createServerSupabaseClient();
   const filters = parseAdminClientsSearchParams(await searchParams);
-  const result = await getAdminClients(filters, supabase);
+  const [result, packageSettings] = await Promise.all([
+    getAdminClients(filters, supabase),
+    getAdminPackageSettings(),
+  ]);
   const hasActiveFilters = hasListFilters(filters);
+  const packageDefaultAvailability = {
+    max: Boolean(packageSettings.max.isActive && packageSettings.max.defaultAmount !== null),
+    pro: Boolean(packageSettings.pro.isActive && packageSettings.pro.defaultAmount !== null),
+  };
 
   return (
     <PageContainer>
@@ -56,7 +64,11 @@ export default async function AdminClientsPage({ searchParams }: AdminClientsPag
         />
       ) : null}
 
-      <ClientsTable hasActiveFilters={hasActiveFilters} items={result.items} />
+      <ClientsTable
+        hasActiveFilters={hasActiveFilters}
+        items={result.items}
+        packageDefaultAvailability={packageDefaultAvailability}
+      />
       <ClientCardList hasActiveFilters={hasActiveFilters} items={result.items} />
 
       <ClientsPagination

@@ -4,11 +4,29 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/permissions";
 import {
   ArchiveClientSchema,
+  BulkArchiveClientsSchema,
+  BulkCancelClientsSchema,
+  BulkDeleteClientsSchema,
+  BulkMarkClientsPaidSchema,
+  BulkRefundClientsSchema,
+  CancelClientSchema,
+  DeleteClientSchema,
+  MarkClientPaidSchema,
+  RefundClientPaymentSchema,
   ResendOnboardingSchema,
   RestoreClientSchema,
 } from "@/lib/validations/admin-workflow.schema";
 import {
   archiveClient,
+  bulkArchiveClients,
+  bulkCancelClients,
+  bulkDeleteClients,
+  bulkMarkClientsAsPaid,
+  bulkRefundClientPayments,
+  cancelClient,
+  deleteClient,
+  markClientAsPaid,
+  refundClientPayment,
   resendClientOnboarding,
   restoreClient,
 } from "@/server/services/admin-workflow/clients";
@@ -26,6 +44,115 @@ export async function archiveClientAction(input: unknown) {
       clientId: client.id,
       status: client.status,
     });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function markClientPaidAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(MarkClientPaidSchema, input);
+    const result = await markClientAsPaid(payload, admin.id);
+
+    revalidateClientRoutes(result.data.clientId);
+
+    return actionSuccess({
+      clientId: result.data.clientId,
+      paymentId: result.data.paymentId,
+      status: result.data.status,
+      warnings: result.warnings,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function cancelClientAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(CancelClientSchema, input);
+    const result = await cancelClient(payload, admin.id);
+
+    revalidateClientRoutes(result.data.clientId);
+
+    return actionSuccess({
+      clientId: result.data.clientId,
+      status: result.data.status,
+      warnings: result.warnings,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function bulkMarkClientsPaidAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(BulkMarkClientsPaidSchema, input);
+    const result = await bulkMarkClientsAsPaid(payload, admin.id);
+
+    revalidateBulkClientRoutes(payload.clientIds);
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function bulkCancelClientsAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(BulkCancelClientsSchema, input);
+    const result = await bulkCancelClients(payload, admin.id);
+
+    revalidateBulkClientRoutes(payload.clientIds);
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function bulkArchiveClientsAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(BulkArchiveClientsSchema, input);
+    const result = await bulkArchiveClients(payload, admin.id);
+
+    revalidateBulkClientRoutes(payload.clientIds);
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function deleteClientAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(DeleteClientSchema, input);
+    const result = await deleteClient(payload, admin.id);
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/clients");
+    revalidatePath(`/admin/clients/${payload.clientId}`);
+
+    return actionSuccess(result.data);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function bulkDeleteClientsAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(BulkDeleteClientsSchema, input);
+    const result = await bulkDeleteClients(payload, admin.id);
+
+    revalidateBulkClientRoutes(payload.clientIds);
+
+    return actionSuccess(result);
   } catch (error) {
     return actionFailure(error);
   }
@@ -52,15 +179,50 @@ export async function resendClientOnboardingAction(input: unknown) {
   try {
     const admin = await requireAdmin();
     const payload = parseActionInput(ResendOnboardingSchema, input);
-    const emailLog = await resendClientOnboarding(payload, admin.id);
+    const result = await resendClientOnboarding(payload, admin.id);
 
     revalidateClientRoutes(payload.clientId);
 
     return actionSuccess({
       clientId: payload.clientId,
-      emailLogId: emailLog.id,
-      status: emailLog.status,
+      emailLogId: result.data.emailLogId,
+      status: result.data.status,
+      warnings: result.warnings,
     });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function refundClientPaymentAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(RefundClientPaymentSchema, input);
+    const result = await refundClientPayment(payload, admin.id);
+
+    revalidateClientRoutes(payload.clientId);
+
+    return actionSuccess({
+      clientId: result.data.clientId,
+      paymentId: result.data.paymentId,
+      refundId: result.data.refundId,
+      status: result.data.status,
+      warnings: result.warnings,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function bulkRefundClientPaymentsAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(BulkRefundClientsSchema, input);
+    const result = await bulkRefundClientPayments(payload, admin.id);
+
+    revalidateBulkClientRoutes(payload.clientIds);
+
+    return actionSuccess(result);
   } catch (error) {
     return actionFailure(error);
   }
@@ -70,5 +232,13 @@ function revalidateClientRoutes(clientId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${clientId}`);
-  revalidatePath("/admin/sales");
+}
+
+function revalidateBulkClientRoutes(clientIds: string[]) {
+  revalidatePath("/admin");
+  revalidatePath("/admin/clients");
+
+  for (const clientId of new Set(clientIds)) {
+    revalidatePath(`/admin/clients/${clientId}`);
+  }
 }

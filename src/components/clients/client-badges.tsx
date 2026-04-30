@@ -18,6 +18,7 @@ const paymentBadgeClasses: Record<string, string> = {
   cancelled: "border-slate-200 bg-slate-100 text-slate-700",
   paid: "border-emerald-200 bg-emerald-50 text-emerald-700",
   pending: "border-amber-200 bg-amber-50 text-amber-700",
+  refunded: "border-purple-200 bg-purple-50 text-purple-700",
 };
 
 const storedStatusBadgeClasses: Record<string, string> = {
