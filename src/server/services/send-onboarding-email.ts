@@ -1,5 +1,6 @@
 import "server-only";
 
+import { formatUserRoleLabel } from "@/lib/auth/role-labels";
 import { buildClientAccessEmail } from "@/server/email/templates/client-access";
 import { createResendClient } from "@/lib/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -29,9 +30,9 @@ type EmailSummary = {
   clientName: string;
   dashboardUrl: string;
   eventDate: string | null;
-  eventTitle: string;
   eventType: string | null;
   loginEmail: string;
+  messengerUrl: string | null;
   planLabel: string;
   roleLabel: string;
   supportEmail: string | null;
@@ -44,9 +45,9 @@ export async function sendOnboardingEmail(input: SendOnboardingEmailInput) {
     clientName: summary.clientName,
     dashboardUrl: summary.dashboardUrl,
     eventDate: summary.eventDate,
-    eventTitle: summary.eventTitle,
     eventType: summary.eventType,
     loginEmail: summary.loginEmail,
+    messengerUrl: summary.messengerUrl,
     mode,
     planLabel: summary.planLabel,
     recipientName: input.recipientName ?? summary.clientName,
@@ -132,9 +133,10 @@ async function getEmailSummary(
     { data: client, error: clientError },
     { data: event, error: eventError },
     { data: ownerProfile, error: profileError },
+    { data: settings, error: settingsError },
   ] = await Promise.all([
     supabase.from("clients").select("name, plan_type").eq("id", clientId).single(),
-    supabase.from("rsvp_events").select("event_date, event_type, title").eq("id", eventId).single(),
+    supabase.from("rsvp_events").select("event_date, event_type").eq("id", eventId).single(),
     supabase
       .from("profiles")
       .select("email, role")
@@ -144,6 +146,7 @@ async function getEmailSummary(
       .order("role", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    supabase.from("platform_public_settings").select("messenger_page_url").maybeSingle(),
   ]);
 
   if (clientError) {
@@ -162,13 +165,12 @@ async function getEmailSummary(
     clientName: client.name,
     dashboardUrl: buildDashboardUrl(),
     eventDate: event.event_date,
-    eventTitle: event.title,
     eventType: event.event_type,
     loginEmail: ownerProfile?.email ?? fallbackEmail,
+    messengerUrl: settingsError ? null : settings?.messenger_page_url?.trim() || null,
     planLabel: formatPlanLabel(client.plan_type),
-    roleLabel: ownerProfile?.role ? formatRoleLabel(ownerProfile.role) : "Client owner",
-    supportEmail:
-      process.env.RESEND_REPLY_TO_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? "WebSerbisyo RSVP",
+    roleLabel: ownerProfile?.role ? formatUserRoleLabel(ownerProfile.role) : "Client Admin",
+    supportEmail: process.env.RESEND_REPLY_TO_EMAIL ?? "webserbisyo@gmail.com",
   };
 }
 
@@ -210,11 +212,4 @@ function buildDashboardUrl() {
 
 function formatPlanLabel(value: string) {
   return value === "max" ? "Max" : "Pro";
-}
-
-function formatRoleLabel(value: string) {
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }

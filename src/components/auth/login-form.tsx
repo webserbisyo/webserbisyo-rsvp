@@ -15,7 +15,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 
 type LoginFormProps = {
   initialErrorCode?: string;
@@ -177,21 +176,9 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
         </Button>
       </form>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <Separator className="bg-white/12" />
-          <span className="text-xs font-medium tracking-[0.18em] whitespace-nowrap text-white/48 uppercase">
-            Coming soon
-          </span>
-          <Separator className="bg-white/12" />
-        </div>
-
-        {/* TODO: Google OAuth — configure provider in Supabase dashboard first. */}
-        <p className="text-center text-xs leading-5 text-white/62">
-          Google sign-in is deferred until the Supabase Google provider and callback settings are
-          confirmed for this project.
-        </p>
-      </div>
+      <p className="text-center text-xs leading-5 text-white/62">
+        Use the email linked to your WebSerbisyo RSVP dashboard to continue.
+      </p>
     </div>
   );
 }

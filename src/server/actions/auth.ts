@@ -19,13 +19,11 @@ export async function requestPasswordResetAction(input: unknown) {
 
     // Keep the response generic to avoid account enumeration.
     return actionSuccess({
-      message:
-        "If a matching WebSerbisyo RSVP account exists, a password reset link will be sent to that email.",
+      message: "If an active dashboard account exists for that email, a reset link has been sent.",
     });
   }
 
   return actionSuccess({
-    message:
-      "If a matching WebSerbisyo RSVP account exists, a password reset link will be sent to that email.",
+    message: "If an active dashboard account exists for that email, a reset link has been sent.",
   });
 }

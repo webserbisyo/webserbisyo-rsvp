@@ -1,4 +1,5 @@
 import { getDashboardSummary } from "@/server/queries/dashboard";
+import { formatUserRoleLabel } from "@/lib/auth/role-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,10 @@ export default async function DashboardPage() {
   const summary = await getDashboardSummary();
   const publicPageUrl = getPublicPageUrl(
     summary.client.custom_frontend_url,
+    summary.client.custom_frontend_status,
     summary.event?.event_slug ?? null,
+    summary.event?.status ?? null,
+    summary.event?.visibility ?? null,
   );
   const onboardingStatus = summary.onboardingEmail?.status
     ? formatWords(summary.onboardingEmail.status)
@@ -50,7 +54,7 @@ export default async function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
             title="Account"
-            value={formatWords(summary.profile.role)}
+            value={formatUserRoleLabel(summary.profile.role)}
             meta={summary.client.contact_email ?? summary.profile.email}
           />
           <SummaryCard
@@ -81,7 +85,6 @@ export default async function DashboardPage() {
             <CardContent className="space-y-4">
               <DefinitionList
                 rows={[
-                  ["Event title", summary.event?.title ?? "Not configured yet"],
                   ["Type", summary.event?.event_type ? formatWords(summary.event.event_type) : "—"],
                   ["Date", formatDate(summary.event?.event_date ?? null)],
                   ["Venue", summary.application?.event_location ?? "Not provided yet"],
@@ -90,7 +93,7 @@ export default async function DashboardPage() {
                     "Visibility",
                     summary.event?.visibility ? formatWords(summary.event.visibility) : "—",
                   ],
-                  ["Public page", publicPageUrl ?? "Not available yet"],
+                  ["Public RSVP page", publicPageUrl ?? "Not available yet"],
                 ]}
               />
             </CardContent>
@@ -105,7 +108,7 @@ export default async function DashboardPage() {
                 rows={[
                   ["Client name", summary.client.name],
                   ["Contact email", summary.client.contact_email ?? summary.profile.email],
-                  ["Role", formatWords(summary.profile.role)],
+                  ["Role", formatUserRoleLabel(summary.profile.role)],
                   ["Onboarding email", onboardingStatus],
                   [
                     "Last access email",
@@ -113,7 +116,7 @@ export default async function DashboardPage() {
                   ],
                   [
                     "Password help",
-                    "Use Forgot password from the sign-in page if you need a new temporary password.",
+                    "Use Forgot password from the sign-in page anytime you need a new reset link.",
                   ],
                 ]}
               />
@@ -157,7 +160,10 @@ export default async function DashboardPage() {
                   ["Starts", formatDateTime(summary.client.hosting_starts_at ?? null)],
                   ["Ends", formatDateTime(summary.client.hosting_ends_at ?? null)],
                   ["Custom frontend", summary.client.custom_frontend_url ?? "Not connected yet"],
-                  ["Support", summary.onboardingEmail?.recipient_email ?? summary.profile.email],
+                  [
+                    "Account email",
+                    summary.onboardingEmail?.recipient_email ?? summary.profile.email,
+                  ],
                 ]}
               />
             </CardContent>
@@ -262,12 +268,22 @@ function formatWords(value: string) {
     .join(" ");
 }
 
-function getPublicPageUrl(customUrl: string | null, eventSlug: string | null) {
-  if (customUrl) {
+function getPublicPageUrl(
+  customUrl: string | null,
+  customFrontendStatus: string | null,
+  eventSlug: string | null,
+  eventStatus: string | null,
+  eventVisibility: string | null,
+) {
+  if (customUrl && customFrontendStatus === "connected") {
     return customUrl;
   }
 
-  if (!eventSlug) {
+  if (
+    !eventSlug ||
+    eventStatus !== "published" ||
+    !["public", "unlisted"].includes(eventVisibility ?? "")
+  ) {
     return null;
   }
 

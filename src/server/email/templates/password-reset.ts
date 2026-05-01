@@ -2,13 +2,14 @@ import "server-only";
 
 type BuildPasswordResetEmailInput = {
   clientFirstName: string;
+  messengerUrl?: string | null;
   resetUrl: string;
   supportEmail?: string | null;
 };
 
 export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
   const subject = "Reset your WebSerbisyo RSVP password";
-  const supportEmail = input.supportEmail ?? "WebSerbisyo RSVP";
+  const supportEmail = input.supportEmail ?? "webserbisyo@gmail.com";
 
   const html = `
     <div style="margin:0; padding:0; background:#f6efe6; font-family:Arial,Helvetica,sans-serif; color:#1f2937;">
@@ -42,8 +43,18 @@ export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
                     </tr>
                     <tr>
                       <td style="padding:0 28px 30px;">
+                        <p style="margin:0 0 10px; font-size:13px; line-height:1.7; color:#6b7280;">
+                          This is an automated account email from WebSerbisyo RSVP.
+                        </p>
+                        ${
+                          input.messengerUrl
+                            ? `<p style="margin:0 0 12px;">
+                          <a href="${escapeAttribute(input.messengerUrl)}" style="display:inline-block; border:1px solid #ebdfcf; background:#fff7ef; color:#9a593f; text-decoration:none; font-weight:700; border-radius:999px; padding:10px 16px;">Message WebSerbisyo on Facebook</a>
+                        </p>`
+                            : ""
+                        }
                         <p style="margin:0; font-size:13px; line-height:1.7; color:#6b7280;">
-                          Need help? Reply to this email or contact ${escapeHtml(supportEmail)}.
+                          Need help? ${input.messengerUrl ? "Message WebSerbisyo on Facebook or " : ""}contact ${escapeHtml(supportEmail)}.
                         </p>
                       </td>
                     </tr>
@@ -66,8 +77,12 @@ export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
     "",
     "This link is time-limited. If you did not request this password reset, you can safely ignore this email.",
     "",
-    `Need help? Reply to this email or contact ${supportEmail}.`,
-  ].join("\n");
+    "This is an automated account email from WebSerbisyo RSVP.",
+    input.messengerUrl ? `Need help? Message WebSerbisyo on Facebook: ${input.messengerUrl}` : null,
+    `Need help? Contact ${supportEmail}.`,
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join("\n");
 
   return { html, subject, text };
 }

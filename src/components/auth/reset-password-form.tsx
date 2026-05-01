@@ -66,7 +66,7 @@ export function ResetPasswordForm() {
       return;
     }
 
-    toast.success("Password updated. You can now sign in to your dashboard.");
+    toast.success("Your password has been updated. You can now sign in with your new password.");
     router.replace("/login?next=/dashboard");
     router.refresh();
   }
@@ -74,13 +74,13 @@ export function ResetPasswordForm() {
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-white/78">
-        Set a new password for your WebSerbisyo RSVP dashboard account.
+        Enter a new password for your WebSerbisyo RSVP dashboard.
       </p>
 
       {!ready ? (
         <div className="rounded-xl bg-white/10 px-4 py-3 text-sm text-white/88">
-          Open this page from your reset email to continue. If the link expired, request a new one
-          from Forgot password.
+          Open this page from your reset email to continue. If the link expired, request a new reset
+          link from Forgot password.
         </div>
       ) : null}
 
@@ -137,7 +137,7 @@ export function ResetPasswordForm() {
           ) : (
             <ArrowRight className="size-4" />
           )}
-          {isSubmitting ? "Saving password..." : "Save new password"}
+          {isSubmitting ? "Updating password..." : "Update password"}
         </Button>
       </form>
 
