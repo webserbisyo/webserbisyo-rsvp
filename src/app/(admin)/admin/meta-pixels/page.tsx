@@ -21,7 +21,7 @@ export default async function AdminMetaPixelsPage() {
     <PageContainer>
       <PageHeader
         title="Meta Pixels"
-        description="Manage public Pixel scopes and review server-side Purchase conversion readiness."
+        description="Manage public browser Pixel scopes and review server-side Purchase conversion readiness for Mark as Paid."
       />
       <MetaPixelsClientPage initialData={initialData} />
     </PageContainer>

@@ -2,15 +2,7 @@
 
 import { type ColumnDef, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  BadgeCheck,
-  CreditCard,
-  Globe2,
-  Loader2,
-  Plus,
-  ServerCog,
-  ShieldCheck,
-} from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -316,74 +308,54 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
     <>
       <SectionCard
         title="How tracking works"
-        description="Public page tracking stays in the browser. Mark as Paid Purchase tracking stays on the server."
+        description="Browser Pixel scopes public page injection. Mark as Paid conversions are sent server-side through Meta CAPI when configured."
       >
-        <div className="grid gap-3 lg:grid-cols-[1.1fr_1.1fr_0.9fr]">
-          <div className="bg-muted/30 rounded-xl border p-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-background flex size-9 shrink-0 items-center justify-center rounded-full border">
-                <Globe2 className="text-muted-foreground size-4" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <p className="text-sm font-semibold">Browser Pixel Scope</p>
-                <p className="text-muted-foreground text-sm leading-5">
-                  Injects the browser Pixel on selected public routes like <code>/apply</code> and
-                  RSVP pages.
-                </p>
-              </div>
-            </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border p-4">
+            <p className="text-sm font-semibold">1. Public pages</p>
+            <p className="text-muted-foreground mt-2 text-sm leading-6">
+              <code>/apply</code>, <code>/apply/start</code>, <code>/apply/success</code>, and
+              public RSVP event pages can load the browser Meta Pixel based on the selected Browser
+              Pixel Scope.
+            </p>
           </div>
-          <div className="bg-muted/30 rounded-xl border p-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-background flex size-9 shrink-0 items-center justify-center rounded-full border">
-                <ServerCog className="text-muted-foreground size-4" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <p className="text-sm font-semibold">Mark as Paid via CAPI</p>
-                <p className="text-muted-foreground text-sm leading-5">
-                  Paid confirmations can send a server-side Purchase event after payment succeeds.
-                </p>
-              </div>
-            </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-sm font-semibold">2. Admin payment confirmation</p>
+            <p className="text-muted-foreground mt-2 text-sm leading-6">
+              Mark as Paid does not use the browser Pixel. After a successful payment confirmation,
+              the server can send a Meta CAPI Purchase event using the confirmed payment amount in
+              PHP.
+            </p>
           </div>
-          <div className="bg-muted/30 rounded-xl border p-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-background flex size-9 shrink-0 items-center justify-center rounded-full border">
-                <ShieldCheck className="text-muted-foreground size-4" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <p className="text-sm font-semibold">Non-blocking delivery</p>
-                <p className="text-muted-foreground text-sm leading-5">
-                  CAPI failures do not undo payment confirmation and tokens remain server-only.
-                </p>
-              </div>
-            </div>
+          <div className="rounded-xl border p-4">
+            <p className="text-sm font-semibold">3. Meta reporting</p>
+            <p className="text-muted-foreground mt-2 text-sm leading-6">
+              Browser events and server-side Purchase events appear in Meta Events Manager when
+              configuration is available. CAPI failures are non-blocking and never undo payment
+              confirmation.
+            </p>
           </div>
         </div>
 
-        <div className="bg-muted/25 mt-3 rounded-xl border p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <BadgeCheck className="text-muted-foreground size-4" />
-                <p className="text-sm font-medium">CAPI readiness</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusBadge tone={capi.hasAccessToken ? "success" : "muted"}>
-                  {capi.hasAccessToken ? "Token available" : "No token"}
-                </StatusBadge>
-                <StatusBadge tone={capi.hasEligiblePixelSource ? "success" : "muted"}>
-                  {capi.hasEligiblePixelSource ? "Pixel source ready" : "No pixel source"}
-                </StatusBadge>
-                <StatusBadge tone={capi.isReady ? "success" : "warning"}>
-                  {capi.isReady ? "Purchase ready" : "Purchase not configured"}
-                </StatusBadge>
-              </div>
+        <div className="bg-muted/25 mt-4 grid gap-3 rounded-xl border p-4 lg:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Current server-side CAPI readiness</p>
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge tone={capi.hasAccessToken ? "success" : "muted"}>
+                {capi.hasAccessToken ? "CAPI token available" : "No CAPI token"}
+              </StatusBadge>
+              <StatusBadge tone={capi.hasEligiblePixelSource ? "success" : "muted"}>
+                {capi.hasEligiblePixelSource ? "Pixel source available" : "No Pixel source"}
+              </StatusBadge>
+              <StatusBadge tone={capi.isReady ? "success" : "warning"}>
+                {capi.isReady ? "Ready for server-side Purchase" : "Not configured for Purchase"}
+              </StatusBadge>
             </div>
-            <div className="text-muted-foreground grid gap-1.5 text-sm leading-5 lg:max-w-md">
-              <p>Browser Pixel Scope only controls public-page script injection.</p>
-              <p>Mark as Paid conversions run server-side through CAPI when configured.</p>
-            </div>
+          </div>
+          <div className="text-muted-foreground space-y-1 text-sm leading-6">
+            <p>Browser Pixel Scope controls public-page script injection only.</p>
+            <p>Mark as Paid conversions are handled server-side through CAPI.</p>
+            <p>CAPI tokens remain server-only and are never exposed in browser code.</p>
           </div>
         </div>
       </SectionCard>
@@ -593,59 +565,56 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
 
       <SectionCard
         title="Paid Conversion Records"
-        description="Recent paid confirmations tied to server-side Purchase conversion readiness."
+        description="Recent paid confirmations relevant to the server-side Meta CAPI Purchase flow."
       >
         {paidConversions.length > 0 ? (
           <div className="overflow-hidden rounded-lg border">
-            <div className="max-h-[24rem] overflow-auto">
-              <Table className="min-w-[860px]">
+            <div className="max-h-[24rem] overflow-y-auto">
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[26%]">Client</TableHead>
-                    <TableHead className="w-[16%]">Package</TableHead>
-                    <TableHead className="w-[12%]">Amount</TableHead>
-                    <TableHead className="w-[14%]">Payment Method</TableHead>
-                    <TableHead className="w-[16%]">Confirmed At</TableHead>
-                    <TableHead className="w-[10%]">Payment Status</TableHead>
-                    <TableHead className="w-[12%]">CAPI Status</TableHead>
-                    <TableHead className="w-[8%] text-right">Action</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Package</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Payment Method</TableHead>
+                    <TableHead>Confirmed At</TableHead>
+                    <TableHead>Payment Status</TableHead>
+                    <TableHead>CAPI Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paidConversions.map((conversion) => (
                     <TableRow key={conversion.id}>
-                      <TableCell className="align-middle">
-                        <p className="max-w-[20rem] truncate font-medium">{conversion.clientName}</p>
+                      <TableCell className="align-top">
+                        <div className="min-w-0 space-y-1">
+                          <p className="truncate font-medium">{conversion.clientName}</p>
+                          <p className="text-muted-foreground text-xs">{conversion.capiDetail}</p>
+                        </div>
                       </TableCell>
-                      <TableCell className="align-middle">
-                        <span className="text-sm">{conversion.packageLabel}</span>
+                      <TableCell className="align-top">
+                        <p className="truncate text-sm">{conversion.eventLabel}</p>
                       </TableCell>
-                      <TableCell className="align-middle whitespace-nowrap font-medium">
+                      <TableCell className="align-top">{conversion.packageLabel}</TableCell>
+                      <TableCell className="align-top">
                         {formatCurrency(conversion.amount)}
                       </TableCell>
-                      <TableCell className="align-middle">
-                        <Badge
-                          variant="outline"
-                          className={getPaymentMethodBadgeClass(conversion.paymentMethodLabel)}
-                        >
-                          <CreditCard className="size-3.5" />
-                          {conversion.paymentMethodLabel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="align-middle whitespace-nowrap text-sm">
+                      <TableCell className="align-top">{conversion.paymentMethodLabel}</TableCell>
+                      <TableCell className="align-top">
                         {formatDateTime(conversion.confirmedAt)}
                       </TableCell>
-                      <TableCell className="align-middle">
+                      <TableCell className="align-top">
                         <StatusBadge tone={getPaymentTone(conversion.paymentStatusLabel)}>
                           {conversion.paymentStatusLabel}
                         </StatusBadge>
                       </TableCell>
-                      <TableCell className="align-middle">
+                      <TableCell className="align-top">
                         <StatusBadge tone={getCapiTone(conversion.capiStatus)}>
                           {conversion.capiStatusLabel}
                         </StatusBadge>
                       </TableCell>
-                      <TableCell className="text-right align-middle">
+                      <TableCell className="text-right align-top">
                         <Button asChild size="sm" variant="outline">
                           <Link href={conversion.href}>View</Link>
                         </Button>
@@ -720,18 +689,5 @@ function getPaymentTone(statusLabel: string): "danger" | "muted" | "success" | "
     case "Pending":
     default:
       return "warning";
-  }
-}
-
-function getPaymentMethodBadgeClass(label: string) {
-  switch (label) {
-    case "GCash":
-      return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200";
-    case "Maya":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200";
-    case "Bank Transfer":
-      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200";
-    default:
-      return "border-border bg-muted/40 text-foreground";
   }
 }
