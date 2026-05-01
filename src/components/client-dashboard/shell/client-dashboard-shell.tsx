@@ -5,6 +5,7 @@ import { ClientMobileBottomNav } from "./client-mobile-bottom-nav";
 import { ClientMobileMoreDrawer } from "./client-mobile-more-drawer";
 import { ClientSidebar } from "./client-sidebar";
 import { ClientTopbar } from "./client-topbar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 type ClientDashboardShellProps = {
   children: React.ReactNode;
@@ -22,7 +23,15 @@ export function ClientDashboardShell({ children, client, profile }: ClientDashbo
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
 
   return (
-    <div className="client-dashboard-theme min-h-svh text-[var(--client-text)]">
+    <SidebarProvider
+      className="client-dashboard-theme min-h-svh text-[var(--client-text)]"
+      style={
+        {
+          "--sidebar-width": "var(--client-sidebar-width)",
+          "--sidebar-width-icon": "var(--client-sidebar-width-icon)",
+        } as React.CSSProperties
+      }
+    >
       <div className="relative flex min-h-svh">
         <ClientSidebar clientName={client.name} />
 
@@ -38,6 +47,6 @@ export function ClientDashboardShell({ children, client, profile }: ClientDashbo
           <ClientMobileMoreDrawer open={moreDrawerOpen} onOpenChange={setMoreDrawerOpen} />
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

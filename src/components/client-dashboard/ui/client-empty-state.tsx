@@ -25,9 +25,9 @@ export function ClientEmptyState({
       elevation="raised"
       className={cn("overflow-hidden rounded-[var(--client-radius-2xl)]", className)}
     >
-      <div className="flex flex-col gap-5 px-5 py-6 sm:px-8 sm:py-8">
+      <div className="flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <div className="client-placeholder-icon flex size-14 shrink-0 items-center justify-center rounded-[var(--client-radius-lg)] text-[var(--client-accent-hover)]">
+          <div className="client-placeholder-icon flex size-14 shrink-0 items-center justify-center rounded-[var(--client-radius-xl)] text-[var(--client-accent-hover)]">
             {icon}
           </div>
           <div className="min-w-0 space-y-3">

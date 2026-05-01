@@ -1,66 +1,82 @@
 .client-dashboard-theme {
-  --client-bg: oklch(0.977 0.012 74);
-  --client-bg-soft: oklch(0.989 0.008 84);
-  --client-surface: oklch(0.997 0.006 84 / 96%);
-  --client-surface-raised: oklch(0.999 0.004 84 / 98%);
-  --client-surface-glass: oklch(0.995 0.006 84 / 78%);
-  --client-border: oklch(0.905 0.016 67 / 78%);
-  --client-border-strong: oklch(0.84 0.028 55 / 86%);
-  --client-text: oklch(0.285 0.028 34);
-  --client-text-muted: oklch(0.49 0.02 42);
-  --client-text-soft: oklch(0.62 0.014 47);
-  --client-accent: oklch(0.665 0.164 36);
-  --client-accent-hover: oklch(0.61 0.148 34);
-  --client-accent-soft: oklch(0.952 0.028 45);
-  --client-accent-ring: oklch(0.8 0.09 38 / 70%);
-  --client-success: oklch(0.73 0.12 152);
-  --client-warning: oklch(0.79 0.14 76);
-  --client-danger: oklch(0.66 0.19 27);
-  --client-info: oklch(0.69 0.1 232);
-  --client-radius-sm: 0.8rem;
-  --client-radius-md: 1rem;
-  --client-radius-lg: 1.25rem;
-  --client-radius-xl: 1.5rem;
-  --client-radius-2xl: 1.9rem;
-  --client-shadow-soft: 0 1px 0 rgb(255 255 255 / 0.72), 0 12px 28px -24px rgb(90 54 38 / 0.28);
-  --client-shadow-card: 0 1px 0 rgb(255 255 255 / 0.76), 0 24px 60px -34px rgb(75 47 34 / 0.24);
-  --client-shadow-elevated: 0 1px 0 rgb(255 255 255 / 0.82), 0 30px 72px -34px rgb(67 38 26 / 0.32);
+  --client-bg: oklch(0.965 0.018 73);
+  --client-bg-soft: oklch(0.987 0.011 84);
+  --client-surface: oklch(0.996 0.008 84 / 96%);
+  --client-surface-raised: oklch(0.999 0.006 86 / 98%);
+  --client-surface-glass: oklch(0.993 0.01 84 / 82%);
+  --client-border: oklch(0.884 0.027 65 / 78%);
+  --client-border-strong: oklch(0.78 0.052 48 / 78%);
+  --client-text: oklch(0.252 0.03 35);
+  --client-text-muted: oklch(0.455 0.025 42);
+  --client-text-soft: oklch(0.61 0.019 50);
+  --client-accent: oklch(0.64 0.171 35);
+  --client-accent-hover: oklch(0.57 0.152 34);
+  --client-accent-soft: oklch(0.928 0.044 43);
+  --client-accent-ring: oklch(0.76 0.105 38 / 64%);
+  --client-success: oklch(0.66 0.118 154);
+  --client-warning: oklch(0.73 0.138 74);
+  --client-danger: oklch(0.62 0.19 27);
+  --client-info: oklch(0.62 0.116 231);
+  --client-radius-sm: 0.625rem;
+  --client-radius-md: 0.8rem;
+  --client-radius-lg: 1rem;
+  --client-radius-xl: 1.25rem;
+  --client-radius-2xl: 1.55rem;
+  --client-shadow-soft: 0 1px 0 rgb(255 255 255 / 0.74), 0 14px 34px -28px rgb(85 51 34 / 0.34);
+  --client-shadow-card: 0 1px 0 rgb(255 255 255 / 0.78), 0 22px 58px -34px rgb(72 43 30 / 0.28);
+  --client-shadow-elevated: 0 1px 0 rgb(255 255 255 / 0.82), 0 34px 80px -38px rgb(65 36 25 / 0.38);
   --client-shadow-floating:
-    0 18px 48px -24px rgb(58 33 24 / 0.34), 0 6px 18px -12px rgb(58 33 24 / 0.16);
+    0 26px 72px -34px rgb(58 33 24 / 0.42), 0 10px 22px -16px rgb(58 33 24 / 0.18);
   --client-shadow-inset:
-    inset 0 1px 0 rgb(255 255 255 / 0.84), inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  --client-sidebar-width: 17.5rem;
-  --client-topbar-height: 4.75rem;
-  --client-bottom-nav-height: 4.9rem;
+    inset 0 1px 0 rgb(255 255 255 / 0.86), inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  --client-sidebar-width: 18.25rem;
+  --client-sidebar-width-icon: 4rem;
+  --client-topbar-height: 5rem;
+  --client-bottom-nav-height: 5.1rem;
   --client-content-max-width: 78rem;
+  --sidebar: var(--client-surface-glass);
+  --sidebar-foreground: var(--client-text);
+  --sidebar-border: var(--client-border);
+  --sidebar-accent: var(--client-accent-soft);
+  --sidebar-accent-foreground: var(--client-accent-hover);
+  --sidebar-ring: var(--client-accent-ring);
   color: var(--client-text);
   background:
-    radial-gradient(circle at top left, rgb(232 109 82 / 0.14), transparent 24rem),
-    radial-gradient(circle at top right, rgb(232 190 146 / 0.16), transparent 28rem),
+    linear-gradient(115deg, rgb(255 255 255 / 0.62), transparent 42%),
+    radial-gradient(ellipse at 12% 0%, rgb(222 102 76 / 0.18), transparent 26rem),
+    radial-gradient(ellipse at 86% 5%, rgb(211 166 101 / 0.2), transparent 30rem),
     linear-gradient(
       180deg,
       var(--client-bg-soft) 0%,
-      var(--client-bg) 46%,
-      oklch(0.972 0.01 66) 100%
+      var(--client-bg) 48%,
+      oklch(0.952 0.018 65) 100%
     );
 }
 
 .client-dashboard-theme .client-shell-edge {
+  border-right: 1px solid var(--client-border);
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.64), rgb(255 255 255 / 0)),
-    linear-gradient(180deg, rgb(244 230 214 / 0.12), rgb(255 255 255 / 0));
+    linear-gradient(180deg, rgb(255 255 255 / 0.76), rgb(255 255 255 / 0.22)),
+    linear-gradient(135deg, rgb(232 109 82 / 0.08), transparent 45%),
+    color-mix(in srgb, var(--client-surface-glass) 92%, white 8%);
+  box-shadow: 20px 0 48px -42px rgb(64 38 26 / 0.38);
+  backdrop-filter: blur(20px);
 }
 
 .client-dashboard-theme .client-topbar-glass {
   border-bottom: 1px solid var(--client-border);
-  background: color-mix(in srgb, var(--client-surface-glass) 88%, white 12%);
-  box-shadow: var(--client-shadow-soft);
-  backdrop-filter: blur(18px);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.32)),
+    color-mix(in srgb, var(--client-surface-glass) 90%, white 10%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.72),
+    0 18px 42px -36px rgb(75 47 34 / 0.26);
+  backdrop-filter: blur(22px);
 }
 
-@supports not (backdrop-filter: blur(18px)) {
+@supports not (backdrop-filter: blur(22px)) {
   .client-dashboard-theme .client-topbar-glass {
-    background: color-mix(in srgb, var(--client-surface) 94%, white 6%);
+    background: color-mix(in srgb, var(--client-surface) 96%, white 4%);
   }
 }
 
@@ -74,6 +90,7 @@
 .client-dashboard-theme .client-nav-link {
   border: 1px solid transparent;
   color: var(--client-text-muted);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -83,22 +100,32 @@
 }
 
 .client-dashboard-theme .client-nav-link:hover {
-  border-color: color-mix(in srgb, var(--client-border) 86%, white 14%);
-  background: rgb(255 255 255 / 0.58);
+  border-color: color-mix(in srgb, var(--client-border) 82%, white 18%);
+  background: rgb(255 255 255 / 0.66);
   color: var(--client-text);
   transform: translateY(-1px);
 }
 
 .client-dashboard-theme .client-nav-link[data-active="true"] {
-  border-color: color-mix(in srgb, var(--client-border-strong) 74%, white 26%);
-  background: color-mix(in srgb, var(--client-accent-soft) 78%, white 22%);
+  border-color: color-mix(in srgb, var(--client-border-strong) 72%, white 28%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.68), rgb(255 255 255 / 0.28)),
+    color-mix(in srgb, var(--client-accent-soft) 86%, white 14%);
   color: var(--client-accent-hover);
-  box-shadow: var(--client-shadow-inset);
+  box-shadow:
+    var(--client-shadow-inset),
+    0 16px 34px -30px rgb(222 102 76 / 0.5);
+}
+
+.client-dashboard-theme .client-nav-link[data-active="true"]::before {
+  width: 0.25rem;
+  background: var(--client-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--client-accent) 16%, transparent);
 }
 
 .client-dashboard-theme .client-nav-link[data-soon="true"] {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.5)),
+    linear-gradient(180deg, rgb(255 255 255 / 0.76), rgb(255 255 255 / 0.46)),
     color-mix(in srgb, var(--client-surface) 92%, white 8%);
 }
 
@@ -111,27 +138,36 @@
 
 .client-dashboard-theme .client-surface-card {
   border: 1px solid var(--client-border);
-  background: color-mix(in srgb, var(--client-surface) 94%, white 6%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.18)),
+    color-mix(in srgb, var(--client-surface) 94%, white 6%);
   box-shadow: var(--client-shadow-card);
 }
 
 .client-dashboard-theme .client-surface-raised {
   border: 1px solid color-mix(in srgb, var(--client-border-strong) 74%, white 26%);
-  background: color-mix(in srgb, var(--client-surface-raised) 96%, white 4%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.76), rgb(255 255 255 / 0.22)),
+    color-mix(in srgb, var(--client-surface-raised) 96%, white 4%);
   box-shadow: var(--client-shadow-elevated);
 }
 
 .client-dashboard-theme .client-floating-surface {
   border: 1px solid color-mix(in srgb, var(--client-border-strong) 78%, white 22%);
-  background: color-mix(in srgb, var(--client-surface-raised) 96%, white 4%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(255 255 255 / 0.34)),
+    color-mix(in srgb, var(--client-surface-raised) 96%, white 4%);
   box-shadow: var(--client-shadow-floating);
 }
 
 .client-dashboard-theme .client-bottom-nav {
-  border-top: 1px solid var(--client-border);
-  background: color-mix(in srgb, var(--client-surface-glass) 90%, white 10%);
-  box-shadow: 0 -10px 30px -26px rgb(54 33 22 / 0.32);
-  backdrop-filter: blur(18px);
+  border: 1px solid color-mix(in srgb, var(--client-border-strong) 56%, white 44%);
+  border-bottom: 0;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.38)),
+    color-mix(in srgb, var(--client-surface-glass) 92%, white 8%);
+  box-shadow: 0 -18px 50px -34px rgb(54 33 22 / 0.44);
+  backdrop-filter: blur(22px);
 }
 
 .client-dashboard-theme .client-bottom-nav-button {
@@ -150,6 +186,11 @@
   color: var(--client-accent-hover);
 }
 
+.client-dashboard-theme .client-bottom-nav-button[data-active="true"] .client-bottom-nav-icon {
+  background: var(--client-accent-soft);
+  box-shadow: var(--client-shadow-inset);
+}
+
 .client-dashboard-theme .client-body-offset {
   padding-bottom: calc(var(--client-bottom-nav-height) + env(safe-area-inset-bottom) + 1rem);
 }
@@ -160,7 +201,17 @@
 
 .client-dashboard-theme .client-placeholder-icon {
   border: 1px solid color-mix(in srgb, var(--client-border) 92%, white 8%);
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(249 243 235 / 0.92));
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(249 243 235 / 0.92)),
+    var(--client-accent-soft);
+  box-shadow: var(--client-shadow-soft);
+}
+
+.client-dashboard-theme .client-page-band {
+  border: 1px solid color-mix(in srgb, var(--client-border) 84%, white 16%);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.58), rgb(255 255 255 / 0.18)),
+    color-mix(in srgb, var(--client-surface-glass) 70%, transparent 30%);
   box-shadow: var(--client-shadow-soft);
 }
 

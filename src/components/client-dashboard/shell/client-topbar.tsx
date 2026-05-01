@@ -21,7 +21,7 @@ export function ClientTopbar({ clientName, email, fullName, role }: ClientTopbar
       <div className="mx-auto flex h-[var(--client-topbar-height)] w-full max-w-[calc(var(--client-content-max-width)+4rem)] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div className="min-w-0">
           <ClientBreadcrumbs />
-          <p className="mt-1 truncate text-sm font-semibold text-[var(--client-text)] sm:text-base">
+          <p className="mt-1 truncate text-base font-semibold text-[var(--client-text)]">
             {pageMeta.title}
           </p>
         </div>

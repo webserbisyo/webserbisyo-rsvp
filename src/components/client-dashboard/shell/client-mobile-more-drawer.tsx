@@ -5,6 +5,7 @@ import { MessageCircle } from "lucide-react";
 import { SignOutButton } from "@/components/app-shell/sign-out-button";
 import { clientToast } from "@/components/client-dashboard/feedback/client-toast";
 import { clientMobileMoreNavItems } from "@/components/client-dashboard/navigation/client-nav-config";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Drawer,
   DrawerContent,
@@ -22,16 +23,16 @@ type ClientMobileMoreDrawerProps = {
 export function ClientMobileMoreDrawer({ open, onOpenChange }: ClientMobileMoreDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange} repositionInputs={false}>
-      <DrawerContent className="client-floating-surface rounded-t-[var(--client-radius-2xl)] border-[var(--client-border)] bg-[var(--client-surface-raised)]">
-        <DrawerHeader className="px-4 pt-4 text-left">
-          <DrawerTitle>More</DrawerTitle>
+      <DrawerContent className="client-floating-surface max-h-[86vh] rounded-t-[var(--client-radius-2xl)] border-[var(--client-border)] bg-[var(--client-surface-raised)]">
+        <DrawerHeader className="px-5 pt-5 text-left">
+          <DrawerTitle className="text-lg text-[var(--client-text)]">More</DrawerTitle>
           <DrawerDescription>
             Secondary client dashboard navigation and account actions.
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="px-4 pb-2">
-          <div className="space-y-2">
+        <ScrollArea className="min-h-0 px-5 pb-2">
+          <div className="space-y-2 pb-1">
             {clientMobileMoreNavItems.map((item) => (
               <Link
                 key={item.href}
@@ -58,9 +59,9 @@ export function ClientMobileMoreDrawer({ open, onOpenChange }: ClientMobileMoreD
               <span>Support</span>
             </button>
           </div>
-        </div>
+        </ScrollArea>
 
-        <DrawerFooter className="px-4 pt-2 pb-5">
+        <DrawerFooter className="px-5 pt-2 pb-5">
           <div className="rounded-[var(--client-radius-xl)] border border-[var(--client-border)] bg-white/82 p-2 shadow-[var(--client-shadow-soft)]">
             <SignOutButton className="client-focus-ring w-full justify-start rounded-[var(--client-radius-lg)] text-[var(--client-text-muted)] hover:bg-[var(--client-accent-soft)] hover:text-[var(--client-accent-hover)]" />
           </div>
