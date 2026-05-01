@@ -10,7 +10,7 @@ export function ClientCard({ className, elevation = "base", ...props }: ClientCa
   return (
     <Card
       className={cn(
-        "rounded-[var(--client-radius-2xl)] border-[var(--client-border)] py-0 text-[var(--client-text)]",
+        "rounded-[var(--client-radius-2xl)] border-[var(--client-border)] text-[var(--client-text)]",
         elevation === "base" && "client-surface-card",
         elevation === "raised" && "client-surface-raised",
         elevation === "floating" && "client-floating-surface",

@@ -39,10 +39,10 @@ export function ClientProfileMenu({ clientName, email, fullName, role }: ClientP
         <Button
           type="button"
           variant="ghost"
-          className="client-focus-ring h-auto rounded-[var(--client-radius-xl)] border border-[var(--client-border)] bg-white/62 px-2 py-2 text-left shadow-[var(--client-shadow-soft)] hover:border-[var(--client-border-strong)] hover:bg-white/82"
+          className="client-focus-ring h-auto rounded-[var(--client-radius-lg)] border border-transparent px-2 py-2 text-left hover:border-[var(--client-border)] hover:bg-white/75"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <Avatar className="size-10 rounded-full border border-[var(--client-border)] bg-white/85 shadow-[var(--client-shadow-soft)]">
+            <Avatar className="size-10 rounded-full border border-[var(--client-border)] bg-white/80">
               <AvatarFallback className="bg-[var(--client-accent-soft)] text-[var(--client-accent-hover)]">
                 {getInitials(fullName, email)}
               </AvatarFallback>
@@ -60,7 +60,6 @@ export function ClientProfileMenu({ clientName, email, fullName, role }: ClientP
 
       <DropdownMenuContent
         align="end"
-        sideOffset={10}
         className="client-floating-surface w-72 rounded-[var(--client-radius-xl)] p-1.5"
       >
         <DropdownMenuLabel className="px-2.5 py-2">
@@ -74,9 +73,8 @@ export function ClientProfileMenu({ clientName, email, fullName, role }: ClientP
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-[var(--client-border)]" />
+        <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="rounded-[var(--client-radius-md)] px-2.5 py-2 focus:bg-[var(--client-accent-soft)] focus:text-[var(--client-accent-hover)]"
           onSelect={() =>
             clientToast.info("Profile tools are still being prepared.", {
               description: "Account details will live here in a later phase.",
@@ -87,7 +85,6 @@ export function ClientProfileMenu({ clientName, email, fullName, role }: ClientP
           <span>Account / Profile</span>
         </DropdownMenuItem>
         <DropdownMenuItem
-          className="rounded-[var(--client-radius-md)] px-2.5 py-2 focus:bg-[var(--client-accent-soft)] focus:text-[var(--client-accent-hover)]"
           onSelect={() =>
             clientToast.info("Support shortcuts are still being prepared.", {
               description: "Use your current WebSerbisyo contact channels for now.",
@@ -97,7 +94,7 @@ export function ClientProfileMenu({ clientName, email, fullName, role }: ClientP
           <MessageCircle className="size-4" />
           <span>Support</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-[var(--client-border)]" />
+        <DropdownMenuSeparator />
         <div className="px-1 pb-1">
           <SignOutButton className="client-focus-ring w-full justify-start rounded-[var(--client-radius-md)] text-[var(--client-text-muted)] hover:bg-[var(--client-accent-soft)] hover:text-[var(--client-accent-hover)]" />
         </div>
