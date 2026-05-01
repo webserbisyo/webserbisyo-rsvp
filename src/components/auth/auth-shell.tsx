@@ -3,9 +3,15 @@ import { Card } from "@/components/ui/card";
 
 type AuthShellProps = {
   children: React.ReactNode;
+  description?: string;
+  title?: string;
 };
 
-export function AuthShell({ children }: AuthShellProps) {
+export function AuthShell({
+  children,
+  description = "One secure login for platform admins and client administrators.",
+  title = "Sign in to WebSerbisyo RSVP",
+}: AuthShellProps) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 sm:px-6">
       <Image
@@ -33,10 +39,8 @@ export function AuthShell({ children }: AuthShellProps) {
               />
             </div>
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold tracking-tight">Sign in to WebSerbisyo RSVP</h1>
-              <p className="text-sm leading-6 text-white/78">
-                One secure login for platform admins and client administrators.{" "}
-              </p>
+              <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+              <p className="text-sm leading-6 text-white/78">{description}</p>
             </div>
           </div>
 

@@ -36,7 +36,8 @@ export async function approveApplication(input: ApprovalInput, actorUserId: stri
           planType: payload.planType,
         });
 
-  await createClientUser({
+  const ownerSetup = await createClientUser({
+    accessMode: "temporary_password",
     clientId: client.id,
     email: application.email,
     fullName: payload.contactName ?? application.full_name,
@@ -90,14 +91,16 @@ export async function approveApplication(input: ApprovalInput, actorUserId: stri
   assertServiceSuccess(approvalError, "Failed to mark RSVP application as approved.");
   assertServiceData(approvedApplication, "Approved RSVP application update returned no row.");
 
-  await sendOnboardingEmail({
-    applicationId: application.id,
-    clientId: client.id,
-    eventId: eventBundle.event.id,
-    eventSlug: eventBundle.event.event_slug,
-    recipientEmail: application.email,
-    recipientName: payload.contactName ?? application.full_name,
-  });
+  if (ownerSetup.temporaryPassword) {
+    await sendOnboardingEmail({
+      applicationId: application.id,
+      clientId: client.id,
+      eventId: eventBundle.event.id,
+      recipientEmail: application.email,
+      recipientName: payload.contactName ?? application.full_name,
+      temporaryPassword: ownerSetup.temporaryPassword,
+    });
+  }
 
   await sendMetaCapiPurchase({
     actorUserId,

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, LockKeyhole, Mail } from "lucide-react";
@@ -135,9 +136,17 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-white">
-            Password
-          </Label>
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="password" className="text-white">
+              Password
+            </Label>
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-white/78 underline underline-offset-4 hover:text-white"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <div className="group relative">
             <LockKeyhole className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-slate-700" />
             <Input

@@ -98,7 +98,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
         return;
       }
 
-      toast.success("Onboarding email flow triggered.");
+      toast.success("Client access reset email triggered.");
       for (const warning of result.data.warnings ?? []) {
         toast.warning(warning);
       }
@@ -107,7 +107,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
       router.refresh();
     },
     onError: () => {
-      toast.error("The onboarding email could not be resent.");
+      toast.error("The client access email could not be sent.");
     },
   });
 
@@ -197,7 +197,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
               onClick={() => setResendOpen(true)}
             >
               {resendMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Resend onboarding
+              Reset and resend access
             </Button>
 
             {canArchive ? (
@@ -298,10 +298,10 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
       <Dialog open={resendOpen} onOpenChange={setResendOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Resend onboarding</DialogTitle>
+            <DialogTitle>Reset and resend dashboard access</DialogTitle>
             <DialogDescription>
-              Send the onboarding email again. A custom recipient receives an email copy only; this
-              does not create RBAC access or a new user.
+              Generate a new temporary password and send a fresh dashboard access email. A custom
+              recipient receives the new login details for this client workspace.
             </DialogDescription>
           </DialogHeader>
 
@@ -322,7 +322,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
                 id="client-onboarding-note"
                 value={resendNote}
                 onChange={(event) => setResendNote(event.currentTarget.value)}
-                placeholder="Optional message for this resend"
+                placeholder="Optional internal note for this access reset"
               />
             </div>
           </div>
@@ -338,7 +338,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
               onClick={() => resendMutation.mutate()}
             >
               {resendMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Resend onboarding
+              Send new temporary password
             </Button>
           </DialogFooter>
         </DialogContent>

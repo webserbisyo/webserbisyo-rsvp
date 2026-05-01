@@ -17,11 +17,12 @@ export async function getDashboardSummary() {
     { data: events, error: eventError },
     { data: payments, error: paymentError },
     { data: onboardingEmails, error: onboardingError },
+    { data: applications, error: applicationError },
   ] = await Promise.all([
     supabase
       .from("clients")
       .select(
-        "id, name, status, plan_type, hosting_starts_at, hosting_ends_at, custom_frontend_status, custom_frontend_url",
+        "id, name, contact_email, contact_name, status, plan_type, hosting_starts_at, hosting_ends_at, custom_frontend_status, custom_frontend_url",
       )
       .eq("id", clientId)
       .single(),
@@ -32,16 +33,24 @@ export async function getDashboardSummary() {
       .order("created_at", { ascending: false }),
     supabase
       .from("payments")
-      .select("id, amount_paid, currency, paid_at, payment_status, updated_at")
+      .select(
+        "id, amount_due, amount_paid, currency, paid_at, payment_method, payment_status, updated_at",
+      )
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false })
       .limit(1),
     supabase
       .from("email_logs")
-      .select("id, sent_at, status, updated_at")
+      .select("id, recipient_email, sent_at, status, subject, updated_at")
       .eq("client_id", clientId)
       .eq("email_type", "client_onboarding")
       .order("updated_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("rsvp_applications")
+      .select("id, event_location, full_name")
+      .eq("approved_client_id", clientId)
+      .order("approved_at", { ascending: false })
       .limit(1),
   ]);
 
@@ -61,7 +70,12 @@ export async function getDashboardSummary() {
     throw onboardingError;
   }
 
+  if (applicationError) {
+    throw applicationError;
+  }
+
   return {
+    application: applications?.[0] ?? null,
     client,
     event: events?.[0] ?? null,
     onboardingEmail: onboardingEmails?.[0] ?? null,

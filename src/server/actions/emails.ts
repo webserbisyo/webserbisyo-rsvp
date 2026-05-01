@@ -9,11 +9,9 @@ const SendOnboardingEmailActionSchema = z.object({
   applicationId: z.uuid().optional(),
   clientId: z.uuid(),
   eventId: z.uuid(),
-  eventSlug: z
-    .string()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens."),
   recipientEmail: z.string().email(),
   recipientName: z.string().trim().max(200).optional(),
+  temporaryPassword: z.string().min(12),
 });
 
 export async function sendEmailAction(input: unknown) {

@@ -24,6 +24,7 @@ import {
 import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
 import { sendMetaCapiPurchase } from "@/server/services/send-meta-capi-purchase";
 import { writeAuditLog } from "@/server/services/write-audit-log";
+import { ensureOwnerProfileForClient } from "./provisioning";
 import { calculateHostingCoverage } from "./hosting";
 import {
   type ClientPaymentDisplayStatus,
@@ -768,15 +769,31 @@ export async function resendClientOnboarding(input: ResendOnboardingInput, actor
   const application = await getApprovedApplicationForClient(client.id);
   const defaultRecipientEmail = ownerProfile?.email ?? client.contact_email;
   const recipientEmail = input.recipientEmail ?? defaultRecipientEmail;
+  const accessEmail = ownerProfile?.email ?? client.contact_email;
+  const ownerSetup = await ensureOwnerProfileForClient({
+    accessMode: "temporary_password",
+    clientId: client.id,
+    email: accessEmail,
+    fullName: ownerProfile?.full_name ?? client.contact_name ?? client.name,
+  });
+
+  if (ownerSetup.warning) {
+    throw new ServiceError(ownerSetup.warning);
+  }
+
+  if (!ownerSetup.temporaryPassword) {
+    throw new ServiceError("A new temporary password could not be generated for this client.");
+  }
 
   const emailLog = await sendOnboardingEmail({
     applicationId: application?.id ?? null,
     clientId: client.id,
     eventId: event.id,
-    eventSlug: event.event_slug,
+    mode: "password_reset",
     note: input.note ?? null,
     recipientEmail,
     recipientName: ownerProfile?.full_name ?? client.contact_name ?? client.name,
+    temporaryPassword: ownerSetup.temporaryPassword,
   });
 
   await touchClientActivity(client.id);
@@ -794,6 +811,7 @@ export async function resendClientOnboarding(input: ResendOnboardingInput, actor
       email_status: emailLog.status,
       is_custom_recipient: recipientEmail !== defaultRecipientEmail,
       note_present: Boolean(input.note),
+      password_reset: true,
       recipient_email: recipientEmail,
     },
   });

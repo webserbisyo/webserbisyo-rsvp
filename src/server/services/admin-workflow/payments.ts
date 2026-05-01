@@ -58,16 +58,18 @@ export async function confirmManualPayment(input: ConfirmManualPaymentInput, act
     planType: payment.plan_type as "pro" | "max",
   });
 
-  await ensureOwnerProfileForClient({
-    clientId: client.id,
-    email: application.email,
-    fullName: application.full_name,
-  });
-
   const eventBundle = await ensureEventBundleForClient({
     application,
     clientId: client.id,
     existingEventId: payment.event_id,
+  });
+
+  const shouldSendOnboarding = await shouldSendOnboardingEmail(client.id);
+  const ownerSetup = await ensureOwnerProfileForClient({
+    accessMode: shouldSendOnboarding ? "temporary_password" : "invite",
+    clientId: client.id,
+    email: application.email,
+    fullName: application.full_name,
   });
 
   const shouldWriteConfirmationAudit = payment.payment_status !== "paid";
@@ -137,14 +139,14 @@ export async function confirmManualPayment(input: ConfirmManualPaymentInput, act
 
   assertServiceSuccess(applicationError, "Failed to link the approved client and event.");
 
-  if (await shouldSendOnboardingEmail(client.id)) {
+  if (shouldSendOnboarding && ownerSetup.temporaryPassword) {
     await sendOnboardingEmail({
       applicationId: application.id,
       clientId: client.id,
       eventId: eventBundle.event.id,
-      eventSlug: eventBundle.event.event_slug,
       recipientEmail: application.email,
       recipientName: application.full_name,
+      temporaryPassword: ownerSetup.temporaryPassword,
     });
   }
 

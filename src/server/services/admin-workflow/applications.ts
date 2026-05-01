@@ -71,6 +71,7 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
   });
 
   const ownerSetup = await ensureOwnerProfileForClient({
+    accessMode: "temporary_password",
     clientId: client.id,
     email: application.email,
     fullName: application.full_name,
@@ -123,17 +124,21 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     warnings.push("Audit log write was skipped for this approval.");
   }
 
-  try {
-    await sendOnboardingEmail({
-      applicationId: application.id,
-      clientId: client.id,
-      eventId: eventBundle.event.id,
-      eventSlug: eventBundle.event.event_slug,
-      recipientEmail: application.email,
-      recipientName: application.full_name,
-    });
-  } catch {
-    warnings.push("Onboarding email could not be sent or logged.");
+  if (ownerSetup.temporaryPassword) {
+    try {
+      await sendOnboardingEmail({
+        applicationId: application.id,
+        clientId: client.id,
+        eventId: eventBundle.event.id,
+        recipientEmail: application.email,
+        recipientName: application.full_name,
+        temporaryPassword: ownerSetup.temporaryPassword,
+      });
+    } catch {
+      warnings.push("Onboarding email could not be sent or logged.");
+    }
+  } else {
+    warnings.push("Client access email was skipped because no temporary password was issued.");
   }
 
   return {
