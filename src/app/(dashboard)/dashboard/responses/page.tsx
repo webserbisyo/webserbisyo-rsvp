@@ -1,3 +1,5 @@
-export default function DashboardResponsesPage() {
-  return <main className="p-6">Dashboard responses placeholder.</main>;
+import { redirect } from "next/navigation";
+
+export default function LegacyDashboardResponsesPage() {
+  redirect("/dashboard/rsvp-responses");
 }

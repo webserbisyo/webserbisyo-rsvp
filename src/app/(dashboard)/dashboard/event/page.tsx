@@ -1,3 +1,5 @@
-export default function DashboardEventPage() {
-  return <main className="p-6">Dashboard event placeholder.</main>;
+import { redirect } from "next/navigation";
+
+export default function LegacyDashboardEventPage() {
+  redirect("/dashboard/event-details");
 }
