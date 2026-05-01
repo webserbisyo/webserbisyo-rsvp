@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
-export default function LegacyDashboardGiftWalletsPage() {
-  redirect("/dashboard/payment-package");
+export default function DashboardGiftWalletsPage() {
+  return <main className="p-6">Dashboard gift wallets placeholder.</main>;
 }

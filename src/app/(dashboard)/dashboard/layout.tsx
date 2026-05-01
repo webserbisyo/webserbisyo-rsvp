@@ -1,17 +1,13 @@
 import { redirect } from "next/navigation";
-import { ClientDashboardShell } from "@/components/client-dashboard/shell/client-dashboard-shell";
-import { AuthenticationError, PermissionError } from "@/lib/permissions";
-import { getDashboardSummary } from "@/server/queries/dashboard";
+import { AuthenticationError, PermissionError, requireTenantMember } from "@/lib/permissions";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
 };
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  let summary: Awaited<ReturnType<typeof getDashboardSummary>>;
-
   try {
-    summary = await getDashboardSummary();
+    await requireTenantMember();
   } catch (error) {
     if (error instanceof AuthenticationError) {
       redirect("/login?next=/dashboard");
@@ -24,14 +20,5 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     throw error;
   }
 
-  return (
-    <ClientDashboardShell
-      client={{
-        name: summary.client.name,
-      }}
-      profile={summary.profile}
-    >
-      {children}
-    </ClientDashboardShell>
-  );
+  return <div className="bg-background min-h-screen">{children}</div>;
 }
