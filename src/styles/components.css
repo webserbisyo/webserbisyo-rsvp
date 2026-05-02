@@ -171,3 +171,35 @@
     transform: none;
   }
 }
+
+/* === CLIENT DASHBOARD SHELL === */
+
+[data-dashboard] {
+  --dash-sidebar-width: 240px;
+  --dash-sidebar-collapsed-width: 56px;
+  --dash-header-height: 56px;
+  --dash-surface: var(--rsvp-surface, #faf7f2);
+  --dash-surface-muted: var(--rsvp-surface-muted, #f5efe8);
+  --dash-foreground: var(--rsvp-foreground, #1d1b18);
+  --dash-muted: var(--rsvp-muted, #6b6560);
+  --dash-border: var(--rsvp-border, #e8e0d6);
+  --dash-brand: var(--rsvp-brand, #c96b48);
+  --dash-brand-hover: var(--rsvp-brand-hover, #b85a39);
+  --dash-ring: var(--rsvp-ring, #c96b48);
+  --dash-success: #639922;
+  --dash-warning: #ba7517;
+  --dash-destructive: #a32d2d;
+}
+
+.dark [data-dashboard] {
+  --dash-surface: #171311;
+  --dash-surface-muted: #211a17;
+  --dash-foreground: #f7f2eb;
+  --dash-muted: #a89e96;
+  --dash-border: #2e2520;
+  --dash-brand: #d97b57;
+  --dash-brand-hover: #e08a66;
+  --dash-success: #97c459;
+  --dash-warning: #ef9f27;
+  --dash-destructive: #f09595;
+}

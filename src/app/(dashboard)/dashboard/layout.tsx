@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { DashboardShell } from "@/components/dashboard/shell";
 import { AuthenticationError, PermissionError, requireTenantMember } from "@/lib/permissions";
 
 type DashboardLayoutProps = {
@@ -6,8 +7,10 @@ type DashboardLayoutProps = {
 };
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+  let profile: Awaited<ReturnType<typeof requireTenantMember>>;
+
   try {
-    await requireTenantMember();
+    profile = await requireTenantMember();
   } catch (error) {
     if (error instanceof AuthenticationError) {
       redirect("/login?next=/dashboard");
@@ -20,5 +23,9 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     throw error;
   }
 
-  return <div className="bg-background min-h-screen">{children}</div>;
+  return (
+    <DashboardShell email={profile.email} displayName={profile.full_name ?? undefined}>
+      {children}
+    </DashboardShell>
+  );
 }
