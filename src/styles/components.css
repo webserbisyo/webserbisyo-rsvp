@@ -184,9 +184,11 @@
   --dash-header-height: 56px;
 
   /* Surfaces */
+  --dash-shell: #fbf5ee;
+  --dash-shell-end: #f8f1e8;
   --dash-surface: #faf7f2;
   --dash-surface-muted: #f5efe8;
-  --dash-surface-hover: #f0e8de;
+  --dash-surface-hover: #ede5da;
 
   /* Text */
   --dash-foreground: #1d1b18;
@@ -227,6 +229,8 @@
 }
 
 .dark [data-dashboard] {
+  --dash-shell: #171311;
+  --dash-shell-end: #1a1410;
   --dash-surface: #171311;
   --dash-surface-muted: #211a17;
   --dash-surface-hover: #2a2018;
@@ -257,4 +261,23 @@
   --sidebar-accent-foreground: #d97b57;
   --sidebar-border: #2e2520;
   --sidebar-ring: #d97b57;
+}
+
+[data-dashboard] [data-slot="sidebar-inset"] {
+  background: transparent;
+}
+
+.dash-page-bg {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgb(201 107 72 / 10%), transparent 28rem),
+    radial-gradient(circle at top right, rgb(215 181 109 / 8%), transparent 24rem),
+    linear-gradient(180deg, var(--dash-shell), var(--dash-shell-end));
+}
+
+.dark .dash-page-bg {
+  background:
+    radial-gradient(circle at top left, rgb(217 123 87 / 8%), transparent 28rem),
+    radial-gradient(circle at top right, rgb(215 181 109 / 5%), transparent 24rem),
+    linear-gradient(180deg, var(--dash-shell), var(--dash-shell-end));
 }

@@ -9,9 +9,10 @@ type DashboardShellProps = {
   children: React.ReactNode;
   email: string;
   displayName?: string;
+  planType?: string | null;
 };
 
-export function DashboardShell({ children, email, displayName }: DashboardShellProps) {
+export function DashboardShell({ children, email, displayName, planType }: DashboardShellProps) {
   return (
     <div
       data-dashboard
@@ -27,12 +28,12 @@ export function DashboardShell({ children, email, displayName }: DashboardShellP
         }
       >
         <div className="hidden md:block">
-          <DashboardSidebar email={email} displayName={displayName} />
+          <DashboardSidebar email={email} displayName={displayName} planType={planType} />
         </div>
 
         <SidebarInset>
-          <DashboardTopHeader email={email} displayName={displayName} />
-          <main className="flex-1 p-4 pb-20 sm:p-6 md:pb-6">{children}</main>
+          <DashboardTopHeader email={email} displayName={displayName} planType={planType} />
+          <main className="dash-page-bg flex-1 p-4 pb-20 sm:p-6 md:pb-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>
 

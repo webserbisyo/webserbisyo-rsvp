@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { dashboardNavItems, isDashboardNavItemActive } from "@/components/dashboard/nav-items";
+import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
 import { DashboardMoreDrawer } from "./dashboard-more-drawer";
-import { LayoutGrid } from "lucide-react";
+import { CalendarHeart, LayoutDashboard, LayoutGrid, Users } from "lucide-react";
 
 type DashboardMobileBottomNavProps = {
   email: string;
@@ -14,7 +14,11 @@ type DashboardMobileBottomNavProps = {
 export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProps) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const items = dashboardNavItems.slice(0, 4);
+  const items = [
+    { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+    { href: "/dashboard/event", label: "Event Details", icon: CalendarHeart },
+    { href: "/dashboard/responses", label: "RSVP Responses", icon: Users },
+  ];
 
   return (
     <>
@@ -37,8 +41,8 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
                 href={item.href}
                 className={
                   active
-                    ? "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
-                    : "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150"
+                    ? "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
+                    : "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150 hover:text-[--dash-foreground]"
                 }
               >
                 <Icon className="h-5 w-5" />
@@ -52,8 +56,8 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
             onClick={() => setMoreOpen(true)}
             className={
               moreOpen
-                ? "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
-                : "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150"
+                ? "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
+                : "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150 hover:text-[--dash-foreground]"
             }
           >
             <LayoutGrid className="h-5 w-5" />

@@ -7,11 +7,13 @@ import { DashboardBreadcrumb } from "./dashboard-breadcrumb";
 type DashboardTopHeaderProps = {
   email: string;
   displayName?: string;
+  planType?: string | null;
 };
 
 export function DashboardTopHeader({
   email,
   displayName,
+  planType,
 }: DashboardTopHeaderProps) {
   return (
     <header
@@ -22,7 +24,7 @@ export function DashboardTopHeader({
       <div className="hidden h-5 w-px bg-[--dash-border] opacity-60 md:block" aria-hidden="true" />
       <DashboardBreadcrumb />
       <div className="ml-auto">
-        <DashboardAvatarDropdown email={email} displayName={displayName} />
+        <DashboardAvatarDropdown email={email} displayName={displayName} planType={planType} />
       </div>
     </header>
   );
