@@ -189,6 +189,13 @@
   --dash-success: #639922;
   --dash-warning: #ba7517;
   --dash-destructive: #a32d2d;
+  --sidebar: var(--dash-surface);
+  --sidebar-background: var(--dash-surface);
+  --sidebar-foreground: var(--dash-foreground);
+  --sidebar-accent: var(--dash-surface-muted);
+  --sidebar-accent-foreground: var(--dash-foreground);
+  --sidebar-border: var(--dash-border);
+  --sidebar-ring: var(--dash-ring);
 }
 
 .dark [data-dashboard] {
@@ -202,4 +209,11 @@
   --dash-success: #97c459;
   --dash-warning: #ef9f27;
   --dash-destructive: #f09595;
+  --sidebar: var(--dash-surface);
+  --sidebar-background: var(--dash-surface);
+  --sidebar-foreground: var(--dash-foreground);
+  --sidebar-accent: var(--dash-surface-muted);
+  --sidebar-accent-foreground: var(--dash-foreground);
+  --sidebar-border: var(--dash-border);
+  --sidebar-ring: var(--dash-ring);
 }

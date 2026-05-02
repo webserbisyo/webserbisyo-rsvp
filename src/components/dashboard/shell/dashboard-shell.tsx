@@ -36,7 +36,7 @@ export function DashboardShell({ children, email, displayName }: DashboardShellP
         </SidebarInset>
       </SidebarProvider>
 
-      <DashboardMobileBottomNav />
+      <DashboardMobileBottomNav email={email} />
     </div>
   );
 }
