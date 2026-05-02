@@ -28,10 +28,10 @@ export function DashboardShell({ children, email, displayName, planType }: Dashb
         }
       >
         <div className="hidden md:block">
-          <DashboardSidebar email={email} displayName={displayName} planType={planType} />
+          <DashboardSidebar email={email} displayName={displayName} />
         </div>
 
-        <SidebarInset>
+        <SidebarInset className="min-h-screen">
           <DashboardTopHeader email={email} displayName={displayName} planType={planType} />
           <main className="dash-page-bg flex-1 p-4 pb-20 sm:p-6 md:pb-6">{children}</main>
         </SidebarInset>

@@ -21,7 +21,10 @@ export function DashboardBreadcrumb() {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbPage className="text-sm font-medium text-[--dash-foreground]">
+          <BreadcrumbPage
+            className="text-sm font-semibold"
+            style={{ color: "var(--dash-foreground)" }}
+          >
             {label}
           </BreadcrumbPage>
         </BreadcrumbItem>

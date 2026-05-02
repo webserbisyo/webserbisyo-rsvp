@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     : "Not sent yet";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(232,109,82,0.14),transparent_28rem),radial-gradient(circle_at_top_right,rgba(215,181,109,0.12),transparent_24rem),linear-gradient(180deg,#fbf5ee,#f8f1e8)] px-4 py-6 sm:px-6 sm:py-10">
+    <div className="space-y-6 pb-8">
       <div className="mx-auto grid max-w-6xl gap-6">
         <section className="overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white/80 p-6 shadow-[0_30px_80px_-40px_rgba(54,36,28,0.35)] backdrop-blur sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
           </Card>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -46,6 +46,7 @@ export function DashboardMoreDrawer({
         side="bottom"
         showCloseButton={false}
         overlayClassName="bg-black/40"
+        style={{ background: "var(--dash-surface)" }}
         className="max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-[--dash-border] bg-[--dash-surface] px-0 pb-5 pt-0 text-[--dash-foreground]"
       >
         <div className="mx-auto mt-3 mb-2 h-1 w-8 rounded-full bg-[--dash-border]" />

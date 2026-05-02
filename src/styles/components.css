@@ -203,7 +203,7 @@
   --dash-brand: #c96b48;
   --dash-brand-hover: #b85a39;
   --dash-brand-active: #a34f32;
-  --dash-brand-subtle: #f5ece7;
+  --dash-brand-subtle: #fde8df;
   --dash-ring: #c96b48;
 
   /* Feedback */
@@ -215,17 +215,37 @@
   --dash-destructive-subtle: #fcebeb;
   --dash-destructive-hover: #8a2424;
 
-  /* shadcn sidebar internal overrides — CRITICAL */
-  /* These must be set here or shadcn will use grey defaults */
-  --sidebar: #faf7f2;
-  --sidebar-background: #faf7f2;
-  --sidebar-foreground: #1d1b18;
-  --sidebar-primary: #c96b48;
+  /* shadcn base overrides — CRITICAL for component theming */
+  --background: var(--dash-shell);
+  --foreground: var(--dash-foreground);
+  --card: var(--dash-surface);
+  --card-foreground: var(--dash-foreground);
+  --popover: var(--dash-surface);
+  --popover-foreground: var(--dash-foreground);
+  --primary: var(--dash-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--dash-surface-muted);
+  --secondary-foreground: var(--dash-foreground);
+  --muted: var(--dash-surface-muted);
+  --muted-foreground: var(--dash-muted);
+  --accent: var(--dash-surface-hover);
+  --accent-foreground: var(--dash-foreground);
+  --destructive: var(--dash-destructive);
+  --destructive-foreground: #ffffff;
+  --border: var(--dash-border);
+  --input: var(--dash-border);
+  --ring: var(--dash-ring);
+
+  /* shadcn sidebar internal overrides */
+  --sidebar: var(--dash-surface);
+  --sidebar-background: var(--dash-surface);
+  --sidebar-foreground: var(--dash-foreground);
+  --sidebar-primary: var(--dash-brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f5ece7;
-  --sidebar-accent-foreground: #c96b48;
-  --sidebar-border: #e8e0d6;
-  --sidebar-ring: #c96b48;
+  --sidebar-accent: var(--dash-surface-hover);
+  --sidebar-accent-foreground: var(--dash-foreground);
+  --sidebar-border: var(--dash-border);
+  --sidebar-ring: var(--dash-ring);
 }
 
 .dark [data-dashboard] {
@@ -242,7 +262,7 @@
   --dash-brand: #d97b57;
   --dash-brand-hover: #e08a66;
   --dash-brand-active: #e89875;
-  --dash-brand-subtle: #2a1a12;
+  --dash-brand-subtle: #3d2215;
   --dash-ring: #d97b57;
   --dash-success: #97c459;
   --dash-success-subtle: #1a2e0a;
@@ -252,23 +272,171 @@
   --dash-destructive-subtle: #2a0f0f;
   --dash-destructive-hover: #f5aaaa;
 
-  --sidebar: #171311;
-  --sidebar-background: #171311;
-  --sidebar-foreground: #f7f2eb;
-  --sidebar-primary: #d97b57;
+  /* shadcn base overrides */
+  --background: var(--dash-shell);
+  --foreground: var(--dash-foreground);
+  --card: var(--dash-surface);
+  --card-foreground: var(--dash-foreground);
+  --popover: var(--dash-surface);
+  --popover-foreground: var(--dash-foreground);
+  --primary: var(--dash-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--dash-surface-muted);
+  --secondary-foreground: var(--dash-foreground);
+  --muted: var(--dash-surface-muted);
+  --muted-foreground: var(--dash-muted);
+  --accent: var(--dash-surface-hover);
+  --accent-foreground: var(--dash-foreground);
+  --destructive: var(--dash-destructive);
+  --destructive-foreground: #ffffff;
+  --border: var(--dash-border);
+  --input: var(--dash-border);
+  --ring: var(--dash-ring);
+
+  /* shadcn sidebar internal overrides */
+  --sidebar: var(--dash-surface);
+  --sidebar-background: var(--dash-surface);
+  --sidebar-foreground: var(--dash-foreground);
+  --sidebar-primary: var(--dash-brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2a1a12;
-  --sidebar-accent-foreground: #d97b57;
-  --sidebar-border: #2e2520;
-  --sidebar-ring: #d97b57;
+  --sidebar-accent: var(--dash-surface-hover);
+  --sidebar-accent-foreground: var(--dash-foreground);
+  --sidebar-border: var(--dash-border);
+  --sidebar-ring: var(--dash-ring);
 }
 
 [data-dashboard] [data-slot="sidebar-inset"] {
   background: transparent;
 }
 
+/* Sidebar container right border — override system gray with brand border */
+[data-dashboard] [data-slot="sidebar-container"] {
+  border-right-color: var(--dash-border);
+}
+
+/* Sidebar menu button focus ring — brand terracotta instead of gray */
+[data-dashboard] [data-slot="sidebar-menu-button"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dash-ring);
+}
+
+/* SidebarRail resize handle — use brand border color */
+[data-dashboard] [data-sidebar="rail"]::after {
+  background-color: var(--dash-border);
+}
+
+/* ─── Dashboard sidebar nav button states ─────────────────────────────────── */
+
+/* Default: foreground text (darker), transparent bg */
+[data-dashboard] [data-slot="sidebar-menu-button"] {
+  color: var(--dash-foreground);
+}
+
+/* Hover (inactive): warm neutral surface */
+[data-dashboard] [data-slot="sidebar-menu-button"]:not([data-active="true"]):hover {
+  background-color: var(--dash-surface-hover);
+  color: var(--dash-foreground);
+}
+
+/* Press / :active (inactive): slightly deeper neutral — override shadcn's sidebar-accent */
+[data-dashboard] [data-slot="sidebar-menu-button"]:not([data-active="true"]):active {
+  background-color: var(--dash-surface-hover);
+  color: var(--dash-foreground);
+}
+
+/* Active (persistent) — brand terracotta pill */
+[data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"] {
+  background-color: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+  font-weight: 500;
+}
+
+/* Active hover — keep brand, don't let hover wash it out */
+[data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"]:hover {
+  background-color: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+}
+
+/* Active press — keep brand on click */
+[data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"]:active {
+  background-color: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+}
+
+/* ─── Dashboard Avatar & Dropdown states ──────────────────────────────────── */
+
+[data-dashboard] .dash-avatar-fallback {
+  background-color: var(--dash-brand) !important;
+  color: #ffffff !important;
+}
+
+[data-dashboard] .dash-plan-badge-max {
+  background-color: var(--dash-brand) !important;
+  color: #ffffff !important;
+}
+
+[data-dashboard] .dash-plan-badge-default {
+  background-color: var(--dash-surface-muted) !important;
+  border-color: var(--dash-border) !important;
+  color: var(--dash-brand) !important;
+}
+
+/* Avatar Dropdown Trigger */
+[data-dashboard] .dash-avatar-trigger {
+  background-color: var(--dash-surface-muted);
+  border-color: color-mix(in srgb, var(--dash-brand) 25%, var(--dash-border));
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--dash-brand) 6%, transparent);
+}
+[data-dashboard] .dash-avatar-trigger:hover,
+[data-dashboard] .dash-avatar-trigger[data-state="open"] {
+  background-color: var(--dash-brand-subtle);
+  border-color: color-mix(in srgb, var(--dash-brand) 40%, var(--dash-border));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--dash-brand) 12%, transparent);
+}
+
+/* ─── Dark mode sidebar nav button states ─────────────────────────────────── */
+
+.dark [data-dashboard] [data-slot="sidebar-menu-button"] {
+  color: var(--dash-foreground);
+}
+
+.dark [data-dashboard] [data-slot="sidebar-menu-button"]:not([data-active="true"]):hover {
+  background-color: var(--dash-surface-hover);
+  color: var(--dash-foreground);
+}
+
+.dark [data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"] {
+  background-color: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+  font-weight: 500;
+}
+
+.dark [data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"]:hover,
+.dark [data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"]:active {
+  background-color: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+}
+
+.dark [data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"]:hover,
+.dark [data-dashboard] [data-slot="sidebar-menu-button"][data-active="true"]:active {
+  background-color: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+}
+
+.dark [data-dashboard] .dash-avatar-trigger {
+  background-color: var(--dash-surface-muted);
+  border-color: color-mix(in srgb, var(--dash-brand) 25%, var(--dash-border));
+  box-shadow: 0 2px 6px color-mix(in srgb, #000000 30%, transparent);
+}
+.dark [data-dashboard] .dash-avatar-trigger:hover,
+.dark [data-dashboard] .dash-avatar-trigger[data-state="open"] {
+  background-color: var(--dash-surface-hover);
+  border-color: color-mix(in srgb, var(--dash-brand) 50%, var(--dash-border));
+  box-shadow: 0 4px 12px color-mix(in srgb, #000000 50%, transparent);
+}
+
 .dash-page-bg {
-  min-height: 100%;
+  min-height: 100vh;
   background:
     radial-gradient(circle at top left, rgb(201 107 72 / 10%), transparent 28rem),
     radial-gradient(circle at top right, rgb(215 181 109 / 8%), transparent 24rem),
