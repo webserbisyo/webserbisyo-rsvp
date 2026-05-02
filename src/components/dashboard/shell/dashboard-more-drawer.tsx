@@ -7,7 +7,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { dashboardNavItems, isDashboardNavItemActive } from "@/components/dashboard/nav-items";
 import { ChevronRight, LogOut } from "lucide-react";
@@ -42,16 +41,17 @@ export function DashboardMoreDrawer({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="max-h-[70vh] overflow-y-auto rounded-t-2xl border-[--dash-border] bg-[--dash-surface] px-4 pb-5 pt-3 text-[--dash-foreground]"
+        overlayClassName="bg-black/40"
+        className="max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-[--dash-border] bg-[--dash-surface] px-4 pb-5 pt-0 text-[--dash-foreground]"
       >
-        <div className="mx-auto mb-4 h-1 w-8 rounded-full bg-[--dash-border]" />
+        <div className="mx-auto mb-4 mt-3 h-1 w-8 rounded-full bg-[--dash-border]" />
         <SheetHeader className="p-0">
-          <SheetTitle className="text-sm font-medium text-[--dash-muted]">
+          <SheetTitle className="mb-2 text-xs font-medium text-[--dash-muted]">
             More options
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-4 grid gap-1">
+        <div className="grid gap-1">
           {remainingItems.map((item) => {
             const active = isDashboardNavItemActive(pathname, item.href);
             const Icon = item.icon;
@@ -61,22 +61,27 @@ export function DashboardMoreDrawer({
                 key={item.href}
                 href={item.href}
                 onClick={() => onOpenChange(false)}
-                className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm transition-colors hover:bg-[--dash-surface-muted]"
-                style={{ color: active ? "var(--dash-brand)" : "var(--dash-foreground)" }}
+                className={
+                  active
+                    ? "flex w-full items-center gap-3 rounded-lg border-l-2 border-[--dash-brand] px-4 py-3 text-sm text-[--dash-brand] transition-colors duration-150 hover:bg-[--dash-surface-hover]"
+                    : "flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-sm text-[--dash-foreground] transition-colors duration-150 hover:bg-[--dash-surface-hover]"
+                }
               >
-                <Icon className="h-5 w-5 shrink-0" />
+                <Icon
+                  className={active ? "h-5 w-5 shrink-0 text-[--dash-brand]" : "h-5 w-5 shrink-0 text-[--dash-muted]"}
+                />
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-[--dash-muted]" />
               </Link>
             );
           })}
 
-          <Separator className="my-2 bg-[--dash-border]" />
+          <div className="my-2 h-px bg-[--dash-border]" />
 
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm text-[--dash-destructive] transition-colors hover:bg-[--dash-surface-muted]"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-[--dash-destructive] transition-colors duration-150 hover:bg-[--dash-destructive-subtle]"
           >
             <LogOut className="h-5 w-5 shrink-0" />
             <span className="min-w-0 flex-1 text-left">Sign out</span>

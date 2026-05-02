@@ -35,8 +35,11 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-1 flex-col items-center gap-0.5 px-2 py-2"
-                style={{ color: active ? "var(--dash-brand)" : "var(--dash-muted)" }}
+                className={
+                  active
+                    ? "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
+                    : "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150"
+                }
               >
                 <Icon className="h-5 w-5" />
                 <span className="max-w-full truncate text-[10px] leading-none">{item.label}</span>
@@ -47,8 +50,11 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className="flex flex-1 flex-col items-center gap-0.5 px-2 py-2"
-            style={{ color: moreOpen ? "var(--dash-brand)" : "var(--dash-muted)" }}
+            className={
+              moreOpen
+                ? "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
+                : "flex flex-1 flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150"
+            }
           >
             <LayoutGrid className="h-5 w-5" />
             <span className="text-[10px] leading-none">More</span>

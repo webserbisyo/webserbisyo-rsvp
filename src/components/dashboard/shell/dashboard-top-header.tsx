@@ -19,7 +19,7 @@ export function DashboardTopHeader({
       style={{ background: "var(--dash-surface)", borderColor: "var(--dash-border)" }}
     >
       <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
-      <div className="hidden h-5 w-px bg-[--dash-border]/40 md:block" aria-hidden="true" />
+      <div className="hidden h-5 w-px bg-[--dash-border] opacity-60 md:block" aria-hidden="true" />
       <DashboardBreadcrumb />
       <div className="ml-auto">
         <DashboardAvatarDropdown email={email} displayName={displayName} />

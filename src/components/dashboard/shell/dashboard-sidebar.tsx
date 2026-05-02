@@ -47,17 +47,19 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
     <button
       type="button"
       onClick={handleSignOut}
-      className="flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm text-[--dash-muted] transition-colors hover:bg-[--dash-surface-muted] hover:text-[--dash-destructive] group-data-[collapsible=icon]:justify-center"
+      className="flex h-9 w-full items-center gap-2 overflow-hidden rounded-md px-2 text-sm text-[--dash-muted] transition-colors duration-150 hover:bg-[--dash-destructive-subtle] hover:text-[--dash-destructive]"
     >
-      <LogOut className="h-4 w-4 shrink-0" />
-      <span className="group-data-[collapsible=icon]:hidden">Sign out</span>
+      <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span className="min-w-0 max-w-28 truncate whitespace-nowrap opacity-100 motion-safe:transition-[max-width,opacity,transform] motion-safe:duration-200 motion-safe:ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:translate-x-1 group-data-[collapsible=icon]:opacity-0">
+        Sign out
+      </span>
     </button>
   );
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="h-[var(--dash-header-height)] justify-center border-b border-[--dash-border] px-2 py-0">
-        <div className="flex items-center gap-2 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+      <SidebarHeader className="h-14 flex-shrink-0 justify-center overflow-hidden border-b border-[--dash-border] px-2 py-0">
+        <div className="flex h-full items-center gap-2 overflow-hidden px-2">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[--dash-border] bg-white/90">
             <Image
               src="/images/brand/webserbisyo-logo.jpeg"
@@ -68,9 +70,9 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
               className="h-full w-full object-cover"
             />
           </div>
-          <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
+          <div className="flex min-w-0 max-w-36 flex-col leading-tight opacity-100 motion-safe:transition-[max-width,opacity,transform] motion-safe:duration-200 motion-safe:ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:translate-x-1 group-data-[collapsible=icon]:opacity-0">
             <span className="text-sm font-semibold text-[--dash-foreground]">WebSerbisyo</span>
-            <span className="text-xs text-[--dash-muted]">RSVP Platform</span>
+            <span className="truncate text-xs text-[--dash-muted]">RSVP Platform</span>
           </div>
         </div>
       </SidebarHeader>
@@ -89,13 +91,15 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
                 isActive={active}
                 className={
                   active
-                    ? "border-l-2 border-[--dash-brand] bg-[--dash-surface-muted] text-[--dash-brand] transition-colors [&_svg]:text-current"
-                    : "border-l-2 border-transparent text-[--dash-muted] transition-colors hover:bg-[--dash-surface-muted] hover:text-[--dash-foreground] [&_svg]:text-current"
+                    ? "border-l-2 border-[--dash-brand] bg-[--dash-brand-subtle] font-medium text-[--dash-brand] transition-colors duration-150 [&_svg]:text-[--dash-brand]"
+                    : "border-l-2 border-transparent bg-transparent text-[--dash-muted] transition-colors duration-150 hover:border-[--dash-border-hover] hover:bg-[--dash-surface-hover] hover:text-[--dash-foreground] [&_svg]:text-[--dash-muted] hover:[&_svg]:text-[--dash-foreground]"
                 }
               >
                 <Link href={item.href}>
                   <Icon className="h-[18px] w-[18px] shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                  <span className="min-w-0 max-w-40 truncate whitespace-nowrap opacity-100 motion-safe:transition-[max-width,opacity,transform] motion-safe:duration-200 motion-safe:ease-in-out group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:translate-x-1 group-data-[collapsible=icon]:opacity-0">
+                    {item.label}
+                  </span>
                 </Link>
               </SidebarMenuButton>
             );
@@ -118,7 +122,7 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[--dash-border] px-2 py-3">
+      <SidebarFooter className="h-14 flex-shrink-0 overflow-hidden border-t border-[--dash-border] px-2 py-2">
         {collapsed ? (
           <TooltipProvider>
             <Tooltip>

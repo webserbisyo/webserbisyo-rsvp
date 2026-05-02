@@ -49,16 +49,12 @@
 
 .rsvp-shell {
   background:
-    radial-gradient(
-      circle at top,
+    radial-gradient(circle at top,
       color-mix(in srgb, var(--rsvp-accent) 45%, transparent) 0%,
-      transparent 48%
-    ),
-    linear-gradient(
-      180deg,
+      transparent 48%),
+    linear-gradient(180deg,
       color-mix(in srgb, var(--rsvp-surface) 88%, white) 0%,
-      var(--background) 100%
-    );
+      var(--background) 100%);
 }
 
 .rsvp-panel {
@@ -79,6 +75,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -86,21 +83,25 @@
 }
 
 @keyframes landing-float {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-8px);
   }
 }
 
 @keyframes landing-scroll-bounce {
+
   0%,
   100% {
     transform: translateY(0px);
     opacity: 0.5;
   }
+
   50% {
     transform: translateY(4px);
     opacity: 0.8;
@@ -125,6 +126,7 @@
   from {
     transform: scale(1.04);
   }
+
   to {
     transform: scale(1);
   }
@@ -148,6 +150,7 @@
 /* ─── Reduced motion overrides ───────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
+
   .landing-nav-enter,
   .hero-microcopy {
     animation: none;
@@ -175,45 +178,83 @@
 /* === CLIENT DASHBOARD SHELL === */
 
 [data-dashboard] {
+  /* Layout */
   --dash-sidebar-width: 240px;
   --dash-sidebar-collapsed-width: 56px;
   --dash-header-height: 56px;
-  --dash-surface: var(--rsvp-surface, #faf7f2);
-  --dash-surface-muted: var(--rsvp-surface-muted, #f5efe8);
-  --dash-foreground: var(--rsvp-foreground, #1d1b18);
-  --dash-muted: var(--rsvp-muted, #6b6560);
-  --dash-border: var(--rsvp-border, #e8e0d6);
-  --dash-brand: var(--rsvp-brand, #c96b48);
-  --dash-brand-hover: var(--rsvp-brand-hover, #b85a39);
-  --dash-ring: var(--rsvp-ring, #c96b48);
+
+  /* Surfaces */
+  --dash-surface: #faf7f2;
+  --dash-surface-muted: #f5efe8;
+  --dash-surface-hover: #f0e8de;
+
+  /* Text */
+  --dash-foreground: #1d1b18;
+  --dash-muted: #6b6560;
+  --dash-subtle: #9e9189;
+
+  /* Borders */
+  --dash-border: #e8e0d6;
+  --dash-border-hover: #d4c8bc;
+
+  /* Brand accent — terracotta */
+  --dash-brand: #c96b48;
+  --dash-brand-hover: #b85a39;
+  --dash-brand-active: #a34f32;
+  --dash-brand-subtle: #f5ece7;
+  --dash-ring: #c96b48;
+
+  /* Feedback */
   --dash-success: #639922;
+  --dash-success-subtle: #eaf3de;
   --dash-warning: #ba7517;
+  --dash-warning-subtle: #faeeda;
   --dash-destructive: #a32d2d;
-  --sidebar: var(--dash-surface);
-  --sidebar-background: var(--dash-surface);
-  --sidebar-foreground: var(--dash-foreground);
-  --sidebar-accent: var(--dash-surface-muted);
-  --sidebar-accent-foreground: var(--dash-foreground);
-  --sidebar-border: var(--dash-border);
-  --sidebar-ring: var(--dash-ring);
+  --dash-destructive-subtle: #fcebeb;
+  --dash-destructive-hover: #8a2424;
+
+  /* shadcn sidebar internal overrides — CRITICAL */
+  /* These must be set here or shadcn will use grey defaults */
+  --sidebar: #faf7f2;
+  --sidebar-background: #faf7f2;
+  --sidebar-foreground: #1d1b18;
+  --sidebar-primary: #c96b48;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5ece7;
+  --sidebar-accent-foreground: #c96b48;
+  --sidebar-border: #e8e0d6;
+  --sidebar-ring: #c96b48;
 }
 
 .dark [data-dashboard] {
   --dash-surface: #171311;
   --dash-surface-muted: #211a17;
+  --dash-surface-hover: #2a2018;
   --dash-foreground: #f7f2eb;
   --dash-muted: #a89e96;
+  --dash-subtle: #7a7068;
   --dash-border: #2e2520;
+  --dash-border-hover: #3d3028;
   --dash-brand: #d97b57;
   --dash-brand-hover: #e08a66;
+  --dash-brand-active: #e89875;
+  --dash-brand-subtle: #2a1a12;
+  --dash-ring: #d97b57;
   --dash-success: #97c459;
+  --dash-success-subtle: #1a2e0a;
   --dash-warning: #ef9f27;
+  --dash-warning-subtle: #2a1e05;
   --dash-destructive: #f09595;
-  --sidebar: var(--dash-surface);
-  --sidebar-background: var(--dash-surface);
-  --sidebar-foreground: var(--dash-foreground);
-  --sidebar-accent: var(--dash-surface-muted);
-  --sidebar-accent-foreground: var(--dash-foreground);
-  --sidebar-border: var(--dash-border);
-  --sidebar-ring: var(--dash-ring);
+  --dash-destructive-subtle: #2a0f0f;
+  --dash-destructive-hover: #f5aaaa;
+
+  --sidebar: #171311;
+  --sidebar-background: #171311;
+  --sidebar-foreground: #f7f2eb;
+  --sidebar-primary: #d97b57;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a1a12;
+  --sidebar-accent-foreground: #d97b57;
+  --sidebar-border: #2e2520;
+  --sidebar-ring: #d97b57;
 }
