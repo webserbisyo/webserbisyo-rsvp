@@ -144,10 +144,9 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const websitePublished = isPublishedEvent(event?.status, event?.published_at);
   const eventContent = eventContentResult.data;
   const websiteContentCompleted = Boolean(
-    eventContent?.hero_title ||
-      eventContent?.hero_subtitle ||
-      eventContent?.couple_or_celebrant_names ||
-      eventContent?.event_story ||
+    eventContent?.hero_title &&
+      eventContent?.couple_or_celebrant_names &&
+      eventContent?.event_story &&
       eventContent?.theme_key,
   );
   const eventDetailsCompleted = Boolean(event?.event_date && venueLabel !== "Venue pending");
@@ -287,10 +286,10 @@ function getPaymentDescription(isConfirmed: boolean, paymentAmount: number | nul
   }
 
   if (paymentAmount !== null) {
-    return `Awaiting confirmation for ${formatCurrency(paymentAmount)}.`;
+    return `Awaiting confirmation for ${formatCurrency(paymentAmount)}. Follow up on Messenger or contact our Facebook page for payment assistance.`;
   }
 
-  return "Amount pending.";
+  return "Amount pending. Follow up on Messenger or contact our Facebook page for payment assistance.";
 }
 
 function getPlanDescription(planType: string | null | undefined) {

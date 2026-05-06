@@ -488,7 +488,7 @@
   inset: 0;
   z-index: 2;
   background:
-    linear-gradient(145deg, rgba(45, 18, 8, 0.08), rgba(45, 18, 8, 0.14)),
+    linear-gradient(145deg, rgba(45, 18, 8, 0.10), rgba(45, 18, 8, 0.16)),
     radial-gradient(circle at 60% 44%, rgba(255, 240, 221, 0.08), transparent 42%);
   pointer-events: none;
 }
@@ -655,8 +655,8 @@
 /* Progress Glow */
 [data-dashboard] .ws-progress-shell {
   position: relative;
-  width: min(100%, 31rem);
-  margin: 8px auto 4px;
+  width: min(100%, 18rem);
+  margin: 8px 0 4px;
 }
 [data-dashboard] .ws-progress-track {
   height: 5px;
@@ -801,7 +801,7 @@
   min-height: 40px;
 }
 [data-dashboard] .ws-card-meta {
-  margin-top: 10px;
+  margin-top: 14px;
   min-width: 0;
   overflow: hidden;
   color: var(--dash-muted);
@@ -821,6 +821,9 @@
   font-size: 11px;
   font-weight: 800;
   border: 1px solid transparent;
+}
+[data-dashboard] .ws-card-meta + .ws-chip {
+  margin-top: 10px;
 }
 [data-dashboard] .ws-chip.neutral { background: #f5eee7; border-color: #e5d5c7; color: #6f5f53; }
 [data-dashboard] .ws-chip.success { background: #eaf6df; border-color: #cbe7ba; color: #347018; }
@@ -1257,7 +1260,7 @@
   }
   [data-dashboard] .ws-countdown-veil {
     background:
-      linear-gradient(145deg, rgba(45, 18, 8, 0.1), rgba(45, 18, 8, 0.14)),
+      linear-gradient(145deg, rgba(45, 18, 8, 0.12), rgba(45, 18, 8, 0.18)),
       radial-gradient(circle at 60% 44%, rgba(255, 240, 221, 0.1), transparent 42%);
   }
   [data-dashboard] .ws-flower-cluster {

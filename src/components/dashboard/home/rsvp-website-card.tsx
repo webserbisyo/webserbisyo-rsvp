@@ -39,17 +39,12 @@ export function RsvpWebsiteCard({
         </div>
       </div>
 
-      <div className="ws-website-status">
-        <strong>
-          {status}
-          {!isPublished ? <span className="ws-status-dots" aria-hidden="true" /> : null}
-        </strong>
-        <p>
-          {isPublished
-            ? "Your RSVP website is live and ready to share."
-            : "Our team is currently building and preparing your RSVP website."}
-        </p>
-      </div>
+      {isPublished ? (
+        <div className="ws-website-status">
+          <strong>{status}</strong>
+          <p>Your RSVP website is live and ready to share.</p>
+        </div>
+      ) : null}
 
       <div className={`ws-link-field ${!url ? "is-disabled" : ""}`} title={url ?? "Slug pending"}>
         <Globe size={18} />
