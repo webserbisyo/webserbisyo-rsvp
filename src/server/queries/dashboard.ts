@@ -28,7 +28,7 @@ export async function getDashboardSummary() {
       .single(),
     supabase
       .from("rsvp_events")
-      .select("id, event_slug, title, event_type, event_date, status, visibility")
+      .select("id, event_slug, title, event_type, event_date, event_time, status, visibility")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false }),
     supabase

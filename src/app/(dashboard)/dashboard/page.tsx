@@ -1,264 +1,125 @@
 import { getDashboardSummary } from "@/server/queries/dashboard";
 import { formatUserRoleLabel } from "@/lib/auth/role-labels";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User, Package, Wallet, Globe, Sparkles } from "lucide-react";
+import { HomeSummaryCard } from "@/components/dashboard/home/home-summary-card";
+import { EventCountdownCard } from "@/components/dashboard/home/event-countdown-card";
+import { SetupChecklistCard } from "@/components/dashboard/home/setup-checklist-card";
+import { RsvpWebsiteCard } from "@/components/dashboard/home/rsvp-website-card";
+import { QuickStatsCard } from "@/components/dashboard/home/quick-stats-card";
 
 export default async function DashboardPage() {
   const summary = await getDashboardSummary();
-  const publicPageUrl = getPublicPageUrl(
-    summary.client.custom_frontend_url,
-    summary.client.custom_frontend_status,
-    summary.event?.event_slug ?? null,
-    summary.event?.status ?? null,
-    summary.event?.visibility ?? null,
-  );
-  const onboardingStatus = summary.onboardingEmail?.status
-    ? formatWords(summary.onboardingEmail.status)
-    : "Not sent yet";
+  
+  const clientName = summary.profile.fullName ?? summary.client.contact_name ?? summary.client.name;
+  
+  // Format Payment
+  const paymentStatus = summary.payment?.payment_status ? formatWords(summary.payment.payment_status) : "Pending";
+  const paymentMeta = formatPaymentMeta(summary.payment?.amount_paid ?? null, summary.payment?.amount_due ?? null);
+  const paymentColor = paymentStatus.toLowerCase() === "paid" || paymentStatus.toLowerCase() === "confirmed" ? "success" : "warning";
+
+  // Format Plan
+  const planName = summary.client.plan_type === "max" ? "Max" : "Pro";
+  const planStatus = formatWords(summary.client.status);
+  
+  // Format Website
+  const websiteStatusRaw = summary.event?.status === "published" && summary.client.custom_frontend_status === "connected" 
+    ? "Published" 
+    : summary.event?.status === "published" 
+    ? "Published" 
+    : "Draft";
+  const websiteMeta = websiteStatusRaw === "Published" ? (summary.event?.visibility ? formatWords(summary.event.visibility) : "Public") : "Not published";
+  const websiteColor = websiteStatusRaw === "Published" ? "brand" : "default";
+
+  // Checklist items
+  const checklistItems = [
+    { id: "account", label: "Account created", completed: true },
+    { id: "payment", label: "Payment confirmed", completed: paymentStatus.toLowerCase() === "paid" || paymentStatus.toLowerCase() === "confirmed", href: "/dashboard/billing" },
+    { id: "details", label: "Event details", completed: Boolean(summary.event?.event_date && summary.application?.event_location), href: "/dashboard/event" },
+    { id: "content", label: "Website content", completed: false, href: "/dashboard/website" },
+    { id: "publish", label: "RSVP page published", completed: websiteStatusRaw === "Published", href: "/dashboard/event" },
+  ];
 
   return (
-    <div className="space-y-6 pb-8">
-      <div className="mx-auto grid max-w-6xl gap-6">
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white/80 p-6 shadow-[0_30px_80px_-40px_rgba(54,36,28,0.35)] backdrop-blur sm:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-3">
-              <Badge variant="outline" className="border-[#e9c59c] bg-[#fff8ef] text-[#9a593f]">
-                Client dashboard
-              </Badge>
-              <div className="space-y-2">
-                <h1 className="text-3xl font-semibold tracking-tight text-stone-950 sm:text-4xl">
-                  Welcome,{" "}
-                  {summary.profile.fullName ?? summary.client.contact_name ?? summary.client.name}
-                </h1>
-                <p className="max-w-3xl text-sm leading-7 text-stone-600 sm:text-base">
-                  Review your account, event, payment, and website access details in one place.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {publicPageUrl ? (
-                <Button asChild className="bg-[#e86d52] text-white hover:bg-[#d95b3f]">
-                  <a href={publicPageUrl} target="_blank" rel="noreferrer">
-                    Open public page
-                  </a>
-                </Button>
-              ) : null}
-              <Button asChild variant="outline">
-                <a href="mailto:webserbisyo@gmail.com">Contact WebSerbisyo</a>
-              </Button>
-            </div>
+    <div className="space-y-8">
+      {/* Intro Row */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--dash-foreground)]">
+            Welcome back, {clientName.split(" ")[0]} <Sparkles className="inline h-5 w-5 text-[var(--dash-brand)]" />
+          </h1>
+          <p className="text-[var(--dash-muted)]">
+            {summary.event?.title ?? "Your Event"} &middot; {summary.application?.event_location ?? "Venue pending"}
+          </p>
+        </div>
+        <Badge variant="outline" className="w-fit border-[var(--dash-border)] bg-[var(--dash-surface-muted)] text-[var(--dash-muted)]">
+          Client dashboard
+        </Badge>
+      </div>
+
+      {/* Hero Countdown */}
+      <EventCountdownCard 
+        eventDate={summary.event?.event_date ?? null} 
+        eventTime={summary.event?.event_time ?? null} 
+      />
+
+      {/* Four Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <HomeSummaryCard
+          title="ACCOUNT"
+          icon={<User className="h-5 w-5" />}
+          primary={formatUserRoleLabel(summary.profile.role)}
+          secondary={summary.profile.email}
+          status="Primary account"
+        />
+        <HomeSummaryCard
+          title="PACKAGE"
+          icon={<Package className="h-5 w-5" />}
+          primary={planName}
+          secondary={planStatus}
+          status="Active"
+          statusColor="brand"
+        />
+        <HomeSummaryCard
+          title="PAYMENT"
+          icon={<Wallet className="h-5 w-5" />}
+          primary={paymentStatus}
+          secondary={paymentMeta}
+          status={paymentStatus === "Pending" ? "Pending review" : "Confirmed"}
+          statusColor={paymentColor}
+        />
+        <HomeSummaryCard
+          title="WEBSITE"
+          icon={<Globe className="h-5 w-5" />}
+          primary={websiteStatusRaw}
+          secondary={websiteMeta}
+          status={websiteStatusRaw === "Draft" ? "Setup in progress" : "Live"}
+          statusColor={websiteColor}
+        />
+      </div>
+
+      {/* Bottom Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <SetupChecklistCard items={checklistItems} />
+        </div>
+        <div className="space-y-6 lg:col-span-2">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <RsvpWebsiteCard 
+              slug={summary.event?.event_slug ?? null}
+              status={websiteStatusRaw}
+              isPublished={websiteStatusRaw === "Published"}
+            />
+            <QuickStatsCard 
+              coverageDays={365} 
+              guestLimit={200} 
+              responsesCount={0} 
+            />
           </div>
-        </section>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard
-            title="Account"
-            value={formatUserRoleLabel(summary.profile.role)}
-            meta={summary.client.contact_email ?? summary.profile.email}
-          />
-          <SummaryCard
-            title="Package"
-            value={formatPlan(summary.client.plan_type)}
-            meta={formatWords(summary.client.status)}
-          />
-          <SummaryCard
-            title="Payment"
-            value={formatPayment(summary.payment?.payment_status ?? null)}
-            meta={formatPaymentMeta(
-              summary.payment?.amount_paid ?? null,
-              summary.payment?.amount_due ?? null,
-            )}
-          />
-          <SummaryCard
-            title="Website Access"
-            value={formatWords(summary.client.custom_frontend_status)}
-            meta={formatAccessWindow(summary.client.hosting_ends_at)}
-          />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="rounded-[1.75rem] border-stone-200/80 bg-white/80">
-            <CardHeader>
-              <CardTitle className="text-stone-950">Event</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <DefinitionList
-                rows={[
-                  ["Type", summary.event?.event_type ? formatWords(summary.event.event_type) : "—"],
-                  ["Date", formatDate(summary.event?.event_date ?? null)],
-                  ["Venue", summary.application?.event_location ?? "Not provided yet"],
-                  ["Status", summary.event?.status ? formatWords(summary.event.status) : "—"],
-                  [
-                    "Visibility",
-                    summary.event?.visibility ? formatWords(summary.event.visibility) : "—",
-                  ],
-                  ["Public RSVP page", publicPageUrl ?? "Not available yet"],
-                ]}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[1.75rem] border-stone-200/80 bg-white/80">
-            <CardHeader>
-              <CardTitle className="text-stone-950">Account and support</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DefinitionList
-                rows={[
-                  ["Client name", summary.client.name],
-                  ["Contact email", summary.client.contact_email ?? summary.profile.email],
-                  ["Role", formatUserRoleLabel(summary.profile.role)],
-                  ["Onboarding email", onboardingStatus],
-                  [
-                    "Last access email",
-                    formatDateTime(summary.onboardingEmail?.updated_at ?? null),
-                  ],
-                  [
-                    "Password help",
-                    "Use Forgot password from the sign-in page anytime you need a new reset link.",
-                  ],
-                ]}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <Card className="rounded-[1.75rem] border-stone-200/80 bg-white/80">
-            <CardHeader>
-              <CardTitle className="text-stone-950">Package and payment</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DefinitionList
-                rows={[
-                  ["Plan", formatPlan(summary.client.plan_type)],
-                  ["Payment status", formatPayment(summary.payment?.payment_status ?? null)],
-                  ["Amount paid", formatCurrency(summary.payment?.amount_paid ?? null)],
-                  ["Amount due", formatCurrency(summary.payment?.amount_due ?? null)],
-                  [
-                    "Payment method",
-                    summary.payment?.payment_method
-                      ? formatWords(summary.payment.payment_method)
-                      : "Manual confirmation",
-                  ],
-                  ["Confirmed at", formatDateTime(summary.payment?.paid_at ?? null)],
-                ]}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[1.75rem] border-stone-200/80 bg-white/80">
-            <CardHeader>
-              <CardTitle className="text-stone-950">Website access</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DefinitionList
-                rows={[
-                  ["Access status", formatWords(summary.client.custom_frontend_status)],
-                  ["Access window", formatAccessWindow(summary.client.hosting_ends_at)],
-                  ["Starts", formatDateTime(summary.client.hosting_starts_at ?? null)],
-                  ["Ends", formatDateTime(summary.client.hosting_ends_at ?? null)],
-                  ["Custom frontend", summary.client.custom_frontend_url ?? "Not connected yet"],
-                  [
-                    "Account email",
-                    summary.onboardingEmail?.recipient_email ?? summary.profile.email,
-                  ],
-                ]}
-              />
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
   );
-}
-
-function SummaryCard({ meta, title, value }: { meta: string; title: string; value: string }) {
-  return (
-    <Card className="rounded-3xl">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-muted-foreground text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-1">
-        <p className="text-2xl font-semibold">{value}</p>
-        <p className="text-muted-foreground truncate text-sm">{meta}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DefinitionList({ rows }: { rows: Array<[string, string]> }) {
-  return (
-    <dl className="grid gap-3">
-      {rows.map(([label, value]) => (
-        <div key={label} className="grid gap-1 sm:grid-cols-[9rem_minmax(0,1fr)]">
-          <dt className="text-muted-foreground text-sm">{label}</dt>
-          <dd className="min-w-0 text-sm font-medium break-words">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function formatPlan(value: string) {
-  return value === "max" ? "Max" : "Pro";
-}
-
-function formatPayment(value: string | null) {
-  return value ? formatWords(value) : "Pending";
-}
-
-function formatPaymentMeta(amountPaid: number | null, amountDue: number | null) {
-  if (amountPaid !== null) {
-    return formatCurrency(amountPaid);
-  }
-
-  if (amountDue !== null) {
-    return `Due ${formatCurrency(amountDue)}`;
-  }
-
-  return "No confirmed amount";
-}
-
-function formatAccessWindow(value: string | null) {
-  return value ? `Until ${formatDateTime(value)}` : "Not configured yet";
-}
-
-function formatCurrency(value: number | null) {
-  if (value === null) {
-    return "No confirmed amount";
-  }
-
-  return new Intl.NumberFormat("en-PH", {
-    currency: "PHP",
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
-}
-
-function formatDate(value: string | null) {
-  if (!value) {
-    return "Not scheduled";
-  }
-
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeZone: "Asia/Manila",
-  }).format(new Date(`${value}T00:00:00.000Z`));
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "Not available";
-  }
-
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Manila",
-  }).format(new Date(value));
 }
 
 function formatWords(value: string) {
@@ -268,30 +129,22 @@ function formatWords(value: string) {
     .join(" ");
 }
 
-function getPublicPageUrl(
-  customUrl: string | null,
-  customFrontendStatus: string | null,
-  eventSlug: string | null,
-  eventStatus: string | null,
-  eventVisibility: string | null,
-) {
-  if (customUrl && customFrontendStatus === "connected") {
-    return customUrl;
+function formatPaymentMeta(amountPaid: number | null, amountDue: number | null) {
+  if (amountPaid !== null) {
+    return formatCurrency(amountPaid);
   }
-
-  if (
-    !eventSlug ||
-    eventStatus !== "published" ||
-    !["public", "unlisted"].includes(eventVisibility ?? "")
-  ) {
-    return null;
+  if (amountDue !== null) {
+    return `Due ${formatCurrency(amountDue)}`;
   }
+  return "No confirmed amount";
+}
 
-  const baseUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
-
-  if (!baseUrl) {
-    return `/r/${eventSlug}`;
-  }
-
-  return `${baseUrl.replace(/\/+$/, "")}/r/${eventSlug}`;
+function formatCurrency(value: number | null) {
+  if (value === null) return "No confirmed amount";
+  return new Intl.NumberFormat("en-PH", {
+    currency: "PHP",
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    style: "currency",
+  }).format(value);
 }
