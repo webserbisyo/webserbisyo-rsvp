@@ -1,150 +1,126 @@
-import { getDashboardSummary } from "@/server/queries/dashboard";
-import { formatUserRoleLabel } from "@/lib/auth/role-labels";
-import { Badge } from "@/components/ui/badge";
-import { User, Package, Wallet, Globe, Sparkles } from "lucide-react";
-import { HomeSummaryCard } from "@/components/dashboard/home/home-summary-card";
+import { Globe, Star, User, Wallet } from "lucide-react";
 import { EventCountdownCard } from "@/components/dashboard/home/event-countdown-card";
-import { SetupChecklistCard } from "@/components/dashboard/home/setup-checklist-card";
-import { RsvpWebsiteCard } from "@/components/dashboard/home/rsvp-website-card";
+import { HomeSummaryCard } from "@/components/dashboard/home/home-summary-card";
 import { QuickStatsCard } from "@/components/dashboard/home/quick-stats-card";
+import { RsvpWebsiteCard } from "@/components/dashboard/home/rsvp-website-card";
+import { SetupChecklistCard } from "@/components/dashboard/home/setup-checklist-card";
+import { getDashboardSummary } from "@/server/queries/dashboard";
 
 export default async function DashboardPage() {
   const summary = await getDashboardSummary();
-  
-  const clientName = summary.profile.fullName ?? summary.client.contact_name ?? summary.client.name;
-  
-  // Format Payment
-  const paymentStatus = summary.payment?.payment_status ? formatWords(summary.payment.payment_status) : "Pending";
-  const paymentMeta = formatPaymentMeta(summary.payment?.amount_paid ?? null, summary.payment?.amount_due ?? null);
-  const paymentColor = paymentStatus.toLowerCase() === "paid" || paymentStatus.toLowerCase() === "confirmed" ? "success" : "warning";
 
-  // Format Plan
-  const planName = summary.client.plan_type === "max" ? "Max" : "Pro";
-  const planStatus = formatWords(summary.client.status);
-  
-  // Format Website
-  const websiteStatusRaw = summary.event?.status === "published" && summary.client.custom_frontend_status === "connected" 
-    ? "Published" 
-    : summary.event?.status === "published" 
-    ? "Published" 
-    : "Draft";
-  const websiteMeta = websiteStatusRaw === "Published" ? (summary.event?.visibility ? formatWords(summary.event.visibility) : "Public") : "Not published";
-  const websiteColor = websiteStatusRaw === "Published" ? "brand" : "default";
-
-  // Checklist items
   const checklistItems = [
-    { id: "account", label: "Account created", completed: true },
-    { id: "payment", label: "Payment confirmed", completed: paymentStatus.toLowerCase() === "paid" || paymentStatus.toLowerCase() === "confirmed", href: "/dashboard/billing" },
-    { id: "details", label: "Event details", completed: Boolean(summary.event?.event_date && summary.application?.event_location), href: "/dashboard/event" },
-    { id: "content", label: "Website content", completed: false, href: "/dashboard/website" },
-    { id: "publish", label: "RSVP page published", completed: websiteStatusRaw === "Published", href: "/dashboard/event" },
+    {
+      completed: true,
+      id: "account",
+      label: "Account created",
+    },
+    {
+      completed: summary.checklist.paymentConfirmed,
+      href: summary.checklist.paymentConfirmed ? undefined : "/dashboard/billing",
+      id: "payment",
+      label: "Payment confirmed",
+    },
+    {
+      completed: summary.checklist.eventDetailsCompleted,
+      href: "/dashboard/event",
+      id: "details",
+      label: "Event details",
+    },
+    {
+      completed: summary.checklist.websiteContentCompleted,
+      href: "/dashboard/website-content",
+      id: "content",
+      label: "Website content",
+    },
+    {
+      completed: summary.checklist.websitePublished,
+      href: "/dashboard/website-access",
+      id: "publish",
+      label: "RSVP page published",
+    },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Intro Row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--dash-foreground)]">
-            Welcome back, {clientName.split(" ")[0]} <Sparkles className="inline h-5 w-5 text-[var(--dash-brand)]" />
-          </h1>
-          <p className="text-[var(--dash-muted)]">
-            {summary.event?.title ?? "Your Event"} &middot; {summary.application?.event_location ?? "Venue pending"}
+    <div className="ws-home-page pb-24 md:pb-8">
+      <section className="ws-intro">
+        <div className="min-w-0">
+          <h2>
+            <span>Welcome back, {summary.profile.firstName}</span>
+            <span className="ws-intro-sparkle" aria-hidden="true">
+              ✦
+            </span>
+          </h2>
+          <p>
+            <strong title={summary.event.title}>{summary.event.title}</strong>
+            <span aria-hidden="true">·</span>
+            <span>{summary.event.venueLabel}</span>
           </p>
         </div>
-        <Badge variant="outline" className="w-fit border-[var(--dash-border)] bg-[var(--dash-surface-muted)] text-[var(--dash-muted)]">
-          Client dashboard
-        </Badge>
-      </div>
+        <span className="ws-intro-pill">Client dashboard</span>
+      </section>
 
-      {/* Hero Countdown */}
-      <EventCountdownCard 
-        eventDate={summary.event?.event_date ?? null} 
-        eventTime={summary.event?.event_time ?? null} 
+      <EventCountdownCard
+        countdownStartAt={summary.event.countdownStartAt}
+        eventDateTime={summary.event.eventDateTime}
+        rsvpDeadlineLabel={summary.event.rsvpDeadlineLabel}
       />
 
-      {/* Four Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="ws-summary-grid">
         <HomeSummaryCard
-          title="ACCOUNT"
-          icon={<User className="h-5 w-5" />}
-          primary={formatUserRoleLabel(summary.profile.role)}
-          secondary={summary.profile.email}
-          status="Primary account"
+          chip="Primary account"
+          chipTone="neutral"
+          icon={<User size={22} />}
+          label="Account"
+          meta={summary.profile.email}
+          subtitle="Primary account for managing your RSVP website and event setup."
+          theme="neutral"
+          title={summary.profile.roleLabel}
         />
         <HomeSummaryCard
-          title="PACKAGE"
-          icon={<Package className="h-5 w-5" />}
-          primary={planName}
-          secondary={planStatus}
-          status="Active"
-          statusColor="brand"
+          chip="Active"
+          chipTone="success"
+          icon={<Star size={22} />}
+          label="Package"
+          subtitle={summary.client.planDescription}
+          theme="premium"
+          title={summary.client.planLabel}
         />
         <HomeSummaryCard
-          title="PAYMENT"
-          icon={<Wallet className="h-5 w-5" />}
-          primary={paymentStatus}
-          secondary={paymentMeta}
-          status={paymentStatus === "Pending" ? "Pending review" : "Confirmed"}
-          statusColor={paymentColor}
+          chip={summary.payment.isConfirmed ? "Confirmed" : "Pending review"}
+          chipTone={summary.payment.isConfirmed ? "success" : "warning"}
+          icon={<Wallet size={22} />}
+          label="Payment"
+          subtitle={summary.payment.description}
+          theme="warning"
+          title={summary.payment.status}
         />
         <HomeSummaryCard
-          title="WEBSITE"
-          icon={<Globe className="h-5 w-5" />}
-          primary={websiteStatusRaw}
-          secondary={websiteMeta}
-          status={websiteStatusRaw === "Draft" ? "Setup in progress" : "Live"}
-          statusColor={websiteColor}
+          chip={summary.event.isPublished ? "Published" : "Setup in progress"}
+          chipTone={summary.event.isPublished ? "success" : "brand"}
+          icon={<Globe size={22} />}
+          label="Website"
+          subtitle={summary.event.websiteDescription}
+          theme="website"
+          title={summary.event.websiteStatus}
         />
-      </div>
+      </section>
 
-      {/* Bottom Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <SetupChecklistCard items={checklistItems} />
+      <section className="ws-bottom-grid">
+        <SetupChecklistCard items={checklistItems} />
+        <div className="ws-right-stack">
+          <RsvpWebsiteCard
+            isPublished={summary.event.isPublished}
+            slug={summary.event.slug ?? null}
+            status={summary.event.websiteStatus}
+          />
+          <QuickStatsCard
+            coverageLabel={summary.stats.rsvpCoverageLabel}
+            guestLimitLabel={summary.stats.guestLimitLabel}
+            responsesLabel={summary.stats.responsesLabel}
+          />
         </div>
-        <div className="space-y-6 lg:col-span-2">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <RsvpWebsiteCard 
-              slug={summary.event?.event_slug ?? null}
-              status={websiteStatusRaw}
-              isPublished={websiteStatusRaw === "Published"}
-            />
-            <QuickStatsCard 
-              coverageDays={365} 
-              guestLimit={200} 
-              responsesCount={0} 
-            />
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
-}
-
-function formatWords(value: string) {
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function formatPaymentMeta(amountPaid: number | null, amountDue: number | null) {
-  if (amountPaid !== null) {
-    return formatCurrency(amountPaid);
-  }
-  if (amountDue !== null) {
-    return `Due ${formatCurrency(amountDue)}`;
-  }
-  return "No confirmed amount";
-}
-
-function formatCurrency(value: number | null) {
-  if (value === null) return "No confirmed amount";
-  return new Intl.NumberFormat("en-PH", {
-    currency: "PHP",
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-    style: "currency",
-  }).format(value);
 }

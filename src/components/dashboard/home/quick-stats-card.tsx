@@ -1,45 +1,44 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Users, MessageSquareQuote } from "lucide-react";
+import { CalendarDays, MessageSquare, Users } from "lucide-react";
 
 export function QuickStatsCard({
-  coverageDays,
-  guestLimit,
-  responsesCount,
+  coverageLabel,
+  guestLimitLabel,
+  responsesLabel,
 }: {
-  coverageDays: number | string;
-  guestLimit: number | string;
-  responsesCount: number;
+  coverageLabel: string;
+  guestLimitLabel: string;
+  responsesLabel: string;
 }) {
+  const rows = [
+    {
+      icon: <CalendarDays size={18} />,
+      label: "RSVP Coverage",
+      value: coverageLabel,
+    },
+    {
+      icon: <Users size={18} />,
+      label: "Guest Limit",
+      value: guestLimitLabel,
+    },
+    {
+      icon: <MessageSquare size={18} />,
+      label: "Responses",
+      value: responsesLabel,
+    },
+  ];
+
   return (
-    <Card className="rounded-3xl border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-[var(--dash-muted)]">
-          QUICK STATS
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[var(--dash-muted)]">
-            <CalendarDays className="h-4 w-4" />
-            <span className="text-sm">RSVP Coverage</span>
+    <section className="ws-quick-stats">
+      <h3>Quick Stats</h3>
+      <div className="ws-stat-list">
+        {rows.map((row) => (
+          <div className="ws-stat-row" key={row.label}>
+            {row.icon}
+            <span>{row.label}</span>
+            <strong title={row.value}>{row.value}</strong>
           </div>
-          <span className="text-sm font-medium text-[var(--dash-foreground)]">{coverageDays} days</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[var(--dash-muted)]">
-            <Users className="h-4 w-4" />
-            <span className="text-sm">Guest Limit</span>
-          </div>
-          <span className="text-sm font-medium text-[var(--dash-foreground)]">{guestLimit}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[var(--dash-muted)]">
-            <MessageSquareQuote className="h-4 w-4" />
-            <span className="text-sm">Responses</span>
-          </div>
-          <span className="text-sm font-medium text-[var(--dash-foreground)]">{responsesCount} so far</span>
-        </div>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </section>
   );
 }

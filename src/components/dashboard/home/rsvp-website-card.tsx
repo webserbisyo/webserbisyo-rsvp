@@ -1,8 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Copy, Globe } from "lucide-react";
+import { Copy, ExternalLink, Globe, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export function RsvpWebsiteCard({
@@ -14,69 +12,72 @@ export function RsvpWebsiteCard({
   status: string;
   isPublished: boolean;
 }) {
-  const url = slug ? `${process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com"}/r/${slug}` : null;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com";
+  const url = slug ? `${baseUrl}/r/${slug}` : null;
+  const displayUrl = url ? url.replace(/^https?:\/\//, "") : "Slug pending";
 
-  const handleCopy = () => {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    toast.success("RSVP link copied to clipboard");
-  };
+  async function handleCopy() {
+    if (!url) {
+      toast.error("Your RSVP link will be available once the slug is ready.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("RSVP link copied to clipboard");
+    } catch {
+      toast.error("Could not copy the RSVP link.");
+    }
+  }
 
   return (
-    <Card className="rounded-3xl border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-[var(--dash-muted)]">
-          YOUR RSVP WEBSITE
-        </CardTitle>
-        <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${isPublished ? "bg-[var(--dash-success-subtle)] text-[var(--dash-success)] border-[var(--dash-success)]" : "bg-[var(--dash-surface-muted)] text-[var(--dash-muted)] border-[var(--dash-border)]"}`}>
+    <section className="ws-website-panel">
+      <div className="ws-website-head">
+        <div className="min-w-0">
+          <h3>Your RSVP Website</h3>
+          <span className="ws-draft-badge">{isPublished ? "Published" : "Setup in progress"}</span>
+        </div>
+      </div>
+
+      <div className="ws-website-status">
+        <strong>
           {status}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+          {!isPublished ? <span className="ws-status-dots" aria-hidden="true" /> : null}
+        </strong>
+        <p>
+          {isPublished
+            ? "Your RSVP website is live and ready to share."
+            : "Our team is currently building and preparing your RSVP website."}
+        </p>
+      </div>
+
+      <div className={`ws-link-field ${!url ? "is-disabled" : ""}`} title={url ?? "Slug pending"}>
+        <Globe size={18} />
+        <span>{displayUrl}</span>
+        <button onClick={() => void handleCopy()} aria-label="Copy RSVP link" disabled={!url}>
+          <Copy size={18} />
+        </button>
+      </div>
+
+      {!url ? <p className="ws-website-hint">Your RSVP preview and share link will appear once the slug is assigned.</p> : null}
+
+      <div className="ws-website-actions">
         {url ? (
-          <div className="flex items-center justify-between rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface-muted)] px-4 py-3">
-            <span className="truncate text-sm font-medium text-[var(--dash-foreground)]">
-              {url.replace(/^https?:\/\//, "")}
-            </span>
-            <button onClick={handleCopy} className="ml-2 flex-shrink-0 text-[var(--dash-muted)] hover:text-[var(--dash-foreground)]">
-              <Copy className="h-4 w-4" />
-            </button>
-          </div>
+          <a href={url} target="_blank" rel="noreferrer" className="ws-preview-btn">
+            <ExternalLink size={16} />
+            Preview website
+          </a>
         ) : (
-          <div className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface-muted)] px-4 py-3 text-sm text-[var(--dash-muted)]">
-            Setup in progress
-          </div>
+          <button className="ws-preview-btn" disabled>
+            <ExternalLink size={16} />
+            Preview website
+          </button>
         )}
-        
-        <div className="flex gap-3">
-          {url && isPublished ? (
-            <Button
-              asChild
-              className="flex-1 bg-[var(--dash-brand)] text-white hover:bg-[var(--dash-brand-hover)]"
-            >
-              <a href={url} target="_blank" rel="noreferrer">
-                <Globe className="mr-2 h-4 w-4" /> Preview website
-              </a>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              className="flex-1 border-[var(--dash-border)] text-[var(--dash-foreground)] hover:bg-[var(--dash-surface-hover)]"
-            >
-              Request Publish
-            </Button>
-          )}
-          
-          <Button
-            onClick={handleCopy}
-            disabled={!url}
-            variant="outline"
-            className="flex-1 border-[var(--dash-border)] text-[var(--dash-foreground)] hover:bg-[var(--dash-surface-hover)]"
-          >
-            <Copy className="mr-2 h-4 w-4" /> Copy RSVP link
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        <button className="ws-copy-btn" onClick={() => void handleCopy()} disabled={!url}>
+          <LinkIcon size={16} />
+          Copy RSVP link
+        </button>
+      </div>
+    </section>
   );
 }

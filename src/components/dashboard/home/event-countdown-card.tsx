@@ -1,167 +1,407 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Calendar, MessageSquare, Pencil } from "lucide-react";
+import { isSameDay } from "date-fns";
 import Link from "next/link";
-import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+
+function clampProgress(value: number) {
+  return Math.min(100, Math.max(0, value));
+}
+
+function getTimeLeft(targetDate: Date, now: Date) {
+  const diff = Math.max(0, targetDate.getTime() - now.getTime());
+
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((diff / (1000 * 60)) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+    totalMs: diff,
+  };
+}
+
+function getProgressValue({
+  countdownStartAt,
+  now,
+  targetDate,
+}: {
+  countdownStartAt?: Date | null;
+  now: Date;
+  targetDate: Date;
+}) {
+  const deadlineDate = new Date(targetDate);
+  deadlineDate.setDate(deadlineDate.getDate() - 30);
+
+  let progressStart = deadlineDate;
+  let progressEnd = targetDate;
+
+  if (countdownStartAt && countdownStartAt.getTime() < deadlineDate.getTime()) {
+    progressStart = countdownStartAt;
+    progressEnd = deadlineDate;
+  }
+
+  const duration = progressEnd.getTime() - progressStart.getTime();
+  if (duration <= 0) {
+    return 72;
+  }
+
+  const elapsed = now.getTime() - progressStart.getTime();
+  return clampProgress((elapsed / duration) * 100);
+}
+
+function parseDate(value?: string | null) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function FlowerCluster({ side = "left" }: { side?: "left" | "right" }) {
+  const flip = side === "right" ? "ws-flower-right" : "";
+
+  return (
+    <svg className={`ws-flower-cluster ${flip}`} viewBox="0 0 220 260" aria-hidden="true">
+      <defs>
+        <radialGradient id={`petalGradient-${side}`} cx="45%" cy="38%" r="72%">
+          <stop offset="0%" stopColor="#fff3e5" />
+          <stop offset="48%" stopColor="#f5b58f" />
+          <stop offset="100%" stopColor="#d56b4c" />
+        </radialGradient>
+        <linearGradient id={`leafGradient-${side}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#e9b17d" />
+          <stop offset="100%" stopColor="#896e3e" />
+        </linearGradient>
+      </defs>
+
+      <g opacity="0.72" fill="none" stroke="#ffd9bd" strokeWidth="2" strokeLinecap="round">
+        <path d="M39 238C58 165 95 88 176 24" />
+        <path d="M52 210C79 189 107 182 142 192" />
+        <path d="M70 164C95 143 121 138 153 147" />
+        <path d="M98 112C119 91 145 82 178 88" />
+      </g>
+
+      <g fill={`url(#leafGradient-${side})`} opacity="0.66">
+        <path d="M55 207c-23-7-38 2-49 19 23 8 41 1 49-19Z" />
+        <path d="M86 164c-22-5-37 5-45 24 23 5 40-3 45-24Z" />
+        <path d="M116 113c-19-8-36-3-49 13 20 9 37 5 49-13Z" />
+        <path d="M158 75c-3-21 6-36 26-45 4 22-4 38-26 45Z" />
+        <path d="M36 232c25-14 49-11 72 8-25 15-49 12-72-8Z" />
+      </g>
+
+      <g className="ws-blossom" transform="translate(48 166) scale(1.18)">
+        {[0, 60, 120, 180, 240, 300].map((rotation) => (
+          <ellipse
+            key={rotation}
+            cx="0"
+            cy="-23"
+            rx="14"
+            ry="28"
+            fill={`url(#petalGradient-${side})`}
+            transform={`rotate(${rotation})`}
+          />
+        ))}
+        <circle r="13" fill="#8e3d24" />
+        <circle r="8" fill="#f7bb65" />
+      </g>
+
+      <g className="ws-blossom" transform="translate(90 99) scale(.68)">
+        {[0, 72, 144, 216, 288].map((rotation) => (
+          <ellipse
+            key={rotation}
+            cx="0"
+            cy="-17"
+            rx="10"
+            ry="20"
+            fill={`url(#petalGradient-${side})`}
+            transform={`rotate(${rotation})`}
+          />
+        ))}
+        <circle r="9" fill="#9a4329" />
+        <circle r="5" fill="#ffd075" />
+      </g>
+
+      <g className="ws-blossom" transform="translate(147 55) scale(.45)">
+        {[0, 72, 144, 216, 288].map((rotation) => (
+          <ellipse
+            key={rotation}
+            cx="0"
+            cy="-15"
+            rx="9"
+            ry="18"
+            fill={`url(#petalGradient-${side})`}
+            transform={`rotate(${rotation})`}
+          />
+        ))}
+        <circle r="7" fill="#9a4329" />
+        <circle r="4" fill="#ffd075" />
+      </g>
+
+      <g fill="#f8c39c" opacity="0.78">
+        <circle cx="68" cy="124" r="5" />
+        <circle cx="75" cy="136" r="3" />
+        <circle cx="119" cy="78" r="4" />
+        <circle cx="135" cy="92" r="3" />
+        <circle cx="97" cy="215" r="4" />
+      </g>
+    </svg>
+  );
+}
+
+const PETAL_DATA = [
+  { left: "33%", delay: 0, duration: 7, size: 17, rotate: 24 },
+  { left: "42%", delay: 1.1, duration: 9, size: 22, rotate: -18 },
+  { left: "53%", delay: 0.3, duration: 8.5, size: 15, rotate: 52 },
+  { left: "63%", delay: 1.8, duration: 7.5, size: 19, rotate: -40 },
+  { left: "73%", delay: 0.8, duration: 8, size: 24, rotate: 12 },
+  { left: "83%", delay: 2.2, duration: 10, size: 14, rotate: -65 },
+  { left: "48%", delay: 3.1, duration: 8.7, size: 18, rotate: 30 },
+  { left: "58%", delay: 2.5, duration: 9.5, size: 21, rotate: -20 },
+  { left: "39%", delay: 4, duration: 8.2, size: 14, rotate: 72 },
+] as const;
+
+function FallingPetals() {
+  const reduceMotion = useReducedMotion();
+  const petals = useMemo(() => PETAL_DATA, []);
+
+  return (
+    <div className="ws-petals" aria-hidden="true">
+      {petals.map((petal, index) => (
+        <motion.span
+          key={index}
+          className="ws-petal"
+          style={{ left: petal.left, width: petal.size, height: petal.size * 0.54 }}
+          initial={{ y: reduceMotion ? 0 : -42, x: 0, rotate: petal.rotate, opacity: 0.45 }}
+          animate={
+            reduceMotion
+              ? { opacity: 0.55 }
+              : {
+                  opacity: [0, 0.85, 0.78, 0],
+                  rotate: [petal.rotate, petal.rotate + 80, petal.rotate + 160, petal.rotate + 230],
+                  x: [0, index % 2 === 0 ? 18 : -18, index % 2 === 0 ? -10 : 12, 24],
+                  y: [-42, 44, 128, 214],
+                }
+          }
+          transition={{
+            delay: petal.delay,
+            duration: petal.duration,
+            ease: "easeInOut",
+            repeat: Infinity,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CountdownTile({ label, value }: { label: string; value: number }) {
+  const display = String(value).padStart(2, "0");
+
+  return (
+    <div className="ws-count-tile-wrap">
+      <motion.div
+        key={`${label}-${display}`}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="ws-count-tile"
+        initial={{ opacity: 0.55, scale: 0.985, y: 6 }}
+        transition={{ duration: 0.28, ease: "easeOut" }}
+      >
+        {display}
+      </motion.div>
+      <div className="ws-count-label">{label}</div>
+    </div>
+  );
+}
+
+function CountdownMessage({
+  description,
+  title,
+}: {
+  description: string;
+  title: string;
+}) {
+  return (
+    <div className="ws-after-event">
+      <div className="ws-after-copy">
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <Link href="/dashboard/responses" className="ws-after-cta">
+        <MessageSquare size={15} />
+        View responses
+      </Link>
+    </div>
+  );
+}
+
+function CountdownProgress({
+  progressValue,
+  reduceMotion,
+}: {
+  progressValue: number;
+  reduceMotion: boolean | null;
+}) {
+  const dotLeft = `calc(${progressValue}% - 7px)`;
+
+  return (
+    <div className="ws-progress-shell">
+      <Progress className="ws-progress-track" value={progressValue} />
+      <motion.span
+        animate={reduceMotion ? {} : { opacity: [0.82, 1, 0.82], scale: [1, 1.16, 1] }}
+        className="ws-progress-dot"
+        style={{ left: dotLeft }}
+        transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity }}
+      />
+    </div>
+  );
+}
 
 export function EventCountdownCard({
-  eventDate,
-  eventTime,
+  countdownStartAt,
+  eventDateTime,
+  rsvpDeadlineLabel,
 }: {
-  eventDate: string | null;
-  eventTime: string | null;
+  countdownStartAt?: string;
+  eventDateTime?: string;
+  rsvpDeadlineLabel: string;
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [isClient, setIsClient] = useState(false);
-  const [petals, setPetals] = useState<Array<{ id: number; left: string; duration: number; delay: number; xValues: string[] }>>([]);
-  
-  const hasDate = Boolean(eventDate);
-  const targetDateStr = hasDate 
-    ? `${eventDate}T${eventTime || "00:00:00"}` 
-    : null;
+  const targetDate = useMemo(() => parseDate(eventDateTime), [eventDateTime]);
+  const countdownStartDate = useMemo(() => parseDate(countdownStartAt), [countdownStartAt]);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsClient(true);
-    
-    // Generate petals only on client to avoid hydration mismatch and impure render errors
-    const generatedPetals = Array.from({ length: 8 }).map((_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      duration: 10 + Math.random() * 20,
-      delay: Math.random() * -20,
-      xValues: ["0vw", `${Math.random() * 20 - 10}vw`]
-    }));
-    setPetals(generatedPetals);
+    if (!targetDate) return;
 
-    if (!targetDateStr) return;
-
-    // Use a fixed UTC offset or local parsing. We'll let JS parse it locally.
-    const targetDate = new Date(targetDateStr).getTime();
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = targetDate - now;
-
-      if (distance < 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        clearInterval(interval);
-        return;
-      }
-
-      setTimeLeft({
-        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((distance % (1000 * 60)) / 1000),
-      });
+    const interval = window.setInterval(() => {
+      setNow(new Date());
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [targetDateStr]);
+    return () => window.clearInterval(interval);
+  }, [targetDate]);
 
-  if (!hasDate) {
+  if (!targetDate) {
     return (
-      <Card className="relative overflow-hidden rounded-[2rem] border-0 bg-gradient-to-br from-[var(--dash-brand)] to-[var(--dash-brand-hover)] text-white shadow-lg">
-        <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-          <p className="mb-2 text-sm font-medium tracking-widest text-white/80">COUNTDOWN TO YOUR EVENT</p>
-          <h2 className="mb-6 text-3xl font-semibold">When is the big day?</h2>
-          <Button asChild className="bg-white text-[var(--dash-brand)] hover:bg-white/90">
-            <Link href="/dashboard/event">Set event date</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <motion.section
+        animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+        className="ws-countdown-hero"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
+      >
+        <FlowerCluster side="left" />
+        <FlowerCluster side="right" />
+        <FallingPetals />
+        <div className="ws-countdown-veil" aria-hidden="true" />
+
+        <Link href="/dashboard/event" className="ws-edit-date">
+          <Pencil size={13} />
+          <span className="ws-edit-date-full">Edit date &amp; time</span>
+          <span className="ws-edit-date-short">Edit date</span>
+        </Link>
+
+        <div className="ws-hero-left">
+          <div className="ws-kicker">Countdown to your event</div>
+          <h2>
+            When is the
+            <br />
+            special day?
+          </h2>
+          <div className="ws-deadline">
+            <Calendar size={16} />
+            <span>Add your event date to unlock the full countdown view.</span>
+          </div>
+        </div>
+
+        <div className="ws-hero-right ws-hero-empty">
+          <p>Your hero countdown, RSVP deadline, and event timeline will appear here once your date is set.</p>
+        </div>
+      </motion.section>
     );
   }
 
-  const rsvpDeadline = new Date(targetDateStr!);
-  rsvpDeadline.setDate(rsvpDeadline.getDate() - 30);
+  const timeLeft = getTimeLeft(targetDate, now);
+  const isEventDay = isSameDay(now, targetDate);
+  const isAfterEvent = now > targetDate && !isEventDay;
+  const progressValue = getProgressValue({
+    countdownStartAt: countdownStartDate,
+    now,
+    targetDate,
+  });
 
   return (
-    <Card className="relative overflow-hidden rounded-[2rem] border-0 bg-gradient-to-br from-[#c96b48] to-[#b85a39] text-white shadow-[0_20px_50px_-12px_rgba(201,107,72,0.4)]">
-      {!shouldReduceMotion && isClient && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
-          {petals.map((petal) => (
-            <motion.div
-              key={petal.id}
-              className="absolute top-[-10%] h-4 w-4 rounded-full bg-white blur-[2px]"
-              animate={{
-                y: ["0vh", "120vh"],
-                x: petal.xValues,
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: petal.duration,
-                repeat: Infinity,
-                ease: "linear",
-                delay: petal.delay,
-              }}
-              style={{ left: petal.left }}
-            />
-          ))}
+    <motion.section
+      animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+      className="ws-countdown-hero"
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+      transition={{ duration: 0.55, ease: "easeOut" }}
+    >
+      <FlowerCluster side="left" />
+      <FlowerCluster side="right" />
+      <FallingPetals />
+      <div className="ws-countdown-veil" aria-hidden="true" />
+
+      <Link href="/dashboard/event" className="ws-edit-date">
+        <Pencil size={13} />
+        <span className="ws-edit-date-full">Edit date &amp; time</span>
+        <span className="ws-edit-date-short">Edit date</span>
+      </Link>
+
+      <div className="ws-hero-left">
+        <div className="ws-kicker">Countdown to your event</div>
+
+        {isAfterEvent ? (
+          <h2>
+            Celebration
+            <br />
+            completed ✦
+          </h2>
+        ) : isEventDay ? (
+          <h2>
+            Today is
+            <br />
+            the day ✦
+          </h2>
+        ) : (
+          <h2>
+            Your special day
+            <br />
+            countdown
+          </h2>
+        )}
+
+        <div className="ws-deadline">
+          <Calendar size={16} />
+          <span>
+            RSVP deadline: <strong>{rsvpDeadlineLabel}</strong>
+          </span>
         </div>
-      )}
+      </div>
 
-      <div className="pointer-events-none absolute -left-12 -top-12 h-40 w-40 rounded-full bg-white opacity-5 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-12 -right-12 h-40 w-40 rounded-full bg-black opacity-10 blur-3xl" />
-
-      <CardContent className="relative z-10 flex flex-col p-8 sm:p-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold tracking-widest text-white/80">COUNTDOWN TO YOUR EVENT</p>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              {isClient && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 ? "It's the big day!" : "Wedding day countdown"}
-            </h2>
-            <p className="text-white/80">RSVP deadline: {format(rsvpDeadline, "MMMM d, yyyy")}</p>
-          </div>
-          
-          <Button asChild variant="outline" size="sm" className="w-fit border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
-            <Link href="/dashboard/event">
-              <Pencil className="mr-2 h-3.5 w-3.5" /> Edit date &amp; time
-            </Link>
-          </Button>
-        </div>
-
-        <div className="mb-4 mt-10 grid grid-cols-4 gap-3 sm:gap-6">
-          {[
-            { label: "Days", value: timeLeft.days },
-            { label: "Hours", value: timeLeft.hours },
-            { label: "Mins", value: timeLeft.minutes },
-            { label: "Secs", value: timeLeft.seconds },
-          ].map((item) => (
-            <div key={item.label} className="flex flex-col items-center">
-              <div className="flex w-full flex-col items-center justify-center rounded-2xl bg-white/10 py-4 shadow-inner backdrop-blur-md sm:py-6">
-                <span className="text-3xl font-medium tabular-nums sm:text-5xl">
-                  {isClient ? String(item.value).padStart(2, "0") : "00"}
-                </span>
-              </div>
-              <span className="mt-3 text-xs font-medium uppercase tracking-wider text-white/80 sm:text-sm">
-                {item.label}
-              </span>
+      <div className="ws-hero-right">
+        {isAfterEvent ? (
+          <CountdownMessage
+            description="Your RSVP website and responses remain available during your coverage period."
+            title="Celebration completed ✦"
+          />
+        ) : isEventDay ? (
+          <CountdownMessage
+            description="Your event is happening today."
+            title="Today is the day ✦"
+          />
+        ) : (
+          <>
+            <div className="ws-count-grid">
+              <CountdownTile label="Days" value={timeLeft.days} />
+              <CountdownTile label="Hours" value={timeLeft.hours} />
+              <CountdownTile label="Minutes" value={timeLeft.minutes} />
+              <CountdownTile label="Seconds" value={timeLeft.seconds} />
             </div>
-          ))}
-        </div>
-
-        <div className="mt-6 flex h-1 w-full items-center rounded-full bg-black/10">
-          <motion.div 
-            className="relative h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-            initial={{ width: "0%" }}
-            animate={{ width: isClient && targetDateStr ? "75%" : "0%" }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-          >
-            <motion.div 
-              className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-white shadow-[0_0_8px_2px_rgba(255,255,255,0.8)]" 
-              animate={shouldReduceMotion ? {} : { scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </motion.div>
-        </div>
-      </CardContent>
-    </Card>
+            <CountdownProgress progressValue={progressValue} reduceMotion={shouldReduceMotion} />
+            <p className="ws-timer-caption">Time remaining until your special day</p>
+          </>
+        )}
+      </div>
+    </motion.section>
   );
 }

@@ -1,46 +1,45 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReactNode } from "react";
+import { AlertCircle, Check } from "lucide-react";
+
+type SummaryTheme = "neutral" | "premium" | "warning" | "website";
+type SummaryChipTone = "brand" | "neutral" | "success" | "warning";
 
 export function HomeSummaryCard({
-  title,
+  chip,
+  chipTone,
   icon,
-  primary,
-  secondary,
-  status,
-  statusColor = "default",
+  label,
+  meta,
+  subtitle,
+  theme,
+  title,
 }: {
-  title: string;
+  chip: string;
+  chipTone: SummaryChipTone;
   icon: ReactNode;
-  primary: string;
-  secondary: string;
-  status: string;
-  statusColor?: "default" | "success" | "warning" | "destructive" | "brand";
+  label: string;
+  meta?: string;
+  subtitle: string;
+  theme: SummaryTheme;
+  title: string;
 }) {
-  const statusStyles = {
-    default: "bg-[var(--dash-surface-muted)] text-[var(--dash-muted)] border-[var(--dash-border)]",
-    success: "bg-[var(--dash-success-subtle)] text-[var(--dash-success)] border-[var(--dash-success)]",
-    warning: "bg-[var(--dash-warning-subtle)] text-[var(--dash-warning)] border-[var(--dash-warning)]",
-    destructive: "bg-[var(--dash-destructive-subtle)] text-[var(--dash-destructive)] border-[var(--dash-destructive)]",
-    brand: "bg-[var(--dash-brand-subtle)] text-[var(--dash-brand-active)] border-[var(--dash-brand)]",
-  };
+  const chipIcon = chipTone === "warning" ? <AlertCircle size={14} /> : <Check size={14} />;
 
   return (
-    <Card className="rounded-3xl border border-[var(--dash-border)] bg-[var(--dash-surface)] shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[var(--dash-muted)]">
-          {title}
-        </CardTitle>
-        <div className="text-[var(--dash-brand)]">{icon}</div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <p className="text-xl font-semibold text-[var(--dash-foreground)]">{primary}</p>
-          <p className="truncate text-sm text-[var(--dash-muted)]">{secondary}</p>
+    <article className={`ws-summary-card ${theme}`}>
+      <div className="ws-card-label">{label}</div>
+      <div className="ws-card-icon">{icon}</div>
+      <h3>{title}</h3>
+      <p>{subtitle}</p>
+      {meta ? (
+        <div className="ws-card-meta" title={meta}>
+          {meta}
         </div>
-        <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[statusColor]}`}>
-          {status}
-        </div>
-      </CardContent>
-    </Card>
+      ) : null}
+      <span className={`ws-chip ${chipTone}`}>
+        {chipIcon}
+        {chip}
+      </span>
+    </article>
   );
 }
