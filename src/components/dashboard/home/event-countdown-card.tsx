@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { Calendar, MessageSquare, Pencil } from "lucide-react";
 import { isSameDay } from "date-fns";
 import Link from "next/link";
-import { Progress } from "@/components/ui/progress";
 
 function clampProgress(value: number) {
   return Math.min(100, Math.max(0, value));
@@ -177,11 +176,11 @@ function FallingPetals() {
             reduceMotion
               ? { opacity: 0.55 }
               : {
-                  opacity: [0, 0.85, 0.78, 0],
-                  rotate: [petal.rotate, petal.rotate + 80, petal.rotate + 160, petal.rotate + 230],
-                  x: [0, index % 2 === 0 ? 18 : -18, index % 2 === 0 ? -10 : 12, 24],
-                  y: [-42, 44, 128, 214],
-                }
+                opacity: [0, 0.85, 0.78, 0],
+                rotate: [petal.rotate, petal.rotate + 80, petal.rotate + 160, petal.rotate + 230],
+                x: [0, index % 2 === 0 ? 18 : -18, index % 2 === 0 ? -10 : 12, 24],
+                y: [-42, 44, 128, 214],
+              }
           }
           transition={{
             delay: petal.delay,
@@ -242,11 +241,14 @@ function CountdownProgress({
   progressValue: number;
   reduceMotion: boolean | null;
 }) {
-  const dotLeft = `calc(${progressValue}% - 7px)`;
+  const clampedValue = clampProgress(progressValue);
+  const dotLeft = `calc(${clampedValue}% - 7px)`;
 
   return (
-    <div className="ws-progress-shell">
-      <Progress className="ws-progress-track" value={progressValue} />
+    <div className="ws-progress-row" aria-hidden="true">
+      <div className="ws-progress-track">
+        <div className="ws-progress-fill" style={{ width: `${clampedValue}%` }} />
+      </div>
       <motion.span
         animate={reduceMotion ? {} : { opacity: [0.82, 1, 0.82], scale: [1, 1.16, 1] }}
         className="ws-progress-dot"
@@ -292,7 +294,7 @@ export function EventCountdownCard({
         <FlowerCluster side="left" />
         <FlowerCluster side="right" />
         <FallingPetals />
-        <div className="ws-countdown-veil" aria-hidden="true" />
+        <div className="ws-countdown-overlay" aria-hidden="true" />
 
         <Link href="/dashboard/event" className="ws-edit-date">
           <Pencil size={13} />
@@ -339,7 +341,7 @@ export function EventCountdownCard({
       <FlowerCluster side="left" />
       <FlowerCluster side="right" />
       <FallingPetals />
-      <div className="ws-countdown-veil" aria-hidden="true" />
+      <div className="ws-countdown-overlay" aria-hidden="true" />
 
       <Link href="/dashboard/event" className="ws-edit-date">
         <Pencil size={13} />
@@ -390,16 +392,18 @@ export function EventCountdownCard({
             title="Today is the day ✦"
           />
         ) : (
-          <>
+          <div className="ws-countdown-panel">
             <div className="ws-count-grid">
               <CountdownTile label="Days" value={timeLeft.days} />
               <CountdownTile label="Hours" value={timeLeft.hours} />
               <CountdownTile label="Minutes" value={timeLeft.minutes} />
               <CountdownTile label="Seconds" value={timeLeft.seconds} />
             </div>
-            <CountdownProgress progressValue={progressValue} reduceMotion={shouldReduceMotion} />
-            <p className="ws-timer-caption">Time remaining until your special day</p>
-          </>
+            <div className="ws-countdown-footer">
+              <CountdownProgress progressValue={progressValue} reduceMotion={shouldReduceMotion} />
+              <p className="ws-timer-caption">Time remaining until your special day</p>
+            </div>
+          </div>
         )}
       </div>
     </motion.section>
