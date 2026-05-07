@@ -655,10 +655,14 @@
 /* Progress Glow */
 [data-dashboard] .ws-progress-shell {
   position: relative;
-  width: min(100%, 18rem);
-  margin: 8px 0 4px;
+  width: 100%;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  margin: 12px 0 4px;
 }
 [data-dashboard] .ws-progress-track {
+  width: 100%;
   height: 5px;
   overflow: visible;
   border-radius: 999px;
@@ -671,8 +675,7 @@
 }
 [data-dashboard] .ws-progress-dot {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
   width: 14px;
   height: 14px;
   border-radius: 50%;
