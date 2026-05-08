@@ -286,7 +286,7 @@ function getPaymentDescription(isConfirmed: boolean, paymentAmount: number | nul
   }
 
   if (paymentAmount !== null) {
-    return `Awaiting confirmation for ${formatCurrency(paymentAmount)}. Follow up on Messenger or contact our Facebook page for payment assistance.`;
+    return `Awaiting confirmation for ${formatCurrency(paymentAmount)}. Follow up on Messenger.`;
   }
 
   return "Amount pending. Follow up on Messenger or contact our Facebook page for payment assistance.";
