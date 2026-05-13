@@ -1,8 +1,7 @@
 import {
   Activity,
-  CalendarHeart,
+  CalendarSearch,
   CreditCard,
-  FileText,
   Globe,
   LayoutDashboard,
   Settings2,
@@ -26,15 +25,9 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
   {
     href: "/dashboard/event",
-    label: "Event Details",
-    icon: CalendarHeart,
-    description: "Configure your event title, date, venue, and host names",
-  },
-  {
-    href: "/dashboard/website-content",
-    label: "Website Content",
-    icon: FileText,
-    description: "Edit page content, guestbook settings, and gift wallets",
+    label: "Event Website",
+    icon: CalendarSearch,
+    description: "Set up your event website sections and required details",
   },
   {
     href: "/dashboard/responses",

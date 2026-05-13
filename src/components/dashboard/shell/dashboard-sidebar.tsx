@@ -45,7 +45,7 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="WebSerbisyo RSVP">
-              <Link href="/dashboard">
+              <Link href="/dashboard" className="w-full min-w-0">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                   <Image
                     src="/images/brand/webserbisyo-logo.jpeg"
@@ -83,9 +83,9 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
                   isActive={isActive}
                   tooltip={item.label}
                 >
-                  <Link href={item.href}>
+                  <Link href={item.href} className="w-full min-w-0 group-data-[collapsible=icon]:justify-center">
                     <Icon className="size-4 shrink-0" />
-                    <span>{item.label}</span>
+                    <span className="min-w-0 truncate group-data-[collapsible=icon]:hidden">{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

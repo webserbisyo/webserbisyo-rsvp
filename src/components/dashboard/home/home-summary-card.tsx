@@ -23,7 +23,14 @@ export function HomeSummaryCard({
   theme: SummaryTheme;
   title: string;
 }) {
-  const chipIcon = chipTone === "warning" ? <AlertCircle size={14} /> : <Check size={14} />;
+  const chipIcon =
+    chipTone === "success" ? (
+      <Check size={14} />
+    ) : chipTone === "warning" ? (
+      <AlertCircle size={14} />
+    ) : chipTone === "brand" ? (
+      <span className="ws-chip-dot" aria-hidden="true" />
+    ) : null;
 
   return (
     <article className={`ws-summary-card ${theme}`}>

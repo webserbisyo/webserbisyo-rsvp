@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
 import { DashboardMoreDrawer } from "./dashboard-more-drawer";
-import { CalendarHeart, LayoutDashboard, LayoutGrid, Users } from "lucide-react";
+import { CalendarSearch, LayoutDashboard, LayoutGrid, Users } from "lucide-react";
 
 type DashboardMobileBottomNavProps = {
   email: string;
@@ -16,7 +16,7 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
   const [moreOpen, setMoreOpen] = useState(false);
   const items = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { href: "/dashboard/event", label: "Event Details", icon: CalendarHeart },
+    { href: "/dashboard/event", label: "Event Website", icon: CalendarSearch },
     { href: "/dashboard/responses", label: "RSVP Responses", icon: Users },
   ];
 

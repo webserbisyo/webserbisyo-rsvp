@@ -1,12 +1,12 @@
-export default function DashboardEventPage() {
+import { EventWebsiteWorkspace } from "@/components/dashboard/event/event-website-workspace";
+import { getDashboardEventWebsiteData } from "@/server/queries/dashboard-event";
+
+export default async function DashboardEventPage() {
+  const eventWebsiteData = await getDashboardEventWebsiteData();
+
   return (
-    <div>
-      <h1 className="text-2xl font-medium" style={{ color: "var(--dash-foreground)" }}>
-        Event Details
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "var(--dash-muted)" }}>
-        Coming soon.
-      </p>
+    <div className="event-website-page event-website-workspace pb-24 md:pb-8">
+      <EventWebsiteWorkspace eventWebsiteData={eventWebsiteData} />
     </div>
   );
 }

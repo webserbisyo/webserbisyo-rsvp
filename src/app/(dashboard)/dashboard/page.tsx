@@ -44,18 +44,22 @@ export default async function DashboardPage() {
   return (
     <div className="ws-home-page pb-24 md:pb-8">
       <section className="ws-intro">
-        <div className="min-w-0">
+        <div className="ws-intro-line">
           <h2>
             <span>Welcome back, {summary.profile.firstName}</span>
             <span className="ws-intro-sparkle" aria-hidden="true">
               ✦
             </span>
           </h2>
-          <p>
-            <strong title={summary.event.title}>{summary.event.title}</strong>
+          <div className="ws-intro-event">
+            <strong className="ws-intro-event-title" title={summary.event.title}>
+              {summary.event.title}
+            </strong>
             <span aria-hidden="true">·</span>
-            <span>{summary.event.venueLabel}</span>
-          </p>
+            <span className="ws-intro-venue" title={summary.event.venueLabel}>
+              {summary.event.venueLabel}
+            </span>
+          </div>
         </div>
         <span className="ws-intro-pill">Client dashboard</span>
       </section>
@@ -96,7 +100,7 @@ export default async function DashboardPage() {
           title={summary.payment.status}
         />
         <HomeSummaryCard
-          chip={summary.event.isPublished ? "Published" : "Setup in progress"}
+          chip={summary.event.isPublished ? "Published" : "Building"}
           chipTone={summary.event.isPublished ? "success" : "brand"}
           icon={<Globe size={22} />}
           label="Website"
