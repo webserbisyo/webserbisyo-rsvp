@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect } from "react";
 import { ArrowRight, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
-import {
-  getAuthRedirectErrorMessage,
-} from "@/lib/auth/redirects";
+import { getAuthRedirectErrorMessage } from "@/lib/auth/redirects";
 import { createClient } from "@/lib/supabase/client";
 import { loginAction, type LoginActionState } from "@/server/actions/auth";
 import { Button } from "@/components/ui/button";
@@ -52,7 +50,7 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
         {state.error ?? initialMessage}
       </p>
 
-      <form action={formAction} method="post" className="space-y-4">
+      <form action={formAction} className="space-y-4">
         <input type="hidden" name="next" value={nextPath ?? ""} />
 
         <div className="space-y-2">
