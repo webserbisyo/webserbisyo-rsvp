@@ -3,6 +3,18 @@
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useMemo, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
+import {
+  OptionalAttirePanel,
+  OptionalContactSocialsPanel,
+  OptionalCountdownPanel,
+  OptionalEntouragePanel,
+  OptionalGiftDetailsPanel,
+  OptionalLoveStoryPanel,
+  OptionalMessagesPanel,
+  OptionalPrincipalSponsorsPanel,
+  OptionalReceptionPanel,
+  OptionalTimelinePanel,
+} from "@/components/dashboard/event/event-website-optional-panels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +48,7 @@ import {
   type ResolvedEventWebsiteSections,
 } from "@/config/event-website-sections";
 
-type EventWebsiteEditorData = {
+export type EventWebsiteEditorData = {
   eventContent: {
     contentJson: unknown;
     coupleOrCelebrantNames: string | null;
@@ -128,6 +140,19 @@ const requiredSectionKeys = new Set<EventWebsiteSectionKey>([
   "rsvp_form",
 ]);
 
+const implementedWeddingOptionalSectionKeys = new Set<EventWebsiteSectionKey>([
+  "countdown",
+  "secondary_event",
+  "timeline_program",
+  "entourage",
+  "principal_sponsors",
+  "story_message",
+  "attire_motif",
+  "guestbook",
+  "gift_details",
+  "contact_socials",
+]);
+
 export function EventWebsiteEditorPanel({
   eventData,
   resolvedSections,
@@ -166,6 +191,17 @@ export function EventWebsiteEditorPanel({
   }
 
   if (!requiredSectionKeys.has(selectedSectionId)) {
+    if (
+      resolvedSections.eventType === "wedding" &&
+      implementedWeddingOptionalSectionKeys.has(selectedSectionId)
+    ) {
+      return (
+        <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
+          <WeddingOptionalSectionForm eventData={eventData} sectionId={selectedSectionId} />
+        </section>
+      );
+    }
+
     return (
       <section className="event-website-editor" aria-label="Event Website editor">
         <PlaceholderPanel
@@ -213,6 +249,61 @@ function RequiredSectionForm({
   }
 
   return <RsvpFormConfigPanel eventData={eventData} section={section} />;
+}
+
+function WeddingOptionalSectionForm({
+  eventData,
+  sectionId,
+}: {
+  eventData: EventWebsiteEditorData;
+  sectionId: EventWebsiteSectionKey;
+}) {
+  if (sectionId === "countdown") {
+    return <OptionalCountdownPanel />;
+  }
+
+  if (sectionId === "secondary_event") {
+    return <OptionalReceptionPanel eventData={eventData} />;
+  }
+
+  if (sectionId === "timeline_program") {
+    return <OptionalTimelinePanel />;
+  }
+
+  if (sectionId === "entourage") {
+    return <OptionalEntouragePanel />;
+  }
+
+  if (sectionId === "principal_sponsors") {
+    return <OptionalPrincipalSponsorsPanel />;
+  }
+
+  if (sectionId === "story_message") {
+    return <OptionalLoveStoryPanel />;
+  }
+
+  if (sectionId === "attire_motif") {
+    return <OptionalAttirePanel />;
+  }
+
+  if (sectionId === "guestbook") {
+    return <OptionalMessagesPanel />;
+  }
+
+  if (sectionId === "gift_details") {
+    return <OptionalGiftDetailsPanel />;
+  }
+
+  if (sectionId === "contact_socials") {
+    return <OptionalContactSocialsPanel />;
+  }
+
+  return (
+    <PlaceholderPanel
+      title="Section unavailable"
+      description="Optional section editor will be added after required setup."
+    />
+  );
 }
 
 function HostInfoForm({
