@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 import { ArrowRight, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAuthRedirectErrorMessage,
-  getProfileLookupResult,
-  mapSignInErrorMessage,
-  resolvePostLoginPath,
 } from "@/lib/auth/redirects";
 import { createClient } from "@/lib/supabase/client";
+import { loginAction, type LoginActionState } from "@/server/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,12 +19,13 @@ type LoginFormProps = {
   signOutOnMount?: boolean;
 };
 
+const INITIAL_LOGIN_STATE: LoginActionState = {
+  error: null,
+};
+
 export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }: LoginFormProps) {
-  const router = useRouter();
   const initialMessage = getAuthRedirectErrorMessage(initialErrorCode);
-  const [liveMessage, setLiveMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [state, formAction, isPending] = useActionState(loginAction, INITIAL_LOGIN_STATE);
 
   useEffect(() => {
     if (signOutOnMount) {
@@ -42,78 +40,21 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
     }
   }, [initialMessage]);
 
-  async function handleSubmit(formData: FormData) {
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-
-    setIsSubmitting(true);
-    setIsRedirecting(false);
-    setLiveMessage(null);
-
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      const message = mapSignInErrorMessage(signInError.message);
-      setLiveMessage(message);
-      toast.error(message);
-      setIsSubmitting(false);
-      return;
+  useEffect(() => {
+    if (state.error) {
+      toast.error(state.error);
     }
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      const message = "Your session could not be verified after sign-in. Please try again.";
-      setLiveMessage(message);
-      toast.error(message);
-      setIsSubmitting(false);
-      return;
-    }
-
-    const profileLookup = await getProfileLookupResult(supabase, user.id);
-
-    if (profileLookup.status !== "ok") {
-      await supabase.auth.signOut();
-
-      const message =
-        getAuthRedirectErrorMessage(profileLookup.status) ??
-        "Your account could not be validated. Please try again.";
-
-      setLiveMessage(message);
-      toast.error(message);
-      setIsSubmitting(false);
-      return;
-    }
-
-    const destination = resolvePostLoginPath(profileLookup.profile, nextPath);
-
-    setIsRedirecting(true);
-    setIsSubmitting(false);
-    toast.success("Signed in successfully.");
-    router.replace(destination);
-    router.refresh();
-  }
+  }, [state.error]);
 
   return (
     <div className="space-y-5">
       <p className="sr-only" aria-live="assertive" aria-atomic="true">
-        {liveMessage ?? initialMessage}
+        {state.error ?? initialMessage}
       </p>
 
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSubmit(new FormData(event.currentTarget));
-        }}
-      >
+      <form action={formAction} method="post" className="space-y-4">
+        <input type="hidden" name="next" value={nextPath ?? ""} />
+
         <div className="space-y-2">
           <Label htmlFor="email" className="text-white">
             Email
@@ -128,7 +69,7 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
               inputMode="email"
               required
               placeholder="you@example.com"
-              disabled={isSubmitting}
+              disabled={isPending}
               className="cn-glass-autofill h-11 border-white/40 bg-white/60 pl-10 text-slate-900 shadow-sm placeholder:text-slate-500 hover:bg-white/80 focus-visible:border-white/60 focus-visible:bg-white/90 focus-visible:ring-2 focus-visible:ring-slate-900/10"
             />
           </div>
@@ -155,24 +96,25 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
               autoComplete="current-password"
               required
               placeholder="Enter your password"
-              disabled={isSubmitting}
+              disabled={isPending}
               className="cn-glass-autofill h-11 border-white/40 bg-white/60 pl-10 text-slate-900 shadow-sm placeholder:text-slate-500 hover:bg-white/80 focus-visible:border-white/60 focus-visible:bg-white/90 focus-visible:ring-2 focus-visible:ring-slate-900/10"
             />
           </div>
         </div>
 
-        <Button
-          type="submit"
-          size="lg"
-          className="h-11 w-full"
-          disabled={isSubmitting || isRedirecting}
-        >
-          {isSubmitting ? (
+        {state.error ? (
+          <p className="rounded-xl border border-red-300/30 bg-red-500/15 px-4 py-3 text-sm text-white">
+            {state.error}
+          </p>
+        ) : null}
+
+        <Button type="submit" size="lg" className="h-11 w-full" disabled={isPending}>
+          {isPending ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <ArrowRight className="size-4" />
           )}
-          {isRedirecting ? "Redirecting..." : isSubmitting ? "Signing in..." : "Sign in"}
+          {isPending ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 
