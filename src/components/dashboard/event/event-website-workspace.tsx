@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import { EventWebsiteLeftPane } from "@/components/dashboard/event/event-website-left-pane";
 import {
+  buildEventWebsiteContentFromPreviewDraft,
   buildInitialEnabledSections,
   buildInitialPreviewDraft,
   buildInitialWebsiteFlow,
+  buildPreviewDraftFromContent,
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsitePreviewPanel } from "@/components/dashboard/event/event-website-preview-panel";
@@ -14,6 +17,7 @@ import {
   resolveEventWebsiteSections,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 
 type EventWebsiteWorkspaceProps = {
@@ -21,8 +25,10 @@ type EventWebsiteWorkspaceProps = {
 };
 
 export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspaceProps) {
+  const [isPending, startTransition] = useTransition();
   const [selectedSection, setSelectedSection] = useState<EventWebsiteSectionKey>("host_info");
   const [previewScrollRequest, setPreviewScrollRequest] = useState(0);
+  const [savedContent, setSavedContent] = useState(eventWebsiteData.eventWebsiteContent);
   const resolvedSections = useMemo(
     () => resolveEventWebsiteSections(eventWebsiteData.eventType),
     [eventWebsiteData.eventType],
@@ -35,18 +41,32 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
     () =>
       buildInitialWebsiteFlow(
         editableSections,
-        eventWebsiteData.eventWebsiteContent.layout.sectionOrder,
+        savedContent.layout.sectionOrder,
       ),
-    [editableSections, eventWebsiteData.eventWebsiteContent.layout.sectionOrder],
+    [editableSections, savedContent.layout.sectionOrder],
   );
   const [websiteFlowSections, setWebsiteFlowSections] = useState(defaultWebsiteFlowSections);
   const [enabledSections, setEnabledSections] = useState(() =>
     buildInitialEnabledSections(
       editableSections,
-      eventWebsiteData.eventWebsiteContent.layout.enabledSections,
+      savedContent.layout.enabledSections,
     ),
   );
   const [previewDraft, setPreviewDraft] = useState(() => buildInitialPreviewDraft(eventWebsiteData));
+  const currentContent = useMemo(
+    () =>
+      buildEventWebsiteContentFromPreviewDraft({
+        enabledSections,
+        previewDraft,
+        savedContent,
+        sectionOrder: websiteFlowSections.map((section) => section.key),
+      }),
+    [enabledSections, previewDraft, savedContent, websiteFlowSections],
+  );
+  const isDirty = useMemo(
+    () => JSON.stringify(currentContent) !== JSON.stringify(savedContent),
+    [currentContent, savedContent],
+  );
   const sectionsByKey = useMemo(
     () =>
       new Map(
@@ -87,6 +107,41 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
     setPreviewScrollRequest((current) => current + 1);
   }
 
+  function handleSaveChanges() {
+    if (!eventWebsiteData.eventId) {
+      toast.error("The current event could not be resolved for saving.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await saveEventWebsiteAction({
+        content: currentContent,
+        eventId: eventWebsiteData.eventId,
+      });
+
+      if (!result.ok) {
+        toast.error(
+          result.error === "The request could not be completed."
+            ? "Event Website draft could not be saved."
+            : result.error,
+        );
+        return;
+      }
+
+      setSavedContent(result.data.content);
+      setPreviewDraft(buildPreviewDraftFromContent(result.data.content));
+      toast.success("Event Website draft saved.");
+    });
+  }
+
+  const saveButtonLabel = isPending
+    ? "Saving..."
+    : !eventWebsiteData.eventId
+      ? "Save unavailable"
+      : isDirty
+        ? "Save changes"
+        : "All changes saved";
+
   return (
     <>
       <EventWebsiteLeftPane
@@ -100,13 +155,20 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
         onSelectedSectionChange={handleSelectedSectionChange}
         onWebsiteFlowSectionsChange={setWebsiteFlowSections}
       />
-      <EventWebsiteEditorPanel
-        eventData={eventWebsiteData}
-        previewDraft={previewDraft}
-        resolvedSections={resolvedSections}
-        selectedSectionId={selectedSection}
-        onPreviewDraftChange={updatePreviewDraft}
-      />
+      <div className="event-website-middle-space grid content-start gap-4">
+        <EventWebsiteEditorPanel
+          eventData={eventWebsiteData}
+          onPreviewDraftChange={updatePreviewDraft}
+          previewDraft={previewDraft}
+          resolvedSections={resolvedSections}
+          saveButtonProps={{
+            disabled: isPending || !eventWebsiteData.eventId || !isDirty,
+            label: saveButtonLabel,
+            onClick: handleSaveChanges,
+          }}
+          selectedSectionId={selectedSection}
+        />
+      </div>
       <EventWebsitePreviewPanel
         enabledSections={enabledSections}
         previewScrollRequest={previewScrollRequest}

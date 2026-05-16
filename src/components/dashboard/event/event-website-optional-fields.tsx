@@ -25,6 +25,12 @@ export type OptionalFieldConfig = {
   showCounter?: boolean;
 };
 
+export type EventWebsiteSaveButtonProps = {
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+};
+
 export function EditorShell({
   children,
   description,
@@ -297,11 +303,20 @@ export function ListBuilderRow({
   );
 }
 
-export function EditorSaveButton() {
+export function EditorSaveButton({
+  disabled,
+  label,
+  onClick,
+}: EventWebsiteSaveButtonProps) {
   return (
     <div className="event-editor-actions">
-      <Button type="button" className="event-editor-save-button">
-        Save changes
+      <Button
+        type="button"
+        className="event-editor-save-button"
+        disabled={disabled}
+        onClick={onClick}
+      >
+        {label}
       </Button>
     </div>
   );

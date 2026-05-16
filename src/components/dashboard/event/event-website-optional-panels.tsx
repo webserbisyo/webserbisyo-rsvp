@@ -12,6 +12,7 @@ import {
   EditorGroup,
   EditorSaveButton,
   EditorShell,
+  type EventWebsiteSaveButtonProps,
   FieldGrid,
   ListBuilder,
   ListBuilderRow,
@@ -23,11 +24,13 @@ import {
 type SharedOptionalPanelProps = {
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
+  saveButtonProps: EventWebsiteSaveButtonProps;
 };
 
 export function OptionalCountdownPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.countdown;
 
@@ -55,7 +58,7 @@ export function OptionalCountdownPanel({
           onChange={(value) => updateCountdownValue("shortNote", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -63,6 +66,7 @@ export function OptionalCountdownPanel({
 export function OptionalReceptionPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.reception;
 
@@ -134,7 +138,7 @@ export function OptionalReceptionPanel({
           onChange={(value) => updateReceptionValue("mapsLink", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -142,6 +146,7 @@ export function OptionalReceptionPanel({
 export function OptionalTimelinePanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const items = previewDraft.timelineProgram.items;
 
@@ -233,7 +238,7 @@ export function OptionalTimelinePanel({
           ))}
         </ListBuilder>
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -241,6 +246,7 @@ export function OptionalTimelinePanel({
 export function OptionalEntouragePanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.entourage;
   const groups = values.groups;
@@ -337,7 +343,7 @@ export function OptionalEntouragePanel({
           ))}
         </ListBuilder>
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -345,6 +351,7 @@ export function OptionalEntouragePanel({
 export function OptionalPrincipalSponsorsPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.principalSponsors;
 
@@ -379,7 +386,7 @@ export function OptionalPrincipalSponsorsPanel({
           onChange={(value) => updateValues("names", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -387,6 +394,7 @@ export function OptionalPrincipalSponsorsPanel({
 export function OptionalLoveStoryPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.loveStory;
 
@@ -421,7 +429,7 @@ export function OptionalLoveStoryPanel({
           onChange={(value) => updateValues("storyBody", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -429,6 +437,7 @@ export function OptionalLoveStoryPanel({
 export function OptionalAttirePanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.attireDressCode;
 
@@ -461,7 +470,7 @@ export function OptionalAttirePanel({
           onChange={(value) => updateValues("colorMotifNote", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -469,6 +478,7 @@ export function OptionalAttirePanel({
 export function OptionalMessagesPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.messages;
 
@@ -496,7 +506,7 @@ export function OptionalMessagesPanel({
           onChange={(value) => updateValues("messageBody", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -504,6 +514,7 @@ export function OptionalMessagesPanel({
 export function OptionalGiftDetailsPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.giftDetails;
   const giftOptionOne = values.options[0] ?? { file: null, title: "" };
@@ -627,7 +638,7 @@ export function OptionalGiftDetailsPanel({
           )}
         </div>
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -635,6 +646,7 @@ export function OptionalGiftDetailsPanel({
 export function OptionalContactSocialsPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.contactSocials;
 
@@ -722,7 +734,7 @@ export function OptionalContactSocialsPanel({
           onChange={(value) => updateValues("tikTokUrl", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -730,6 +742,7 @@ export function OptionalContactSocialsPanel({
 export function OptionalMusicEffectsPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.musicEffects;
 
@@ -773,7 +786,7 @@ export function OptionalMusicEffectsPanel({
           onChange={(value) => updateValues("shortNote", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -781,6 +794,7 @@ export function OptionalMusicEffectsPanel({
 export function OptionalExtraInfoPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.extraInfo;
   const items = values.items;
@@ -883,7 +897,7 @@ export function OptionalExtraInfoPanel({
           ))}
         </ListBuilder>
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }

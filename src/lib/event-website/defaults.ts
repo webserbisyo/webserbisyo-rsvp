@@ -25,11 +25,7 @@ export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSe
 export function buildDefaultWeddingEventWebsiteContent(
   context: EventWebsiteDefaultsContext = {},
 ): EventWebsiteContent {
-  const rawCoupleNames = firstNonEmpty(
-    context.eventContent?.coupleOrCelebrantNames,
-    context.event?.title,
-    context.client?.name,
-  );
+  const rawCoupleNames = firstNonEmpty(context.eventContent?.coupleOrCelebrantNames);
   const coupleNames = deriveWeddingNames(rawCoupleNames);
   const hostLine = firstNonEmpty(
     context.eventContent?.heroTitle,

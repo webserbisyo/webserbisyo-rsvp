@@ -7,6 +7,7 @@ import type { Json } from "@/lib/supabase/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type DashboardEventWebsiteData = {
+  eventId: string | null;
   eventWebsiteContent: EventWebsiteContent;
   eventContent: {
     contentJson: Json;
@@ -48,6 +49,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
       .from("rsvp_events")
       .select(
         `
+          id,
           title,
           event_type,
           event_date,
@@ -134,6 +136,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
   );
 
   return {
+    eventId: event?.id ?? null,
     eventContent: eventContentData,
     eventDate: event?.event_date ?? null,
     eventTime: event?.event_time ?? null,

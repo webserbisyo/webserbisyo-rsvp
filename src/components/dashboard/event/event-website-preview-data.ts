@@ -2,6 +2,8 @@ import type { EventWebsiteSectionDefinition, EventWebsiteSectionKey } from "@/co
 import {
   eventWebsiteContentSectionKeys,
   type EventWebsiteContent,
+  type EventWebsiteContentSectionKey,
+  type EventWebsiteCustomQuestionFieldType,
 } from "@/lib/event-website/types";
 
 export type EventWebsitePreviewDevice = "desktop" | "mobile";
@@ -490,6 +492,175 @@ export function buildPreviewDraftFromContent(content: EventWebsiteContent): Even
       venueName: content.sections.venue.venueName,
     },
   };
+}
+
+export function buildEventWebsiteContentFromPreviewDraft({
+  enabledSections,
+  previewDraft,
+  savedContent,
+  sectionOrder,
+}: {
+  enabledSections: Partial<Record<EventWebsiteSectionKey, boolean>>;
+  previewDraft: EventWebsitePreviewDraft;
+  savedContent: EventWebsiteContent;
+  sectionOrder: readonly EventWebsiteSectionKey[];
+}): EventWebsiteContent {
+  return {
+    ...savedContent,
+    layout: {
+      enabledSections: {
+        ...savedContent.layout.enabledSections,
+        ...pickSavedSectionEnabledState(enabledSections),
+      },
+      sectionOrder: mapSectionOrder(sectionOrder),
+    },
+    sections: {
+      attire_motif: {
+        colorMotifNote: previewDraft.attireDressCode.colorMotifNote,
+        dressCodeNote: previewDraft.attireDressCode.dressCodeNote,
+        sectionIntro: previewDraft.attireDressCode.sectionIntro,
+      },
+      contact_socials: {
+        contactNumber: previewDraft.contactSocials.contactNumber,
+        contactPerson: previewDraft.contactSocials.contactPerson,
+        email: previewDraft.contactSocials.email,
+        facebookUrl: previewDraft.contactSocials.facebookUrl,
+        instagramUrl: previewDraft.contactSocials.instagramUrl,
+        tikTokUrl: previewDraft.contactSocials.tikTokUrl,
+      },
+      countdown: {
+        shortNote: previewDraft.countdown.shortNote,
+        title: previewDraft.countdown.title,
+      },
+      extra_info: {
+        items: previewDraft.extraInfo.items.map((item, index) => ({
+          details: item.details,
+          id: savedContent.sections.extra_info.items[index]?.id ?? `extra-info-${index + 1}`,
+          title: item.title,
+        })),
+        sectionIntro: previewDraft.extraInfo.sectionIntro,
+        sectionTitle: previewDraft.extraInfo.sectionTitle,
+      },
+      gift_details: {
+        giftNote: previewDraft.giftDetails.giftNote,
+        options: previewDraft.giftDetails.options.map((option, index) => ({
+          id: savedContent.sections.gift_details.options[index]?.id ?? `gift-option-${index + 1}`,
+          image: savedContent.sections.gift_details.options[index]?.image ?? null,
+          title: option.title,
+        })),
+        sectionIntro: previewDraft.giftDetails.sectionIntro,
+      },
+      guestbook: {
+        messageBody: previewDraft.messages.messageBody,
+        sectionTitle: previewDraft.messages.sectionTitle,
+      },
+      host_info: {
+        brideName: previewDraft.coupleInfo.brideName,
+        displayAs: previewDraft.coupleInfo.displayAs,
+        groomName: previewDraft.coupleInfo.groomName,
+        hostLine: previewDraft.coupleInfo.hostLine,
+        shortHostMessage: previewDraft.coupleInfo.shortHostMessage,
+      },
+      main_event: {
+        endTime: previewDraft.ceremony.endTime,
+        eventDate: previewDraft.ceremony.eventDate,
+        eventLabel: previewDraft.ceremony.eventLabel,
+        eventTime: previewDraft.ceremony.eventTime,
+        rsvpDeadline: previewDraft.ceremony.rsvpDeadline,
+        scheduleNote: previewDraft.ceremony.scheduleNote,
+      },
+      music_effects: {
+        musicLink: previewDraft.musicEffects.musicLink,
+        musicTitle: previewDraft.musicEffects.musicTitle,
+        playButtonLabel: previewDraft.musicEffects.playButtonLabel,
+        shortNote: previewDraft.musicEffects.shortNote,
+      },
+      principal_sponsors: {
+        introLine: previewDraft.principalSponsors.introLine,
+        names: previewDraft.principalSponsors.names,
+      },
+      rsvp_form: {
+        companionAgeEnabled: previewDraft.rsvpForm.companionAgeEnabled,
+        companionLimit: parseCompanionLimit(
+          previewDraft.rsvpForm.companionLimit,
+          savedContent.sections.rsvp_form.companionLimit,
+        ),
+        companionNameEnabled: previewDraft.rsvpForm.companionNameEnabled,
+        customQuestions: previewDraft.rsvpForm.customQuestions.map((question, index) => ({
+          fieldType: question.fieldType as EventWebsiteCustomQuestionFieldType,
+          id: savedContent.sections.rsvp_form.customQuestions[index]?.id ?? `custom-question-${index + 1}`,
+          label: question.label,
+          options: [...question.options],
+          required: question.required,
+        })),
+        foodAllergiesEnabled: previewDraft.rsvpForm.foodAllergiesEnabled,
+        messageToHostEnabled: previewDraft.rsvpForm.messageToHostEnabled,
+        plusOneEnabled: previewDraft.rsvpForm.plusOneEnabled,
+      },
+      secondary_event: {
+        address: previewDraft.reception.address,
+        endTime: previewDraft.reception.endTime,
+        mapsLink: previewDraft.reception.mapsLink,
+        note: previewDraft.reception.note,
+        startTime: previewDraft.reception.startTime,
+        title: previewDraft.reception.title,
+        venueName: previewDraft.reception.venueName,
+      },
+      story_message: {
+        sectionIntro: previewDraft.loveStory.sectionIntro,
+        storyBody: previewDraft.loveStory.storyBody,
+        storyTitle: previewDraft.loveStory.storyTitle,
+      },
+      timeline_program: {
+        items: previewDraft.timelineProgram.items.map((item, index) => ({
+          description: item.description,
+          id: savedContent.sections.timeline_program.items[index]?.id ?? `timeline-item-${index + 1}`,
+          time: item.time,
+          title: item.title,
+        })),
+      },
+      entourage: {
+        groups: previewDraft.entourage.groups.map((group, index) => ({
+          groupTitle: group.groupTitle,
+          id: savedContent.sections.entourage.groups[index]?.id ?? `entourage-group-${index + 1}`,
+          names: group.names,
+        })),
+        introLine: previewDraft.entourage.introLine,
+      },
+      venue: {
+        address: previewDraft.venue.address,
+        arrivalNote: previewDraft.venue.arrivalNote,
+        mapsLink: previewDraft.venue.mapsLink,
+        venueName: previewDraft.venue.venueName,
+      },
+    },
+  };
+}
+
+function mapSectionOrder(sectionOrder: readonly EventWebsiteSectionKey[]): EventWebsiteContentSectionKey[] {
+  return sectionOrder.filter((key): key is EventWebsiteContentSectionKey =>
+    eventWebsiteContentSectionKeys.includes(key as EventWebsiteContentSectionKey),
+  );
+}
+
+function parseCompanionLimit(value: string, fallback: number) {
+  const parsed = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsed)) {
+    return fallback;
+  }
+
+  return Math.max(0, Math.min(parsed, 10));
+}
+
+function pickSavedSectionEnabledState(
+  enabledSections: Partial<Record<EventWebsiteSectionKey, boolean>>,
+): Partial<Record<EventWebsiteContentSectionKey, boolean>> {
+  return Object.fromEntries(
+    eventWebsiteContentSectionKeys.flatMap((key) =>
+      typeof enabledSections[key] === "boolean" ? [[key, enabledSections[key]]] : [],
+    ),
+  ) as Partial<Record<EventWebsiteContentSectionKey, boolean>>;
 }
 
 export function formatPreviewDate(value: string, fallback: string) {

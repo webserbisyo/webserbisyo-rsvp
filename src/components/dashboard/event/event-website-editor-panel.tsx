@@ -4,6 +4,10 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { useMemo, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import {
+  EditorSaveButton,
+  type EventWebsiteSaveButtonProps,
+} from "@/components/dashboard/event/event-website-optional-fields";
+import {
   OptionalAttirePanel,
   OptionalContactSocialsPanel,
   OptionalCountdownPanel,
@@ -76,6 +80,7 @@ type EventWebsiteEditorPanelProps = {
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
   resolvedSections: ResolvedEventWebsiteSections;
+  saveButtonProps: EventWebsiteSaveButtonProps;
   selectedSectionId: EventWebsiteSectionKey;
 };
 
@@ -158,6 +163,7 @@ export function EventWebsiteEditorPanel({
   onPreviewDraftChange,
   previewDraft,
   resolvedSections,
+  saveButtonProps,
   selectedSectionId,
 }: EventWebsiteEditorPanelProps) {
   const selectedSection = useMemo(
@@ -203,6 +209,7 @@ export function EventWebsiteEditorPanel({
             previewDraft={previewDraft}
             sectionId={selectedSectionId}
             onPreviewDraftChange={onPreviewDraftChange}
+            saveButtonProps={saveButtonProps}
           />
         </section>
       );
@@ -228,6 +235,7 @@ export function EventWebsiteEditorPanel({
         section={selectedSection}
         sectionId={selectedSectionId as EventWebsiteRequiredSectionKey}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     </section>
   );
@@ -240,6 +248,7 @@ function RequiredSectionForm({
   previewDraft,
   section,
   sectionId,
+  saveButtonProps,
 }: {
   eventData: EventWebsiteEditorData;
   eventType: EventWebsiteEventType | "generic";
@@ -247,6 +256,7 @@ function RequiredSectionForm({
   previewDraft: EventWebsitePreviewDraft;
   section: EventWebsiteSectionDefinition;
   sectionId: EventWebsiteRequiredSectionKey;
+  saveButtonProps: EventWebsiteSaveButtonProps;
 }) {
   if (sectionId === "host_info") {
     return (
@@ -255,6 +265,7 @@ function RequiredSectionForm({
         eventType={eventType}
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -267,6 +278,7 @@ function RequiredSectionForm({
         previewDraft={previewDraft}
         section={section}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -277,6 +289,7 @@ function RequiredSectionForm({
         previewDraft={previewDraft}
         section={section}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -286,6 +299,7 @@ function RequiredSectionForm({
       previewDraft={previewDraft}
       section={section}
       onPreviewDraftChange={onPreviewDraftChange}
+      saveButtonProps={saveButtonProps}
     />
   );
 }
@@ -293,10 +307,12 @@ function RequiredSectionForm({
 function WeddingOptionalSectionForm({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
   sectionId,
 }: {
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
+  saveButtonProps: EventWebsiteSaveButtonProps;
   sectionId: EventWebsiteSectionKey;
 }) {
   if (sectionId === "countdown") {
@@ -304,6 +320,7 @@ function WeddingOptionalSectionForm({
       <OptionalCountdownPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -313,6 +330,7 @@ function WeddingOptionalSectionForm({
       <OptionalReceptionPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -322,6 +340,7 @@ function WeddingOptionalSectionForm({
       <OptionalTimelinePanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -331,6 +350,7 @@ function WeddingOptionalSectionForm({
       <OptionalEntouragePanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -340,6 +360,7 @@ function WeddingOptionalSectionForm({
       <OptionalPrincipalSponsorsPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -349,6 +370,7 @@ function WeddingOptionalSectionForm({
       <OptionalLoveStoryPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -358,6 +380,7 @@ function WeddingOptionalSectionForm({
       <OptionalAttirePanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -367,6 +390,7 @@ function WeddingOptionalSectionForm({
       <OptionalMessagesPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -376,6 +400,7 @@ function WeddingOptionalSectionForm({
       <OptionalGiftDetailsPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -385,6 +410,7 @@ function WeddingOptionalSectionForm({
       <OptionalContactSocialsPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -394,6 +420,7 @@ function WeddingOptionalSectionForm({
       <OptionalMusicEffectsPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -403,6 +430,7 @@ function WeddingOptionalSectionForm({
       <OptionalExtraInfoPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
       />
     );
   }
@@ -420,11 +448,13 @@ function HostInfoForm({
   eventType,
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
 }: {
   eventData: EventWebsiteEditorData;
   eventType: EventWebsiteEventType | "generic";
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
+  saveButtonProps: EventWebsiteSaveButtonProps;
 }) {
   const model = getHostInfoModel(eventType);
   const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
@@ -521,7 +551,7 @@ function HostInfoForm({
           })}
         </EditorGroup>
       ))}
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -531,12 +561,14 @@ function MainEventForm({
   eventType,
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
   section,
 }: {
   eventData: EventWebsiteEditorData;
   eventType: EventWebsiteEventType | "generic";
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
+  saveButtonProps: EventWebsiteSaveButtonProps;
   section: EventWebsiteSectionDefinition;
 }) {
   const model = getMainEventModel(eventType, section.label);
@@ -604,7 +636,7 @@ function MainEventForm({
           onChange={(value) => updateMainEventValue("scheduleNote", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -612,10 +644,12 @@ function MainEventForm({
 function VenueForm({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
   section,
 }: {
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
+  saveButtonProps: EventWebsiteSaveButtonProps;
   section: EventWebsiteSectionDefinition;
 }) {
   const values = previewDraft.venue;
@@ -676,7 +710,7 @@ function VenueForm({
           onChange={(value) => updateVenueValue("arrivalNote", value)}
         />
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -684,10 +718,12 @@ function VenueForm({
 function RsvpFormConfigPanel({
   onPreviewDraftChange,
   previewDraft,
+  saveButtonProps,
   section,
 }: {
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
+  saveButtonProps: EventWebsiteSaveButtonProps;
   section: EventWebsiteSectionDefinition;
 }) {
   const [isCustomQuestionDialogOpen, setIsCustomQuestionDialogOpen] = useState(false);
@@ -1055,7 +1091,7 @@ function RsvpFormConfigPanel({
           </div>
         ))}
       </EditorGroup>
-      <EditorSaveButton />
+      <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
 }
@@ -1276,16 +1312,6 @@ function ToggleRow({
         onCheckedChange={onCheckedChange}
         aria-label={`Toggle ${title}`}
       />
-    </div>
-  );
-}
-
-function EditorSaveButton() {
-  return (
-    <div className="event-editor-actions">
-      <Button type="button" className="event-editor-save-button">
-        Save changes
-      </Button>
     </div>
   );
 }

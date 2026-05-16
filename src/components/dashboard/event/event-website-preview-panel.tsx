@@ -40,13 +40,6 @@ type EventWebsitePreviewPanelProps = {
 
 const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(previewSupportedSectionKeys);
 
-const countdownItems = [
-  { label: "Days", value: "04" },
-  { label: "Hours", value: "02" },
-  { label: "Minutes", value: "39" },
-  { label: "Seconds", value: "55" },
-];
-
 export function EventWebsitePreviewPanel({
   enabledSections,
   previewScrollRequest,
@@ -232,6 +225,19 @@ function CoupleInfoPreview({ draft }: { draft: EventWebsitePreviewDraft }) {
 function CountdownPreview({ draft }: { draft: EventWebsitePreviewDraft }) {
   const title = withFallback(draft.countdown.title, previewDefaultDraft.countdown.title);
   const shortNote = draft.countdown.shortNote.trim();
+  const [now, setNow] = useState(() => Date.now());
+  const countdownItems = useMemo(
+    () => buildCountdownItems(draft.ceremony.eventDate, draft.ceremony.eventTime, now),
+    [draft.ceremony.eventDate, draft.ceremony.eventTime, now],
+  );
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   return (
     <section className="event-preview-section">
@@ -242,7 +248,6 @@ function CountdownPreview({ draft }: { draft: EventWebsitePreviewDraft }) {
       {shortNote ? <p className="event-preview-copy">{shortNote}</p> : null}
       <div className="event-preview-countdown-grid">
         {countdownItems.map((item, index) => (
-          // Future real countdown should derive from Ceremony date + start time.
           <motion.div
             key={item.label}
             className="event-preview-countdown-card"
@@ -863,6 +868,58 @@ function normalizeExtraInfoItems(items: EventWebsitePreviewDraft["extraInfo"]["i
 function normalizeGiftOptions(options: EventWebsitePreviewDraft["giftDetails"]["options"]) {
   const cleaned = options.filter((option) => option.title.trim() || option.file);
   return cleaned.length > 0 ? cleaned : previewDefaultDraft.giftDetails.options;
+}
+
+function buildCountdownItems(eventDate: string, eventTime: string, now: number) {
+  const targetTime = parseCountdownTarget(eventDate, eventTime);
+
+  if (targetTime === null) {
+    return createZeroCountdownItems();
+  }
+
+  const remainingMs = Math.max(0, targetTime - now);
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return [
+    { label: "Days", value: formatCountdownValue(days) },
+    { label: "Hours", value: formatCountdownValue(hours) },
+    { label: "Minutes", value: formatCountdownValue(minutes) },
+    { label: "Seconds", value: formatCountdownValue(seconds) },
+  ];
+}
+
+function createZeroCountdownItems() {
+  return [
+    { label: "Days", value: "00" },
+    { label: "Hours", value: "00" },
+    { label: "Minutes", value: "00" },
+    { label: "Seconds", value: "00" },
+  ];
+}
+
+function parseCountdownTarget(eventDate: string, eventTime: string) {
+  const normalizedDate = eventDate.trim();
+  const normalizedTime = eventTime.trim();
+
+  if (!normalizedDate || !normalizedTime) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${normalizedDate}T${normalizedTime}`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate.getTime();
+}
+
+function formatCountdownValue(value: number) {
+  return `${value}`.padStart(2, "0");
 }
 
 function withFallback(value: string, fallback: string) {
