@@ -1,0 +1,478 @@
+import { z } from "zod";
+import {
+  DEFAULT_WEDDING_EVENT_TYPE,
+  eventWebsiteContentSectionKeys,
+  eventWebsiteCustomQuestionFieldTypes,
+  type EventWebsiteContentSectionKey,
+} from "@/lib/event-website/types";
+
+const DANGEROUS_PROTOCOLS = new Set(["javascript:", "data:", "file:"]);
+const SECTION_COUNT = eventWebsiteContentSectionKeys.length;
+
+function trimString(value: unknown) {
+  return typeof value === "string" ? value.trim() : value;
+}
+
+function draftText(max: number) {
+  return z.preprocess(trimString, z.string().max(max));
+}
+
+function requiredDraftText(max: number) {
+  return z.preprocess(trimString, z.string().min(1).max(max));
+}
+
+function lineDelimitedItemCount(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean).length;
+}
+
+function isValidDateInput(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isValidTimeInput(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function isValidLocalDateTimeInput(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value);
+}
+
+export function isSafeHttpUrl(value: string) {
+  if (!value) {
+    return true;
+  }
+
+  const lowered = value.toLowerCase();
+
+  for (const protocol of DANGEROUS_PROTOCOLS) {
+    if (lowered.startsWith(protocol)) {
+      return false;
+    }
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export const EventWebsiteContentSectionKeySchema = z.enum(eventWebsiteContentSectionKeys);
+export const EventWebsiteContentEventTypeSchema = z.literal(DEFAULT_WEDDING_EVENT_TYPE);
+export const EventWebsiteCustomQuestionFieldTypeSchema = z.enum(
+  eventWebsiteCustomQuestionFieldTypes,
+);
+
+export const EventWebsiteItemIdSchema = z.preprocess(trimString, z.string().min(1).max(100));
+
+export const EventWebsiteSafeUrlSchema = (max: number) =>
+  draftText(max).refine((value) => isSafeHttpUrl(value), {
+    error: "Use a valid http or https URL.",
+  });
+
+export const EventWebsiteDateInputSchema = draftText(10).refine(
+  (value) => value === "" || isValidDateInput(value),
+  {
+    error: "Use YYYY-MM-DD format.",
+  },
+);
+
+export const EventWebsiteTimeInputSchema = draftText(5).refine(
+  (value) => value === "" || isValidTimeInput(value),
+  {
+    error: "Use HH:MM format.",
+  },
+);
+
+export const EventWebsiteLocalDateTimeInputSchema = draftText(16).refine(
+  (value) => value === "" || isValidLocalDateTimeInput(value),
+  {
+    error: "Use YYYY-MM-DDTHH:MM format.",
+  },
+);
+
+export const EventWebsiteImageAssetSchema = z
+  .object({
+    alt: draftText(160).optional(),
+    path: requiredDraftText(500),
+    url: EventWebsiteSafeUrlSchema(2000).optional(),
+  })
+  .strict();
+
+export const EventWebsiteHostInfoSectionSchema = z
+  .object({
+    brideName: draftText(40),
+    displayAs: draftText(80),
+    groomName: draftText(40),
+    hostLine: draftText(120),
+    shortHostMessage: draftText(160),
+  })
+  .strict();
+
+export const EventWebsiteCountdownSectionSchema = z
+  .object({
+    shortNote: draftText(160),
+    title: draftText(90),
+  })
+  .strict();
+
+export const EventWebsiteMusicEffectsSectionSchema = z
+  .object({
+    musicLink: EventWebsiteSafeUrlSchema(240),
+    musicTitle: draftText(80),
+    playButtonLabel: draftText(80),
+    shortNote: draftText(180),
+  })
+  .strict();
+
+export const EventWebsiteMainEventSectionSchema = z
+  .object({
+    endTime: EventWebsiteTimeInputSchema,
+    eventDate: EventWebsiteDateInputSchema,
+    eventLabel: draftText(80),
+    eventTime: EventWebsiteTimeInputSchema,
+    rsvpDeadline: EventWebsiteLocalDateTimeInputSchema,
+    scheduleNote: draftText(200),
+  })
+  .strict();
+
+export const EventWebsiteVenueSectionSchema = z
+  .object({
+    address: draftText(180),
+    arrivalNote: draftText(160),
+    mapsLink: EventWebsiteSafeUrlSchema(200),
+    venueName: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteSecondaryEventSectionSchema = z
+  .object({
+    address: draftText(180),
+    endTime: EventWebsiteTimeInputSchema,
+    mapsLink: EventWebsiteSafeUrlSchema(200),
+    note: draftText(180),
+    startTime: EventWebsiteTimeInputSchema,
+    title: draftText(80),
+    venueName: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteTimelineItemSchema = z
+  .object({
+    description: draftText(180),
+    id: EventWebsiteItemIdSchema,
+    time: EventWebsiteTimeInputSchema,
+    title: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteTimelineProgramSectionSchema = z
+  .object({
+    items: z.array(EventWebsiteTimelineItemSchema).max(20),
+  })
+  .strict();
+
+export const EventWebsiteEntourageGroupSchema = z
+  .object({
+    groupTitle: draftText(80),
+    id: EventWebsiteItemIdSchema,
+    names: draftText(220),
+  })
+  .strict();
+
+export const EventWebsiteEntourageSectionSchema = z
+  .object({
+    groups: z.array(EventWebsiteEntourageGroupSchema).max(20),
+    introLine: draftText(220),
+  })
+  .strict();
+
+export const EventWebsitePrincipalSponsorsSectionSchema = z
+  .object({
+    introLine: draftText(220),
+    names: draftText(1200).superRefine((value, ctx) => {
+      if (lineDelimitedItemCount(value) > 40) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Use at most 40 principal sponsor names.",
+        });
+      }
+    }),
+  })
+  .strict();
+
+export const EventWebsiteAttireMotifSectionSchema = z
+  .object({
+    colorMotifNote: draftText(180),
+    dressCodeNote: draftText(180),
+    sectionIntro: draftText(180),
+  })
+  .strict();
+
+export const EventWebsiteExtraInfoItemSchema = z
+  .object({
+    details: draftText(220),
+    id: EventWebsiteItemIdSchema,
+    title: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteExtraInfoSectionSchema = z
+  .object({
+    items: z.array(EventWebsiteExtraInfoItemSchema).max(12),
+    sectionIntro: draftText(180),
+    sectionTitle: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteCustomQuestionSchema = z
+  .object({
+    fieldType: EventWebsiteCustomQuestionFieldTypeSchema,
+    id: EventWebsiteItemIdSchema,
+    label: draftText(100),
+    options: z.array(draftText(80)).max(12),
+    required: z.boolean(),
+  })
+  .strict();
+
+export const EventWebsiteRsvpFormSectionSchema = z
+  .object({
+    companionAgeEnabled: z.boolean(),
+    companionLimit: z.number().int().min(0).max(10),
+    companionNameEnabled: z.boolean(),
+    customQuestions: z.array(EventWebsiteCustomQuestionSchema).max(10),
+    foodAllergiesEnabled: z.boolean(),
+    messageToHostEnabled: z.boolean(),
+    plusOneEnabled: z.boolean(),
+  })
+  .strict();
+
+export const EventWebsiteGiftOptionSchema = z
+  .object({
+    id: EventWebsiteItemIdSchema,
+    image: EventWebsiteImageAssetSchema.nullable(),
+    title: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteGiftDetailsSectionSchema = z
+  .object({
+    giftNote: draftText(360),
+    options: z.array(EventWebsiteGiftOptionSchema).max(2),
+    sectionIntro: draftText(200),
+  })
+  .strict();
+
+export const EventWebsiteGuestbookSectionSchema = z
+  .object({
+    messageBody: draftText(320),
+    sectionTitle: draftText(80),
+  })
+  .strict();
+
+export const EventWebsiteStoryMessageSectionSchema = z
+  .object({
+    sectionIntro: draftText(180),
+    storyBody: draftText(420),
+    storyTitle: draftText(80),
+  })
+  .strict();
+
+const emailDraftSchema = draftText(120).refine((value) => {
+  if (!value) {
+    return true;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}, {
+  error: "Enter a valid email address.",
+});
+
+export const EventWebsiteContactSocialsSectionSchema = z
+  .object({
+    contactNumber: draftText(40),
+    contactPerson: draftText(80),
+    email: emailDraftSchema,
+    facebookUrl: EventWebsiteSafeUrlSchema(200),
+    instagramUrl: EventWebsiteSafeUrlSchema(200),
+    tikTokUrl: EventWebsiteSafeUrlSchema(200),
+  })
+  .strict();
+
+export const EventWebsiteSectionsSchema = z
+  .object({
+    attire_motif: EventWebsiteAttireMotifSectionSchema,
+    contact_socials: EventWebsiteContactSocialsSectionSchema,
+    countdown: EventWebsiteCountdownSectionSchema,
+    extra_info: EventWebsiteExtraInfoSectionSchema,
+    gift_details: EventWebsiteGiftDetailsSectionSchema,
+    guestbook: EventWebsiteGuestbookSectionSchema,
+    host_info: EventWebsiteHostInfoSectionSchema,
+    main_event: EventWebsiteMainEventSectionSchema,
+    music_effects: EventWebsiteMusicEffectsSectionSchema,
+    principal_sponsors: EventWebsitePrincipalSponsorsSectionSchema,
+    rsvp_form: EventWebsiteRsvpFormSectionSchema,
+    secondary_event: EventWebsiteSecondaryEventSectionSchema,
+    story_message: EventWebsiteStoryMessageSectionSchema,
+    timeline_program: EventWebsiteTimelineProgramSectionSchema,
+    entourage: EventWebsiteEntourageSectionSchema,
+    venue: EventWebsiteVenueSectionSchema,
+  })
+  .strict();
+
+const enabledSectionsShape = Object.fromEntries(
+  eventWebsiteContentSectionKeys.map((key) => [key, z.boolean()]),
+) as Record<EventWebsiteContentSectionKey, z.ZodBoolean>;
+
+const enabledSectionsPatchShape = Object.fromEntries(
+  eventWebsiteContentSectionKeys.map((key) => [key, z.boolean().optional()]),
+) as Record<EventWebsiteContentSectionKey, z.ZodOptional<z.ZodBoolean>>;
+
+export const EventWebsiteEnabledSectionsSchema = z.object(enabledSectionsShape).strict();
+
+export const EventWebsiteLayoutSchema = z
+  .object({
+    enabledSections: EventWebsiteEnabledSectionsSchema,
+    sectionOrder: z.array(EventWebsiteContentSectionKeySchema).length(SECTION_COUNT).superRefine(
+      (value, ctx) => {
+        if (new Set(value).size !== SECTION_COUNT) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Section order must contain each accepted section exactly once.",
+          });
+        }
+      },
+    ),
+  })
+  .strict();
+
+export const EventWebsiteContentAssetsSchema = z.object({}).strict();
+
+export const EventWebsiteContentMetaSchema = z
+  .object({
+    savedAt: z
+      .union([z.string().datetime({ offset: true }), z.null()])
+      .or(z.literal("").transform(() => null)),
+    savedBy: z.union([z.uuid(), z.null()]).or(z.literal("").transform(() => null)),
+  })
+  .strict();
+
+export const EventWebsiteContentSchema = z
+  .object({
+    assets: EventWebsiteContentAssetsSchema,
+    eventType: EventWebsiteContentEventTypeSchema,
+    layout: EventWebsiteLayoutSchema,
+    meta: EventWebsiteContentMetaSchema,
+    sections: EventWebsiteSectionsSchema,
+    version: z.literal(1),
+  })
+  .strict();
+
+export const EventWebsiteHostInfoSectionPatchSchema =
+  EventWebsiteHostInfoSectionSchema.partial().strict();
+export const EventWebsiteCountdownSectionPatchSchema =
+  EventWebsiteCountdownSectionSchema.partial().strict();
+export const EventWebsiteMusicEffectsSectionPatchSchema =
+  EventWebsiteMusicEffectsSectionSchema.partial().strict();
+export const EventWebsiteMainEventSectionPatchSchema =
+  EventWebsiteMainEventSectionSchema.partial().strict();
+export const EventWebsiteVenueSectionPatchSchema =
+  EventWebsiteVenueSectionSchema.partial().strict();
+export const EventWebsiteSecondaryEventSectionPatchSchema =
+  EventWebsiteSecondaryEventSectionSchema.partial().strict();
+export const EventWebsiteTimelineProgramSectionPatchSchema = z
+  .object({
+    items: z.array(EventWebsiteTimelineItemSchema).max(20).optional(),
+  })
+  .strict();
+export const EventWebsiteEntourageSectionPatchSchema = z
+  .object({
+    groups: z.array(EventWebsiteEntourageGroupSchema).max(20).optional(),
+    introLine: draftText(220).optional(),
+  })
+  .strict();
+export const EventWebsitePrincipalSponsorsSectionPatchSchema = z
+  .object({
+    introLine: draftText(220).optional(),
+    names: EventWebsitePrincipalSponsorsSectionSchema.shape.names.optional(),
+  })
+  .strict();
+export const EventWebsiteAttireMotifSectionPatchSchema =
+  EventWebsiteAttireMotifSectionSchema.partial().strict();
+export const EventWebsiteExtraInfoSectionPatchSchema = z
+  .object({
+    items: z.array(EventWebsiteExtraInfoItemSchema).max(12).optional(),
+    sectionIntro: draftText(180).optional(),
+    sectionTitle: draftText(80).optional(),
+  })
+  .strict();
+export const EventWebsiteRsvpFormSectionPatchSchema = z
+  .object({
+    companionAgeEnabled: z.boolean().optional(),
+    companionLimit: z.number().int().min(0).max(10).optional(),
+    companionNameEnabled: z.boolean().optional(),
+    customQuestions: z.array(EventWebsiteCustomQuestionSchema).max(10).optional(),
+    foodAllergiesEnabled: z.boolean().optional(),
+    messageToHostEnabled: z.boolean().optional(),
+    plusOneEnabled: z.boolean().optional(),
+  })
+  .strict();
+export const EventWebsiteGiftDetailsSectionPatchSchema = z
+  .object({
+    giftNote: draftText(360).optional(),
+    options: z.array(EventWebsiteGiftOptionSchema).max(2).optional(),
+    sectionIntro: draftText(200).optional(),
+  })
+  .strict();
+export const EventWebsiteGuestbookSectionPatchSchema =
+  EventWebsiteGuestbookSectionSchema.partial().strict();
+export const EventWebsiteStoryMessageSectionPatchSchema =
+  EventWebsiteStoryMessageSectionSchema.partial().strict();
+export const EventWebsiteContactSocialsSectionPatchSchema =
+  EventWebsiteContactSocialsSectionSchema.partial().strict();
+
+export const EventWebsiteSectionsPatchSchema = z
+  .object({
+    attire_motif: EventWebsiteAttireMotifSectionPatchSchema.optional(),
+    contact_socials: EventWebsiteContactSocialsSectionPatchSchema.optional(),
+    countdown: EventWebsiteCountdownSectionPatchSchema.optional(),
+    extra_info: EventWebsiteExtraInfoSectionPatchSchema.optional(),
+    gift_details: EventWebsiteGiftDetailsSectionPatchSchema.optional(),
+    guestbook: EventWebsiteGuestbookSectionPatchSchema.optional(),
+    host_info: EventWebsiteHostInfoSectionPatchSchema.optional(),
+    main_event: EventWebsiteMainEventSectionPatchSchema.optional(),
+    music_effects: EventWebsiteMusicEffectsSectionPatchSchema.optional(),
+    principal_sponsors: EventWebsitePrincipalSponsorsSectionPatchSchema.optional(),
+    rsvp_form: EventWebsiteRsvpFormSectionPatchSchema.optional(),
+    secondary_event: EventWebsiteSecondaryEventSectionPatchSchema.optional(),
+    story_message: EventWebsiteStoryMessageSectionPatchSchema.optional(),
+    timeline_program: EventWebsiteTimelineProgramSectionPatchSchema.optional(),
+    entourage: EventWebsiteEntourageSectionPatchSchema.optional(),
+    venue: EventWebsiteVenueSectionPatchSchema.optional(),
+  })
+  .strict();
+
+export const EventWebsiteLayoutPatchSchema = z
+  .object({
+    enabledSections: z.object(enabledSectionsPatchShape).strict().optional(),
+    sectionOrder: z.array(EventWebsiteContentSectionKeySchema).max(SECTION_COUNT).optional(),
+  })
+  .strict();
+
+export const EventWebsiteContentPatchSchema = z
+  .object({
+    assets: EventWebsiteContentAssetsSchema.optional(),
+    eventType: EventWebsiteContentEventTypeSchema.optional(),
+    layout: EventWebsiteLayoutPatchSchema.optional(),
+    meta: EventWebsiteContentMetaSchema.partial().strict().optional(),
+    sections: EventWebsiteSectionsPatchSchema.optional(),
+    version: z.literal(1).optional(),
+  })
+  .strict();
+
+export type EventWebsiteContentInput = z.infer<typeof EventWebsiteContentSchema>;
+export type EventWebsiteContentPatchInput = z.infer<typeof EventWebsiteContentPatchSchema>;
