@@ -42,6 +42,7 @@ export function EventSectionRow({
       className={cn(
         "event-section-row group w-full text-left",
         selected && "is-selected",
+        !enabled && !section.required && !section.comingSoon && "is-off",
         section.comingSoon && "is-coming-soon",
         section.generated && "is-generated",
       )}

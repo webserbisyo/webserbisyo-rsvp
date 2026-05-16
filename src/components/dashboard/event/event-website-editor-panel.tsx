@@ -8,13 +8,16 @@ import {
   OptionalContactSocialsPanel,
   OptionalCountdownPanel,
   OptionalEntouragePanel,
+  OptionalExtraInfoPanel,
   OptionalGiftDetailsPanel,
   OptionalLoveStoryPanel,
   OptionalMessagesPanel,
+  OptionalMusicEffectsPanel,
   OptionalPrincipalSponsorsPanel,
   OptionalReceptionPanel,
   OptionalTimelinePanel,
 } from "@/components/dashboard/event/event-website-optional-panels";
+import type { EventWebsitePreviewDraft } from "@/components/dashboard/event/event-website-preview-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,6 +73,8 @@ export type EventWebsiteEditorData = {
 
 type EventWebsiteEditorPanelProps = {
   eventData: EventWebsiteEditorData;
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
   resolvedSections: ResolvedEventWebsiteSections;
   selectedSectionId: EventWebsiteSectionKey;
 };
@@ -98,13 +103,6 @@ type FieldConfig = {
   showCounter?: boolean;
   showOptionalBadge?: boolean;
   type?: "input" | "select" | "textarea";
-};
-
-type CustomQuestion = {
-  fieldType: string;
-  label: string;
-  options: string[];
-  required: boolean;
 };
 
 type TextFieldProps = {
@@ -151,10 +149,14 @@ const implementedWeddingOptionalSectionKeys = new Set<EventWebsiteSectionKey>([
   "guestbook",
   "gift_details",
   "contact_socials",
+  "music_effects",
+  "extra_info",
 ]);
 
 export function EventWebsiteEditorPanel({
   eventData,
+  onPreviewDraftChange,
+  previewDraft,
   resolvedSections,
   selectedSectionId,
 }: EventWebsiteEditorPanelProps) {
@@ -197,7 +199,11 @@ export function EventWebsiteEditorPanel({
     ) {
       return (
         <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
-          <WeddingOptionalSectionForm eventData={eventData} sectionId={selectedSectionId} />
+          <WeddingOptionalSectionForm
+            previewDraft={previewDraft}
+            sectionId={selectedSectionId}
+            onPreviewDraftChange={onPreviewDraftChange}
+          />
         </section>
       );
     }
@@ -218,8 +224,10 @@ export function EventWebsiteEditorPanel({
         key={`${resolvedSections.eventType}-${selectedSectionId}`}
         eventData={eventData}
         eventType={resolvedSections.eventType}
+        previewDraft={previewDraft}
         section={selectedSection}
         sectionId={selectedSectionId as EventWebsiteRequiredSectionKey}
+        onPreviewDraftChange={onPreviewDraftChange}
       />
     </section>
   );
@@ -228,74 +236,175 @@ export function EventWebsiteEditorPanel({
 function RequiredSectionForm({
   eventData,
   eventType,
+  onPreviewDraftChange,
+  previewDraft,
   section,
   sectionId,
 }: {
   eventData: EventWebsiteEditorData;
   eventType: EventWebsiteEventType | "generic";
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
   section: EventWebsiteSectionDefinition;
   sectionId: EventWebsiteRequiredSectionKey;
 }) {
   if (sectionId === "host_info") {
-    return <HostInfoForm eventData={eventData} eventType={eventType} />;
+    return (
+      <HostInfoForm
+        eventData={eventData}
+        eventType={eventType}
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "main_event") {
-    return <MainEventForm eventData={eventData} eventType={eventType} section={section} />;
+    return (
+      <MainEventForm
+        eventData={eventData}
+        eventType={eventType}
+        previewDraft={previewDraft}
+        section={section}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "venue") {
-    return <VenueForm eventData={eventData} section={section} />;
+    return (
+      <VenueForm
+        previewDraft={previewDraft}
+        section={section}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
-  return <RsvpFormConfigPanel eventData={eventData} section={section} />;
+  return (
+    <RsvpFormConfigPanel
+      previewDraft={previewDraft}
+      section={section}
+      onPreviewDraftChange={onPreviewDraftChange}
+    />
+  );
 }
 
 function WeddingOptionalSectionForm({
-  eventData,
+  onPreviewDraftChange,
+  previewDraft,
   sectionId,
 }: {
-  eventData: EventWebsiteEditorData;
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
   sectionId: EventWebsiteSectionKey;
 }) {
   if (sectionId === "countdown") {
-    return <OptionalCountdownPanel />;
+    return (
+      <OptionalCountdownPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "secondary_event") {
-    return <OptionalReceptionPanel eventData={eventData} />;
+    return (
+      <OptionalReceptionPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "timeline_program") {
-    return <OptionalTimelinePanel />;
+    return (
+      <OptionalTimelinePanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "entourage") {
-    return <OptionalEntouragePanel />;
+    return (
+      <OptionalEntouragePanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "principal_sponsors") {
-    return <OptionalPrincipalSponsorsPanel />;
+    return (
+      <OptionalPrincipalSponsorsPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "story_message") {
-    return <OptionalLoveStoryPanel />;
+    return (
+      <OptionalLoveStoryPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "attire_motif") {
-    return <OptionalAttirePanel />;
+    return (
+      <OptionalAttirePanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "guestbook") {
-    return <OptionalMessagesPanel />;
+    return (
+      <OptionalMessagesPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "gift_details") {
-    return <OptionalGiftDetailsPanel />;
+    return (
+      <OptionalGiftDetailsPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   if (sectionId === "contact_socials") {
-    return <OptionalContactSocialsPanel />;
+    return (
+      <OptionalContactSocialsPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
+  }
+
+  if (sectionId === "music_effects") {
+    return (
+      <OptionalMusicEffectsPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
+  }
+
+  if (sectionId === "extra_info") {
+    return (
+      <OptionalExtraInfoPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+      />
+    );
   }
 
   return (
@@ -309,19 +418,24 @@ function WeddingOptionalSectionForm({
 function HostInfoForm({
   eventData,
   eventType,
+  onPreviewDraftChange,
+  previewDraft,
 }: {
   eventData: EventWebsiteEditorData;
   eventType: EventWebsiteEventType | "generic";
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
 }) {
   const model = getHostInfoModel(eventType);
-  const [values, setValues] = useState(() => buildInitialHostValues(model, eventData));
   const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
+  const [localValues, setLocalValues] = useState(() => buildInitialHostValues(model, eventData));
+  const values: Record<string, string> = isWedding ? previewDraft.coupleInfo : localValues;
   const displayOptions = isWedding
     ? getWeddingDisplayOptions(values.groomName, values.brideName)
     : model.displayOptions;
 
   function updateHostValue(fieldId: string, value: string) {
-    setValues((current) => {
+    const updateValues = (current: Record<string, string>) => {
       const next = { ...current, [fieldId]: value };
 
       if (isWedding && (fieldId === "groomName" || fieldId === "brideName")) {
@@ -339,6 +453,23 @@ function HostInfoForm({
       }
 
       return next;
+    };
+
+    if (!isWedding) {
+      setLocalValues(updateValues);
+      return;
+    }
+
+    const nextValues = updateValues(previewDraft.coupleInfo);
+    onPreviewDraftChange({
+      ...previewDraft,
+      coupleInfo: {
+        brideName: nextValues.brideName ?? "",
+        displayAs: nextValues.displayAs ?? "",
+        groomName: nextValues.groomName ?? "",
+        hostLine: nextValues.hostLine ?? "",
+        shortHostMessage: nextValues.shortHostMessage ?? "",
+      },
     });
   }
 
@@ -398,21 +529,39 @@ function HostInfoForm({
 function MainEventForm({
   eventData,
   eventType,
+  onPreviewDraftChange,
+  previewDraft,
   section,
 }: {
   eventData: EventWebsiteEditorData;
   eventType: EventWebsiteEventType | "generic";
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
   section: EventWebsiteSectionDefinition;
 }) {
   const model = getMainEventModel(eventType, section.label);
-  const [values, setValues] = useState(() => ({
+  const [localValues, setLocalValues] = useState(() => ({
     endTime: model.defaultEndTime,
-    eventDate: eventData.eventDate ?? "2026-06-20",
+    eventDate: eventData.eventDate ?? "2026-06-06",
     eventLabel: model.defaultLabel,
     eventTime: formatTime(eventData.eventTime) || model.defaultStartTime,
     rsvpDeadline: formatDateTimeLocal(eventData.rsvpCloseAt) || "2026-06-01T18:00",
     scheduleNote: eventData.eventContent?.scheduleNote ?? model.defaultScheduleNote,
   }));
+  const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
+  const values = isWedding ? previewDraft.ceremony : localValues;
+
+  function updateMainEventValue(fieldId: keyof EventWebsitePreviewDraft["ceremony"], value: string) {
+    if (!isWedding) {
+      setLocalValues((current) => ({ ...current, [fieldId]: value }));
+      return;
+    }
+
+    onPreviewDraftChange({
+      ...previewDraft,
+      ceremony: { ...previewDraft.ceremony, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell title={model.title} description={model.description}>
@@ -420,22 +569,22 @@ function MainEventForm({
         <TextField
           field={{ colSpan: "full", id: "eventLabel", label: model.labelField, maxLength: 80 }}
           value={values.eventLabel}
-          onChange={(value) => setValues((current) => ({ ...current, eventLabel: value }))}
+          onChange={(value) => updateMainEventValue("eventLabel", value)}
         />
         <DateField
           field={{ colSpan: "half", id: "eventDate", label: "Date", maxLength: 10, showCounter: false }}
           value={values.eventDate}
-          onChange={(value) => setValues((current) => ({ ...current, eventDate: value }))}
+          onChange={(value) => updateMainEventValue("eventDate", value)}
         />
         <TimeField
           field={{ colSpan: "half", id: "eventTime", label: "Start Time", maxLength: 8, showCounter: false }}
           value={values.eventTime}
-          onChange={(value) => setValues((current) => ({ ...current, eventTime: value }))}
+          onChange={(value) => updateMainEventValue("eventTime", value)}
         />
         <TimeField
           field={{ colSpan: "half", id: "endTime", label: "End Time", maxLength: 8, showCounter: false }}
           value={values.endTime}
-          onChange={(value) => setValues((current) => ({ ...current, endTime: value }))}
+          onChange={(value) => updateMainEventValue("endTime", value)}
         />
         <TextField
           field={{
@@ -447,12 +596,12 @@ function MainEventForm({
           }}
           inputType="datetime-local"
           value={values.rsvpDeadline}
-          onChange={(value) => setValues((current) => ({ ...current, rsvpDeadline: value }))}
+          onChange={(value) => updateMainEventValue("rsvpDeadline", value)}
         />
         <TextAreaField
           field={{ colSpan: "full", id: "scheduleNote", label: "Schedule Note", maxLength: 200 }}
           value={values.scheduleNote}
-          onChange={(value) => setValues((current) => ({ ...current, scheduleNote: value }))}
+          onChange={(value) => updateMainEventValue("scheduleNote", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -461,18 +610,22 @@ function MainEventForm({
 }
 
 function VenueForm({
-  eventData,
+  onPreviewDraftChange,
+  previewDraft,
   section,
 }: {
-  eventData: EventWebsiteEditorData;
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
   section: EventWebsiteSectionDefinition;
 }) {
-  const [values, setValues] = useState(() => ({
-    address: eventData.venueAddress ?? "",
-    arrivalNote: eventData.eventContent?.venueNote ?? "",
-    mapsLink: "",
-    venueName: eventData.venueName ?? "",
-  }));
+  const values = previewDraft.venue;
+
+  function updateVenueValue(fieldId: keyof EventWebsitePreviewDraft["venue"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      venue: { ...previewDraft.venue, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell title={section.label} description="Set the main location guests need to find for your event.">
@@ -486,7 +639,7 @@ function VenueForm({
             placeholder: "e.g. The Ruins, Bacolod",
           }}
           value={values.venueName}
-          onChange={(value) => setValues((current) => ({ ...current, venueName: value }))}
+          onChange={(value) => updateVenueValue("venueName", value)}
         />
         <TextAreaField
           field={{
@@ -497,7 +650,7 @@ function VenueForm({
             placeholder: "Street, city, province...",
           }}
           value={values.address}
-          onChange={(value) => setValues((current) => ({ ...current, address: value }))}
+          onChange={(value) => updateVenueValue("address", value)}
         />
         <TextField
           field={{
@@ -509,7 +662,7 @@ function VenueForm({
           }}
           inputType="url"
           value={values.mapsLink}
-          onChange={(value) => setValues((current) => ({ ...current, mapsLink: value }))}
+          onChange={(value) => updateVenueValue("mapsLink", value)}
         />
         <TextAreaField
           field={{
@@ -520,7 +673,7 @@ function VenueForm({
             placeholder: "e.g. Parking available near the entrance...",
           }}
           value={values.arrivalNote}
-          onChange={(value) => setValues((current) => ({ ...current, arrivalNote: value }))}
+          onChange={(value) => updateVenueValue("arrivalNote", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -529,25 +682,21 @@ function VenueForm({
 }
 
 function RsvpFormConfigPanel({
-  eventData,
+  onPreviewDraftChange,
+  previewDraft,
   section,
 }: {
-  eventData: EventWebsiteEditorData;
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
   section: EventWebsiteSectionDefinition;
 }) {
   const [isCustomQuestionDialogOpen, setIsCustomQuestionDialogOpen] = useState(false);
-  const [plusOneEnabled, setPlusOneEnabled] = useState(Boolean(eventData.maxGuestCount));
-  const [companionLimit, setCompanionLimit] = useState("1");
-  const [companionNameEnabled, setCompanionNameEnabled] = useState(true);
-  const [companionAgeEnabled, setCompanionAgeEnabled] = useState(false);
-  const [foodAllergiesEnabled, setFoodAllergiesEnabled] = useState(false);
-  const [messageToHostEnabled, setMessageToHostEnabled] = useState(true);
-  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
+  const rsvpValues = previewDraft.rsvpForm;
   const [customQuestionLabel, setCustomQuestionLabel] = useState("");
   const [customQuestionType, setCustomQuestionType] = useState(defaultCustomQuestionFieldType);
   const [customQuestionRequired, setCustomQuestionRequired] = useState(false);
   const [customQuestionOptions, setCustomQuestionOptions] = useState(defaultCustomQuestionOptions);
-  const customQuestionCount = customQuestions.length;
+  const customQuestionCount = rsvpValues.customQuestions.length;
   const hasReachedCustomQuestionLimit = customQuestionCount >= maxCustomQuestions;
   const isChoiceQuestion =
     customQuestionType === "Single choice" || customQuestionType === "Multiple choice";
@@ -607,18 +756,41 @@ function RsvpFormConfigPanel({
       return;
     }
 
-    setCustomQuestions((current) => [
-      ...current,
-      {
-        fieldType: customQuestionType,
-        label,
-        options: isChoiceQuestion ? customQuestionOptions.map((option) => option.trim()).filter(Boolean) : [],
-        required: customQuestionRequired,
+    onPreviewDraftChange({
+      ...previewDraft,
+      rsvpForm: {
+        ...rsvpValues,
+        customQuestions: [
+          ...rsvpValues.customQuestions,
+          {
+            fieldType: customQuestionType,
+            label,
+            options: isChoiceQuestion ? customQuestionOptions.map((option) => option.trim()).filter(Boolean) : [],
+            required: customQuestionRequired,
+          },
+        ],
       },
-    ]);
+    });
     setIsCustomQuestionDialogOpen(false);
     resetCustomQuestionDraft();
   }
+
+  function updateRsvpValue(
+    fieldId: keyof EventWebsitePreviewDraft["rsvpForm"],
+    value: boolean | string | EventWebsitePreviewDraft["rsvpForm"]["customQuestions"],
+  ) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      rsvpForm: { ...rsvpValues, [fieldId]: value },
+    });
+  }
+
+  const plusOneEnabled = rsvpValues.plusOneEnabled;
+  const companionNameEnabled = rsvpValues.companionNameEnabled;
+  const companionAgeEnabled = rsvpValues.companionAgeEnabled;
+  const foodAllergiesEnabled = rsvpValues.foodAllergiesEnabled;
+  const messageToHostEnabled = rsvpValues.messageToHostEnabled;
+  const customQuestions = rsvpValues.customQuestions;
 
   return (
     <EditorShell
@@ -638,31 +810,31 @@ function RsvpFormConfigPanel({
           title="Plus-one / Guest Count"
           description="Lets guests add one companion; party size counts automatically"
           checked={plusOneEnabled}
-          onCheckedChange={setPlusOneEnabled}
+          onCheckedChange={(checked) => updateRsvpValue("plusOneEnabled", checked)}
         />
         {plusOneEnabled ? (
           <div className="event-editor-nested-settings">
             <TextField
-              field={{ id: "companionLimit", label: "Companion Limit", maxLength: 2, showCounter: false }}
+              field={{ id: "companionLimit", label: "Maximum Companions Allowed", maxLength: 2, showCounter: false }}
               inputMode="numeric"
               inputType="number"
               max={10}
               min={1}
-              value={companionLimit}
-              helper="Default is 1 companion; increase only when groups are allowed."
-              onChange={setCompanionLimit}
+              value={rsvpValues.companionLimit}
+              helper="Guests can choose any number of companions up to this limit."
+              onChange={(value) => updateRsvpValue("companionLimit", value)}
             />
             <ToggleRow
               title="Companion Name"
               description="Ask for the companion name when guest count is enabled"
               checked={companionNameEnabled}
-              onCheckedChange={setCompanionNameEnabled}
+              onCheckedChange={(checked) => updateRsvpValue("companionNameEnabled", checked)}
             />
             <ToggleRow
               title="Companion Age"
               description="Useful for children or age-based planning."
               checked={companionAgeEnabled}
-              onCheckedChange={setCompanionAgeEnabled}
+              onCheckedChange={(checked) => updateRsvpValue("companionAgeEnabled", checked)}
             />
           </div>
         ) : null}
@@ -670,13 +842,13 @@ function RsvpFormConfigPanel({
           title="Food Allergies / Dietary Restrictions"
           description="Ask guests to mention allergies or dietary restrictions"
           checked={foodAllergiesEnabled}
-          onCheckedChange={setFoodAllergiesEnabled}
+          onCheckedChange={(checked) => updateRsvpValue("foodAllergiesEnabled", checked)}
         />
         <ToggleRow
           title="Message to Host"
           description="Optional note or greeting"
           checked={messageToHostEnabled}
-          onCheckedChange={setMessageToHostEnabled}
+          onCheckedChange={(checked) => updateRsvpValue("messageToHostEnabled", checked)}
         />
         <Dialog open={isCustomQuestionDialogOpen} onOpenChange={handleCustomQuestionDialogChange}>
           <DialogTrigger asChild>

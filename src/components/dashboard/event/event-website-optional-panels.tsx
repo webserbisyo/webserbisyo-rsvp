@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import type { EventWebsiteEditorData } from "@/components/dashboard/event/event-website-editor-panel";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
+import type {
+  EventWebsiteEntourageGroupDraft,
+  EventWebsiteExtraInfoItemDraft,
+  EventWebsiteGiftOptionDraft,
+  EventWebsitePreviewDraft,
+  EventWebsiteTimelineItemDraft,
+} from "@/components/dashboard/event/event-website-preview-data";
 import {
   EditorGroup,
   EditorSaveButton,
@@ -10,42 +15,28 @@ import {
   FieldGrid,
   ListBuilder,
   ListBuilderRow,
-  SelectField,
   TextAreaField,
   TextField,
   TimeField,
 } from "@/components/dashboard/event/event-website-optional-fields";
 
-type OptionalPanelProps = {
-  eventData: EventWebsiteEditorData;
+type SharedOptionalPanelProps = {
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
 };
 
-type TimelineItem = {
-  description: string;
-  time: string;
-  title: string;
-};
+export function OptionalCountdownPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.countdown;
 
-type EntourageGroup = {
-  groupTitle: string;
-  names: string;
-};
-
-type SponsorItem = {
-  groupTitle: string;
-  names: string;
-};
-
-type GiftOptionDraft = {
-  file: File | null;
-  title: string;
-};
-
-export function OptionalCountdownPanel() {
-  const [values, setValues] = useState({
-    shortNote: "We can't wait to celebrate with you.",
-    title: "Counting down to our special day",
-  });
+  function updateCountdownValue(fieldId: keyof EventWebsitePreviewDraft["countdown"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      countdown: { ...previewDraft.countdown, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell
@@ -56,12 +47,12 @@ export function OptionalCountdownPanel() {
         <TextField
           field={{ id: "countdownTitle", label: "Section Title", maxLength: 90 }}
           value={values.title}
-          onChange={(value) => setValues((current) => ({ ...current, title: value }))}
+          onChange={(value) => updateCountdownValue("title", value)}
         />
         <TextAreaField
           field={{ id: "countdownShortNote", label: "Short Note", maxLength: 160 }}
           value={values.shortNote}
-          onChange={(value) => setValues((current) => ({ ...current, shortNote: value }))}
+          onChange={(value) => updateCountdownValue("shortNote", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -69,16 +60,18 @@ export function OptionalCountdownPanel() {
   );
 }
 
-export function OptionalReceptionPanel({ eventData }: OptionalPanelProps) {
-  const [values, setValues] = useState(() => ({
-    address: "",
-    endTime: "21:00",
-    mapsLink: "",
-    note: "Dinner and program will follow after the ceremony.",
-    startTime: "18:00",
-    title: "Wedding Reception",
-    venueName: eventData.venueName ?? "",
-  }));
+export function OptionalReceptionPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.reception;
+
+  function updateReceptionValue(fieldId: keyof EventWebsitePreviewDraft["reception"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      reception: { ...previewDraft.reception, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell
@@ -89,22 +82,22 @@ export function OptionalReceptionPanel({ eventData }: OptionalPanelProps) {
         <TextField
           field={{ colSpan: "full", id: "receptionTitle", label: "Reception Label", maxLength: 80 }}
           value={values.title}
-          onChange={(value) => setValues((current) => ({ ...current, title: value }))}
+          onChange={(value) => updateReceptionValue("title", value)}
         />
         <TimeField
           field={{ colSpan: "half", id: "receptionStartTime", label: "Start Time", maxLength: 8, showCounter: false }}
           value={values.startTime}
-          onChange={(value) => setValues((current) => ({ ...current, startTime: value }))}
+          onChange={(value) => updateReceptionValue("startTime", value)}
         />
         <TimeField
           field={{ colSpan: "half", id: "receptionEndTime", label: "End Time", maxLength: 8, showCounter: false }}
           value={values.endTime}
-          onChange={(value) => setValues((current) => ({ ...current, endTime: value }))}
+          onChange={(value) => updateReceptionValue("endTime", value)}
         />
         <TextAreaField
           field={{ colSpan: "full", id: "receptionNote", label: "Reception Note", maxLength: 180 }}
           value={values.note}
-          onChange={(value) => setValues((current) => ({ ...current, note: value }))}
+          onChange={(value) => updateReceptionValue("note", value)}
         />
         <TextField
           field={{
@@ -115,7 +108,7 @@ export function OptionalReceptionPanel({ eventData }: OptionalPanelProps) {
             placeholder: "e.g. The Ruins Garden Hall",
           }}
           value={values.venueName}
-          onChange={(value) => setValues((current) => ({ ...current, venueName: value }))}
+          onChange={(value) => updateReceptionValue("venueName", value)}
         />
         <TextAreaField
           field={{
@@ -126,7 +119,7 @@ export function OptionalReceptionPanel({ eventData }: OptionalPanelProps) {
             placeholder: "Street, city, province...",
           }}
           value={values.address}
-          onChange={(value) => setValues((current) => ({ ...current, address: value }))}
+          onChange={(value) => updateReceptionValue("address", value)}
         />
         <TextField
           field={{
@@ -138,7 +131,7 @@ export function OptionalReceptionPanel({ eventData }: OptionalPanelProps) {
           }}
           inputType="url"
           value={values.mapsLink}
-          onChange={(value) => setValues((current) => ({ ...current, mapsLink: value }))}
+          onChange={(value) => updateReceptionValue("mapsLink", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -146,54 +139,43 @@ export function OptionalReceptionPanel({ eventData }: OptionalPanelProps) {
   );
 }
 
-export function OptionalTimelinePanel() {
-  const [items, setItems] = useState<TimelineItem[]>([
-    {
-      description: "Guests may proceed to the entrance area.",
-      time: "15:00",
-      title: "Guest Arrival",
-    },
-    {
-      description: "Main ceremony begins.",
-      time: "16:00",
-      title: "Ceremony",
-    },
-    {
-      description: "Dinner and program follow.",
-      time: "18:00",
-      title: "Reception",
-    },
-  ]);
+export function OptionalTimelinePanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const items = previewDraft.timelineProgram.items;
 
-  function updateItem(index: number, nextItem: TimelineItem) {
-    setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? nextItem : item)));
-  }
-
-  function moveItem(index: number, direction: -1 | 1) {
-    setItems((current) => {
-      const nextIndex = index + direction;
-
-      if (nextIndex < 0 || nextIndex >= current.length) {
-        return current;
-      }
-
-      const next = [...current];
-      const moved = next[index];
-      next[index] = next[nextIndex]!;
-      next[nextIndex] = moved!;
-      return next;
+  function updateItems(items: EventWebsiteTimelineItemDraft[]) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      timelineProgram: { items },
     });
   }
 
+  function updateItem(index: number, nextItem: EventWebsiteTimelineItemDraft) {
+    updateItems(items.map((item, itemIndex) => (itemIndex === index ? nextItem : item)));
+  }
+
+  function moveItem(index: number, direction: -1 | 1) {
+    const nextIndex = index + direction;
+
+    if (nextIndex < 0 || nextIndex >= items.length) {
+      return;
+    }
+
+    const next = [...items];
+    const moved = next[index];
+    next[index] = next[nextIndex]!;
+    next[nextIndex] = moved!;
+    updateItems(next);
+  }
+
   function addItem() {
-    setItems((current) => [
-      ...current,
-      { description: "", time: "", title: `Program Item ${current.length + 1}` },
-    ]);
+    updateItems([...items, { description: "", time: "", title: "" }]);
   }
 
   function removeItem(index: number) {
-    setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    updateItems(items.filter((_, itemIndex) => itemIndex !== index));
   }
 
   return (
@@ -256,49 +238,44 @@ export function OptionalTimelinePanel() {
   );
 }
 
-export function OptionalEntouragePanel() {
-  const [introLine, setIntroLine] = useState(
-    "Meet the family and friends standing with us on our wedding day.",
-  );
-  const [displayStyle, setDisplayStyle] = useState("Grouped by role");
-  const [nameFormat, setNameFormat] = useState("Full names");
-  const [groups, setGroups] = useState<EntourageGroup[]>([
-    {
-      groupTitle: "Maid of Honor",
-      names: "Maria Santos",
-    },
-    {
-      groupTitle: "Bridesmaids",
-      names: "Ana Cruz, Bella Reyes, Carla Lim",
-    },
-  ]);
+export function OptionalEntouragePanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.entourage;
+  const groups = values.groups;
 
-  function updateGroup(index: number, nextGroup: EntourageGroup) {
-    setGroups((current) => current.map((group, groupIndex) => (groupIndex === index ? nextGroup : group)));
-  }
-
-  function moveGroup(index: number, direction: -1 | 1) {
-    setGroups((current) => {
-      const nextIndex = index + direction;
-
-      if (nextIndex < 0 || nextIndex >= current.length) {
-        return current;
-      }
-
-      const next = [...current];
-      const moved = next[index];
-      next[index] = next[nextIndex]!;
-      next[nextIndex] = moved!;
-      return next;
+  function updateGroups(groups: EventWebsiteEntourageGroupDraft[]) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      entourage: { ...values, groups },
     });
   }
 
+  function updateGroup(index: number, nextGroup: EventWebsiteEntourageGroupDraft) {
+    updateGroups(groups.map((group, groupIndex) => (groupIndex === index ? nextGroup : group)));
+  }
+
+  function moveGroup(index: number, direction: -1 | 1) {
+    const nextIndex = index + direction;
+
+    if (nextIndex < 0 || nextIndex >= groups.length) {
+      return;
+    }
+
+    const next = [...groups];
+    const moved = next[index];
+    next[index] = next[nextIndex]!;
+    next[nextIndex] = moved!;
+    updateGroups(next);
+  }
+
   function addGroup() {
-    setGroups((current) => [...current, { groupTitle: "", names: "" }]);
+    updateGroups([...groups, { groupTitle: "", names: "" }]);
   }
 
   function removeGroup(index: number) {
-    setGroups((current) => current.filter((_, groupIndex) => groupIndex !== index));
+    updateGroups(groups.filter((_, groupIndex) => groupIndex !== index));
   }
 
   return (
@@ -306,23 +283,16 @@ export function OptionalEntouragePanel() {
       title="Entourage"
       description="List the wedding party and ceremony participants, grouped by role."
     >
-      <EditorGroup title="Display Settings" layout="two-column">
+      <EditorGroup title="Section Intro">
         <TextAreaField
           field={{ colSpan: "full", id: "entourageIntroLine", label: "Intro Line", maxLength: 220 }}
-          value={introLine}
-          onChange={setIntroLine}
-        />
-        <SelectField
-          field={{ colSpan: "half", id: "entourageDisplayStyle", label: "Display Style", maxLength: 40, showCounter: false }}
-          options={["Grouped by role", "Simple list"]}
-          value={displayStyle}
-          onChange={setDisplayStyle}
-        />
-        <SelectField
-          field={{ colSpan: "half", id: "entourageNameFormat", label: "Name Format", maxLength: 40, showCounter: false }}
-          options={["Full names", "First names only"]}
-          value={nameFormat}
-          onChange={setNameFormat}
+          value={values.introLine}
+          onChange={(value) =>
+            onPreviewDraftChange({
+              ...previewDraft,
+              entourage: { ...values, introLine: value },
+            })
+          }
         />
       </EditorGroup>
 
@@ -333,6 +303,7 @@ export function OptionalEntouragePanel() {
               key={`${index}-${group.groupTitle}`}
               canMoveDown={index < groups.length - 1}
               canMoveUp={index > 0}
+              hideGripIcon
               onMoveDown={() => moveGroup(index, 1)}
               onMoveUp={() => moveGroup(index, -1)}
               onRemove={() => removeGroup(index)}
@@ -371,49 +342,17 @@ export function OptionalEntouragePanel() {
   );
 }
 
-export function OptionalPrincipalSponsorsPanel() {
-  const [introLine, setIntroLine] = useState(
-    "We are grateful for the love and guidance of our principal sponsors.",
-  );
-  const [sponsors, setSponsors] = useState<SponsorItem[]>([
-    {
-      groupTitle: "Principal Sponsors",
-      names: "Mr. Juan Dela Cruz\nMrs. Maria Dela Cruz",
-    },
-    {
-      groupTitle: "Principal Sponsors",
-      names: "Mr. Pedro Santos\nMrs. Ana Santos",
-    },
-  ]);
+export function OptionalPrincipalSponsorsPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.principalSponsors;
 
-  function updateSponsor(index: number, nextSponsor: SponsorItem) {
-    setSponsors((current) =>
-      current.map((sponsor, sponsorIndex) => (sponsorIndex === index ? nextSponsor : sponsor)),
-    );
-  }
-
-  function moveSponsor(index: number, direction: -1 | 1) {
-    setSponsors((current) => {
-      const nextIndex = index + direction;
-
-      if (nextIndex < 0 || nextIndex >= current.length) {
-        return current;
-      }
-
-      const next = [...current];
-      const moved = next[index];
-      next[index] = next[nextIndex]!;
-      next[nextIndex] = moved!;
-      return next;
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["principalSponsors"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      principalSponsors: { ...values, [fieldId]: value },
     });
-  }
-
-  function addSponsor() {
-    setSponsors((current) => [...current, { groupTitle: "", names: "" }]);
-  }
-
-  function removeSponsor(index: number) {
-    setSponsors((current) => current.filter((_, sponsorIndex) => sponsorIndex !== index));
   }
 
   return (
@@ -424,62 +363,39 @@ export function OptionalPrincipalSponsorsPanel() {
       <EditorGroup title="Sponsor Intro">
         <TextAreaField
           field={{ colSpan: "full", id: "principalSponsorsIntroLine", label: "Section Intro", maxLength: 220 }}
-          value={introLine}
-          onChange={setIntroLine}
+          value={values.introLine}
+          onChange={(value) => updateValues("introLine", value)}
         />
       </EditorGroup>
-
-      <EditorGroup title="Principal Sponsor List">
-        <ListBuilder addLabel="Add sponsor" onAdd={addSponsor}>
-          {sponsors.map((sponsor, index) => (
-            <ListBuilderRow
-              key={`${index}-${sponsor.groupTitle}`}
-              canMoveDown={index < sponsors.length - 1}
-              canMoveUp={index > 0}
-              hideGripIcon
-              onMoveDown={() => moveSponsor(index, 1)}
-              onMoveUp={() => moveSponsor(index, -1)}
-              onRemove={() => removeSponsor(index)}
-              title={`Sponsor ${index + 1}`}
-            >
-              <FieldGrid layout="two-column">
-                <TextField
-                  field={{
-                    colSpan: "full",
-                    id: `principalSponsorsGroupTitle${index}`,
-                    label: "Group Title",
-                    maxLength: 80,
-                  }}
-                  value={sponsor.groupTitle}
-                  onChange={(value) => updateSponsor(index, { ...sponsor, groupTitle: value })}
-                />
-                <TextAreaField
-                  field={{
-                    colSpan: "full",
-                    id: `principalSponsorsNames${index}`,
-                    label: "Names",
-                    maxLength: 220,
-                  }}
-                  value={sponsor.names}
-                  onChange={(value) => updateSponsor(index, { ...sponsor, names: value })}
-                />
-              </FieldGrid>
-            </ListBuilderRow>
-          ))}
-        </ListBuilder>
+      <EditorGroup title="Principal Sponsor Names">
+        <TextAreaField
+          field={{
+            id: "principalSponsorsNames",
+            label: "Names",
+            maxLength: 420,
+            placeholder: "One name per line",
+          }}
+          value={values.names}
+          onChange={(value) => updateValues("names", value)}
+        />
       </EditorGroup>
       <EditorSaveButton />
     </EditorShell>
   );
 }
 
-export function OptionalLoveStoryPanel() {
-  const [values, setValues] = useState({
-    sectionIntro: "A little story about how our journey began.",
-    storyBody:
-      "From the first hello to this special day, we are grateful for every moment that brought us here.",
-    storyTitle: "Our Story",
-  });
+export function OptionalLoveStoryPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.loveStory;
+
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["loveStory"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      loveStory: { ...values, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell
@@ -490,19 +406,19 @@ export function OptionalLoveStoryPanel() {
         <TextAreaField
           field={{ id: "loveStorySectionIntro", label: "Section Intro", maxLength: 180 }}
           value={values.sectionIntro}
-          onChange={(value) => setValues((current) => ({ ...current, sectionIntro: value }))}
+          onChange={(value) => updateValues("sectionIntro", value)}
         />
       </EditorGroup>
       <EditorGroup title="Story Content">
         <TextField
           field={{ id: "loveStoryTitle", label: "Story Title", maxLength: 80 }}
           value={values.storyTitle}
-          onChange={(value) => setValues((current) => ({ ...current, storyTitle: value }))}
+          onChange={(value) => updateValues("storyTitle", value)}
         />
         <TextAreaField
           field={{ id: "loveStoryBody", label: "Story Body", maxLength: 420 }}
           value={values.storyBody}
-          onChange={(value) => setValues((current) => ({ ...current, storyBody: value }))}
+          onChange={(value) => updateValues("storyBody", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -510,12 +426,18 @@ export function OptionalLoveStoryPanel() {
   );
 }
 
-export function OptionalAttirePanel() {
-  const [values, setValues] = useState({
-    colorMotifNote: "Please wear shades that complement our wedding colors.",
-    dressCodeNote: "Formal or semi-formal attire is encouraged.",
-    sectionIntro: "We would love to see you in our wedding motif.",
-  });
+export function OptionalAttirePanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.attireDressCode;
+
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["attireDressCode"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      attireDressCode: { ...values, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell
@@ -526,17 +448,17 @@ export function OptionalAttirePanel() {
         <TextAreaField
           field={{ id: "attireSectionIntro", label: "Section Intro", maxLength: 180 }}
           value={values.sectionIntro}
-          onChange={(value) => setValues((current) => ({ ...current, sectionIntro: value }))}
+          onChange={(value) => updateValues("sectionIntro", value)}
         />
         <TextAreaField
           field={{ id: "attireDressCodeNote", label: "Dress Code Note", maxLength: 180 }}
           value={values.dressCodeNote}
-          onChange={(value) => setValues((current) => ({ ...current, dressCodeNote: value }))}
+          onChange={(value) => updateValues("dressCodeNote", value)}
         />
         <TextAreaField
           field={{ id: "attireColorMotifNote", label: "Color / Motif Note", maxLength: 180 }}
           value={values.colorMotifNote}
-          onChange={(value) => setValues((current) => ({ ...current, colorMotifNote: value }))}
+          onChange={(value) => updateValues("colorMotifNote", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -544,28 +466,34 @@ export function OptionalAttirePanel() {
   );
 }
 
-export function OptionalMessagesPanel() {
-  const [values, setValues] = useState({
-    messageBody:
-      "Your presence means the world to us. Thank you for celebrating this special day with us.",
-    sectionTitle: "A Note from Us",
-  });
+export function OptionalMessagesPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.messages;
+
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["messages"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      messages: { ...values, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell
       title="Messages"
-      description="Add a simple note, reminder, or message from the couple."
+      description="Add a simple note or message from the couple."
     >
       <EditorGroup title="Message Content">
         <TextField
           field={{ id: "messagesSectionTitle", label: "Section Title", maxLength: 80 }}
           value={values.sectionTitle}
-          onChange={(value) => setValues((current) => ({ ...current, sectionTitle: value }))}
+          onChange={(value) => updateValues("sectionTitle", value)}
         />
         <TextAreaField
           field={{ id: "messagesBody", label: "Message Body", maxLength: 320 }}
           value={values.messageBody}
-          onChange={(value) => setValues((current) => ({ ...current, messageBody: value }))}
+          onChange={(value) => updateValues("messageBody", value)}
         />
       </EditorGroup>
       <EditorSaveButton />
@@ -573,17 +501,26 @@ export function OptionalMessagesPanel() {
   );
 }
 
-export function OptionalGiftDetailsPanel() {
-  const [values, setValues] = useState({
-    giftNote:
-      "If you wish to give a gift, a monetary gift would be greatly appreciated as we begin this new chapter together.",
-    sectionIntro: "Your presence is the greatest gift.",
-  });
-  const [giftOptionOne, setGiftOptionOne] = useState<GiftOptionDraft>({
-    file: null,
-    title: "",
-  });
-  const [giftOptionTwo, setGiftOptionTwo] = useState<GiftOptionDraft | null>(null);
+export function OptionalGiftDetailsPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.giftDetails;
+  const giftOptionOne = values.options[0] ?? { file: null, title: "" };
+  const giftOptionTwo = values.options[1] ?? null;
+
+  function updateValues(nextValues: EventWebsitePreviewDraft["giftDetails"]) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      giftDetails: nextValues,
+    });
+  }
+
+  function updateOption(index: number, nextOption: EventWebsiteGiftOptionDraft) {
+    const options = [...values.options];
+    options[index] = nextOption;
+    updateValues({ ...values, options });
+  }
 
   return (
     <EditorShell
@@ -594,12 +531,12 @@ export function OptionalGiftDetailsPanel() {
         <TextAreaField
           field={{ id: "giftSectionIntro", label: "Section Intro", maxLength: 200 }}
           value={values.sectionIntro}
-          onChange={(value) => setValues((current) => ({ ...current, sectionIntro: value }))}
+          onChange={(value) => updateValues({ ...values, sectionIntro: value })}
         />
         <TextAreaField
           field={{ id: "giftNote", label: "Gift Note", maxLength: 360 }}
           value={values.giftNote}
-          onChange={(value) => setValues((current) => ({ ...current, giftNote: value }))}
+          onChange={(value) => updateValues({ ...values, giftNote: value })}
         />
       </EditorGroup>
 
@@ -620,7 +557,7 @@ export function OptionalGiftDetailsPanel() {
                   placeholder: "e.g. GCash, Maya, Bank Transfer, Gift Registry",
                 }}
                 value={giftOptionOne.title}
-                onChange={(value) => setGiftOptionOne((current) => ({ ...current, title: value }))}
+                onChange={(value) => updateOption(0, { ...giftOptionOne, title: value })}
               />
               <div className="event-editor-field event-editor-field--full">
                 <div className="event-editor-label-row">
@@ -629,7 +566,7 @@ export function OptionalGiftDetailsPanel() {
                 <EventWebsiteGiftUploadCard
                   file={giftOptionOne.file}
                   fileInputId="event-editor-gift-option-one-upload"
-                  onFileChange={(file) => setGiftOptionOne((current) => ({ ...current, file }))}
+                  onFileChange={(file) => updateOption(0, { ...giftOptionOne, file })}
                 />
               </div>
             </FieldGrid>
@@ -645,7 +582,7 @@ export function OptionalGiftDetailsPanel() {
                   <button
                     type="button"
                     className="event-editor-inline-remove-button"
-                    onClick={() => setGiftOptionTwo(null)}
+                    onClick={() => updateValues({ ...values, options: [giftOptionOne] })}
                   >
                     Remove option
                   </button>
@@ -660,9 +597,7 @@ export function OptionalGiftDetailsPanel() {
                     placeholder: "e.g. GCash, Maya, Bank Transfer, Gift Registry",
                   }}
                   value={giftOptionTwo.title}
-                  onChange={(value) =>
-                    setGiftOptionTwo((current) => (current ? { ...current, title: value } : current))
-                  }
+                  onChange={(value) => updateOption(1, { ...giftOptionTwo, title: value })}
                 />
                 <div className="event-editor-field event-editor-field--full">
                   <div className="event-editor-label-row">
@@ -671,9 +606,7 @@ export function OptionalGiftDetailsPanel() {
                   <EventWebsiteGiftUploadCard
                     file={giftOptionTwo.file}
                     fileInputId="event-editor-gift-option-two-upload"
-                    onFileChange={(file) =>
-                      setGiftOptionTwo((current) => (current ? { ...current, file } : current))
-                    }
+                    onFileChange={(file) => updateOption(1, { ...giftOptionTwo, file })}
                   />
                 </div>
               </FieldGrid>
@@ -682,7 +615,12 @@ export function OptionalGiftDetailsPanel() {
             <button
               type="button"
               className="event-editor-list-add-button event-editor-list-add-button--inline"
-              onClick={() => setGiftOptionTwo({ file: null, title: "" })}
+              onClick={() =>
+                updateValues({
+                  ...values,
+                  options: [...values.options, { file: null, title: "" }],
+                })
+              }
             >
               + Add another gift option
             </button>
@@ -694,15 +632,18 @@ export function OptionalGiftDetailsPanel() {
   );
 }
 
-export function OptionalContactSocialsPanel() {
-  const [values, setValues] = useState({
-    contactNumber: "",
-    contactPerson: "",
-    email: "",
-    facebookUrl: "",
-    instagramUrl: "",
-    tikTokUrl: "",
-  });
+export function OptionalContactSocialsPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.contactSocials;
+
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["contactSocials"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      contactSocials: { ...values, [fieldId]: value },
+    });
+  }
 
   return (
     <EditorShell
@@ -719,7 +660,7 @@ export function OptionalContactSocialsPanel() {
             placeholder: "e.g. Anna Santos",
           }}
           value={values.contactPerson}
-          onChange={(value) => setValues((current) => ({ ...current, contactPerson: value }))}
+          onChange={(value) => updateValues("contactPerson", value)}
         />
         <TextField
           field={{
@@ -730,7 +671,7 @@ export function OptionalContactSocialsPanel() {
             placeholder: "e.g. +63 917 123 4567",
           }}
           value={values.contactNumber}
-          onChange={(value) => setValues((current) => ({ ...current, contactNumber: value }))}
+          onChange={(value) => updateValues("contactNumber", value)}
         />
         <TextField
           field={{
@@ -742,7 +683,7 @@ export function OptionalContactSocialsPanel() {
           }}
           inputType="email"
           value={values.email}
-          onChange={(value) => setValues((current) => ({ ...current, email: value }))}
+          onChange={(value) => updateValues("email", value)}
         />
       </EditorGroup>
 
@@ -756,7 +697,7 @@ export function OptionalContactSocialsPanel() {
           }}
           inputType="url"
           value={values.facebookUrl}
-          onChange={(value) => setValues((current) => ({ ...current, facebookUrl: value }))}
+          onChange={(value) => updateValues("facebookUrl", value)}
         />
         <TextField
           field={{
@@ -767,7 +708,7 @@ export function OptionalContactSocialsPanel() {
           }}
           inputType="url"
           value={values.instagramUrl}
-          onChange={(value) => setValues((current) => ({ ...current, instagramUrl: value }))}
+          onChange={(value) => updateValues("instagramUrl", value)}
         />
         <TextField
           field={{
@@ -778,8 +719,169 @@ export function OptionalContactSocialsPanel() {
           }}
           inputType="url"
           value={values.tikTokUrl}
-          onChange={(value) => setValues((current) => ({ ...current, tikTokUrl: value }))}
+          onChange={(value) => updateValues("tikTokUrl", value)}
         />
+      </EditorGroup>
+      <EditorSaveButton />
+    </EditorShell>
+  );
+}
+
+export function OptionalMusicEffectsPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.musicEffects;
+
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["musicEffects"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      musicEffects: { ...values, [fieldId]: value },
+    });
+  }
+
+  return (
+    <EditorShell
+      title="Music & Effects"
+      description="Add a music link for the wedding website."
+    >
+      <EditorGroup title="Background Music">
+        <TextField
+          field={{ id: "musicEffectsTitle", label: "Music Title", maxLength: 80 }}
+          value={values.musicTitle}
+          onChange={(value) => updateValues("musicTitle", value)}
+        />
+        <TextField
+          field={{
+            id: "musicEffectsLink",
+            label: "Music Link / Audio URL",
+            maxLength: 240,
+            placeholder: "Paste YouTube, Spotify, SoundCloud, or audio link",
+          }}
+          inputType="url"
+          value={values.musicLink}
+          onChange={(value) => updateValues("musicLink", value)}
+        />
+        <TextField
+          field={{ id: "musicEffectsButtonLabel", label: "Play Button Label", maxLength: 80 }}
+          value={values.playButtonLabel}
+          onChange={(value) => updateValues("playButtonLabel", value)}
+        />
+        <TextAreaField
+          field={{ id: "musicEffectsShortNote", label: "Short Note", maxLength: 180 }}
+          value={values.shortNote}
+          onChange={(value) => updateValues("shortNote", value)}
+        />
+      </EditorGroup>
+      <EditorSaveButton />
+    </EditorShell>
+  );
+}
+
+export function OptionalExtraInfoPanel({
+  onPreviewDraftChange,
+  previewDraft,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.extraInfo;
+  const items = values.items;
+
+  function updateItems(items: EventWebsiteExtraInfoItemDraft[]) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      extraInfo: { ...values, items },
+    });
+  }
+
+  function updateItem(index: number, nextItem: EventWebsiteExtraInfoItemDraft) {
+    updateItems(items.map((item, itemIndex) => (itemIndex === index ? nextItem : item)));
+  }
+
+  function moveItem(index: number, direction: -1 | 1) {
+    const nextIndex = index + direction;
+
+    if (nextIndex < 0 || nextIndex >= items.length) {
+      return;
+    }
+
+    const next = [...items];
+    const moved = next[index];
+    next[index] = next[nextIndex]!;
+    next[nextIndex] = moved!;
+    updateItems(next);
+  }
+
+  function addItem() {
+    updateItems([...items, { details: "", title: "" }]);
+  }
+
+  function removeItem(index: number) {
+    updateItems(items.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  return (
+    <EditorShell
+      title="Extra Info"
+      description="Add practical guest information that does not fit in the other sections."
+    >
+      <EditorGroup title="Additional Information">
+        <TextField
+          field={{ id: "extraInfoSectionTitle", label: "Section Title", maxLength: 80 }}
+          value={values.sectionTitle}
+          onChange={(value) =>
+            onPreviewDraftChange({
+              ...previewDraft,
+              extraInfo: { ...values, sectionTitle: value },
+            })
+          }
+        />
+        <TextAreaField
+          field={{ id: "extraInfoSectionIntro", label: "Section Intro", maxLength: 180 }}
+          value={values.sectionIntro}
+          onChange={(value) =>
+            onPreviewDraftChange({
+              ...previewDraft,
+              extraInfo: { ...values, sectionIntro: value },
+            })
+          }
+        />
+      </EditorGroup>
+
+      <EditorGroup title="Info Items">
+        <ListBuilder addLabel="Add info item" onAdd={addItem}>
+          {items.map((item, index) => (
+            <ListBuilderRow
+              key={`${index}-${item.title}`}
+              canMoveDown={index < items.length - 1}
+              canMoveUp={index > 0}
+              hideGripIcon
+              onMoveDown={() => moveItem(index, 1)}
+              onMoveUp={() => moveItem(index, -1)}
+              onRemove={() => removeItem(index)}
+              title={`Info ${index + 1}`}
+            >
+              <FieldGrid>
+                <TextField
+                  field={{
+                    id: `extraInfoItemTitle${index}`,
+                    label: "Item Title",
+                    maxLength: 80,
+                  }}
+                  value={item.title}
+                  onChange={(value) => updateItem(index, { ...item, title: value })}
+                />
+                <TextAreaField
+                  field={{
+                    id: `extraInfoItemDetails${index}`,
+                    label: "Details",
+                    maxLength: 220,
+                  }}
+                  value={item.details}
+                  onChange={(value) => updateItem(index, { ...item, details: value })}
+                />
+              </FieldGrid>
+            </ListBuilderRow>
+          ))}
+        </ListBuilder>
       </EditorGroup>
       <EditorSaveButton />
     </EditorShell>
