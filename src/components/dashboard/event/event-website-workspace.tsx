@@ -32,12 +32,19 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
     [resolvedSections.optionalSections, resolvedSections.requiredSections],
   );
   const defaultWebsiteFlowSections = useMemo(
-    () => buildInitialWebsiteFlow(editableSections),
-    [editableSections],
+    () =>
+      buildInitialWebsiteFlow(
+        editableSections,
+        eventWebsiteData.eventWebsiteContent.layout.sectionOrder,
+      ),
+    [editableSections, eventWebsiteData.eventWebsiteContent.layout.sectionOrder],
   );
   const [websiteFlowSections, setWebsiteFlowSections] = useState(defaultWebsiteFlowSections);
   const [enabledSections, setEnabledSections] = useState(() =>
-    buildInitialEnabledSections(editableSections),
+    buildInitialEnabledSections(
+      editableSections,
+      eventWebsiteData.eventWebsiteContent.layout.enabledSections,
+    ),
   );
   const [previewDraft, setPreviewDraft] = useState(() => buildInitialPreviewDraft(eventWebsiteData));
   const sectionsByKey = useMemo(

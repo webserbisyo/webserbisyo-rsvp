@@ -1,4 +1,8 @@
 import type { EventWebsiteSectionDefinition, EventWebsiteSectionKey } from "@/config/event-website-sections";
+import {
+  eventWebsiteContentSectionKeys,
+  type EventWebsiteContent,
+} from "@/lib/event-website/types";
 
 export type EventWebsitePreviewDevice = "desktop" | "mobile";
 
@@ -126,8 +130,11 @@ export type EventWebsitePreviewDraft = {
 };
 
 type EventWebsitePreviewEventData = {
+  eventWebsiteContent?: EventWebsiteContent | null;
   eventContent: {
     coupleOrCelebrantNames: string | null;
+    eventStory?: string | null;
+    giftNote?: string | null;
     heroSubtitle: string | null;
     heroTitle: string | null;
     rsvpNote: string | null;
@@ -143,43 +150,10 @@ type EventWebsitePreviewEventData = {
   venueName: string | null;
 };
 
-export const previewSupportedSectionKeys = [
-  "host_info",
-  "countdown",
-  "music_effects",
-  "main_event",
-  "venue",
-  "secondary_event",
-  "timeline_program",
-  "entourage",
-  "principal_sponsors",
-  "attire_motif",
-  "extra_info",
-  "rsvp_form",
-  "gift_details",
-  "guestbook",
-  "story_message",
-  "contact_socials",
-] as const satisfies EventWebsiteSectionKey[];
+export const previewSupportedSectionKeys =
+  eventWebsiteContentSectionKeys as readonly EventWebsiteSectionKey[];
 
-const defaultWeddingFlow: EventWebsiteSectionKey[] = [
-  "host_info",
-  "countdown",
-  "music_effects",
-  "main_event",
-  "venue",
-  "secondary_event",
-  "timeline_program",
-  "entourage",
-  "principal_sponsors",
-  "attire_motif",
-  "extra_info",
-  "rsvp_form",
-  "gift_details",
-  "guestbook",
-  "story_message",
-  "contact_socials",
-];
+const defaultWeddingFlow: EventWebsiteSectionKey[] = [...eventWebsiteContentSectionKeys];
 
 export const previewDefaultDraft: EventWebsitePreviewDraft = {
   attireDressCode: {
@@ -317,6 +291,10 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
 export function buildInitialPreviewDraft(
   eventData: EventWebsitePreviewEventData,
 ): EventWebsitePreviewDraft {
+  if (eventData.eventWebsiteContent) {
+    return buildPreviewDraftFromContent(eventData.eventWebsiteContent);
+  }
+
   return {
     ...previewDefaultDraft,
     attireDressCode: { ...previewDefaultDraft.attireDressCode },
@@ -373,17 +351,22 @@ export function buildInitialPreviewDraft(
 
 export function buildInitialEnabledSections(
   sections: EventWebsiteSectionDefinition[],
+  hydratedEnabledSections?: Partial<Record<EventWebsiteSectionKey, boolean>> | null,
 ): Record<EventWebsiteSectionKey, boolean> {
   return Object.fromEntries(
-    sections.map((section) => [section.key, section.required || section.defaultEnabled]),
+    sections.map((section) => [
+      section.key,
+      section.required ? true : hydratedEnabledSections?.[section.key] ?? section.defaultEnabled,
+    ]),
   ) as Record<EventWebsiteSectionKey, boolean>;
 }
 
 export function buildInitialWebsiteFlow(
   sections: EventWebsiteSectionDefinition[],
+  preferredOrder: readonly EventWebsiteSectionKey[] = defaultWeddingFlow,
 ): EventWebsiteSectionDefinition[] {
   const sectionMap = new Map(sections.map((section) => [section.key, section]));
-  const pinnedSections = defaultWeddingFlow
+  const pinnedSections = preferredOrder
     .map((key) => sectionMap.get(key))
     .filter((section): section is EventWebsiteSectionDefinition => Boolean(section));
   const pinnedKeys = new Set(pinnedSections.map((section) => section.key));
@@ -392,6 +375,121 @@ export function buildInitialWebsiteFlow(
   );
 
   return [...pinnedSections, ...remainingSections];
+}
+
+export function buildPreviewDraftFromContent(content: EventWebsiteContent): EventWebsitePreviewDraft {
+  return {
+    attireDressCode: {
+      colorMotifNote: content.sections.attire_motif.colorMotifNote,
+      dressCodeNote: content.sections.attire_motif.dressCodeNote,
+      sectionIntro: content.sections.attire_motif.sectionIntro,
+    },
+    ceremony: {
+      endTime: content.sections.main_event.endTime,
+      eventDate: content.sections.main_event.eventDate,
+      eventLabel: content.sections.main_event.eventLabel,
+      eventTime: content.sections.main_event.eventTime,
+      rsvpDeadline: content.sections.main_event.rsvpDeadline,
+      scheduleNote: content.sections.main_event.scheduleNote,
+    },
+    contactSocials: {
+      contactNumber: content.sections.contact_socials.contactNumber,
+      contactPerson: content.sections.contact_socials.contactPerson,
+      email: content.sections.contact_socials.email,
+      facebookUrl: content.sections.contact_socials.facebookUrl,
+      instagramUrl: content.sections.contact_socials.instagramUrl,
+      tikTokUrl: content.sections.contact_socials.tikTokUrl,
+    },
+    countdown: {
+      shortNote: content.sections.countdown.shortNote,
+      title: content.sections.countdown.title,
+    },
+    coupleInfo: {
+      brideName: content.sections.host_info.brideName,
+      displayAs: content.sections.host_info.displayAs,
+      groomName: content.sections.host_info.groomName,
+      hostLine: content.sections.host_info.hostLine,
+      shortHostMessage: content.sections.host_info.shortHostMessage,
+    },
+    entourage: {
+      groups: content.sections.entourage.groups.map((group) => ({
+        groupTitle: group.groupTitle,
+        names: group.names,
+      })),
+      introLine: content.sections.entourage.introLine,
+    },
+    extraInfo: {
+      items: content.sections.extra_info.items.map((item) => ({
+        details: item.details,
+        title: item.title,
+      })),
+      sectionIntro: content.sections.extra_info.sectionIntro,
+      sectionTitle: content.sections.extra_info.sectionTitle,
+    },
+    giftDetails: {
+      giftNote: content.sections.gift_details.giftNote,
+      options: content.sections.gift_details.options.map((option) => ({
+        file: null,
+        title: option.title,
+      })),
+      sectionIntro: content.sections.gift_details.sectionIntro,
+    },
+    loveStory: {
+      sectionIntro: content.sections.story_message.sectionIntro,
+      storyBody: content.sections.story_message.storyBody,
+      storyTitle: content.sections.story_message.storyTitle,
+    },
+    messages: {
+      messageBody: content.sections.guestbook.messageBody,
+      sectionTitle: content.sections.guestbook.sectionTitle,
+    },
+    musicEffects: {
+      musicLink: content.sections.music_effects.musicLink,
+      musicTitle: content.sections.music_effects.musicTitle,
+      playButtonLabel: content.sections.music_effects.playButtonLabel,
+      shortNote: content.sections.music_effects.shortNote,
+    },
+    principalSponsors: {
+      introLine: content.sections.principal_sponsors.introLine,
+      names: content.sections.principal_sponsors.names,
+    },
+    reception: {
+      address: content.sections.secondary_event.address,
+      endTime: content.sections.secondary_event.endTime,
+      mapsLink: content.sections.secondary_event.mapsLink,
+      note: content.sections.secondary_event.note,
+      startTime: content.sections.secondary_event.startTime,
+      title: content.sections.secondary_event.title,
+      venueName: content.sections.secondary_event.venueName,
+    },
+    rsvpForm: {
+      companionAgeEnabled: content.sections.rsvp_form.companionAgeEnabled,
+      companionLimit: `${content.sections.rsvp_form.companionLimit}`,
+      companionNameEnabled: content.sections.rsvp_form.companionNameEnabled,
+      customQuestions: content.sections.rsvp_form.customQuestions.map((question) => ({
+        fieldType: question.fieldType,
+        label: question.label,
+        options: [...question.options],
+        required: question.required,
+      })),
+      foodAllergiesEnabled: content.sections.rsvp_form.foodAllergiesEnabled,
+      messageToHostEnabled: content.sections.rsvp_form.messageToHostEnabled,
+      plusOneEnabled: content.sections.rsvp_form.plusOneEnabled,
+    },
+    timelineProgram: {
+      items: content.sections.timeline_program.items.map((item) => ({
+        description: item.description,
+        time: item.time,
+        title: item.title,
+      })),
+    },
+    venue: {
+      address: content.sections.venue.address,
+      arrivalNote: content.sections.venue.arrivalNote,
+      mapsLink: content.sections.venue.mapsLink,
+      venueName: content.sections.venue.venueName,
+    },
+  };
 }
 
 export function formatPreviewDate(value: string, fallback: string) {
