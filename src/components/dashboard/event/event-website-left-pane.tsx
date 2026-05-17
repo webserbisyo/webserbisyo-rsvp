@@ -10,6 +10,7 @@ import {
   type EventWebsiteSectionDefinition,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { isEventWebsiteContentSectionKey } from "@/lib/event-website/types";
 import type { EventWebsiteReadinessResult } from "@/lib/event-website/readiness";
 import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ type EventWebsiteLeftPaneProps = {
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   futureDevelopmentSections: EventWebsiteSectionDefinition[];
   isDirty: boolean;
-  onOpenReadiness: () => void;
+  onReviewReadiness: () => void;
   onEnabledSectionChange: (section: EventWebsiteSectionKey, enabled: boolean) => void;
   onResetWebsiteFlowOrder: () => void;
   onSelectedSectionChange?: (section: EventWebsiteSectionKey) => void;
@@ -34,7 +35,7 @@ export function EventWebsiteLeftPane({
   enabledSections,
   futureDevelopmentSections,
   isDirty,
-  onOpenReadiness,
+  onReviewReadiness,
   onEnabledSectionChange,
   onResetWebsiteFlowOrder,
   onSelectedSectionChange,
@@ -94,12 +95,33 @@ export function EventWebsiteLeftPane({
     return () => setDashboardBreadcrumbDetail(null);
   }, [selectedSectionLabel]);
 
+  function getSectionReadinessState(sectionKey: EventWebsiteSectionKey) {
+    if (!isEventWebsiteContentSectionKey(sectionKey)) {
+      return undefined;
+    }
+
+    const sectionStatus = readiness.sectionStatus[sectionKey];
+    if (!sectionStatus?.included) {
+      return undefined;
+    }
+
+    if (sectionStatus.blockerCount > 0) {
+      return "blocker" as const;
+    }
+
+    if (sectionStatus.warningCount > 0) {
+      return "warning" as const;
+    }
+
+    return undefined;
+  }
+
   return (
     <section className="event-website-pane" aria-label="Event Website setup sections">
       <EventWebsiteStatusCard
         isDirty={isDirty}
         readiness={readiness}
-        onOpenReadiness={onOpenReadiness}
+        onReviewReadiness={onReviewReadiness}
       />
 
       <div className="event-section-group">
@@ -129,6 +151,7 @@ export function EventWebsiteLeftPane({
           as="div"
         >
           {websiteFlowSections.map((section, index) => (
+            // Section row styling communicates readiness state without extra pills or badges.
             <Reorder.Item
               key={section.key}
               value={section}
@@ -144,6 +167,7 @@ export function EventWebsiteLeftPane({
                 canMoveDown={index < websiteFlowSections.length - 1}
                 canMoveUp={index > 0}
                 enabled={section.required || (enabledSections[section.key] ?? false)}
+                readinessState={getSectionReadinessState(section.key)}
                 reorderable
                 section={section}
                 selected={selectedSection === section.key}

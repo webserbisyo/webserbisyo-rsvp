@@ -3690,6 +3690,21 @@
   letter-spacing: 0.01em;
 }
 
+[data-dashboard] .event-status-badge.is-ready {
+  background: color-mix(in srgb, var(--dash-success-subtle) 88%, white);
+  color: color-mix(in srgb, var(--dash-success) 84%, var(--dash-foreground));
+}
+
+[data-dashboard] .event-status-badge.is-warning {
+  background: color-mix(in srgb, var(--dash-warning-subtle) 88%, white);
+  color: color-mix(in srgb, var(--dash-warning) 84%, var(--dash-foreground));
+}
+
+[data-dashboard] .event-status-badge.is-blocker {
+  background: color-mix(in srgb, var(--dash-destructive-subtle) 88%, white);
+  color: color-mix(in srgb, var(--dash-destructive) 84%, var(--dash-foreground));
+}
+
 [data-dashboard] .event-status-badge-dot {
   display: block;
   width: 6px;
@@ -3700,8 +3715,38 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-brand) 22%, transparent);
 }
 
+[data-dashboard] .event-status-badge.is-ready .event-status-badge-dot {
+  background: var(--dash-success);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-success) 22%, transparent);
+}
+
+[data-dashboard] .event-status-badge.is-warning .event-status-badge-dot {
+  background: var(--dash-warning);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-warning) 22%, transparent);
+}
+
+[data-dashboard] .event-status-badge.is-blocker .event-status-badge-dot {
+  background: var(--dash-destructive);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-destructive) 22%, transparent);
+}
+
 [data-dashboard] .event-website-progress {
   height: 5px;
+}
+
+[data-dashboard] .event-status-blockers {
+  color: color-mix(in srgb, var(--dash-destructive) 88%, var(--dash-foreground));
+  font-weight: 600;
+}
+
+[data-dashboard] .event-status-warnings {
+  color: color-mix(in srgb, var(--dash-warning) 88%, var(--dash-foreground));
+  font-weight: 600;
+}
+
+[data-dashboard] .event-status-unsaved {
+  color: color-mix(in srgb, var(--dash-warning) 78%, var(--dash-foreground));
+  font-weight: 600;
 }
 
 /* Preview button — ghost-style quiet link */
@@ -3817,6 +3862,48 @@
   background: rgba(255, 248, 242, 0.85);
 }
 
+[data-dashboard] .event-section-row.is-blocker {
+  border-color: color-mix(in srgb, var(--dash-destructive) 22%, var(--dash-border));
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dash-destructive) 10%, transparent) 0 3px,
+      transparent 3px
+    ),
+    color-mix(in srgb, var(--dash-destructive-subtle) 64%, rgba(255, 251, 250, 0.84));
+}
+
+[data-dashboard] .event-section-row.is-blocker:hover {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dash-destructive) 12%, transparent) 0 3px,
+      transparent 3px
+    ),
+    color-mix(in srgb, var(--dash-destructive-subtle) 78%, rgba(255, 249, 247, 0.88));
+}
+
+[data-dashboard] .event-section-row.is-warning {
+  border-color: color-mix(in srgb, var(--dash-warning) 24%, var(--dash-border));
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dash-warning) 12%, transparent) 0 3px,
+      transparent 3px
+    ),
+    color-mix(in srgb, var(--dash-warning-subtle) 68%, rgba(255, 252, 246, 0.86));
+}
+
+[data-dashboard] .event-section-row.is-warning:hover {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dash-warning) 14%, transparent) 0 3px,
+      transparent 3px
+    ),
+    color-mix(in srgb, var(--dash-warning-subtle) 82%, rgba(255, 250, 241, 0.9));
+}
+
 [data-dashboard] .event-section-row:focus-within {
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-ring) 60%, transparent);
@@ -3826,6 +3913,28 @@
 [data-dashboard] .event-section-row.is-selected {
   border-color: color-mix(in srgb, var(--dash-brand) 30%, var(--dash-border));
   background: var(--dash-brand-subtle);
+}
+
+[data-dashboard] .event-section-row.is-selected.is-blocker {
+  border-color: color-mix(in srgb, var(--dash-brand) 34%, var(--dash-destructive) 40%);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dash-destructive) 28%, transparent) 0 4px,
+      transparent 4px
+    ),
+    color-mix(in srgb, var(--dash-brand-subtle) 84%, var(--dash-destructive-subtle));
+}
+
+[data-dashboard] .event-section-row.is-selected.is-warning {
+  border-color: color-mix(in srgb, var(--dash-brand) 34%, var(--dash-warning) 42%);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--dash-warning) 28%, transparent) 0 4px,
+      transparent 4px
+    ),
+    color-mix(in srgb, var(--dash-brand-subtle) 86%, var(--dash-warning-subtle));
 }
 
 [data-dashboard] .event-section-row.is-coming-soon {
@@ -3896,6 +4005,16 @@
   border-color: color-mix(in srgb, var(--dash-brand) 50%, var(--dash-border));
   background: var(--dash-brand);
   color: #ffffff;
+}
+
+[data-dashboard] .event-section-row.is-blocker .event-section-icon {
+  border-color: color-mix(in srgb, var(--dash-destructive) 26%, var(--dash-border));
+  color: color-mix(in srgb, var(--dash-destructive) 82%, var(--dash-brand));
+}
+
+[data-dashboard] .event-section-row.is-warning .event-section-icon {
+  border-color: color-mix(in srgb, var(--dash-warning) 28%, var(--dash-border));
+  color: color-mix(in srgb, var(--dash-warning) 86%, var(--dash-brand));
 }
 
 [data-dashboard] .event-section-title {

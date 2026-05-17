@@ -2,15 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { EventWebsiteReadinessResult } from "@/lib/event-website/readiness";
+import { cn } from "@/lib/utils";
 import { ArrowUpRight, Rocket } from "lucide-react";
 
 type EventWebsiteStatusCardProps = {
   isDirty: boolean;
-  onOpenReadiness: () => void;
+  onReviewReadiness: () => void;
   readiness: EventWebsiteReadinessResult;
 };
 
-export function EventWebsiteStatusCard({ isDirty, onOpenReadiness, readiness }: EventWebsiteStatusCardProps) {
+export function EventWebsiteStatusCard({
+  isDirty,
+  onReviewReadiness,
+  readiness,
+}: EventWebsiteStatusCardProps) {
   const badgeLabel =
     readiness.state === "ready"
       ? "Ready"
@@ -21,7 +26,14 @@ export function EventWebsiteStatusCard({ isDirty, onOpenReadiness, readiness }: 
   return (
     <Card className="event-website-status-card sticky top-[calc(var(--dash-header-height)+1rem)] z-20 gap-0 px-4 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="event-status-badge">
+        <span
+          className={cn(
+            "event-status-badge",
+            readiness.state === "ready" && "is-ready",
+            readiness.state === "ready_with_warnings" && "is-warning",
+            readiness.state === "not_ready" && "is-blocker",
+          )}
+        >
           <span className="event-status-badge-dot" aria-hidden="true" />
           {badgeLabel}
         </span>
@@ -37,9 +49,13 @@ export function EventWebsiteStatusCard({ isDirty, onOpenReadiness, readiness }: 
       />
 
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[--dash-muted]">
-        <span>{readiness.blockerCount} blockers</span>
-        <span>{readiness.warningCount} warnings</span>
-        {isDirty ? <span className="font-medium text-amber-700">Unsaved changes</span> : null}
+        <span className="event-status-blockers">
+          {readiness.blockerCount} blocker{readiness.blockerCount === 1 ? "" : "s"}
+        </span>
+        <span className="event-status-warnings">
+          {readiness.warningCount} warning{readiness.warningCount === 1 ? "" : "s"}
+        </span>
+        {isDirty ? <span className="event-status-unsaved">Unsaved changes</span> : null}
       </div>
 
       <div className="flex items-center justify-between gap-2">
@@ -56,7 +72,7 @@ export function EventWebsiteStatusCard({ isDirty, onOpenReadiness, readiness }: 
           type="button"
           size="sm"
           className="event-status-publish-btn h-7 gap-1 px-2.5 text-xs"
-          onClick={onOpenReadiness}
+          onClick={onReviewReadiness}
         >
           <Rocket className="size-3" aria-hidden="true" />
           Publish readiness
