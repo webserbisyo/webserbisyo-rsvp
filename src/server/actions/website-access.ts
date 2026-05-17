@@ -23,15 +23,18 @@ export async function publishEventWebsiteAction(input: unknown) {
   try {
     const profile = await requireTenantMember();
     const payload = parseActionInput(PublishEventWebsiteActionSchema, input);
-    const eventId = await requireOwnedEventId(payload.eventId, profile.client_id ?? "");
+    const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
     const result = await publishEventWebsite({
       actorUserId: profile.id,
       clientId: profile.client_id ?? "",
       confirmWarnings: payload.confirmWarnings,
-      eventId,
+      eventId: event.id,
     });
 
     revalidatePath("/dashboard/website-access");
+    if (event.event_slug) {
+      revalidatePath(`/r/${event.event_slug}`);
+    }
 
     return actionSuccess(result);
   } catch (error) {
@@ -43,14 +46,17 @@ export async function unpublishEventWebsiteAction(input: unknown) {
   try {
     const profile = await requireTenantMember();
     const payload = parseActionInput(UnpublishEventWebsiteActionSchema, input);
-    const eventId = await requireOwnedEventId(payload.eventId, profile.client_id ?? "");
+    const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
     const result = await unpublishEventWebsite({
       actorUserId: profile.id,
       clientId: profile.client_id ?? "",
-      eventId,
+      eventId: event.id,
     });
 
     revalidatePath("/dashboard/website-access");
+    if (event.event_slug) {
+      revalidatePath(`/r/${event.event_slug}`);
+    }
 
     return actionSuccess(result);
   } catch (error) {
@@ -58,11 +64,11 @@ export async function unpublishEventWebsiteAction(input: unknown) {
   }
 }
 
-async function requireOwnedEventId(eventId: string, clientId: string) {
+async function requireOwnedEvent(eventId: string, clientId: string) {
   const supabase = await createServerSupabaseClient();
   const { data: event, error } = await supabase
     .from("rsvp_events")
-    .select("id, client_id")
+    .select("id, client_id, event_slug")
     .eq("id", eventId)
     .eq("client_id", clientId)
     .maybeSingle();
@@ -75,5 +81,5 @@ async function requireOwnedEventId(eventId: string, clientId: string) {
     throw new PermissionError("The requested event does not belong to the current tenant.");
   }
 
-  return event.id;
+  return event;
 }
