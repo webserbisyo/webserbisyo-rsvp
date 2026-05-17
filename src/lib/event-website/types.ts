@@ -233,6 +233,14 @@ export type EventWebsiteContent = {
   version: 1;
 };
 
+export type EventWebsiteCanonicalEventPatch = {
+  event_date: string | null;
+  event_time: string | null;
+  rsvp_close_at: string | null;
+  venue_address: string | null;
+  venue_name: string | null;
+};
+
 export type EventWebsiteDefaultsContext = {
   application?: { [key: string]: unknown } | null;
   client?: {

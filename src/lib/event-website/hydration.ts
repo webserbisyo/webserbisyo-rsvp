@@ -1,4 +1,10 @@
 import { buildDefaultWeddingEventWebsiteContent } from "@/lib/event-website/defaults";
+import {
+  formatCanonicalRsvpCloseAtToEditorInput,
+  normalizeCanonicalDateInput,
+  normalizeCanonicalText,
+  normalizeCanonicalTimeInput,
+} from "@/lib/event-website/canonical";
 import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/event-website/types";
 import {
   EventWebsiteContentPatchSchema,
@@ -19,10 +25,14 @@ export function mergeEventWebsiteContent(
   const parsedPatch = EventWebsiteContentPatchSchema.safeParse(savedContent);
 
   if (!parsedPatch.success) {
-    return defaults;
+    return applyCanonicalEventFieldOverrides(defaults, context);
   }
 
-  return EventWebsiteContentSchema.parse(mergeEventWebsiteContentPatch(defaults, parsedPatch.data));
+  const merged = EventWebsiteContentSchema.parse(
+    mergeEventWebsiteContentPatch(defaults, parsedPatch.data),
+  );
+
+  return applyCanonicalEventFieldOverrides(merged, context);
 }
 
 export function normalizeEventWebsiteContentForSave(draft: unknown): EventWebsiteContent {
@@ -119,5 +129,38 @@ function mergeEventWebsiteContentPatch(
       },
     },
     version: patch.version ?? defaults.version,
+  };
+}
+
+function applyCanonicalEventFieldOverrides(
+  content: EventWebsiteContent,
+  context: EventWebsiteDefaultsContext,
+) {
+  const eventDate = normalizeCanonicalDateInput(context.event?.eventDate);
+  const eventTime = normalizeCanonicalTimeInput(context.event?.eventTime);
+  const rsvpCloseAt = formatCanonicalRsvpCloseAtToEditorInput(context.event?.rsvpCloseAt);
+  const venueName = normalizeCanonicalText(context.event?.venueName);
+  const venueAddress = normalizeCanonicalText(context.event?.venueAddress);
+
+  if (!eventDate && !eventTime && !rsvpCloseAt && !venueName && !venueAddress) {
+    return content;
+  }
+
+  return {
+    ...content,
+    sections: {
+      ...content.sections,
+      main_event: {
+        ...content.sections.main_event,
+        ...(eventDate ? { eventDate } : {}),
+        ...(eventTime ? { eventTime } : {}),
+        ...(rsvpCloseAt ? { rsvpDeadline: rsvpCloseAt } : {}),
+      },
+      venue: {
+        ...content.sections.venue,
+        ...(venueAddress ? { address: venueAddress } : {}),
+        ...(venueName ? { venueName } : {}),
+      },
+    },
   };
 }

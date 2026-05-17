@@ -7,6 +7,11 @@ import {
   type EventWebsiteContentSectionKey,
   type EventWebsiteDefaultsContext,
 } from "@/lib/event-website/types";
+import {
+  formatCanonicalRsvpCloseAtToEditorInput,
+  normalizeCanonicalDateInput,
+  normalizeCanonicalTimeInput,
+} from "@/lib/event-website/canonical";
 
 const DEFAULT_WEDDING_EVENT_DATE = "2026-06-06";
 const DEFAULT_WEDDING_EVENT_TIME = "16:00";
@@ -37,10 +42,10 @@ export function buildDefaultWeddingEventWebsiteContent(
     context.eventContent?.heroSubtitle,
     buildWeddingInvitationMessage(coupleNames.groomName, coupleNames.brideName),
   );
-  const eventDate = normalizeDateInput(context.event?.eventDate) || DEFAULT_WEDDING_EVENT_DATE;
-  const eventTime = normalizeTimeInput(context.event?.eventTime) || DEFAULT_WEDDING_EVENT_TIME;
+  const eventDate = normalizeCanonicalDateInput(context.event?.eventDate) || DEFAULT_WEDDING_EVENT_DATE;
+  const eventTime = normalizeCanonicalTimeInput(context.event?.eventTime) || DEFAULT_WEDDING_EVENT_TIME;
   const rsvpDeadline =
-    normalizeLocalDateTimeInput(context.event?.rsvpCloseAt) ||
+    formatCanonicalRsvpCloseAtToEditorInput(context.event?.rsvpCloseAt) ||
     buildDefaultRsvpDeadline(eventDate, DEFAULT_RSVP_DEADLINE_OFFSET_DAYS);
   const venueName = firstNonEmpty(context.event?.venueName, "The Ruins, Bacolod");
   const venueAddress = firstNonEmpty(
@@ -310,48 +315,6 @@ function firstNonEmpty(...values: Array<string | null | undefined>) {
   return "";
 }
 
-function normalizeDateInput(value?: string | null) {
-  const normalized = normalizeText(value);
-
-  if (!normalized) {
-    return "";
-  }
-
-  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : "";
-}
-
-function normalizeLocalDateTimeInput(value?: string | null) {
-  const normalized = normalizeText(value);
-
-  if (!normalized) {
-    return "";
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(normalized)) {
-    return normalized;
-  }
-
-  const date = new Date(normalized);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return localDate.toISOString().slice(0, 16);
-}
-
 function normalizeText(value?: string | null) {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeTimeInput(value?: string | null) {
-  const normalized = normalizeText(value);
-
-  if (!normalized) {
-    return "";
-  }
-
-  const timeMatch = normalized.match(/^(\d{2}:\d{2})(?::\d{2})?$/);
-  return timeMatch?.[1] ?? "";
 }

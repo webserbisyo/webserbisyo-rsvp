@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { buildManilaOffsetDateTime } from "@/lib/event-website/canonical";
 import {
   DEFAULT_WEDDING_EVENT_TYPE,
   eventWebsiteContentSectionKeys,
@@ -36,8 +37,22 @@ function isValidTimeInput(value: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+function isValidCanonicalTimeInput(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value);
+}
+
 function isValidLocalDateTimeInput(value: string) {
   return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value);
+}
+
+function normalizeNullableTextInput(value: unknown) {
+  const normalized = trimString(value);
+
+  if (normalized === "") {
+    return null;
+  }
+
+  return normalized;
 }
 
 export function isSafeHttpUrl(value: string) {
@@ -361,6 +376,67 @@ export const EventWebsiteContentMetaSchema = z
   })
   .strict();
 
+export const EventWebsiteCanonicalEventPatchSchema = z
+  .object({
+    event_date: z.preprocess(
+      normalizeNullableTextInput,
+      z.union([
+        z.string().refine(isValidDateInput, {
+          error: "Use YYYY-MM-DD format.",
+        }),
+        z.null(),
+      ]),
+    ),
+    event_time: z.preprocess(
+      normalizeNullableTextInput,
+      z.union([
+        z.string().refine(isValidCanonicalTimeInput, {
+          error: "Use HH:MM or HH:MM:SS format.",
+        }),
+        z.null(),
+      ]),
+    ),
+    rsvp_close_at: z.preprocess(
+      normalizeNullableTextInput,
+      z.union([z.string().datetime({ offset: true }), z.null()]),
+    ),
+    venue_address: z.preprocess(
+      normalizeNullableTextInput,
+      z.union([z.string().max(180), z.null()]),
+    ),
+    venue_name: z.preprocess(
+      normalizeNullableTextInput,
+      z.union([z.string().max(80), z.null()]),
+    ),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.event_date || !value.event_time || !value.rsvp_close_at) {
+      return;
+    }
+
+    const ceremonyDateTime = buildManilaOffsetDateTime(value.event_date, value.event_time);
+
+    if (!ceremonyDateTime) {
+      return;
+    }
+
+    const rsvpDeadline = new Date(value.rsvp_close_at).getTime();
+    const ceremonyStart = new Date(ceremonyDateTime).getTime();
+
+    if (Number.isNaN(rsvpDeadline) || Number.isNaN(ceremonyStart)) {
+      return;
+    }
+
+    if (rsvpDeadline > ceremonyStart) {
+      ctx.addIssue({
+        code: "custom",
+        message: "RSVP deadline must be on or before the ceremony start.",
+        path: ["rsvp_close_at"],
+      });
+    }
+  });
+
 export const EventWebsiteContentSchema = z
   .object({
     assets: EventWebsiteContentAssetsSchema,
@@ -475,4 +551,7 @@ export const EventWebsiteContentPatchSchema = z
   .strict();
 
 export type EventWebsiteContentInput = z.infer<typeof EventWebsiteContentSchema>;
+export type EventWebsiteCanonicalEventPatchInput = z.infer<
+  typeof EventWebsiteCanonicalEventPatchSchema
+>;
 export type EventWebsiteContentPatchInput = z.infer<typeof EventWebsiteContentPatchSchema>;
