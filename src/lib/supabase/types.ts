@@ -286,6 +286,9 @@ export type Database = {
           hero_subtitle: string | null;
           hero_title: string | null;
           id: string;
+          published_at: string | null;
+          published_by: string | null;
+          published_content_json: Json | null;
           rsvp_note: string | null;
           schedule_note: string | null;
           theme_key: string | null;
@@ -304,6 +307,9 @@ export type Database = {
           hero_subtitle?: string | null;
           hero_title?: string | null;
           id?: string;
+          published_at?: string | null;
+          published_by?: string | null;
+          published_content_json?: Json | null;
           rsvp_note?: string | null;
           schedule_note?: string | null;
           theme_key?: string | null;
@@ -322,6 +328,9 @@ export type Database = {
           hero_subtitle?: string | null;
           hero_title?: string | null;
           id?: string;
+          published_at?: string | null;
+          published_by?: string | null;
+          published_content_json?: Json | null;
           rsvp_note?: string | null;
           schedule_note?: string | null;
           theme_key?: string | null;
@@ -334,6 +343,13 @@ export type Database = {
             columns: ["event_id"];
             isOneToOne: true;
             referencedRelation: "rsvp_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_content_published_by_fkey";
+            columns: ["published_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
