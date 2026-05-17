@@ -10,6 +10,7 @@ import {
   type EventWebsiteSectionDefinition,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import type { EventWebsiteReadinessResult } from "@/lib/event-website/readiness";
 import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,10 +18,13 @@ type EventWebsiteLeftPaneProps = {
   defaultWebsiteFlowSections: EventWebsiteSectionDefinition[];
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   futureDevelopmentSections: EventWebsiteSectionDefinition[];
+  isDirty: boolean;
+  onOpenReadiness: () => void;
   onEnabledSectionChange: (section: EventWebsiteSectionKey, enabled: boolean) => void;
   onResetWebsiteFlowOrder: () => void;
   onSelectedSectionChange?: (section: EventWebsiteSectionKey) => void;
   onWebsiteFlowSectionsChange: (sections: EventWebsiteSectionDefinition[]) => void;
+  readiness: EventWebsiteReadinessResult;
   selectedSection?: EventWebsiteSectionKey;
   websiteFlowSections: EventWebsiteSectionDefinition[];
 };
@@ -29,10 +33,13 @@ export function EventWebsiteLeftPane({
   defaultWebsiteFlowSections,
   enabledSections,
   futureDevelopmentSections,
+  isDirty,
+  onOpenReadiness,
   onEnabledSectionChange,
   onResetWebsiteFlowOrder,
   onSelectedSectionChange,
   onWebsiteFlowSectionsChange,
+  readiness,
   selectedSection: selectedSectionProp,
   websiteFlowSections,
 }: EventWebsiteLeftPaneProps) {
@@ -56,12 +63,6 @@ export function EventWebsiteLeftPane({
     allSectionsByKey.get(selectedSection)?.label ??
     websiteFlowSections[0]?.label ??
     "Host Info";
-
-  const enabledCount =
-    websiteFlowSections.filter(
-      (section) => !section.comingSoon && (section.required || enabledSections[section.key]),
-    ).length;
-  const totalCount = websiteFlowSections.filter((section) => !section.comingSoon).length;
 
   // Dirty detection: compare current order keys to default order keys
   const isOrderDirty =
@@ -95,7 +96,11 @@ export function EventWebsiteLeftPane({
 
   return (
     <section className="event-website-pane" aria-label="Event Website setup sections">
-      <EventWebsiteStatusCard enabledCount={enabledCount} totalCount={totalCount} />
+      <EventWebsiteStatusCard
+        isDirty={isDirty}
+        readiness={readiness}
+        onOpenReadiness={onOpenReadiness}
+      />
 
       <div className="event-section-group">
         <div className="event-section-heading">

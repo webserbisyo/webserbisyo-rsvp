@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { EventWebsiteReadinessDialog } from "@/components/dashboard/event/event-website-readiness-dialog";
 import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import { EventWebsiteLeftPane } from "@/components/dashboard/event/event-website-left-pane";
@@ -17,6 +18,7 @@ import {
   resolveEventWebsiteSections,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { evaluateEventWebsiteReadiness } from "@/lib/event-website/readiness";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 
@@ -26,6 +28,7 @@ type EventWebsiteWorkspaceProps = {
 
 export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspaceProps) {
   const [isPending, startTransition] = useTransition();
+  const [isReadinessOpen, setIsReadinessOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<EventWebsiteSectionKey>("host_info");
   const [previewScrollRequest, setPreviewScrollRequest] = useState(0);
   const [savedContent, setSavedContent] = useState(eventWebsiteData.eventWebsiteContent);
@@ -67,6 +70,10 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
     () => JSON.stringify(currentContent) !== JSON.stringify(savedContent),
     [currentContent, savedContent],
   );
+  const readiness = useMemo(
+    () => evaluateEventWebsiteReadiness(currentContent),
+    [currentContent],
+  );
   const sectionsByKey = useMemo(
     () =>
       new Map(
@@ -83,6 +90,21 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
     ],
   );
   const selectedSectionDefinition = sectionsByKey.get(selectedSection);
+  const sectionLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        [
+          ...resolvedSections.requiredSections,
+          ...resolvedSections.optionalSections,
+          ...resolvedSections.futureDevelopmentSections,
+        ].map((section) => [section.key, section.label]),
+      ) as Partial<Record<EventWebsiteSectionKey, string>>,
+    [
+      resolvedSections.futureDevelopmentSections,
+      resolvedSections.optionalSections,
+      resolvedSections.requiredSections,
+    ],
+  );
 
   function resetWebsiteFlowOrder() {
     setWebsiteFlowSections(defaultWebsiteFlowSections);
@@ -105,6 +127,11 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
   function handleSelectedSectionChange(section: EventWebsiteSectionKey) {
     setSelectedSection(section);
     setPreviewScrollRequest((current) => current + 1);
+  }
+
+  function handleReadinessIssueSelect(section: EventWebsiteSectionKey) {
+    setIsReadinessOpen(false);
+    handleSelectedSectionChange(section);
   }
 
   function handleSaveChanges() {
@@ -148,6 +175,9 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
         enabledSections={enabledSections}
         defaultWebsiteFlowSections={defaultWebsiteFlowSections}
         futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
+        isDirty={isDirty}
+        readiness={readiness}
+        onOpenReadiness={() => setIsReadinessOpen(true)}
         selectedSection={selectedSection}
         websiteFlowSections={websiteFlowSections}
         onEnabledSectionChange={updateEnabledSection}
@@ -175,6 +205,14 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
         previewDraft={previewDraft}
         selectedSection={selectedSectionDefinition}
         websiteFlowSections={websiteFlowSections}
+      />
+      <EventWebsiteReadinessDialog
+        isDirty={isDirty}
+        open={isReadinessOpen}
+        readiness={readiness}
+        sectionLabels={sectionLabels}
+        onIssueSelect={handleReadinessIssueSelect}
+        onOpenChange={setIsReadinessOpen}
       />
     </>
   );
