@@ -1,7 +1,7 @@
 "use client";
 
-import { jsPDF } from "jspdf";
-import autoTable, { type CellHookData, type RowInput } from "jspdf-autotable";
+import type { jsPDF } from "jspdf";
+import type { CellHookData, RowInput } from "jspdf-autotable";
 import {
   formatResponseSubmittedTable,
   getResponseStatusLabel,
@@ -53,6 +53,9 @@ type ExportOptions = ExportRowsInput & {
   includes: ExportIncludeState;
 };
 
+type JsPdfConstructor = typeof import("jspdf").jsPDF;
+type AutoTableFn = typeof import("jspdf-autotable").default;
+
 type LandscapeColumn = {
   header: string;
   key:
@@ -85,7 +88,7 @@ export function exportRsvpResponses(options: ExportOptions) {
     return;
   }
 
-  downloadLandscapePdf(exportRows, options.includes);
+  void downloadLandscapePdf(exportRows, options.includes);
 }
 
 function buildRsvpResponsesCsv(rows: RsvpResponseRecord[], includes: ExportIncludeState) {
@@ -162,7 +165,24 @@ function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
-function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: ExportIncludeState) {
+async function loadPdfDependencies() {
+  const [{ jsPDF }, autoTableModule] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+
+  const autoTable =
+    autoTableModule.default ??
+    autoTableModule.autoTable;
+
+  return {
+    autoTable: autoTable as AutoTableFn,
+    jsPDF: jsPDF as JsPdfConstructor,
+  };
+}
+
+async function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: ExportIncludeState) {
+  const { autoTable, jsPDF } = await loadPdfDependencies();
   const doc = new jsPDF({
     orientation: "landscape",
     unit: "pt",
