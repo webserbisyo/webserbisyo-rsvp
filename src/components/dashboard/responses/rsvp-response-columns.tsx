@@ -37,7 +37,7 @@ export function getRsvpResponseColumns({
             </div>
             <div className="min-w-0">
               <p className="truncate font-semibold text-[--dash-foreground]">{response.guestName}</p>
-              <p className="truncate text-sm text-[--dash-muted]">{response.email}</p>
+              <p className="truncate text-sm text-[--dash-muted]">{response.email ?? "No email added"}</p>
             </div>
           </div>
         );

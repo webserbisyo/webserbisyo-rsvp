@@ -34,12 +34,10 @@ import { Separator } from "@/components/ui/separator";
 import {
   formatResponseSubmittedAt,
   getResponseInitials,
-  RSVP_RESPONSE_SOURCE_LABELS,
+  getResponseSourceLabel,
   type RsvpResponseRecord,
 } from "./rsvp-responses-types";
 import { RESPONSES_PORTAL_THEME_STYLE } from "./rsvp-responses-theme";
-
-const LONG_MESSAGE_THRESHOLD = 70;
 
 type RsvpResponseDetailDialogProps = {
   onOpenChange: (open: boolean) => void;
@@ -102,15 +100,6 @@ function RsvpResponseDetailContent({
   response: RsvpResponseRecord;
 }) {
   const isAttending = response.status === "attending";
-  const normalizedMessage = response.message?.trim() ?? "";
-  const sentenceLikeChunks = normalizedMessage
-    .split(/[.!?](?:\s+|$)/)
-    .map((chunk) => chunk.trim())
-    .filter(Boolean).length;
-  const hasLongMessage = Boolean(
-    normalizedMessage &&
-      (normalizedMessage.length > LONG_MESSAGE_THRESHOLD || sentenceLikeChunks >= 2),
-  );
 
   return (
     <div className="flex max-h-[88vh] flex-col bg-[var(--responses-surface)] text-[color:var(--responses-foreground)]">
@@ -187,17 +176,17 @@ function RsvpResponseDetailContent({
           />
           <DetailStat
             label="Source"
-            value={RSVP_RESPONSE_SOURCE_LABELS[response.source]}
+            value={getResponseSourceLabel(response.source)}
             icon={<ExternalLink className="size-4" aria-hidden="true" />}
           />
           <DetailStat
             label="Email"
-            value={response.email}
+            value={response.email ?? "No email added."}
             icon={<Mail className="size-4" aria-hidden="true" />}
           />
           <DetailStat
             label="Phone"
-            value={response.phone}
+            value={response.phone ?? "No phone added."}
             icon={<Phone className="size-4" aria-hidden="true" />}
           />
         </div>
@@ -244,38 +233,36 @@ function RsvpResponseDetailContent({
             )}
           </section>
 
-          <div className={hasLongMessage ? "space-y-3" : "grid gap-3 md:grid-cols-[0.9fr_1.1fr]"}>
-            <section>
-              <DetailMessageCard
-                icon={<Utensils className="size-4" aria-hidden="true" />}
-                title="Dietary notes"
-              >
-                {response.dietaryNotes ?? "No dietary notes."}
-              </DetailMessageCard>
-            </section>
+          <section>
+            <DetailMessageCard
+              icon={<Utensils className="size-4" aria-hidden="true" />}
+              title="Dietary notes"
+            >
+              {response.dietaryNotes ?? "No dietary notes."}
+            </DetailMessageCard>
+          </section>
 
-            <section>
-              <div
-                className="rounded-[24px] border px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-                style={{
-                  borderColor: "color-mix(in srgb, var(--responses-brand) 24%, var(--responses-border))",
-                  backgroundColor: "var(--responses-brand-subtle)",
-                  color: "var(--responses-foreground)",
-                }}
-              >
-                <div className="mb-2.5 flex items-center gap-3 text-[color:var(--responses-brand-active)]">
-                  <span
-                    className="flex size-9 items-center justify-center rounded-[18px]"
-                    style={{ backgroundColor: "rgba(255,255,255,0.5)" }}
-                  >
-                    <MessageCircle className="size-4" aria-hidden="true" />
-                  </span>
-                  <span className="text-xs font-semibold tracking-[0.16em] uppercase">Message</span>
-                </div>
-                <p className="text-sm leading-6">{response.message ?? "No message added."}</p>
+          <section>
+            <div
+              className="rounded-[24px] border px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
+              style={{
+                borderColor: "color-mix(in srgb, var(--responses-brand) 24%, var(--responses-border))",
+                backgroundColor: "var(--responses-brand-subtle)",
+                color: "var(--responses-foreground)",
+              }}
+            >
+              <div className="mb-2.5 flex items-center gap-3 text-[color:var(--responses-brand-active)]">
+                <span
+                  className="flex size-9 items-center justify-center rounded-[18px]"
+                  style={{ backgroundColor: "rgba(255,255,255,0.5)" }}
+                >
+                  <MessageCircle className="size-4" aria-hidden="true" />
+                </span>
+                <span className="text-xs font-semibold tracking-[0.16em] uppercase">Message</span>
               </div>
-            </section>
-          </div>
+              <p className="text-sm leading-6">{response.message ?? "No message added."}</p>
+            </div>
+          </section>
         </div>
       </div>
     </div>

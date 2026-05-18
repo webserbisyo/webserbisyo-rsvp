@@ -152,7 +152,7 @@ export function RsvpResponsesTable({
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search name, email, or phone"
                 className="h-10 rounded-full border-[color:var(--dash-border)] bg-[color:var(--dash-surface-muted)] pr-3 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
-                aria-label="Search responses by guest name, email, phone, or companion names"
+                aria-label="Search responses by guest name, email, or phone"
               />
             </div>
 

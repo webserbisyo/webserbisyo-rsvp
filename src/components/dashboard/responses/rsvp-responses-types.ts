@@ -1,12 +1,12 @@
 export type RsvpResponseStatus = "attending" | "not_attending";
 
-export type RsvpResponseSource = "public_rsvp_page" | "qr_code" | "shared_link";
+export type RsvpResponseSource = string | null;
 
 export type RsvpResponseRecord = {
   id: string;
   guestName: string;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   status: RsvpResponseStatus;
   partySize: number;
   companions: string[];
@@ -28,14 +28,34 @@ export type RsvpResponsesExportInclude =
   | "dietary_notes"
   | "messages";
 
-export const RSVP_RESPONSE_SOURCE_LABELS: Record<RsvpResponseSource, string> = {
+export const RSVP_RESPONSE_SOURCE_LABELS = {
   public_rsvp_page: "Public RSVP page",
   qr_code: "QR code",
   shared_link: "Shared link",
+  internal: "Internal",
 };
 
 export function getResponseStatusLabel(status: RsvpResponseStatus) {
   return status === "attending" ? "Attending" : "Not attending";
+}
+
+export function getResponseSourceLabel(source: RsvpResponseSource) {
+  if (!source) {
+    return "Not specified";
+  }
+
+  const knownLabel =
+    RSVP_RESPONSE_SOURCE_LABELS[source as keyof typeof RSVP_RESPONSE_SOURCE_LABELS];
+
+  if (knownLabel) {
+    return knownLabel;
+  }
+
+  return source
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 export function matchesResponseTab(record: RsvpResponseRecord, tab: RsvpResponsesTab) {
@@ -71,9 +91,8 @@ export function matchesResponseSearch(record: RsvpResponseRecord, query: string)
 
   const searchableValues = [
     record.guestName,
-    record.email,
-    record.phone,
-    ...record.companions,
+    record.email ?? "",
+    record.phone ?? "",
   ];
 
   return searchableValues.some((value) => value.toLowerCase().includes(normalizedQuery));
