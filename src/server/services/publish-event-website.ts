@@ -1,7 +1,6 @@
 import "server-only";
 
 import { mergeEventWebsiteContent, normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
-import { evaluateEventWebsiteReadiness } from "@/lib/event-website/readiness";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesUpdate } from "@/lib/supabase/types";
 import { ZodError } from "zod";
@@ -16,16 +15,10 @@ export type PublishEventWebsiteInput = {
 };
 
 export type PublishEventWebsiteResult =
-  | {
-      state: "confirmation_required";
-      warningCount: number;
-      warnings: string[];
-    }
-  | {
-      publishedAt: string;
-      state: "published";
-      warningCount: number;
-    };
+  {
+    publishedAt: string;
+    state: "published";
+  };
 
 export type UnpublishEventWebsiteInput = {
   actorUserId: string;
@@ -47,6 +40,7 @@ export async function publishEventWebsite(
       `
         id,
         client_id,
+        event_slug,
         status,
         published_at,
         event_date,
@@ -74,6 +68,10 @@ export async function publishEventWebsite(
     throw new ServiceError("Archived events cannot be published.");
   }
 
+  if (!eventRecord.event_slug) {
+    throw new ServiceError("This event is missing its public slug and cannot be published yet.");
+  }
+
   const eventContent = Array.isArray(eventRecord.event_content)
     ? (eventRecord.event_content[0] ?? null)
     : eventRecord.event_content;
@@ -99,23 +97,6 @@ export async function publishEventWebsite(
     }
 
     throw error;
-  }
-  const readiness = evaluateEventWebsiteReadiness(normalizedDraft);
-
-  if (readiness.blockerCount > 0) {
-    throw new ServiceError(
-      `Publish readiness has ${readiness.blockerCount} blocker${
-        readiness.blockerCount === 1 ? "" : "s"
-      }. Resolve them in Event Website before publishing.`,
-    );
-  }
-
-  if (readiness.warningCount > 0 && !input.confirmWarnings) {
-    return {
-      state: "confirmation_required",
-      warningCount: readiness.warningCount,
-      warnings: readiness.warnings.slice(0, 3).map((issue) => issue.title),
-    };
   }
 
   const publishedAt = new Date().toISOString();
@@ -164,17 +145,14 @@ export async function publishEventWebsite(
     entityType: "event_content",
     eventId: input.eventId,
     metadata: {
-      blockerCount: readiness.blockerCount,
       eventType: normalizedDraft.eventType,
       version: normalizedDraft.version,
-      warningCount: readiness.warningCount,
     },
   });
 
   return {
     publishedAt,
     state: "published",
-    warningCount: readiness.warningCount,
   };
 }
 

@@ -8,6 +8,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type DashboardEventWebsiteData = {
   eventId: string | null;
+  eventSlug: string | null;
   eventWebsiteContent: EventWebsiteContent;
   eventContent: {
     contentJson: Json;
@@ -19,12 +20,17 @@ export type DashboardEventWebsiteData = {
     rsvpNote: string | null;
     scheduleNote: string | null;
     venueNote: string | null;
+    publishedAt: string | null;
   } | null;
   eventDate: string | null;
+  publishState: "draft" | "published";
+  publishedAt: string | null;
   eventTime: string | null;
   eventType: string | null;
   maxGuestCount: number | null;
   rsvpCloseAt: string | null;
+  snapshotPublishedAt: string | null;
+  status: string | null;
   title: string | null;
   venueAddress: string | null;
   venueName: string | null;
@@ -50,6 +56,9 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
       .select(
         `
           id,
+          event_slug,
+          status,
+          published_at,
           title,
           event_type,
           event_date,
@@ -65,6 +74,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
             gift_note,
             hero_title,
             hero_subtitle,
+            published_at,
             rsvp_note,
             schedule_note,
             venue_note
@@ -98,6 +108,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
         eventStory: eventContent.event_story,
         giftNote: eventContent.gift_note,
         heroSubtitle: eventContent.hero_subtitle,
+        publishedAt: eventContent.published_at,
         heroTitle: eventContent.hero_title,
         rsvpNote: eventContent.rsvp_note,
         scheduleNote: eventContent.schedule_note,
@@ -137,13 +148,18 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
 
   return {
     eventId: event?.id ?? null,
+    eventSlug: event?.event_slug ?? null,
     eventContent: eventContentData,
     eventDate: event?.event_date ?? null,
+    publishState: event?.status === "published" && event?.published_at ? "published" : "draft",
+    publishedAt: event?.published_at ?? null,
     eventTime: event?.event_time ?? null,
     eventType: event?.event_type ?? null,
     eventWebsiteContent,
     maxGuestCount: event?.max_guest_count ?? null,
     rsvpCloseAt: event?.rsvp_close_at ?? null,
+    snapshotPublishedAt: eventContent?.published_at ?? null,
+    status: event?.status ?? null,
     title: event?.title ?? null,
     venueAddress: event?.venue_address ?? null,
     venueName: event?.venue_name ?? null,

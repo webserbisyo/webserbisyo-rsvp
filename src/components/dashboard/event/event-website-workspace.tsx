@@ -17,7 +17,11 @@ import {
   resolveEventWebsiteSections,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
-import { evaluateEventWebsiteReadiness } from "@/lib/event-website/readiness";
+import {
+  getEventWebsiteSavedAt,
+  getEventWebsiteWorkspaceStatus,
+  summarizeEventWebsiteSections,
+} from "@/lib/event-website/readiness";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 
@@ -68,9 +72,17 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
     () => JSON.stringify(currentContent) !== JSON.stringify(savedContent),
     [currentContent, savedContent],
   );
-  const readiness = useMemo(
-    () => evaluateEventWebsiteReadiness(currentContent),
-    [currentContent],
+  const sectionSummary = useMemo(() => summarizeEventWebsiteSections(currentContent), [currentContent]);
+  const savedAt = useMemo(() => getEventWebsiteSavedAt(savedContent), [savedContent]);
+  const workflowStatus = useMemo(
+    () =>
+      getEventWebsiteWorkspaceStatus({
+        isDirty,
+        isPublished: eventWebsiteData.publishState === "published",
+        publishedAt: eventWebsiteData.snapshotPublishedAt ?? eventWebsiteData.publishedAt,
+        savedAt,
+      }),
+    [eventWebsiteData.publishState, eventWebsiteData.publishedAt, eventWebsiteData.snapshotPublishedAt, isDirty, savedAt],
   );
   const sectionsByKey = useMemo(
     () =>
@@ -110,32 +122,6 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
   function handleSelectedSectionChange(section: EventWebsiteSectionKey) {
     setSelectedSection(section);
     setPreviewScrollRequest((current) => current + 1);
-  }
-
-  function handleReadinessJump(section: EventWebsiteSectionKey) {
-    handleSelectedSectionChange(section);
-  }
-
-  function handleReviewReadiness() {
-    const firstBlocker = readiness.blockers[0];
-    if (firstBlocker) {
-      handleReadinessJump(firstBlocker.sectionKey);
-      toast.error(firstBlocker.title);
-      return;
-    }
-
-    const firstWarning = readiness.warnings[0];
-    if (firstWarning) {
-      handleReadinessJump(firstWarning.sectionKey);
-      toast.warning(firstWarning.title);
-      return;
-    }
-
-    toast.success(
-      isDirty
-        ? "This draft is ready. Save changes when you're ready to keep them."
-        : "This draft is ready to publish.",
-    );
   }
 
   function handleSaveChanges() {
@@ -178,12 +164,12 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
       <EventWebsiteLeftPane
         enabledSections={enabledSections}
         defaultWebsiteFlowSections={defaultWebsiteFlowSections}
+        eventSlug={eventWebsiteData.eventSlug}
         futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
-        isDirty={isDirty}
-        readiness={readiness}
-        onReviewReadiness={handleReviewReadiness}
         selectedSection={selectedSection}
+        sectionSummary={sectionSummary}
         websiteFlowSections={websiteFlowSections}
+        workflowStatus={workflowStatus}
         onEnabledSectionChange={updateEnabledSection}
         onResetWebsiteFlowOrder={resetWebsiteFlowOrder}
         onSelectedSectionChange={handleSelectedSectionChange}

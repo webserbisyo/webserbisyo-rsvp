@@ -37,13 +37,12 @@ export default async function DashboardWebsiteAccessPage() {
     );
   }
 
-  const readiness = websiteAccessData.readiness;
-  const readinessLabel =
-    !readiness || readiness.blockerCount > 0
-      ? "Needs review"
-      : readiness.warningCount > 0
-        ? "Ready with warnings"
-        : "Ready";
+  const statusBadgeVariant =
+    websiteAccessData.workflowStatus.tone === "success"
+      ? "secondary"
+      : websiteAccessData.workflowStatus.tone === "warning"
+        ? "outline"
+        : "outline";
 
   return (
     <div className="space-y-6">
@@ -61,8 +60,8 @@ export default async function DashboardWebsiteAccessPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={websiteAccessData.publishState === "published" ? "default" : "outline"}>
-                {websiteAccessData.publishState === "published" ? "Published" : "Not published"}
+              <Badge variant={statusBadgeVariant} className={getStatusBadgeClassName(websiteAccessData.workflowStatus.tone)}>
+                {websiteAccessData.workflowStatus.label}
               </Badge>
               <Badge variant="outline">{websiteAccessData.visibility ?? "Visibility pending"}</Badge>
               <Badge variant="outline">{websiteAccessData.status ?? "Draft"}</Badge>
@@ -107,35 +106,32 @@ export default async function DashboardWebsiteAccessPage() {
               </div>
             </dl>
 
-            {readiness ? (
+            {websiteAccessData.eventId ? (
               <WebsiteAccessControls
                 eventId={websiteAccessData.eventId}
                 publishState={websiteAccessData.publishState}
-                readiness={readiness}
+                workflowStatus={websiteAccessData.workflowStatus}
               />
-            ) : null}
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Save a draft in Event Website before publishing a public snapshot.
+              </p>
+            )}
           </CardContent>
         </Card>
 
         <Card className="rsvp-panel border-border/70 rounded-3xl">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-xl">Saved draft readiness</CardTitle>
+            <CardTitle className="text-xl">Draft snapshot status</CardTitle>
             <CardDescription>
-              This summary checks the saved dashboard draft that will be used for publishing.
+              This summary tracks the saved dashboard draft and how it relates to the current
+              published snapshot.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant={
-                  !readiness || readiness.blockerCount > 0
-                    ? "destructive"
-                    : readiness.warningCount > 0
-                      ? "outline"
-                      : "secondary"
-                }
-              >
-                {readinessLabel}
+              <Badge variant={statusBadgeVariant} className={getStatusBadgeClassName(websiteAccessData.workflowStatus.tone)}>
+                {websiteAccessData.workflowStatus.label}
               </Badge>
               {websiteAccessData.hasPublishedSnapshot ? (
                 <Badge variant="outline">Published snapshot saved</Badge>
@@ -144,28 +140,27 @@ export default async function DashboardWebsiteAccessPage() {
               )}
             </div>
 
-            {readiness ? (
+            {websiteAccessData.sectionSummary ? (
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-muted-foreground">Ready sections</dt>
+                  <dt className="text-muted-foreground">Active sections</dt>
                   <dd className="font-medium">
-                    {readiness.readySectionCount}/{readiness.totalSectionCount}
+                    {websiteAccessData.sectionSummary.activeSectionCount}/
+                    {websiteAccessData.sectionSummary.totalSectionCount}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Progress</dt>
-                  <dd className="font-medium">{readiness.progressPercent}%</dd>
+                  <dd className="font-medium">{websiteAccessData.sectionSummary.progressPercent}%</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Blockers</dt>
-                  <dd className="font-medium text-[var(--dash-destructive)]">
-                    {readiness.blockerCount}
-                  </dd>
+                  <dt className="text-muted-foreground">Draft saved</dt>
+                  <dd className="font-medium">{formatDateTime(websiteAccessData.draftSavedAt)}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Warnings</dt>
-                  <dd className="font-medium text-[var(--dash-warning)]">
-                    {readiness.warningCount}
+                  <dt className="text-muted-foreground">Live snapshot</dt>
+                  <dd className="font-medium">
+                    {formatDateTime(websiteAccessData.snapshotPublishedAt ?? websiteAccessData.publishedAt)}
                   </dd>
                 </div>
               </dl>
@@ -175,13 +170,21 @@ export default async function DashboardWebsiteAccessPage() {
               </p>
             )}
 
-            <p className="text-sm text-muted-foreground">
-              Public rendering is still disabled in this phase. Publishing only creates or clears
-              the approved snapshot and live status metadata.
-            </p>
+            <p className="text-sm text-muted-foreground">{websiteAccessData.workflowStatus.description}</p>
           </CardContent>
         </Card>
       </div>
     </div>
   );
+}
+
+function getStatusBadgeClassName(tone: "neutral" | "success" | "warning") {
+  switch (tone) {
+    case "success":
+      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+    case "warning":
+      return "border-amber-200 bg-amber-50 text-amber-900";
+    default:
+      return "border-slate-200 bg-slate-100 text-slate-700";
+  }
 }

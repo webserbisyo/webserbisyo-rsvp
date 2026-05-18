@@ -3695,6 +3695,11 @@
   color: color-mix(in srgb, var(--dash-success) 84%, var(--dash-foreground));
 }
 
+[data-dashboard] .event-status-badge.is-neutral {
+  background: color-mix(in srgb, var(--dash-surface-hover) 92%, white);
+  color: color-mix(in srgb, var(--dash-muted) 88%, var(--dash-foreground));
+}
+
 [data-dashboard] .event-status-badge.is-warning {
   background: color-mix(in srgb, var(--dash-warning-subtle) 88%, white);
   color: color-mix(in srgb, var(--dash-warning) 84%, var(--dash-foreground));
@@ -3720,6 +3725,11 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-success) 22%, transparent);
 }
 
+[data-dashboard] .event-status-badge.is-neutral .event-status-badge-dot {
+  background: var(--dash-muted);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-muted) 18%, transparent);
+}
+
 [data-dashboard] .event-status-badge.is-warning .event-status-badge-dot {
   background: var(--dash-warning);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-warning) 22%, transparent);
@@ -3741,6 +3751,11 @@
 
 [data-dashboard] .event-status-warnings {
   color: color-mix(in srgb, var(--dash-warning) 88%, var(--dash-foreground));
+  font-weight: 600;
+}
+
+[data-dashboard] .event-status-sections {
+  color: color-mix(in srgb, var(--dash-muted) 92%, var(--dash-foreground));
   font-weight: 600;
 }
 

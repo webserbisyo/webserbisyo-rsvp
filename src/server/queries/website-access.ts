@@ -1,13 +1,20 @@
 import "server-only";
 
-import { evaluateEventWebsiteReadiness, type EventWebsiteReadinessResult } from "@/lib/event-website/readiness";
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import {
+  getEventWebsiteSavedAt,
+  getWebsiteAccessPublishStatus,
+  summarizeEventWebsiteSections,
+  type EventWebsiteOperationalStatus,
+  type EventWebsiteSectionSummary,
+} from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type WebsiteAccessData = {
   customFrontendEnabled: boolean;
   customFrontendUrl: string | null;
+  draftSavedAt: string | null;
   eventId: string | null;
   eventSlug: string | null;
   fallbackPageEnabled: boolean;
@@ -15,11 +22,12 @@ export type WebsiteAccessData = {
   publishedAt: string | null;
   publishedBy: string | null;
   publishState: "draft" | "published";
-  readiness: EventWebsiteReadinessResult | null;
+  sectionSummary: EventWebsiteSectionSummary | null;
   snapshotPublishedAt: string | null;
   status: string | null;
   title: string | null;
   visibility: string | null;
+  workflowStatus: EventWebsiteOperationalStatus;
 };
 
 export async function getWebsiteAccessData(): Promise<WebsiteAccessData> {
@@ -65,38 +73,44 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessData> {
     ? (event.event_content[0] ?? null)
     : (event?.event_content ?? null);
 
-  const readiness = eventContent
-    ? evaluateEventWebsiteReadiness(
-        mergeEventWebsiteContent(
-          parseEventWebsiteContentJson(eventContent.content_json) ?? eventContent.content_json,
-          {
-            event: {
-              eventDate: event?.event_date ?? null,
-              eventTime: event?.event_time ?? null,
-              eventType: null,
-              rsvpCloseAt: event?.rsvp_close_at ?? null,
-              venueAddress: event?.venue_address ?? null,
-              venueName: event?.venue_name ?? null,
-            },
+  const mergedDraftContent = eventContent
+    ? mergeEventWebsiteContent(
+        parseEventWebsiteContentJson(eventContent.content_json) ?? eventContent.content_json,
+        {
+          event: {
+            eventDate: event?.event_date ?? null,
+            eventTime: event?.event_time ?? null,
+            eventType: null,
+            rsvpCloseAt: event?.rsvp_close_at ?? null,
+            venueAddress: event?.venue_address ?? null,
+            venueName: event?.venue_name ?? null,
           },
-        ),
+        },
       )
     : null;
+  const draftSavedAt = getEventWebsiteSavedAt(mergedDraftContent);
+  const publishState = event?.status === "published" && event?.published_at ? "published" : "draft";
 
   return {
     customFrontendEnabled: event?.custom_frontend_enabled ?? false,
     customFrontendUrl: event?.custom_frontend_url ?? null,
+    draftSavedAt,
     eventId: event?.id ?? null,
     eventSlug: event?.event_slug ?? null,
     fallbackPageEnabled: event?.fallback_page_enabled ?? false,
     hasPublishedSnapshot: Boolean(eventContent?.published_content_json),
     publishedAt: event?.published_at ?? null,
     publishedBy: eventContent?.published_by ?? null,
-    publishState: event?.status === "published" && event?.published_at ? "published" : "draft",
-    readiness,
+    publishState,
+    sectionSummary: mergedDraftContent ? summarizeEventWebsiteSections(mergedDraftContent) : null,
     snapshotPublishedAt: eventContent?.published_at ?? null,
     status: event?.status ?? null,
     title: event?.title ?? null,
     visibility: event?.visibility ?? null,
+    workflowStatus: getWebsiteAccessPublishStatus({
+      isPublished: publishState === "published",
+      publishedAt: eventContent?.published_at ?? event?.published_at ?? null,
+      savedAt: draftSavedAt,
+    }),
   };
 }
