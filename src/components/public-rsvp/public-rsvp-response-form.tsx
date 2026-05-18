@@ -3,13 +3,9 @@
 import { useState, useTransition } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
+import { cn } from "@/lib/utils";
 import { submitRsvpResponseAction } from "@/server/actions/responses";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
 
 type PublicRsvpResponseFormProps = {
   availabilityMessage: string | null;
@@ -101,30 +97,43 @@ export function PublicRsvpResponseForm({
     });
   }
 
+  function setAttendanceStatusWithReset(nextStatus: "attending" | "not_attending") {
+    setAttendanceStatus(nextStatus);
+
+    if (nextStatus === "not_attending") {
+      updateCompanionCount(0);
+    }
+  }
+
   if (!isAcceptingResponses) {
     return (
-      <Alert className="rounded-[1.5rem] border-amber-200 bg-amber-50 text-amber-950">
-        <AlertTitle>RSVP submissions are currently closed.</AlertTitle>
-        <AlertDescription>
-          {availabilityMessage ?? "Please contact the host if you need to update your response."}
-        </AlertDescription>
-      </Alert>
+      <div className="event-preview-rsvp-card event-preview-rsvp-state event-preview-rsvp-state--warning">
+        <div className="event-preview-rsvp-state-copy">
+          <h4>RSVP submissions are currently closed.</h4>
+          <p>
+            {availabilityMessage ?? "Please contact the host if you need to update your response."}
+          </p>
+        </div>
+      </div>
     );
   }
 
   if (isSubmitted) {
     return (
-      <div className="space-y-4 rounded-[1.5rem] border border-emerald-200 bg-emerald-50/80 p-5 text-emerald-950">
-        <div className="flex items-start gap-3">
+      <div className="event-preview-rsvp-card event-preview-rsvp-state event-preview-rsvp-state--success">
+        <div className="flex items-start gap-3 text-left">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
-          <div>
-            <h3 className="font-medium">Your RSVP has been submitted.</h3>
-            <p className="mt-1 text-sm leading-6 text-emerald-900">
-              Thank you. The host will see your response in their dashboard.
-            </p>
+          <div className="event-preview-rsvp-state-copy">
+            <h4>Your RSVP has been submitted.</h4>
+            <p>Thank you. The host will see your response in their dashboard.</p>
           </div>
         </div>
-        <Button type="button" variant="outline" onClick={resetForm}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={resetForm}
+          className="event-preview-submit-button is-secondary"
+        >
           Submit another response
         </Button>
       </div>
@@ -132,107 +141,127 @@ export function PublicRsvpResponseForm({
   }
 
   return (
-    <form
-      className="space-y-5 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5"
-      onSubmit={submitResponse}
-    >
+    <form className="event-preview-rsvp-card" onSubmit={submitResponse}>
       {errorMessage ? (
-        <Alert variant="destructive" className="rounded-2xl">
-          <AlertTitle>Could not submit RSVP.</AlertTitle>
-          <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
+        <div className="event-preview-rsvp-inline-error" role="alert">
+          <strong>Could not submit RSVP.</strong>
+          <p>{errorMessage}</p>
+        </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FieldError name="guestName" errors={fieldErrors} className="space-y-2">
-          <Label htmlFor="guestName">Guest name</Label>
-          <Input
+      <FieldError name="guestName" errors={fieldErrors} className="event-preview-field">
+        <label htmlFor="guestName">
+          <span>Guest Name</span>
+          <input
             id="guestName"
             name="guestName"
             autoComplete="name"
             disabled={isPending}
+            placeholder="Your full name"
             required
           />
-        </FieldError>
+        </label>
+      </FieldError>
 
-        <div className="space-y-2">
-          <Label>Attendance</Label>
-          <RadioGroup
-            value={attendanceStatus}
-            onValueChange={(value) => {
-              const nextStatus = value === "not_attending" ? "not_attending" : "attending";
-              setAttendanceStatus(nextStatus);
-              if (nextStatus === "not_attending") {
-                updateCompanionCount(0);
-              }
-            }}
-            className="grid gap-2"
+      <div className="event-preview-field">
+        <span>Attendance</span>
+        <div className="event-preview-choice-group" aria-label="Attendance">
+          <AttendanceOption
+            id="attendance-attending"
+            checked={attendanceStatus === "attending"}
             disabled={isPending}
-          >
-            <AttendanceOption id="attendance-attending" label="Attending" value="attending" />
-            <AttendanceOption
-              id="attendance-not-attending"
-              label="Not attending"
-              value="not_attending"
-            />
-          </RadioGroup>
+            label="Yes, I will attend"
+            onChange={() => setAttendanceStatusWithReset("attending")}
+            value="attending"
+          />
+          <AttendanceOption
+            id="attendance-not-attending"
+            checked={attendanceStatus === "not_attending"}
+            disabled={isPending}
+            label="Sorry, I can't attend"
+            onChange={() => setAttendanceStatusWithReset("not_attending")}
+            value="not_attending"
+          />
         </div>
-
-        <FieldError name="email" errors={fieldErrors} className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" disabled={isPending} />
-        </FieldError>
-
-        <FieldError name="phone" errors={fieldErrors} className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" type="tel" autoComplete="tel" disabled={isPending} />
-        </FieldError>
       </div>
 
+      <FieldError name="email" errors={fieldErrors} className="event-preview-field">
+        <label htmlFor="email">
+          <span>Email</span>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            disabled={isPending}
+            placeholder="you@example.com"
+          />
+        </label>
+      </FieldError>
+
+      <FieldError name="phone" errors={fieldErrors} className="event-preview-field">
+        <label htmlFor="phone">
+          <span>Phone</span>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            disabled={isPending}
+            placeholder="09XXXXXXXXX"
+          />
+        </label>
+      </FieldError>
+
       {shouldShowCompanions ? (
-        <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
-          <div className="space-y-2">
-            <Label htmlFor="companionCount">Companion count</Label>
-            <select
-              id="companionCount"
-              value={companionCount}
-              onChange={(event) => updateCompanionCount(Number(event.target.value))}
-              disabled={isPending}
-              className="border-input bg-background ring-offset-background focus-visible:ring-ring h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {Array.from({ length: settings.companionLimit + 1 }, (_, index) => (
-                <option key={index} value={index}>
-                  {index}
-                </option>
-              ))}
-            </select>
+        <div className="event-preview-field">
+          <span>Guest Count</span>
+          <p className="mb-1 text-[11.5px] leading-snug text-[#7a746f]">
+            Choose how many companions you will bring. You may bring up to{" "}
+            {settings.companionLimit}.
+          </p>
+          <div className="event-preview-choice-group" aria-label="Guest count">
+            {Array.from({ length: settings.companionLimit + 1 }, (_, index) => (
+              <button
+                key={index}
+                type="button"
+                className={cn(companionCount === index && "is-selected")}
+                onClick={() => updateCompanionCount(index)}
+                disabled={isPending}
+              >
+                {index === 0 ? "Just me" : `Me + ${index}`}
+              </button>
+            ))}
           </div>
 
           {settings.companionNameEnabled && companionCount > 0 ? (
-            <div className="grid gap-3">
+            <div className="mt-1 grid gap-3">
               {companions.map((companion, index) => (
-                <div key={index} className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor={`companion-${index}`}>Companion {index + 1}</Label>
-                    <Input
-                      id={`companion-${index}`}
-                      value={companion.fullName}
-                      onChange={(event) => updateCompanion(index, "fullName", event.target.value)}
-                      disabled={isPending}
-                      required
-                    />
-                  </div>
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 rounded-[10px] border border-[#ece9e5] bg-[#fbfbfa] p-3 text-left"
+                >
+                  <span className="text-[11px] font-bold text-[#4d4945]">
+                    Companion {index + 1}
+                  </span>
+                  <input
+                    className="event-preview-companion-input"
+                    id={`companion-${index}`}
+                    value={companion.fullName}
+                    onChange={(event) => updateCompanion(index, "fullName", event.target.value)}
+                    disabled={isPending}
+                    placeholder="Full Name"
+                    required
+                  />
                   {settings.companionAgeEnabled ? (
-                    <div className="space-y-2">
-                      <Label htmlFor={`companion-age-${index}`}>Age label</Label>
-                      <Input
-                        id={`companion-age-${index}`}
-                        value={companion.ageLabel}
-                        onChange={(event) => updateCompanion(index, "ageLabel", event.target.value)}
-                        disabled={isPending}
-                        placeholder="Adult, child, or age"
-                      />
-                    </div>
+                    <input
+                      className="event-preview-companion-input"
+                      id={`companion-age-${index}`}
+                      value={companion.ageLabel}
+                      onChange={(event) => updateCompanion(index, "ageLabel", event.target.value)}
+                      disabled={isPending}
+                      placeholder="Adult, child, or age"
+                    />
                   ) : null}
                 </div>
               ))}
@@ -242,32 +271,36 @@ export function PublicRsvpResponseForm({
       ) : null}
 
       {settings.foodAllergiesEnabled ? (
-        <FieldError name="dietaryNotes" errors={fieldErrors} className="space-y-2">
-          <Label htmlFor="dietaryNotes">Dietary notes</Label>
-          <Textarea
-            id="dietaryNotes"
-            name="dietaryNotes"
-            rows={4}
-            disabled={isPending}
-            placeholder="Food allergies, dietary restrictions, or meal notes"
-          />
+        <FieldError name="dietaryNotes" errors={fieldErrors} className="event-preview-field">
+          <label htmlFor="dietaryNotes">
+            <span>Food Allergies / Dietary Restrictions</span>
+            <textarea
+              id="dietaryNotes"
+              name="dietaryNotes"
+              rows={4}
+              disabled={isPending}
+              placeholder="List any allergies or dietary restrictions for your party."
+            />
+          </label>
         </FieldError>
       ) : null}
 
       {settings.messageToHostEnabled ? (
-        <FieldError name="message" errors={fieldErrors} className="space-y-2">
-          <Label htmlFor="message">Message</Label>
-          <Textarea
-            id="message"
-            name="message"
-            rows={4}
-            disabled={isPending}
-            placeholder="Write a message to the host"
-          />
+        <FieldError name="message" errors={fieldErrors} className="event-preview-field">
+          <label htmlFor="message">
+            <span>Message to the Couple</span>
+            <textarea
+              id="message"
+              name="message"
+              rows={4}
+              disabled={isPending}
+              placeholder="Leave a short message."
+            />
+          </label>
         </FieldError>
       ) : null}
 
-      <Button type="submit" disabled={isPending} className="w-full">
+      <Button type="submit" disabled={isPending} className="event-preview-submit-button">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Submitting..." : "Submit RSVP"}
       </Button>
@@ -276,22 +309,37 @@ export function PublicRsvpResponseForm({
 }
 
 function AttendanceOption({
+  checked,
+  disabled,
   id,
   label,
+  onChange,
   value,
 }: {
+  checked: boolean;
+  disabled: boolean;
   id: string;
   label: string;
+  onChange: () => void;
   value: "attending" | "not_attending";
 }) {
   return (
-    <Label
+    <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium"
+      className={cn("event-preview-choice-option", checked && "is-selected", disabled && "is-disabled")}
     >
-      <RadioGroupItem id={id} value={value} />
+      <input
+        id={id}
+        type="radio"
+        name="attendanceStatus"
+        value={value}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className="sr-only"
+      />
       {label}
-    </Label>
+    </label>
   );
 }
 
@@ -309,7 +357,7 @@ function FieldError({
   return (
     <div className={className}>
       {children}
-      {errors[name]?.[0] ? <p className="text-destructive text-sm">{errors[name]?.[0]}</p> : null}
+      {errors[name]?.[0] ? <p className="event-preview-field-error">{errors[name]?.[0]}</p> : null}
     </div>
   );
 }
