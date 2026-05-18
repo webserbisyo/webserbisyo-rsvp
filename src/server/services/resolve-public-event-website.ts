@@ -2,7 +2,10 @@ import "server-only";
 
 import { cache } from "react";
 import { z } from "zod";
-import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import {
+  mergeEventWebsiteContent,
+  parseEventWebsiteContentJson,
+} from "@/lib/event-website/hydration";
 import type { EventWebsiteContent, EventWebsiteContentSectionKey } from "@/lib/event-website/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -26,7 +29,7 @@ type PublicEventWebsiteDto = {
   sectionsToRender: EventWebsiteContentSectionKey[];
   venueAddress: string | null;
   venueName: string | null;
-  visibility: "public" | "unlisted";
+  visibility: "private" | "public" | "unlisted";
 };
 
 export const resolvePublicEventWebsite = cache(
@@ -53,6 +56,7 @@ export const resolvePublicEventWebsite = cache(
           status,
           published_at,
           archived_at,
+          fallback_page_enabled,
           rsvp_open_at,
           rsvp_close_at,
           event_content (
@@ -63,7 +67,8 @@ export const resolvePublicEventWebsite = cache(
       )
       .eq("event_slug", parsedSlug.data)
       .eq("status", "published")
-      .in("visibility", ["public", "unlisted"])
+      .eq("fallback_page_enabled", true)
+      .in("visibility", ["public", "unlisted", "private"])
       .is("archived_at", null)
       .maybeSingle();
 
@@ -114,7 +119,7 @@ export const resolvePublicEventWebsite = cache(
       sectionsToRender: buildSectionsToRender(content),
       venueAddress: event.venue_address,
       venueName: event.venue_name,
-      visibility: event.visibility as "public" | "unlisted",
+      visibility: event.visibility as "private" | "public" | "unlisted",
     };
   },
 );
@@ -124,7 +129,9 @@ function buildSectionsToRender(content: EventWebsiteContent): EventWebsiteConten
     (sectionKey) => sectionKey === "contact_socials" || content.layout.enabledSections[sectionKey],
   );
   const contactSection = visibleSections.filter((sectionKey) => sectionKey === "contact_socials");
-  const nonContactSections = visibleSections.filter((sectionKey) => sectionKey !== "contact_socials");
+  const nonContactSections = visibleSections.filter(
+    (sectionKey) => sectionKey !== "contact_socials",
+  );
 
   return [...nonContactSections, ...contactSection];
 }

@@ -14,6 +14,7 @@ type PublishedEventRow = Pick<
   Tables<"rsvp_events">,
   | "client_id"
   | "event_slug"
+  | "fallback_page_enabled"
   | "id"
   | "published_at"
   | "rsvp_close_at"
@@ -99,11 +100,12 @@ async function getPublishedEvent(eventSlug: string): Promise<PublishedEventRow> 
   const { data: event, error } = await supabase
     .from("rsvp_events")
     .select(
-      "id, client_id, event_slug, status, visibility, published_at, rsvp_open_at, rsvp_close_at",
+      "id, client_id, event_slug, fallback_page_enabled, status, visibility, published_at, rsvp_open_at, rsvp_close_at",
     )
     .eq("event_slug", eventSlug)
     .eq("status", "published")
-    .in("visibility", ["public", "unlisted"])
+    .eq("fallback_page_enabled", true)
+    .in("visibility", ["public", "unlisted", "private"])
     .is("archived_at", null)
     .maybeSingle();
 

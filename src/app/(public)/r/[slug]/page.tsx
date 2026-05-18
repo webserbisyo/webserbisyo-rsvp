@@ -65,7 +65,7 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
         <header className="rounded-[2rem] border border-amber-200/70 bg-white/90 p-6 shadow-[0_18px_60px_rgba(120,74,20,0.08)] backdrop-blur sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-900">
-              {event.visibility === "unlisted" ? "Unlisted" : "Public"}
+              {formatVisibilityLabel(event.visibility)}
             </Badge>
             <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900">
               Published
@@ -695,6 +695,14 @@ function formatPublicDate(value: string | null) {
     dateStyle: "full",
     timeZone: "Asia/Manila",
   }).format(date);
+}
+
+function formatVisibilityLabel(visibility: PublicEventWebsiteDto["visibility"]) {
+  if (visibility === "private") {
+    return "Private link";
+  }
+
+  return visibility === "unlisted" ? "Unlisted" : "Public";
 }
 
 function formatPublicTime(value: string | null) {
