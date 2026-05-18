@@ -21,15 +21,19 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { exportRsvpResponses, RSVP_RESPONSES_EXPORT_BASE_FILENAME } from "./rsvp-responses-export";
 import { RESPONSES_PORTAL_THEME_STYLE } from "./rsvp-responses-theme";
 import type {
+  RsvpResponseRecord,
   RsvpResponsesExportFormat,
   RsvpResponsesExportInclude,
   RsvpResponsesExportRows,
 } from "./rsvp-responses-types";
 
 type RsvpResponseExportDialogProps = {
+  allResponses: RsvpResponseRecord[];
   allResponsesCount: number;
+  currentViewResponses: RsvpResponseRecord[];
   currentViewCount: number;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -43,7 +47,9 @@ const EXPORT_INCLUDES: Array<{ id: RsvpResponsesExportInclude; label: string }> 
 ];
 
 export function RsvpResponseExportDialog({
+  allResponses,
   allResponsesCount,
+  currentViewResponses,
   currentViewCount,
   onOpenChange,
   open,
@@ -68,7 +74,16 @@ export function RsvpResponseExportDialog({
       format={format}
       includes={includes}
       onClose={() => onOpenChange(false)}
-      onExport={() => onOpenChange(false)}
+      onExport={() => {
+        exportRsvpResponses({
+          allResponses,
+          currentViewResponses,
+          format,
+          includes,
+          rows,
+        });
+        onOpenChange(false);
+      }}
       onFormatChange={setFormat}
       onIncludeToggle={(key, checked) =>
         setIncludes((current) => ({ ...current, [key]: checked }))
@@ -137,7 +152,7 @@ function RsvpResponseExportContent({
   onRowsChange: (value: RsvpResponsesExportRows) => void;
   rows: RsvpResponsesExportRows;
 }) {
-  const fileName = `juan-and-maria-rsvp-responses.${format === "csv" ? "csv" : "pdf"}`;
+  const fileName = `${RSVP_RESPONSES_EXPORT_BASE_FILENAME}.${format === "csv" ? "csv" : "pdf"}`;
 
   return (
     <div className="flex max-h-[88vh] flex-col bg-[var(--responses-surface)] text-[color:var(--responses-foreground)]">

@@ -103,7 +103,9 @@ export function RsvpResponsesPage() {
       />
 
       <RsvpResponseExportDialog
+        allResponses={allResponses}
         allResponsesCount={totalResponses}
+        currentViewResponses={currentViewResponses}
         currentViewCount={currentViewCount}
         open={isExportOpen}
         onOpenChange={setIsExportOpen}
