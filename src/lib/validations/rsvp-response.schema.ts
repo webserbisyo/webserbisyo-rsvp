@@ -15,28 +15,44 @@ const GuestNameSchema = z
   .min(1, "Guest name is required.")
   .max(120, "Guest name is too long.");
 
+function normalizeOptionalInput(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
 const OptionalEmailSchema = z
-  .string()
-  .trim()
-  .transform((value) => (value ? value.toLowerCase() : undefined))
-  .refine((value) => value === undefined || z.email().safeParse(value).success, {
-    message: "Enter a valid email address.",
-  });
+  .preprocess(
+    normalizeOptionalInput,
+    z
+      .string()
+      .trim()
+      .transform((value) => (value ? value.toLowerCase() : undefined))
+      .refine((value) => value === undefined || z.email().safeParse(value).success, {
+        message: "Enter a valid email address.",
+      }),
+  );
 
 const OptionalPhoneSchema = z
-  .string()
-  .trim()
-  .transform((value) => (value ? value.replace(/[\s-]+/g, "") : undefined))
-  .refine((value) => value === undefined || value.length <= 40, {
-    message: "Phone number is too long.",
-  });
+  .preprocess(
+    normalizeOptionalInput,
+    z
+      .string()
+      .trim()
+      .transform((value) => (value ? value.replace(/[\s-]+/g, "") : undefined))
+      .refine((value) => value === undefined || value.length <= 40, {
+        message: "Phone number is too long.",
+      }),
+  );
 
 const OptionalTextSchema = (max: number, message: string) =>
   z
-    .string()
-    .trim()
-    .transform((value) => (value ? value : undefined))
-    .refine((value) => value === undefined || value.length <= max, message);
+    .preprocess(
+      normalizeOptionalInput,
+      z
+        .string()
+        .trim()
+        .transform((value) => (value ? value : undefined))
+        .refine((value) => value === undefined || value.length <= max, message),
+    );
 
 const CompanionCountSchema = z
   .union([z.string(), z.number(), z.undefined()])
