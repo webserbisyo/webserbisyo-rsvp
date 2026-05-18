@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  CalendarDays,
-  Clock3,
-  HeartHandshake,
-  MapPin,
-  Music,
-  Play,
-  Timer,
-} from "lucide-react";
+import { CalendarDays, Clock3, HeartHandshake, MapPin, Music, Play, Timer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-response-form";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import {
   resolvePublicEventWebsite,
@@ -62,6 +55,7 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
     eventSlug: slug,
     route: "event_page",
   });
+  const rsvpAvailability = getRsvpAvailability(event.rsvpOpenAt, event.rsvpCloseAt);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8ef_0%,#ffffff_55%,#fff6ec_100%)] text-slate-900">
@@ -81,7 +75,7 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
           <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
             <div className="space-y-4">
               {event.content.sections.host_info.hostLine.trim() ? (
-                <p className="text-sm font-medium uppercase tracking-[0.28em] text-amber-700">
+                <p className="text-sm font-medium tracking-[0.28em] text-amber-700 uppercase">
                   {event.content.sections.host_info.hostLine.trim()}
                 </p>
               ) : null}
@@ -98,7 +92,7 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
             </div>
 
             <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <h2 className="text-sm font-semibold tracking-[0.22em] text-slate-500 uppercase">
                 Event Summary
               </h2>
               <dl className="mt-4 space-y-3 text-sm">
@@ -135,16 +129,23 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
           </div>
 
           <aside className="h-fit rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-sm lg:sticky lg:top-6">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <h2 className="text-sm font-semibold tracking-[0.24em] text-slate-500 uppercase">
               RSVP Status
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Public RSVP submissions are not enabled yet in this fallback page. The form preview
-              below is view-only for now.
+              {rsvpAvailability.isAcceptingResponses
+                ? "Public RSVP submissions are open for this event."
+                : rsvpAvailability.message}
             </p>
-            <Button type="button" disabled className="mt-4 w-full">
-              RSVP submissions coming soon
-            </Button>
+            {rsvpAvailability.isAcceptingResponses ? (
+              <Button asChild type="button" className="mt-4 w-full">
+                <Link href="#rsvp-form">Go to RSVP form</Link>
+              </Button>
+            ) : (
+              <Button type="button" disabled className="mt-4 w-full">
+                RSVP closed
+              </Button>
+            )}
           </aside>
         </div>
       </div>
@@ -226,7 +227,7 @@ function CountdownSection({ event }: { event: PublicEventWebsiteDto }) {
             className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-4 text-center"
           >
             <div className="text-2xl font-semibold text-slate-900">{item.value}</div>
-            <div className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-500">
+            <div className="mt-1 text-xs tracking-[0.22em] text-slate-500 uppercase">
               {item.label}
             </div>
           </div>
@@ -379,7 +380,7 @@ function EntourageSection({ event }: { event: PublicEventWebsiteDto }) {
             className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4"
           >
             <h3 className="font-medium text-slate-900">{group.groupTitle || "Entourage group"}</h3>
-            <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 whitespace-pre-line text-slate-600">
               {group.names.trim() || "Names to be announced"}
             </p>
           </div>
@@ -397,7 +398,7 @@ function PrincipalSponsorsSection({ event }: { event: PublicEventWebsiteDto }) {
       {section.introLine.trim() ? (
         <p className="text-sm leading-6 text-slate-600">{section.introLine.trim()}</p>
       ) : null}
-      <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-700">
+      <p className="mt-4 text-sm leading-7 whitespace-pre-line text-slate-700">
         {section.names.trim() || "Names to be announced"}
       </p>
     </PublicSection>
@@ -447,47 +448,17 @@ function ExtraInfoSection({ event }: { event: PublicEventWebsiteDto }) {
 
 function RsvpFormSection({ event }: { event: PublicEventWebsiteDto }) {
   const section = event.content.sections.rsvp_form;
+  const rsvpAvailability = getRsvpAvailability(event.rsvpOpenAt, event.rsvpCloseAt);
 
   return (
-    <PublicSection label="RSVP" title="Response Form Preview">
-      <div className="space-y-4 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-5">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ReadOnlyField label="Guest name" placeholder="Guest name" />
-          <ReadOnlyField label="Attendance" placeholder="Attending / Not attending" />
-          {section.plusOneEnabled ? (
-            <ReadOnlyField
-              label="Companion"
-              placeholder={`Up to ${section.companionLimit} companion${section.companionLimit === 1 ? "" : "s"}`}
-            />
-          ) : null}
-          {section.foodAllergiesEnabled ? (
-            <ReadOnlyField label="Food allergies" placeholder="Dietary notes" />
-          ) : null}
-          {section.messageToHostEnabled ? (
-            <ReadOnlyField label="Message to host" placeholder="Write a message" />
-          ) : null}
-        </div>
-
-        {section.customQuestions.length > 0 ? (
-          <div className="space-y-3 border-t border-slate-200 pt-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Additional questions
-            </h3>
-            {section.customQuestions.map((question) => (
-              <ReadOnlyField
-                key={question.id}
-                label={question.label || "Custom question"}
-                placeholder={
-                  question.options.length > 0 ? question.options.join(", ") : question.fieldType
-                }
-              />
-            ))}
-          </div>
-        ) : null}
-
-        <Button type="button" disabled className="w-full">
-          RSVP submissions coming soon
-        </Button>
+    <PublicSection label="RSVP" title="Response Form">
+      <div id="rsvp-form">
+        <PublicRsvpResponseForm
+          availabilityMessage={rsvpAvailability.message}
+          eventSlug={event.eventSlug}
+          isAcceptingResponses={rsvpAvailability.isAcceptingResponses}
+          settings={section}
+        />
       </div>
     </PublicSection>
   );
@@ -540,7 +511,7 @@ function StoryMessageSection({ event }: { event: PublicEventWebsiteDto }) {
       {section.sectionIntro.trim() ? (
         <p className="text-sm leading-6 text-slate-600">{section.sectionIntro.trim()}</p>
       ) : null}
-      <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-700">
+      <p className="mt-4 text-sm leading-7 whitespace-pre-line text-slate-700">
         {section.storyBody.trim() || "Story details will be shared soon."}
       </p>
     </PublicSection>
@@ -558,17 +529,24 @@ function ContactSocialsSection({ event }: { event: PublicEventWebsiteDto }) {
   return (
     <footer className="rounded-[2rem] border border-slate-200 bg-slate-950 px-6 py-8 text-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-amber-200">
+        <div className="flex items-center gap-2 text-sm font-semibold tracking-[0.22em] text-amber-200 uppercase">
           <HeartHandshake className="size-4" />
           Contact & socials
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <FooterInfo label="Contact person" value={section.contactPerson.trim() || "Not provided"} />
+          <FooterInfo
+            label="Contact person"
+            value={section.contactPerson.trim() || "Not provided"}
+          />
           <FooterInfo label="Phone" value={section.contactNumber.trim() || "Not provided"} />
           <FooterInfo label="Email" value={section.email.trim() || "Not provided"} />
           <FooterInfo
             label="Socials"
-            value={socialLinks.length > 0 ? socialLinks.map((item) => item.label).join(", ") : "Not provided"}
+            value={
+              socialLinks.length > 0
+                ? socialLinks.map((item) => item.label).join(", ")
+                : "Not provided"
+            }
           />
         </div>
         {socialLinks.length > 0 ? (
@@ -607,18 +585,10 @@ function PublicSection({
   );
 }
 
-function InfoCard({
-  href,
-  label,
-  value,
-}: {
-  href?: string;
-  label: string;
-  value: string;
-}) {
+function InfoCard({ href, label, value }: { href?: string; label: string; value: string }) {
   return (
     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">{label}</p>
       {href ? (
         <Link
           href={href}
@@ -632,19 +602,6 @@ function InfoCard({
         <p className="mt-2 text-sm leading-6 text-slate-700">{value}</p>
       )}
     </div>
-  );
-}
-
-function ReadOnlyField({ label, placeholder }: { label: string; placeholder: string }) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-        {label}
-      </span>
-      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-400">
-        {placeholder}
-      </div>
-    </label>
   );
 }
 
@@ -671,7 +628,7 @@ function SummaryRow({
 function FooterInfo({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">{label}</p>
       <p className="mt-2 text-sm leading-6 text-slate-100">{value}</p>
     </div>
   );
@@ -775,6 +732,29 @@ function formatPublicDateTime(value: string | null) {
     timeStyle: "short",
     timeZone: "Asia/Manila",
   }).format(date);
+}
+
+function getRsvpAvailability(rsvpOpenAt: string | null, rsvpCloseAt: string | null) {
+  const now = Date.now();
+
+  if (rsvpOpenAt && new Date(rsvpOpenAt).getTime() > now) {
+    return {
+      isAcceptingResponses: false,
+      message: `RSVP submissions open on ${formatPublicDateTime(rsvpOpenAt) ?? "the scheduled opening date"}.`,
+    };
+  }
+
+  if (rsvpCloseAt && new Date(rsvpCloseAt).getTime() < now) {
+    return {
+      isAcceptingResponses: false,
+      message: "The RSVP deadline has passed.",
+    };
+  }
+
+  return {
+    isAcceptingResponses: true,
+    message: null,
+  };
 }
 
 function formatTimeRange(start: string | null, end: string | null) {

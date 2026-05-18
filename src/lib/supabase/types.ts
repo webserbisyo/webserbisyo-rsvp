@@ -904,6 +904,104 @@ export type Database = {
           },
         ];
       };
+      rsvp_response_companions: {
+        Row: {
+          age_label: string | null;
+          created_at: string;
+          full_name: string;
+          id: string;
+          response_id: string;
+        };
+        Insert: {
+          age_label?: string | null;
+          created_at?: string;
+          full_name: string;
+          id?: string;
+          response_id: string;
+        };
+        Update: {
+          age_label?: string | null;
+          created_at?: string;
+          full_name?: string;
+          id?: string;
+          response_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_response_companions_response_id_fkey";
+            columns: ["response_id"];
+            isOneToOne: false;
+            referencedRelation: "rsvp_responses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rsvp_responses: {
+        Row: {
+          archived_at: string | null;
+          attendance_status: string;
+          client_id: string;
+          dietary_notes: string | null;
+          email: string | null;
+          event_id: string;
+          guest_name: string;
+          id: string;
+          message: string | null;
+          party_size: number;
+          phone: string | null;
+          source: string | null;
+          submitted_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          attendance_status: string;
+          client_id: string;
+          dietary_notes?: string | null;
+          email?: string | null;
+          event_id: string;
+          guest_name: string;
+          id?: string;
+          message?: string | null;
+          party_size?: number;
+          phone?: string | null;
+          source?: string | null;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          attendance_status?: string;
+          client_id?: string;
+          dietary_notes?: string | null;
+          email?: string | null;
+          event_id?: string;
+          guest_name?: string;
+          id?: string;
+          message?: string | null;
+          party_size?: number;
+          phone?: string | null;
+          source?: string | null;
+          submitted_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_responses_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rsvp_responses_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "rsvp_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -4,6 +4,7 @@ import { formatUserRoleLabel } from "@/lib/auth/role-labels";
 import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getEventResponseCount } from "@/server/queries/responses";
 
 type DashboardChecklistState = {
   eventDetailsCompleted: boolean;
@@ -92,7 +93,9 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
       .limit(1),
     supabase
       .from("payments")
-      .select("id, amount_due, amount_paid, currency, paid_at, payment_method, payment_status, updated_at")
+      .select(
+        "id, amount_due, amount_paid, currency, paid_at, payment_method, payment_status, updated_at",
+      )
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false })
       .limit(1),
@@ -113,7 +116,11 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const payment = payments?.[0] ?? null;
   const application = applications?.[0] ?? null;
 
-  const [{ data: packageSettings, error: packageSettingsError }, eventContentResult] = await Promise.all([
+  const [
+    { data: packageSettings, error: packageSettingsError },
+    eventContentResult,
+    responseCount,
+  ] = await Promise.all([
     adminSupabase
       .from("platform_package_settings")
       .select("default_amount, default_hosting_days")
@@ -126,6 +133,7 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
           .eq("event_id", event.id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    event?.id ? getEventResponseCount({ clientId, eventId: event.id, supabase }) : 0,
   ]);
 
   if (packageSettingsError) throw packageSettingsError;
@@ -145,9 +153,9 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const eventContent = eventContentResult.data;
   const websiteContentCompleted = Boolean(
     eventContent?.hero_title &&
-      eventContent?.couple_or_celebrant_names &&
-      eventContent?.event_story &&
-      eventContent?.theme_key,
+    eventContent?.couple_or_celebrant_names &&
+    eventContent?.event_story &&
+    eventContent?.theme_key,
   );
   const eventDetailsCompleted = Boolean(event?.event_date && venueLabel !== "Venue pending");
   const roleLabel = profile.role === "client_staff" ? "Client Staff" : "Client Admin";
@@ -204,7 +212,7 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
     },
     stats: {
       guestLimitLabel: event?.max_guest_count ? `${event.max_guest_count}` : "To be finalized",
-      responsesLabel: "0 so far",
+      responsesLabel: `${responseCount} so far`,
       rsvpCoverageLabel: `${defaultAccessDays} days`,
     },
   };
@@ -282,7 +290,7 @@ function getPaymentDescription(isConfirmed: boolean, paymentAmount: number | nul
   if (isConfirmed) {
     return paymentAmount !== null
       ? `Confirmed amount: ${formatCurrency(paymentAmount)}.`
-      : "Confirmed payment received."
+      : "Confirmed payment received.";
   }
 
   if (paymentAmount !== null) {

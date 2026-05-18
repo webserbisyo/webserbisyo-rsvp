@@ -11,12 +11,9 @@ import {
   type RsvpResponsesExportRows,
 } from "./rsvp-responses-types";
 
-export const RSVP_RESPONSES_EXPORT_BASE_FILENAME = "juan-and-maria-rsvp-responses";
-
-const RSVP_RESPONSES_EXPORT_TITLE = "Juan & Maria Wedding";
-const RSVP_RESPONSES_EXPORT_SUBTITLE = "Exported May 17, 2026";
 const RSVP_RESPONSES_EXPORT_META_LABEL = "Landscape table";
-const RSVP_RESPONSES_EXPORT_META_LINK = "webserbisyo.app/r/juan-and-maria";
+const DEFAULT_EXPORT_TITLE = "RSVP Responses";
+const DEFAULT_EXPORT_FILENAME = "rsvp-responses";
 
 type RgbColor = [number, number, number];
 
@@ -51,6 +48,12 @@ type ExportRowsInput = {
 type ExportOptions = ExportRowsInput & {
   format: RsvpResponsesExportFormat;
   includes: ExportIncludeState;
+  metadata: RsvpResponsesExportMetadata;
+};
+
+export type RsvpResponsesExportMetadata = {
+  eventSlug?: string | null;
+  eventTitle?: string | null;
 };
 
 type JsPdfConstructor = typeof import("jspdf").jsPDF;
@@ -71,11 +74,7 @@ type LandscapeColumn = {
   render: (row: RsvpResponseRecord) => string;
 };
 
-export function getExportRows({
-  allResponses,
-  currentViewResponses,
-  rows,
-}: ExportRowsInput) {
+export function getExportRows({ allResponses, currentViewResponses, rows }: ExportRowsInput) {
   return rows === "current_view" ? currentViewResponses : allResponses;
 }
 
@@ -84,11 +83,21 @@ export function exportRsvpResponses(options: ExportOptions) {
 
   if (options.format === "csv") {
     const csv = buildRsvpResponsesCsv(exportRows, options.includes);
-    downloadCsv(`${RSVP_RESPONSES_EXPORT_BASE_FILENAME}.csv`, csv);
+    downloadCsv(buildRsvpResponsesExportFilename(options.metadata, "csv"), csv);
     return;
   }
 
-  void downloadLandscapePdf(exportRows, options.includes);
+  void downloadLandscapePdf(exportRows, options.includes, options.metadata);
+}
+
+export function buildRsvpResponsesExportFilename(
+  metadata: RsvpResponsesExportMetadata,
+  extension: "csv" | "pdf",
+) {
+  const baseName =
+    slugifyExportFilename(metadata.eventTitle) ?? metadata.eventSlug ?? DEFAULT_EXPORT_FILENAME;
+
+  return `${baseName}-rsvp-responses.${extension}`;
 }
 
 function buildRsvpResponsesCsv(rows: RsvpResponseRecord[], includes: ExportIncludeState) {
@@ -165,15 +174,36 @@ function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
+function slugifyExportFilename(value?: string | null) {
+  const slug = value
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || null;
+}
+
+function buildExportLinkLabel(metadata: RsvpResponsesExportMetadata) {
+  return metadata.eventSlug ? `webserbisyo.app/r/${metadata.eventSlug}` : "webserbisyo.app";
+}
+
+function buildExportDateLabel() {
+  const date = new Intl.DateTimeFormat("en-PH", {
+    dateStyle: "medium",
+    timeZone: "Asia/Manila",
+  }).format(new Date());
+
+  return `Exported ${date}`;
+}
+
 async function loadPdfDependencies() {
   const [{ jsPDF }, autoTableModule] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
   ]);
 
-  const autoTable =
-    autoTableModule.default ??
-    autoTableModule.autoTable;
+  const autoTable = autoTableModule.default ?? autoTableModule.autoTable;
 
   return {
     autoTable: autoTable as AutoTableFn,
@@ -181,7 +211,11 @@ async function loadPdfDependencies() {
   };
 }
 
-async function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: ExportIncludeState) {
+async function downloadLandscapePdf(
+  rows: RsvpResponseRecord[],
+  includes: ExportIncludeState,
+  metadata: RsvpResponsesExportMetadata,
+) {
   const { autoTable, jsPDF } = await loadPdfDependencies();
   const doc = new jsPDF({
     orientation: "landscape",
@@ -208,6 +242,7 @@ async function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: Export
   drawLandscapeHeader(doc, {
     contentWidth,
     marginTop,
+    metadata,
     x: marginX,
   });
 
@@ -250,9 +285,7 @@ async function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: Export
   );
 
   const columns = buildLandscapeColumns(includes);
-  const body = rows.map((row) =>
-    columns.map((column) => column.render(row)),
-  ) satisfies RowInput[];
+  const body = rows.map((row) => columns.map((column) => column.render(row))) satisfies RowInput[];
 
   autoTable(doc, {
     startY: tableTop,
@@ -291,9 +324,7 @@ async function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: Export
       if (data.section === "body" && columns[data.column.index]?.key === "status") {
         const rawValue = String(data.cell.raw ?? "");
         data.cell.styles.textColor =
-          rawValue === "Attending"
-            ? LANDSCAPE_COLORS.success
-            : LANDSCAPE_COLORS.destructive;
+          rawValue === "Attending" ? LANDSCAPE_COLORS.success : LANDSCAPE_COLORS.destructive;
         data.cell.styles.fontStyle = "bold";
       }
     },
@@ -310,7 +341,7 @@ async function downloadLandscapePdf(rows: RsvpResponseRecord[], includes: Export
     },
   });
 
-  doc.save(`${RSVP_RESPONSES_EXPORT_BASE_FILENAME}.pdf`);
+  doc.save(buildRsvpResponsesExportFilename(metadata, "pdf"));
 }
 
 function drawLandscapeHeader(
@@ -318,10 +349,12 @@ function drawLandscapeHeader(
   {
     contentWidth,
     marginTop,
+    metadata,
     x,
   }: {
     contentWidth: number;
     marginTop: number;
+    metadata: RsvpResponsesExportMetadata;
     x: number;
   },
 ) {
@@ -342,7 +375,7 @@ function drawLandscapeHeader(
   doc.setTextColor(...LANDSCAPE_COLORS.muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.2);
-  doc.text(RSVP_RESPONSES_EXPORT_META_LINK, rightX, marginTop + 21, { align: "right" });
+  doc.text(buildExportLinkLabel(metadata), rightX, marginTop + 21, { align: "right" });
 
   doc.setTextColor(...LANDSCAPE_COLORS.headingMuted);
   doc.setFont("helvetica", "bold");
@@ -351,12 +384,12 @@ function drawLandscapeHeader(
 
   doc.setTextColor(...LANDSCAPE_COLORS.foreground);
   doc.setFontSize(24);
-  doc.text(RSVP_RESPONSES_EXPORT_TITLE, x, marginTop + 58);
+  doc.text(metadata.eventTitle?.trim() || DEFAULT_EXPORT_TITLE, x, marginTop + 58);
 
   doc.setTextColor(...LANDSCAPE_COLORS.muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(RSVP_RESPONSES_EXPORT_SUBTITLE, x, marginTop + 76);
+  doc.text(buildExportDateLabel(), x, marginTop + 76);
 }
 
 function drawStatCard(

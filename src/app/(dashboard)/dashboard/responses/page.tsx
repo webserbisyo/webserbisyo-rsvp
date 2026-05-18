@@ -7,6 +7,8 @@ export default async function DashboardResponsesPage() {
   return (
     <RsvpResponsesPage
       errorMessage={data.errorMessage}
+      eventSlug={data.eventSlug}
+      eventTitle={data.eventTitle}
       hasCurrentEvent={data.hasCurrentEvent}
       initialResponses={data.initialResponses}
     />
@@ -19,12 +21,16 @@ async function loadDashboardResponses() {
 
     return {
       errorMessage: null,
+      eventSlug: data.currentEvent?.event_slug ?? null,
+      eventTitle: data.currentEvent?.title ?? null,
       hasCurrentEvent: data.currentEvent !== null,
       initialResponses: data.responses,
     };
   } catch {
     return {
       errorMessage: "Refresh the page or try again after checking the current event setup.",
+      eventSlug: null,
+      eventTitle: null,
       hasCurrentEvent: false,
       initialResponses: [],
     };

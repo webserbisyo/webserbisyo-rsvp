@@ -19,12 +19,16 @@ import {
 
 type RsvpResponsesPageProps = {
   errorMessage?: string | null;
+  eventSlug?: string | null;
+  eventTitle?: string | null;
   hasCurrentEvent: boolean;
   initialResponses: RsvpResponseRecord[];
 };
 
 export function RsvpResponsesPage({
   errorMessage = null,
+  eventSlug = null,
+  eventTitle = null,
   hasCurrentEvent,
   initialResponses,
 }: RsvpResponsesPageProps) {
@@ -80,15 +84,12 @@ export function RsvpResponsesPage({
               backgroundColor: "var(--dash-success)",
             }}
           />
-          Live responses
+          Responses
         </Badge>
       </header>
 
       {errorMessage ? (
-        <ErrorState
-          title="RSVP responses could not be loaded"
-          description={errorMessage}
-        />
+        <ErrorState title="RSVP responses could not be loaded" description={errorMessage} />
       ) : !hasCurrentEvent ? (
         <RsvpResponsesEmptyState variant="no-event" />
       ) : (
@@ -130,6 +131,8 @@ export function RsvpResponsesPage({
                 allResponsesCount={totalResponses}
                 currentViewResponses={currentViewResponses}
                 currentViewCount={currentViewCount}
+                eventSlug={eventSlug}
+                eventTitle={eventTitle}
                 open={isExportOpen}
                 onOpenChange={setIsExportOpen}
               />

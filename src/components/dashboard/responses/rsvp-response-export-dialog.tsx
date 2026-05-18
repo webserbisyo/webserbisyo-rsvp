@@ -21,7 +21,11 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
-import { exportRsvpResponses, RSVP_RESPONSES_EXPORT_BASE_FILENAME } from "./rsvp-responses-export";
+import {
+  buildRsvpResponsesExportFilename,
+  exportRsvpResponses,
+  type RsvpResponsesExportMetadata,
+} from "./rsvp-responses-export";
 import { RESPONSES_PORTAL_THEME_STYLE } from "./rsvp-responses-theme";
 import type {
   RsvpResponseRecord,
@@ -35,6 +39,8 @@ type RsvpResponseExportDialogProps = {
   allResponsesCount: number;
   currentViewResponses: RsvpResponseRecord[];
   currentViewCount: number;
+  eventSlug?: string | null;
+  eventTitle?: string | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 };
@@ -51,6 +57,8 @@ export function RsvpResponseExportDialog({
   allResponsesCount,
   currentViewResponses,
   currentViewCount,
+  eventSlug,
+  eventTitle,
   onOpenChange,
   open,
 }: RsvpResponseExportDialogProps) {
@@ -63,6 +71,10 @@ export function RsvpResponseExportDialog({
     dietary_notes: true,
     messages: true,
   });
+  const metadata: RsvpResponsesExportMetadata = {
+    eventSlug,
+    eventTitle,
+  };
 
   const exportCount = rows === "current_view" ? currentViewCount : allResponsesCount;
 
@@ -73,6 +85,7 @@ export function RsvpResponseExportDialog({
       exportCount={exportCount}
       format={format}
       includes={includes}
+      metadata={metadata}
       onClose={() => onOpenChange(false)}
       onExport={() => {
         exportRsvpResponses({
@@ -80,14 +93,13 @@ export function RsvpResponseExportDialog({
           currentViewResponses,
           format,
           includes,
+          metadata,
           rows,
         });
         onOpenChange(false);
       }}
       onFormatChange={setFormat}
-      onIncludeToggle={(key, checked) =>
-        setIncludes((current) => ({ ...current, [key]: checked }))
-      }
+      onIncludeToggle={(key, checked) => setIncludes((current) => ({ ...current, [key]: checked }))}
       onRowsChange={setRows}
       rows={rows}
     />
@@ -133,6 +145,7 @@ function RsvpResponseExportContent({
   exportCount,
   format,
   includes,
+  metadata,
   onClose,
   onExport,
   onFormatChange,
@@ -145,6 +158,7 @@ function RsvpResponseExportContent({
   exportCount: number;
   format: RsvpResponsesExportFormat;
   includes: Record<RsvpResponsesExportInclude, boolean>;
+  metadata: RsvpResponsesExportMetadata;
   onClose: () => void;
   onExport: () => void;
   onFormatChange: (value: RsvpResponsesExportFormat) => void;
@@ -152,7 +166,7 @@ function RsvpResponseExportContent({
   onRowsChange: (value: RsvpResponsesExportRows) => void;
   rows: RsvpResponsesExportRows;
 }) {
-  const fileName = `${RSVP_RESPONSES_EXPORT_BASE_FILENAME}.${format === "csv" ? "csv" : "pdf"}`;
+  const fileName = buildRsvpResponsesExportFilename(metadata, format === "csv" ? "csv" : "pdf");
 
   return (
     <div className="flex max-h-[88vh] flex-col bg-[var(--responses-surface)] text-[color:var(--responses-foreground)]">
@@ -162,7 +176,9 @@ function RsvpResponseExportContent({
             <p className="text-[11px] font-semibold tracking-[0.24em] text-[color:var(--responses-heading-muted)] uppercase">
               Export responses
             </p>
-            <h2 className="text-xl font-semibold text-[color:var(--responses-foreground)]">Download guest list</h2>
+            <h2 className="text-xl font-semibold text-[color:var(--responses-foreground)]">
+              Download guest list
+            </h2>
           </div>
           <Button
             type="button"
@@ -180,7 +196,9 @@ function RsvpResponseExportContent({
       <div className="overflow-y-auto px-4 py-4">
         <div className="space-y-5">
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">Format</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">
+              Format
+            </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <SelectableCard
                 active={format === "csv"}
@@ -218,7 +236,9 @@ function RsvpResponseExportContent({
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">File preview</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">
+              File preview
+            </h3>
             <div
               className="rounded-[22px] border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
               style={{
@@ -229,18 +249,22 @@ function RsvpResponseExportContent({
               <p className="text-xs font-semibold tracking-[0.16em] text-[color:var(--responses-heading-muted)] uppercase">
                 File
               </p>
-              <p className="mt-1 text-sm font-medium text-[color:var(--responses-foreground)]">{fileName}</p>
+              <p className="mt-1 text-sm font-medium text-[color:var(--responses-foreground)]">
+                {fileName}
+              </p>
             </div>
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">Include</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">
+              Include
+            </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {EXPORT_INCLUDES.map((item) => (
                 <label
                   key={item.id}
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-[22px] border px-4 py-3 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
+                    "flex cursor-pointer items-start gap-3 rounded-[22px] border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition-colors",
                     includes[item.id] && "shadow-[var(--responses-shadow-sm)]",
                   )}
                   style={{
@@ -256,7 +280,9 @@ function RsvpResponseExportContent({
                     onCheckedChange={(checked) => onIncludeToggle(item.id, checked === true)}
                     aria-label={`Include ${item.label}`}
                   />
-                  <span className="text-sm font-medium text-[color:var(--responses-foreground)]">{item.label}</span>
+                  <span className="text-sm font-medium text-[color:var(--responses-foreground)]">
+                    {item.label}
+                  </span>
                 </label>
               ))}
             </div>
@@ -305,7 +331,7 @@ function SelectableCard({
     <button
       type="button"
       className={cn(
-        "cursor-pointer rounded-[24px] border px-4 py-4 text-left transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
+        "cursor-pointer rounded-[24px] border px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition-colors",
         active && "shadow-sm",
       )}
       style={{
@@ -329,7 +355,9 @@ function SelectableCard({
           ) : null}
           <div>
             <p className="font-semibold text-[color:var(--responses-foreground)]">{title}</p>
-            <p className="mt-1 text-sm leading-6 text-[color:var(--responses-muted)]">{description}</p>
+            <p className="mt-1 text-sm leading-6 text-[color:var(--responses-muted)]">
+              {description}
+            </p>
           </div>
         </div>
         {active ? (
