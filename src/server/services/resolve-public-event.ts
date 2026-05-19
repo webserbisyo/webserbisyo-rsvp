@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { resolvePublicEventWebsite } from "@/server/services/resolve-public-event-website";
 
 export type PublicEventDto = {
   content: {
@@ -26,72 +26,36 @@ export type PublicEventDto = {
 };
 
 export async function resolvePublicEvent(eventSlug: string): Promise<PublicEventDto | null> {
-  const supabase = createAdminClient();
-  const { data: event, error } = await supabase
-    .from("rsvp_events")
-    .select(
-      `
-        event_slug,
-        title,
-        event_type,
-        event_date,
-        event_time,
-        venue_name,
-        venue_address,
-        rsvp_open_at,
-        rsvp_close_at,
-        event_content (
-          hero_title,
-          hero_subtitle,
-          couple_or_celebrant_names,
-          event_story,
-          dress_code,
-          schedule_note,
-          venue_note,
-          rsvp_note,
-          theme_key
-        )
-      `,
-    )
-    .eq("event_slug", eventSlug)
-    .eq("status", "published")
-    .in("visibility", ["public", "unlisted"])
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
+  // Legacy compatibility adapter.
+  // New public consumers should prefer resolvePublicEventWebsite(), which is backed by the published snapshot.
+  const event = await resolvePublicEventWebsite(eventSlug);
 
   if (!event) {
     return null;
   }
 
-  const content = Array.isArray(event.event_content)
-    ? (event.event_content[0] ?? null)
-    : event.event_content;
-
   return {
-    content: content
+    content: event.content
       ? {
-          coupleOrCelebrantNames: content.couple_or_celebrant_names,
-          dressCode: content.dress_code,
-          eventStory: content.event_story,
-          heroSubtitle: content.hero_subtitle,
-          heroTitle: content.hero_title,
-          rsvpNote: content.rsvp_note,
-          scheduleNote: content.schedule_note,
-          themeKey: content.theme_key,
-          venueNote: content.venue_note,
+          coupleOrCelebrantNames: event.content.sections.host_info.displayAs,
+          dressCode: event.content.sections.attire_motif.dressCodeNote,
+          eventStory: event.content.sections.story_message.storyBody,
+          heroSubtitle: event.content.sections.host_info.shortHostMessage,
+          heroTitle: event.content.sections.host_info.hostLine,
+          rsvpNote: null,
+          scheduleNote: event.content.sections.main_event.scheduleNote,
+          themeKey: null,
+          venueNote: event.content.sections.venue.arrivalNote,
         }
       : null,
-    eventDate: event.event_date,
-    eventSlug: event.event_slug,
-    eventTime: event.event_time,
-    eventType: event.event_type,
-    rsvpCloseAt: event.rsvp_close_at,
-    rsvpOpenAt: event.rsvp_open_at,
-    title: event.title,
-    venueAddress: event.venue_address,
-    venueName: event.venue_name,
+    eventDate: event.eventDate,
+    eventSlug: event.eventSlug,
+    eventTime: event.eventTime,
+    eventType: event.eventType,
+    rsvpCloseAt: event.rsvp.closeAt,
+    rsvpOpenAt: event.rsvp.openAt,
+    title: event.eventTitle,
+    venueAddress: event.venueAddress,
+    venueName: event.venueName,
   };
 }

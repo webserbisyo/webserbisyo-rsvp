@@ -3,6 +3,10 @@
 import { useState, useTransition } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
+import {
+  PublicRsvpResponseFieldsInput,
+  RSVP_RESPONSE_STATUS_VALUES,
+} from "@/lib/validations/rsvp-response.schema";
 import { cn } from "@/lib/utils";
 import { submitRsvpResponseAction } from "@/server/actions/responses";
 import { Button } from "@/components/ui/button";
@@ -19,6 +23,8 @@ type CompanionInput = {
   fullName: string;
 };
 
+type AttendanceStatus = (typeof RSVP_RESPONSE_STATUS_VALUES)[number];
+
 const EMPTY_COMPANION: CompanionInput = {
   ageLabel: "",
   fullName: "",
@@ -31,9 +37,7 @@ export function PublicRsvpResponseForm({
   settings,
 }: PublicRsvpResponseFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [attendanceStatus, setAttendanceStatus] = useState<"attending" | "not_attending">(
-    "attending",
-  );
+  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>("attending");
   const [companionCount, setCompanionCount] = useState(0);
   const [companions, setCompanions] = useState<CompanionInput[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -75,16 +79,19 @@ export function PublicRsvpResponseForm({
     setFieldErrors({});
 
     startTransition(async () => {
-      const result = await submitRsvpResponseAction({
+      const payload: PublicRsvpResponseFieldsInput = {
         attendanceStatus,
         companionCount: attendanceStatus === "attending" ? companionCount : 0,
         companions: companions.slice(0, companionCount),
-        dietaryNotes: formData.get("dietaryNotes") ?? "",
-        email: formData.get("email") ?? "",
+        dietaryNotes: formData.get("dietaryNotes")?.toString() ?? "",
+        email: formData.get("email")?.toString() ?? "",
+        guestName: formData.get("guestName")?.toString() ?? "",
+        message: formData.get("message")?.toString() ?? "",
+        phone: formData.get("phone")?.toString() ?? "",
+      };
+      const result = await submitRsvpResponseAction({
+        ...payload,
         eventSlug,
-        guestName: formData.get("guestName") ?? "",
-        message: formData.get("message") ?? "",
-        phone: formData.get("phone") ?? "",
       });
 
       if (!result.ok) {
@@ -97,7 +104,7 @@ export function PublicRsvpResponseForm({
     });
   }
 
-  function setAttendanceStatusWithReset(nextStatus: "attending" | "not_attending") {
+  function setAttendanceStatusWithReset(nextStatus: AttendanceStatus) {
     setAttendanceStatus(nextStatus);
 
     if (nextStatus === "not_attending") {

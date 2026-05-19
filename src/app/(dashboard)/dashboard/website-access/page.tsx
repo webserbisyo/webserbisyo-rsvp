@@ -81,6 +81,16 @@ export default async function DashboardWebsiteAccessPage() {
               <div className="sm:col-span-2">
                 <dt className="text-muted-foreground">Public path</dt>
                 <dd className="font-medium">/r/{websiteAccessData.eventSlug ?? "event-slug"}</dd>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Current MVP sharing uses this exact fallback route for direct links and QR codes.
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="text-muted-foreground">Visibility behavior</dt>
+                <dd className="font-medium">{getVisibilityLabel(websiteAccessData.visibility)}</dd>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {getVisibilityDescription(websiteAccessData.visibility)}
+                </p>
               </div>
               <div>
                 <dt className="text-muted-foreground">Published at</dt>
@@ -117,6 +127,10 @@ export default async function DashboardWebsiteAccessPage() {
                 Save a draft in Event Website before publishing a public snapshot.
               </p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Invite-code restricted access is planned for a later phase and is not active in the
+              current fallback page flow.
+            </p>
           </CardContent>
         </Card>
 
@@ -186,5 +200,31 @@ function getStatusBadgeClassName(tone: "neutral" | "success" | "warning") {
       return "border-amber-200 bg-amber-50 text-amber-900";
     default:
       return "border-slate-200 bg-slate-100 text-slate-700";
+  }
+}
+
+function getVisibilityLabel(visibility: string | null) {
+  switch (visibility) {
+    case "public":
+      return "Public";
+    case "unlisted":
+      return "Unlisted direct link";
+    case "private":
+      return "Private direct link";
+    default:
+      return "Visibility pending";
+  }
+}
+
+function getVisibilityDescription(visibility: string | null) {
+  switch (visibility) {
+    case "public":
+      return "Anyone with the fallback page link can open the published RSVP page.";
+    case "unlisted":
+      return "The page is shared by direct link and is not treated as a broadly public listing.";
+    case "private":
+      return "Only guests with the direct URL or QR link can open the page in the current MVP.";
+    default:
+      return "Visibility will reflect the current fallback page access mode once configured.";
   }
 }

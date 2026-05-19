@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const RSVP_RESPONSE_STATUS_VALUES = ["attending", "not_attending"] as const;
 
-const EventSlugSchema = z
+export const EventSlugSchema = z
   .string()
   .trim()
   .min(1, "Event link is required.")
@@ -97,7 +97,7 @@ const CompanionSchema = z.object({
   fullName: z.string().trim().max(120, "Companion name is too long."),
 });
 
-export const PublicRsvpResponseSchema = z.object({
+export const PublicRsvpResponseFieldsSchema = z.object({
   attendanceStatus: z.enum(RSVP_RESPONSE_STATUS_VALUES, {
     error: "Select whether you are attending.",
   }),
@@ -105,11 +105,21 @@ export const PublicRsvpResponseSchema = z.object({
   companions: z.array(CompanionSchema).max(20, "Too many companions.").optional(),
   dietaryNotes: OptionalTextSchema(1000, "Dietary notes are too long."),
   email: OptionalEmailSchema,
-  eventSlug: EventSlugSchema,
   guestName: GuestNameSchema,
   message: OptionalTextSchema(1200, "Message is too long."),
   phone: OptionalPhoneSchema,
 });
 
+export const PublicRsvpResponseSchema = PublicRsvpResponseFieldsSchema.extend({
+  eventSlug: EventSlugSchema,
+});
+
 export type PublicRsvpResponseInput = z.output<typeof PublicRsvpResponseSchema>;
 export type PublicRsvpResponseFormInput = z.input<typeof PublicRsvpResponseSchema>;
+export type PublicRsvpResponseFieldsInput = z.output<typeof PublicRsvpResponseFieldsSchema>;
+export type PublicRsvpResponseFieldsFormInput = z.input<typeof PublicRsvpResponseFieldsSchema>;
+
+export type PublicRsvpSubmitSuccess = {
+  responseId: string;
+  submittedAt: string;
+};

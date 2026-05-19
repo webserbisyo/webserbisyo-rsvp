@@ -19,9 +19,11 @@ import {
   formatPreviewDateTime,
   formatPreviewTime,
   previewDefaultDraft,
-  previewSupportedSectionKeys,
-  type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
+import {
+  eventWebsiteRenderModelSectionKeys,
+  type EventWebsiteRenderModel,
+} from "@/lib/event-website/render-model";
 import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-response-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
 import { cn } from "@/lib/utils";
 
 type EventWebsiteRendererProps = {
-  draft: EventWebsitePreviewDraft;
+  draft: EventWebsiteRenderModel;
   highlightActiveSection?: boolean;
   publicRsvp?: {
     availabilityMessage: string | null;
@@ -41,7 +43,7 @@ type EventWebsiteRendererProps = {
   selectedSectionKey?: EventWebsiteSectionKey;
 };
 
-const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(previewSupportedSectionKeys);
+const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(eventWebsiteRenderModelSectionKeys);
 
 export function EventWebsiteRenderer({
   draft,
@@ -75,7 +77,7 @@ function SectionRouter({
   sectionKey,
   showDivider,
 }: {
-  draft: EventWebsitePreviewDraft;
+  draft: EventWebsiteRenderModel;
   isActive: boolean;
   publicRsvp: EventWebsiteRendererProps["publicRsvp"];
   sectionKey: EventWebsiteSectionKey;
@@ -111,7 +113,7 @@ function SectionRouter({
   );
 }
 
-function CoupleInfoSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function CoupleInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const coupleInfo = draft.coupleInfo;
   const groomName = withFallback(coupleInfo.groomName, previewDefaultDraft.coupleInfo.groomName);
   const brideName = withFallback(coupleInfo.brideName, previewDefaultDraft.coupleInfo.brideName);
@@ -142,7 +144,7 @@ function CoupleInfoSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function CountdownSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function CountdownSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const title = withFallback(draft.countdown.title, previewDefaultDraft.countdown.title);
   const shortNote = draft.countdown.shortNote.trim();
   const [now, setNow] = useState(0);
@@ -187,7 +189,7 @@ function CountdownSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function MusicSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function MusicSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const values = draft.musicEffects;
   const title = withFallback(values.musicTitle, previewDefaultDraft.musicEffects.musicTitle);
   const buttonLabel = withFallback(
@@ -227,7 +229,7 @@ function MusicSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function CeremonySection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function CeremonySection({ draft }: { draft: EventWebsiteRenderModel }) {
   const ceremony = draft.ceremony;
   const date = formatPreviewDate(
     ceremony.eventDate,
@@ -263,7 +265,7 @@ function CeremonySection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function VenueSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function VenueSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const venue = draft.venue;
   const mapsLink = venue.mapsLink.trim();
   const arrivalNote = venue.arrivalNote.trim();
@@ -295,7 +297,7 @@ function VenueSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function ReceptionSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const values = draft.reception;
   const startTime = formatPreviewTime(
     values.startTime,
@@ -341,7 +343,7 @@ function ReceptionSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function TimelineSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const items = normalizeTimelineItems(draft.timelineProgram.items);
 
   return (
@@ -367,7 +369,7 @@ function TimelineSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function EntourageSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function EntourageSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const intro = draft.entourage.introLine.trim();
   const groups = normalizeEntourageGroups(draft.entourage.groups);
 
@@ -390,7 +392,7 @@ function EntourageSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function PrincipalSponsorsSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function PrincipalSponsorsSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const intro = draft.principalSponsors.introLine.trim();
   const names = normalizeLineList(draft.principalSponsors.names);
 
@@ -410,7 +412,7 @@ function PrincipalSponsorsSection({ draft }: { draft: EventWebsitePreviewDraft }
   );
 }
 
-function AttireSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function AttireSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const values = draft.attireDressCode;
   const intro = values.sectionIntro.trim();
   const cards = [
@@ -450,7 +452,7 @@ function AttireSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function ExtraInfoSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function ExtraInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const values = draft.extraInfo;
   const title = withFallback(values.sectionTitle, previewDefaultDraft.extraInfo.sectionTitle);
   const intro = values.sectionIntro.trim();
@@ -479,7 +481,7 @@ function RsvpFormSection({
   draft,
   publicRsvp,
 }: {
-  draft: EventWebsitePreviewDraft;
+  draft: EventWebsiteRenderModel;
   publicRsvp: EventWebsiteRendererProps["publicRsvp"];
 }) {
   const [previewCompanionCount, setPreviewCompanionCount] = useState(0);
@@ -596,7 +598,7 @@ function RsvpFormSection({
   );
 }
 
-function GiftDetailsSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function GiftDetailsSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const values = draft.giftDetails;
   const intro = values.sectionIntro.trim() || previewDefaultDraft.giftDetails.sectionIntro;
   const note = values.giftNote.trim() || previewDefaultDraft.giftDetails.giftNote;
@@ -622,7 +624,7 @@ function GiftDetailsSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function MessagesSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function MessagesSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const title = withFallback(draft.messages.sectionTitle, previewDefaultDraft.messages.sectionTitle);
   const body = draft.messages.messageBody.trim() || previewDefaultDraft.messages.messageBody;
 
@@ -639,7 +641,7 @@ function MessagesSection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function LoveStorySection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function LoveStorySection({ draft }: { draft: EventWebsiteRenderModel }) {
   const intro = draft.loveStory.sectionIntro.trim();
   const title = withFallback(draft.loveStory.storyTitle, previewDefaultDraft.loveStory.storyTitle);
   const body = draft.loveStory.storyBody.trim() || previewDefaultDraft.loveStory.storyBody;
@@ -659,7 +661,7 @@ function LoveStorySection({ draft }: { draft: EventWebsitePreviewDraft }) {
   );
 }
 
-function ContactSocialsSection({ draft }: { draft: EventWebsitePreviewDraft }) {
+function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const hasAnyContent = Object.values(draft.contactSocials).some((value) => value.trim());
   const values = hasAnyContent ? draft.contactSocials : previewDefaultDraft.contactSocials;
   const contactPerson = values.contactPerson.trim();
@@ -764,7 +766,7 @@ function InternalDivider() {
   return <div className="event-preview-internal-divider" aria-hidden="true" />;
 }
 
-function normalizeTimelineItems(items: EventWebsitePreviewDraft["timelineProgram"]["items"]) {
+function normalizeTimelineItems(items: EventWebsiteRenderModel["timelineProgram"]["items"]) {
   const cleaned = items
     .map((item) => ({
       description: item.description.trim(),
@@ -786,7 +788,7 @@ function normalizeTimelineItems(items: EventWebsitePreviewDraft["timelineProgram
       }));
 }
 
-function normalizeEntourageGroups(groups: EventWebsitePreviewDraft["entourage"]["groups"]) {
+function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["groups"]) {
   const cleaned = groups
     .map((group) => ({
       groupTitle: group.groupTitle.trim() || (group.names.trim() ? "Wedding Party" : ""),
@@ -806,7 +808,7 @@ function normalizeLineList(value: string): string[] {
   return items.length > 0 ? items : normalizeLineList(previewDefaultDraft.principalSponsors.names);
 }
 
-function normalizeExtraInfoItems(items: EventWebsitePreviewDraft["extraInfo"]["items"]) {
+function normalizeExtraInfoItems(items: EventWebsiteRenderModel["extraInfo"]["items"]) {
   const cleaned = items
     .map((item) => ({
       details: item.details.trim(),
@@ -817,7 +819,7 @@ function normalizeExtraInfoItems(items: EventWebsitePreviewDraft["extraInfo"]["i
   return cleaned.length > 0 ? cleaned : previewDefaultDraft.extraInfo.items;
 }
 
-function normalizeGiftOptions(options: EventWebsitePreviewDraft["giftDetails"]["options"]) {
+function normalizeGiftOptions(options: EventWebsiteRenderModel["giftDetails"]["options"]) {
   const cleaned = options.filter((option) => option.title.trim() || option.file);
   return cleaned.length > 0 ? cleaned : previewDefaultDraft.giftDetails.options;
 }

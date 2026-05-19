@@ -1,6 +1,5 @@
 import "server-only";
 
-import { parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import {
@@ -28,8 +27,11 @@ type PublishedContentRow = Pick<Tables<"event_content">, "published_at" | "publi
 export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
   const payload = PublicRsvpResponseSchema.parse(input);
   const supabase = createAdminClient();
+  // Public RSVP writes intentionally use a server-only admin client after validation.
+  // Dashboard reads stay on SSR + RLS so browser-facing code never receives service-role access.
   const event = await getPublishedEvent(payload.eventSlug);
   const eventContent = await getPublishedEventContent(event.id);
+  const { parseEventWebsiteContentJson } = await import("@/lib/event-website/hydration");
   const content = parseEventWebsiteContentJson(eventContent.published_content_json);
 
   if (!content) {
@@ -43,6 +45,8 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
   assertRsvpWindowIsOpen(event);
 
   const rsvpSettings = content.sections.rsvp_form;
+  // TODO: Custom question answers are intentionally excluded from the public submit contract
+  // until a storage model and dashboard read flow are defined for them.
   const companionRows = buildCompanionRows(payload, rsvpSettings);
   const partySize = payload.attendanceStatus === "attending" ? 1 + payload.companionCount : 1;
   const responsePayload: TablesInsert<"rsvp_responses"> = {

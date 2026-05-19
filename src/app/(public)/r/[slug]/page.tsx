@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  buildPreviewDraftFromContent,
-  previewSupportedSectionKeys,
-} from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsiteRenderer } from "@/components/event-website/event-website-renderer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
-import { resolveEventWebsiteSections } from "@/config/event-website-sections";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { resolvePublicEventWebsite } from "@/server/services/resolve-public-event-website";
 
 type PublicRsvpPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-const supportedSectionKeySet = new Set(previewSupportedSectionKeys);
 
 export async function generateMetadata({ params }: PublicRsvpPageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -27,7 +20,7 @@ export async function generateMetadata({ params }: PublicRsvpPageProps): Promise
     };
   }
 
-  const displayName = event.content.sections.host_info.displayAs.trim() || event.eventTitle;
+  const displayName = event.renderModel.coupleInfo.displayAs.trim() || event.eventTitle;
   const summaryParts = [
     formatPublicDate(event.eventDate),
     formatPublicTime(event.eventTime),
@@ -55,16 +48,6 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
     eventSlug: slug,
     route: "event_page",
   });
-  const rsvpAvailability = getRsvpAvailability(event.rsvpOpenAt, event.rsvpCloseAt);
-  const previewDraft = buildPreviewDraftFromContent(event.content);
-  const resolvedSections = resolveEventWebsiteSections(event.eventType);
-  const publicSections = event.sectionsToRender
-    .filter((sectionKey) => supportedSectionKeySet.has(sectionKey))
-    .filter((sectionKey) =>
-      [...resolvedSections.requiredSections, ...resolvedSections.optionalSections].some(
-        (section) => section.key === sectionKey,
-      ),
-    );
 
   return (
     <main className="event-website-public-page min-h-screen bg-[linear-gradient(180deg,#fff8ef_0%,#ffffff_55%,#fff6ec_100%)] text-slate-900">
@@ -72,15 +55,16 @@ export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {
 
       <div className="event-preview-public-shell">
         <div className="event-preview-frame event-preview-frame--public">
+          {/* Public event pages render from the published snapshot only, never from mutable draft content. */}
           <EventWebsiteRenderer
-            draft={previewDraft}
+            draft={event.renderModel}
             publicRsvp={{
-              availabilityMessage: rsvpAvailability.message,
+              availabilityMessage: event.rsvp.availabilityMessage,
               eventSlug: event.eventSlug,
-              isAcceptingResponses: rsvpAvailability.isAcceptingResponses,
-            settings: event.content.sections.rsvp_form,
-          }}
-            sections={publicSections}
+              isAcceptingResponses: event.rsvp.isAcceptingResponses,
+              settings: event.rsvp.settings,
+            }}
+            sections={event.sections}
           />
         </div>
       </div>
@@ -122,45 +106,4 @@ function formatPublicTime(value: string | null) {
     minute: "2-digit",
     timeZone: "Asia/Manila",
   }).format(date);
-}
-
-function formatPublicDateTime(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Manila",
-  }).format(date);
-}
-
-function getRsvpAvailability(rsvpOpenAt: string | null, rsvpCloseAt: string | null) {
-  const now = Date.now();
-
-  if (rsvpOpenAt && new Date(rsvpOpenAt).getTime() > now) {
-    return {
-      isAcceptingResponses: false,
-      message: `RSVP submissions open on ${formatPublicDateTime(rsvpOpenAt) ?? "the scheduled opening date"}.`,
-    };
-  }
-
-  if (rsvpCloseAt && new Date(rsvpCloseAt).getTime() < now) {
-    return {
-      isAcceptingResponses: false,
-      message: "The RSVP deadline has passed.",
-    };
-  }
-
-  return {
-    isAcceptingResponses: true,
-    message: null,
-  };
 }

@@ -121,9 +121,10 @@ type TextFieldProps = {
   value: string;
 };
 
-const defaultCustomQuestionFieldType = "Short text";
+const defaultCustomQuestionFieldType: EventWebsitePreviewDraft["rsvpForm"]["customQuestions"][number]["fieldType"] =
+  "Short text";
 
-const customQuestionFieldTypes = [
+const customQuestionFieldTypes: EventWebsitePreviewDraft["rsvpForm"]["customQuestions"][number]["fieldType"][] = [
   "Short text",
   "Long text",
   "Number",

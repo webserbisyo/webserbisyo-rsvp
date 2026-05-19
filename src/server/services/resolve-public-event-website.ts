@@ -1,39 +1,15 @@
 import "server-only";
 
 import { cache } from "react";
-import { z } from "zod";
 import {
-  mergeEventWebsiteContent,
-  parseEventWebsiteContentJson,
-} from "@/lib/event-website/hydration";
-import type { EventWebsiteContent, EventWebsiteContentSectionKey } from "@/lib/event-website/types";
+  buildPublicEventDto,
+  PublicEventSlugSchema,
+  type PublicEventDto,
+} from "@/lib/event-website/public-event";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const PublicEventSlugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(200)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-
-type PublicEventWebsiteDto = {
-  content: EventWebsiteContent;
-  eventDate: string | null;
-  eventSlug: string;
-  eventTime: string | null;
-  eventTitle: string;
-  eventType: string;
-  publishedAt: string;
-  rsvpCloseAt: string | null;
-  rsvpOpenAt: string | null;
-  sectionsToRender: EventWebsiteContentSectionKey[];
-  venueAddress: string | null;
-  venueName: string | null;
-  visibility: "private" | "public" | "unlisted";
-};
-
 export const resolvePublicEventWebsite = cache(
-  async (eventSlugInput: string): Promise<PublicEventWebsiteDto | null> => {
+  async (eventSlugInput: string): Promise<PublicEventDto | null> => {
     const parsedSlug = PublicEventSlugSchema.safeParse(eventSlugInput);
 
     if (!parsedSlug.success) {
@@ -68,6 +44,8 @@ export const resolvePublicEventWebsite = cache(
       .eq("event_slug", parsedSlug.data)
       .eq("status", "published")
       .eq("fallback_page_enabled", true)
+      // Current MVP treats private visibility as direct-link access to the published fallback page.
+      // Invite-code restricted access is deferred until a separate gating flow exists.
       .in("visibility", ["public", "unlisted", "private"])
       .is("archived_at", null)
       .maybeSingle();
@@ -88,6 +66,9 @@ export const resolvePublicEventWebsite = cache(
       return null;
     }
 
+    const { mergeEventWebsiteContent, parseEventWebsiteContentJson } = await import(
+      "@/lib/event-website/hydration"
+    );
     const parsedContent = parseEventWebsiteContentJson(eventContent.published_content_json);
 
     if (!parsedContent) {
@@ -106,7 +87,7 @@ export const resolvePublicEventWebsite = cache(
       },
     });
 
-    return {
+    return buildPublicEventDto({
       content,
       eventDate: event.event_date,
       eventSlug: event.event_slug,
@@ -116,24 +97,9 @@ export const resolvePublicEventWebsite = cache(
       publishedAt: event.published_at,
       rsvpCloseAt: event.rsvp_close_at,
       rsvpOpenAt: event.rsvp_open_at,
-      sectionsToRender: buildSectionsToRender(content),
       venueAddress: event.venue_address,
       venueName: event.venue_name,
       visibility: event.visibility as "private" | "public" | "unlisted",
-    };
+    });
   },
 );
-
-function buildSectionsToRender(content: EventWebsiteContent): EventWebsiteContentSectionKey[] {
-  const visibleSections = content.layout.sectionOrder.filter(
-    (sectionKey) => sectionKey === "contact_socials" || content.layout.enabledSections[sectionKey],
-  );
-  const contactSection = visibleSections.filter((sectionKey) => sectionKey === "contact_socials");
-  const nonContactSections = visibleSections.filter(
-    (sectionKey) => sectionKey !== "contact_socials",
-  );
-
-  return [...nonContactSections, ...contactSection];
-}
-
-export type { PublicEventWebsiteDto };

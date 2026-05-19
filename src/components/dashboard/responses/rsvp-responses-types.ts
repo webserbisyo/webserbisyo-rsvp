@@ -13,6 +13,8 @@ export type RsvpResponseRecord = {
   dietaryNotes: string | null;
   message: string | null;
   submittedAt: string;
+  // Internal-only source label for detail views and future auditing.
+  // It is intentionally excluded from the main table and export defaults.
   source: RsvpResponseSource;
 };
 
