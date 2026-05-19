@@ -67,12 +67,19 @@ type LandscapeColumn = {
     | "status"
     | "party"
     | "companions"
-    | "dietary"
-    | "message"
     | "submitted";
   width: number;
   render: (row: RsvpResponseRecord) => string;
 };
+
+type NotesColumn = {
+  header: string;
+  key: "guest" | "dietary" | "message";
+  width: number;
+  render: (row: RsvpResponseRecord) => string;
+};
+
+type StatCardIcon = "responses" | "attending" | "not_attending" | "party_size";
 
 export function getExportRows({ allResponses, currentViewResponses, rows }: ExportRowsInput) {
   return rows === "current_view" ? currentViewResponses : allResponses;
@@ -232,32 +239,33 @@ async function downloadLandscapePdf(
   const statsGap = 10;
   const statWidth = (contentWidth - statsGap * 3) / 4;
   const statsTop = 118;
-  const statsHeight = 50;
-  const sectionTop = statsTop + statsHeight + 26;
-  const tableTop = sectionTop + 52;
+  const statsHeight = 58;
+  const tableTop = statsTop + statsHeight + 22;
 
-  doc.setFillColor(...LANDSCAPE_COLORS.white);
+  doc.setFillColor(...LANDSCAPE_COLORS.page);
   doc.rect(0, 0, pageWidth, pageHeight, "F");
 
   drawLandscapeHeader(doc, {
     contentWidth,
     marginTop,
+    metaLabel: RSVP_RESPONSES_EXPORT_META_LABEL,
     metadata,
     x: marginX,
   });
 
   const stats = buildExportStats(rows);
-  const statCards: Array<{ label: string; value: number }> = [
-    { label: "Total responses", value: stats.totalResponses },
-    { label: "Attending", value: stats.attendingCount },
-    { label: "Not attending", value: stats.notAttendingCount },
-    { label: "Total party size", value: stats.totalPartySize },
+  const statCards: Array<{ icon: StatCardIcon; label: string; value: number }> = [
+    { icon: "responses", label: "Total responses", value: stats.totalResponses },
+    { icon: "attending", label: "Attending", value: stats.attendingCount },
+    { icon: "not_attending", label: "Not attending", value: stats.notAttendingCount },
+    { icon: "party_size", label: "Total party size", value: stats.totalPartySize },
   ];
 
   statCards.forEach((card, index) => {
     const x = marginX + index * (statWidth + statsGap);
     drawStatCard(doc, {
       height: statsHeight,
+      icon: card.icon,
       label: card.label,
       value: card.value,
       width: statWidth,
@@ -265,24 +273,6 @@ async function downloadLandscapePdf(
       y: statsTop,
     });
   });
-
-  doc.setTextColor(...LANDSCAPE_COLORS.headingMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("GUEST LIST", marginX, sectionTop);
-
-  doc.setTextColor(...LANDSCAPE_COLORS.foreground);
-  doc.setFontSize(17);
-  doc.text("Full table", marginX, sectionTop + 18);
-
-  doc.setTextColor(...LANDSCAPE_COLORS.muted);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(
-    "Includes contact, party size, companions, notes, and submission time.",
-    marginX,
-    sectionTop + 34,
-  );
 
   const columns = buildLandscapeColumns(includes);
   const body = rows.map((row) => columns.map((column) => column.render(row))) satisfies RowInput[];
@@ -341,6 +331,61 @@ async function downloadLandscapePdf(
     },
   });
 
+  const notesColumns = buildNotesColumns(includes);
+
+  if (notesColumns.length > 0) {
+    doc.addPage("a4", "landscape");
+    doc.setFillColor(...LANDSCAPE_COLORS.page);
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+    drawLandscapeHeader(doc, {
+      contentWidth,
+      marginTop,
+      metaLabel: "Notes & messages",
+      metadata,
+      x: marginX,
+    });
+
+    const notesBody = rows.map((row) =>
+      notesColumns.map((column) => column.render(row)),
+    ) satisfies RowInput[];
+
+    autoTable(doc, {
+      startY: 118,
+      margin: { left: marginX, right: marginX },
+      tableWidth: contentWidth,
+      head: [notesColumns.map((column) => column.header)],
+      body: notesBody,
+      theme: "grid",
+      rowPageBreak: "avoid",
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        textColor: LANDSCAPE_COLORS.foreground,
+        cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
+        lineColor: LANDSCAPE_COLORS.border,
+        lineWidth: 0.45,
+        overflow: "linebreak",
+        valign: "top",
+      },
+      headStyles: {
+        fillColor: LANDSCAPE_COLORS.surfaceMuted,
+        textColor: LANDSCAPE_COLORS.headingMuted,
+        fontStyle: "bold",
+        fontSize: 7.6,
+        lineColor: LANDSCAPE_COLORS.borderStrong,
+        lineWidth: 0.55,
+        cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
+      },
+      bodyStyles: {
+        fillColor: LANDSCAPE_COLORS.white,
+      },
+      columnStyles: Object.fromEntries(
+        notesColumns.map((column, index) => [index, { cellWidth: column.width }]),
+      ),
+    });
+  }
+
   doc.save(buildRsvpResponsesExportFilename(metadata, "pdf"));
 }
 
@@ -349,53 +394,51 @@ function drawLandscapeHeader(
   {
     contentWidth,
     marginTop,
+    metaLabel,
     metadata,
     x,
   }: {
     contentWidth: number;
     marginTop: number;
+    metaLabel: string;
     metadata: RsvpResponsesExportMetadata;
     x: number;
   },
 ) {
-  const pillWidth = 34;
+  const pillWidth = 112;
   const pillHeight = 18;
 
   doc.setFillColor(...LANDSCAPE_COLORS.brand);
   doc.roundedRect(x, marginTop, pillWidth, pillHeight, 9, 9, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
+  doc.setFontSize(7.8);
   doc.setTextColor(...LANDSCAPE_COLORS.white);
-  doc.text("RSVP", x + pillWidth / 2, marginTop + 12.4, { align: "center" });
+  doc.text("RSVP RESPONSES", x + pillWidth / 2, marginTop + 12.2, { align: "center" });
 
   const rightX = x + contentWidth;
   doc.setTextColor(...LANDSCAPE_COLORS.headingMuted);
   doc.setFontSize(8.5);
-  doc.text(RSVP_RESPONSES_EXPORT_META_LABEL, rightX, marginTop + 8, { align: "right" });
+  doc.text(metaLabel, rightX, marginTop + 8, { align: "right" });
   doc.setTextColor(...LANDSCAPE_COLORS.muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.2);
   doc.text(buildExportLinkLabel(metadata), rightX, marginTop + 21, { align: "right" });
 
-  doc.setTextColor(...LANDSCAPE_COLORS.headingMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.6);
-  doc.text("RSVP RESPONSES", x, marginTop + 34);
-
   doc.setTextColor(...LANDSCAPE_COLORS.foreground);
   doc.setFontSize(24);
-  doc.text(metadata.eventTitle?.trim() || DEFAULT_EXPORT_TITLE, x, marginTop + 58);
+  doc.text(metadata.eventTitle?.trim() || DEFAULT_EXPORT_TITLE, x, marginTop + 52);
 
   doc.setTextColor(...LANDSCAPE_COLORS.muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(buildExportDateLabel(), x, marginTop + 76);
+  doc.text(buildExportDateLabel(), x, marginTop + 70);
 }
 
 function drawStatCard(
   doc: jsPDF,
   {
     height,
+    icon,
     label,
     value,
     width,
@@ -403,6 +446,7 @@ function drawStatCard(
     y,
   }: {
     height: number;
+    icon: StatCardIcon;
     label: string;
     value: number;
     width: number;
@@ -417,13 +461,19 @@ function drawStatCard(
 
   doc.setTextColor(...LANDSCAPE_COLORS.foreground);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text(String(value), x + 12, y + 22);
+  doc.setFontSize(20);
+  doc.text(String(value), x + 14, y + 24);
 
   doc.setTextColor(...LANDSCAPE_COLORS.muted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(label, x + 12, y + 37);
+  doc.text(label, x + 14, y + 42);
+
+  drawStatCardIcon(doc, {
+    icon,
+    x: x + width - 52,
+    y: y + 10,
+  });
 }
 
 function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] {
@@ -431,7 +481,7 @@ function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] 
     {
       header: "Guest",
       key: "guest",
-      width: 84,
+      width: includes.contact_details ? 104 : 156,
       render: (row) => row.guestName,
     },
   ];
@@ -440,8 +490,8 @@ function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] 
     columns.push({
       header: "Contact",
       key: "contact",
-      width: 126,
-      render: (row) => `${row.email}\n${row.phone}`,
+      width: includes.companions ? 156 : 184,
+      render: (row) => [row.email, row.phone].filter(Boolean).join("\n") || "—",
     });
   }
 
@@ -449,13 +499,13 @@ function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] 
     {
       header: "Status",
       key: "status",
-      width: 59,
+      width: 70,
       render: (row) => getResponseStatusLabel(row.status),
     },
     {
       header: "Party",
       key: "party",
-      width: 34,
+      width: 46,
       render: (row) => String(row.partySize),
     },
   );
@@ -464,17 +514,37 @@ function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] 
     columns.push({
       header: "Companions",
       key: "companions",
-      width: 92,
-      render: (row) => (row.companions.length ? row.companions.join(", ") : "-"),
+      width: includes.contact_details ? 176 : 250,
+      render: (row) => (row.companions.length ? row.companions.join(", ") : "—"),
     });
   }
 
+  columns.push({
+    header: "Submitted",
+    key: "submitted",
+    width: includes.contact_details ? 122 : 138,
+    render: (row) => formatResponseSubmittedTable(row.submittedAt),
+  });
+
+  return columns;
+}
+
+function buildNotesColumns(includes: ExportIncludeState): NotesColumn[] {
+  const columns: NotesColumn[] = [
+    {
+      header: "Guest",
+      key: "guest",
+      width: includes.dietary_notes && includes.messages ? 128 : 170,
+      render: (row) => row.guestName,
+    },
+  ];
+
   if (includes.dietary_notes) {
     columns.push({
-      header: "Dietary",
+      header: "Dietary Notes",
       key: "dietary",
-      width: 106,
-      render: (row) => row.dietaryNotes?.trim() || "-",
+      width: includes.messages ? 270 : 560,
+      render: (row) => row.dietaryNotes?.trim() || "—",
     });
   }
 
@@ -482,17 +552,10 @@ function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] 
     columns.push({
       header: "Message",
       key: "message",
-      width: 146,
-      render: (row) => row.message?.trim() || "-",
+      width: includes.dietary_notes ? 334 : 560,
+      render: (row) => row.message?.trim() || "—",
     });
   }
-
-  columns.push({
-    header: "Submitted",
-    key: "submitted",
-    width: 78,
-    render: (row) => formatResponseSubmittedTable(row.submittedAt),
-  });
 
   return columns;
 }
@@ -504,4 +567,70 @@ function buildExportStats(rows: RsvpResponseRecord[]) {
     notAttendingCount: rows.filter((row) => row.status === "not_attending").length,
     totalPartySize: rows.reduce((sum, row) => sum + row.partySize, 0),
   };
+}
+
+function drawStatCardIcon(
+  doc: jsPDF,
+  {
+    icon,
+    x,
+    y,
+  }: {
+    icon: StatCardIcon;
+    x: number;
+    y: number;
+  },
+) {
+  doc.setDrawColor(...LANDSCAPE_COLORS.borderStrong);
+  doc.setTextColor(...LANDSCAPE_COLORS.brandStrong);
+  doc.setLineWidth(1.6);
+
+  switch (icon) {
+    case "responses":
+      drawResponsesIcon(doc, x, y);
+      return;
+    case "attending":
+      drawAttendingIcon(doc, x, y);
+      return;
+    case "not_attending":
+      drawNotAttendingIcon(doc, x, y);
+      return;
+    case "party_size":
+      drawPartySizeIcon(doc, x, y);
+      return;
+  }
+}
+
+function drawResponsesIcon(doc: jsPDF, x: number, y: number) {
+  doc.roundedRect(x, y, 26, 34, 5, 5);
+  doc.line(x + 18, y, x + 26, y + 8);
+  doc.line(x + 17, y + 1, x + 17, y + 9);
+  doc.line(x + 4, y + 13, x + 19, y + 13);
+  doc.line(x + 4, y + 19, x + 22, y + 19);
+  doc.line(x + 4, y + 25, x + 16, y + 25);
+}
+
+function drawAttendingIcon(doc: jsPDF, x: number, y: number) {
+  doc.circle(x + 15, y + 18, 13);
+  doc.line(x + 8, y + 18, x + 13, y + 23);
+  doc.line(x + 13, y + 23, x + 23, y + 12);
+}
+
+function drawNotAttendingIcon(doc: jsPDF, x: number, y: number) {
+  doc.circle(x + 15, y + 18, 13);
+  doc.line(x + 9, y + 12, x + 21, y + 24);
+  doc.line(x + 21, y + 12, x + 9, y + 24);
+}
+
+function drawPartySizeIcon(doc: jsPDF, x: number, y: number) {
+  doc.circle(x + 10, y + 12, 5);
+  doc.circle(x + 21, y + 14, 4);
+  doc.line(x + 4, y + 29, x + 7, y + 21);
+  doc.line(x + 7, y + 21, x + 13, y + 21);
+  doc.line(x + 13, y + 21, x + 16, y + 29);
+  doc.line(x + 16, y + 29, x + 4, y + 29);
+  doc.line(x + 17, y + 29, x + 19, y + 23);
+  doc.line(x + 19, y + 23, x + 24, y + 23);
+  doc.line(x + 24, y + 23, x + 26, y + 29);
+  doc.line(x + 26, y + 29, x + 17, y + 29);
 }
