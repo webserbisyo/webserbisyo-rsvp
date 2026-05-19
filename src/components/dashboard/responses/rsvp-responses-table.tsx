@@ -183,13 +183,13 @@ export function RsvpResponsesTable({
       ) : (
         // No manual overflow-x-auto wrapper — Shadcn Table provides its own
         <Table className="w-full min-w-[820px] text-left text-sm border-0">
-          <TableHeader className="text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
+          <TableHeader className="bg-[#fffaf6] text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
             {table.getHeaderGroups().map((headerGroup) => (
               // Background + border live on the row so they span table-column width
               // and avoid thead paint-clipping artifacts in overflow containers
               <TableRow
                 key={headerGroup.id}
-                className="border-b border-[#eadbd0] bg-[#fffaf6] hover:bg-[#fffaf6]"
+                className="border-b border-[#eadbd0] bg-[#fffaf6] hover:bg-[#fffaf6] transition-none"
               >
                 {headerGroup.headers.map((header) => (
                   <TableHead
