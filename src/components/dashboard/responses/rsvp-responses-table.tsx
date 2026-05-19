@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -92,79 +92,103 @@ export function RsvpResponsesTable({
     totalRows === 0 ? 0 : Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalRows);
 
   return (
-    <Card className="rsvp-panel overflow-hidden rounded-[32px] border-[color:var(--dash-border)] bg-[color:var(--dash-surface)] py-0 shadow-[var(--dash-shadow-md)]">
-      <CardContent className="px-0 py-0">
-        <div className="flex flex-col gap-3 border-b border-[color:var(--dash-border)] px-4 py-3.5">
-          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-            <ScrollArea className="w-full whitespace-nowrap lg:w-auto">
-              <Tabs value={activeTab} onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}>
-                <TabsList
-                  className="rounded-full border border-[color:var(--dash-border)] bg-[color:var(--dash-surface-muted)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
-                  variant="default"
+    <Card
+      className="overflow-hidden rounded-[32px] border py-0"
+      style={{
+        ...RESPONSES_PORTAL_THEME_STYLE,
+        backgroundColor: "var(--responses-table-surface)",
+        borderColor: "var(--responses-table-border)",
+        boxShadow: "0 22px 50px rgba(62,39,23,0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+      }}
+    >
+      <div className="flex flex-col gap-5 px-6 py-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <ScrollArea className="w-full whitespace-nowrap lg:w-auto">
+            <Tabs value={activeTab} onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}>
+              <TabsList
+                className="rounded-full border p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                style={{
+                  backgroundColor: "var(--responses-table-control)",
+                  borderColor: "var(--responses-table-control-border)",
+                }}
+              >
+                <TabsTrigger
+                  className="rounded-full px-4 py-2 text-[14px] font-medium text-gray-500 transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                  value="all"
                 >
-                  <TabsTrigger
-                    className="rounded-full px-3.5 py-1.5 text-sm text-[--dash-muted] data-active:bg-[color:var(--dash-surface)] data-active:text-[--dash-foreground] data-active:shadow-[var(--dash-shadow-sm)]"
-                    value="all"
-                  >
-                    All
-                  </TabsTrigger>
-                  <TabsTrigger
-                    className="rounded-full px-3.5 py-1.5 text-sm text-[--dash-muted] data-active:bg-[color:var(--dash-surface)] data-active:text-[--dash-foreground] data-active:shadow-[var(--dash-shadow-sm)]"
-                    value="attending"
-                  >
-                    Attending
-                  </TabsTrigger>
-                  <TabsTrigger
-                    className="rounded-full px-3.5 py-1.5 text-sm text-[--dash-muted] data-active:bg-[color:var(--dash-surface)] data-active:text-[--dash-foreground] data-active:shadow-[var(--dash-shadow-sm)]"
-                    value="not_attending"
-                  >
-                    Not attending
-                  </TabsTrigger>
-                  <TabsTrigger
-                    className="rounded-full px-3.5 py-1.5 text-sm text-[--dash-muted] data-active:bg-[color:var(--dash-surface)] data-active:text-[--dash-foreground] data-active:shadow-[var(--dash-shadow-sm)]"
-                    value="messages"
-                  >
+                  All
+                </TabsTrigger>
+                <TabsTrigger
+                  className="rounded-full px-4 py-2 text-[14px] font-medium text-gray-500 transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                  value="attending"
+                >
+                  Attending
+                </TabsTrigger>
+                <TabsTrigger
+                  className="rounded-full px-4 py-2 text-[14px] font-medium text-gray-500 transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                  value="not_attending"
+                >
+                  Not attending
+                </TabsTrigger>
+                <TabsTrigger
+                  className="rounded-full px-4 py-2 text-[14px] font-medium text-gray-500 transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+                  value="messages"
+                >
                     Messages
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </ScrollArea>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </ScrollArea>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 rounded-full border-[color:var(--dash-border)] bg-[color:var(--dash-surface)] px-4 shadow-[var(--dash-shadow-sm)]"
-              onClick={onExportClick}
-            >
-              <Download className="size-4" aria-hidden="true" />
-              Export
-            </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-[52px] rounded-full border px-6 text-[14px] font-medium shadow-[0_2px_8px_rgba(62,39,23,0.04)]"
+            style={{
+              backgroundColor: "#ffffff",
+              borderColor: "var(--responses-table-control-border)",
+            }}
+            onClick={onExportClick}
+          >
+            <Download className="mr-2 size-4" aria-hidden="true" />
+            Export
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div className="relative flex-1">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search name, email, or phone"
+              className="h-[52px] rounded-full border px-4 pl-11 text-[15px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+              style={{
+                backgroundColor: "var(--responses-table-control)",
+                borderColor: "var(--responses-table-control-border)",
+              }}
+              aria-label="Search responses by guest name, email, or phone"
+            />
           </div>
 
-          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
-            <div className="relative flex-1">
-              <Search
-                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[--dash-subtle]"
-                aria-hidden="true"
-              />
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search name, email, or phone"
-                className="h-10 rounded-full border-[color:var(--dash-border)] bg-[color:var(--dash-surface-muted)] pr-3 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
-                aria-label="Search responses by guest name, email, or phone"
-              />
-            </div>
-
-            <div className="w-full lg:w-[220px]">
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as RsvpResponsesStatusFilter)}>
-                <SelectTrigger className="h-10 w-full rounded-full border-[color:var(--dash-border)] bg-[color:var(--dash-surface-muted)] px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-                  <span className="flex items-center gap-2 min-w-0">
-                    <SlidersHorizontal className="size-4 text-[--dash-subtle]" aria-hidden="true" />
-                    <SelectValue placeholder="All statuses" />
-                  </span>
-                </SelectTrigger>
-                <SelectContent
+          <div className="w-full lg:w-[240px]">
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as RsvpResponsesStatusFilter)}>
+              <SelectTrigger
+                className="h-[52px] w-full rounded-full border px-4 text-[15px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                style={{
+                  backgroundColor: "var(--responses-table-control)",
+                  borderColor: "var(--responses-table-control-border)",
+                }}
+              >
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <SlidersHorizontal className="size-4.5 text-gray-400" aria-hidden="true" />
+                  <SelectValue placeholder="All statuses" />
+                </span>
+              </SelectTrigger>
+              <SelectContent
                   position="popper"
                   sideOffset={8}
                   align="start"
@@ -181,22 +205,29 @@ export function RsvpResponsesTable({
         </div>
 
         {!hasResponses || filteredRowCount === 0 ? (
-          <div className="px-4 py-6">
+          <div className="px-6 py-8">
             <RsvpResponsesEmptyState variant={hasResponses ? "no-results" : "empty"} />
           </div>
         ) : (
-          <div className="px-4 py-2">
-            <Table className="min-w-[880px]">
+          <div
+            className="w-full overflow-x-auto border-t"
+            style={{ borderColor: "var(--responses-table-divider)" }}
+          >
+            <Table className="min-w-[960px] [&_td:first-child]:pl-6 [&_td:last-child]:pr-6 [&_th:first-child]:pl-6 [&_th:last-child]:pr-6">
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow
                     key={headerGroup.id}
-                    className="border-[color:var(--dash-divider)] bg-[color:var(--dash-surface-muted)]"
+                    className="border-b"
+                    style={{
+                      borderColor: "var(--responses-table-border)",
+                      backgroundColor: "var(--responses-table-header)",
+                    }}
                   >
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
-                        className="h-11 px-3 text-[11px] font-semibold tracking-[0.16em] text-[--dash-heading-muted] uppercase"
+                        className="h-14 px-3 text-[12px] font-semibold tracking-[0.12em] text-gray-500 uppercase"
                       >
                         {header.isPlaceholder
                           ? null
@@ -210,11 +241,12 @@ export function RsvpResponsesTable({
                 {pageRows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="cursor-pointer border-[color:var(--dash-divider)] hover:bg-[color:var(--dash-surface-muted)]"
+                    className="cursor-pointer border-b transition-colors hover:bg-[rgba(255,255,255,0.5)]"
+                    style={{ borderColor: "var(--responses-table-divider)" }}
                     onClick={() => onOpenResponse(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-3 py-2.5 align-top">
+                      <TableCell key={cell.id} className="px-3 py-5 align-middle">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -225,15 +257,21 @@ export function RsvpResponsesTable({
           </div>
         )}
 
-        <div className="border-t border-[color:var(--dash-border)] bg-[color:var(--dash-surface-muted)] px-4 py-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <p className="text-sm text-[--dash-muted]">
+        <div
+          className="border-t px-6 py-5"
+          style={{
+            borderColor: "var(--responses-table-border)",
+            backgroundColor: "var(--responses-table-header)",
+          }}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <p className="text-[14px] font-medium text-gray-500">
               Showing {firstItem}-{lastItem} of {totalRows} responses
             </p>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-[--dash-muted]">Rows per page</span>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
+              <div className="flex items-center gap-3">
+                <span className="text-[14px] font-medium text-gray-500">Rows per page</span>
                 <Select
                   value={String(pagination.pageSize)}
                   onValueChange={(value) =>
@@ -243,7 +281,13 @@ export function RsvpResponsesTable({
                     })
                   }
                 >
-                  <SelectTrigger className="h-9 w-[88px] rounded-full border-[color:var(--dash-border)] bg-[color:var(--dash-surface)] px-3 shadow-[var(--dash-shadow-sm)]">
+                  <SelectTrigger
+                    className="h-10 w-[88px] rounded-full border px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                    style={{
+                      backgroundColor: "var(--responses-table-surface)",
+                      borderColor: "var(--responses-table-border)",
+                    }}
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent
@@ -261,32 +305,33 @@ export function RsvpResponsesTable({
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-full"
+                  className="h-10 rounded-full border px-5 text-[14px] font-medium text-gray-600 hover:text-gray-900"
+                  style={{ borderColor: "var(--responses-table-border)" }}
                   disabled={!table.getCanPreviousPage()}
                   onClick={() => table.previousPage()}
                 >
-                  <ChevronLeft className="size-4" aria-hidden="true" />
+                  <ChevronLeft className="mr-1 size-4" aria-hidden="true" />
                   Previous
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-full"
+                  className="h-10 rounded-full border px-5 text-[14px] font-medium text-gray-600 hover:text-gray-900"
+                  style={{ borderColor: "var(--responses-table-border)" }}
                   disabled={!table.getCanNextPage()}
                   onClick={() => table.nextPage()}
                 >
                   Next
-                  <ChevronRight className="size-4" aria-hidden="true" />
+                  <ChevronRight className="ml-1 size-4" aria-hidden="true" />
                 </Button>
               </div>
             </div>
           </div>
         </div>
-      </CardContent>
     </Card>
   );
 }

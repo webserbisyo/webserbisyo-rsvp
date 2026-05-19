@@ -26,4 +26,13 @@ export const RESPONSES_PORTAL_THEME_STYLE = {
     "0 15px 34px rgba(62, 39, 23, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.75)",
   "--responses-shadow-lg":
     "0 22px 54px rgba(62, 39, 23, 0.09), 0 1px 3px rgba(62, 39, 23, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.86)",
+
+  /* Local Table Overrides for a lighter, premium feel */
+  "--responses-table-surface": "#fcfbfa",
+  "--responses-table-header": "#f8f6f3",
+  "--responses-table-border": "#ebe5de",
+  "--responses-table-divider": "#f0ebe5",
+  "--responses-table-control": "#f5f3f0",
+  "--responses-table-control-border": "#e8e2db",
+  "--responses-table-muted": "#857c74",
 } satisfies Record<string, string> as CSSProperties;
