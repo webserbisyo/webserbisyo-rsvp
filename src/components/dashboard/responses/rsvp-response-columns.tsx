@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, MessageCircle, MoreHorizontal, Users, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   formatResponseSubmittedTable,
   getResponseInitials,
@@ -13,49 +14,21 @@ type GetRsvpResponseColumnsOptions = {
   onOpenResponse: (response: RsvpResponseRecord) => void;
 };
 
-function RsvpChip({
-  icon: Icon,
-  label,
-  variant,
-}: {
-  icon: React.ElementType;
-  label: React.ReactNode;
-  variant: "attending" | "not_attending" | "party" | "message";
-}) {
-  const styles = {
-    attending: {
-      bg: "#e9f5ed",
-      border: "#cce8d6",
-      text: "#1b5e3a",
-    },
-    not_attending: {
-      bg: "#fdf0f0",
-      border: "#fadbdc",
-      text: "#912c2c",
-    },
-    party: {
-      bg: "#f6f4f1",
-      border: "#e8e4de",
-      text: "#524b45",
-    },
-    message: {
-      bg: "#fdf1ec",
-      border: "#faddd2",
-      text: "#a34f32",
-    },
-  }[variant];
+function StatusChip({ status }: { status: "attending" | "not_attending" }) {
+  const isAttending = status === "attending";
+  const Icon = isAttending ? CheckCircle2 : XCircle;
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
-      style={{
-        backgroundColor: styles.bg,
-        borderColor: styles.border,
-        color: styles.text,
-      }}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+        isAttending
+          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+          : "bg-rose-50 text-rose-700 ring-rose-200"
+      )}
     >
-      <Icon className="size-3.5 opacity-80" aria-hidden="true" />
-      {label}
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {isAttending ? "Attending" : "Not attending"}
     </span>
   );
 }
@@ -71,20 +44,13 @@ export function getRsvpResponseColumns({
         const response = row.original;
 
         return (
-          <div className="flex min-w-[280px] items-center gap-3.5">
-            <div
-              className="flex size-12 shrink-0 items-center justify-center rounded-[18px] border text-[15px] font-bold shadow-[0_4px_12px_rgba(62,39,23,0.04)]"
-              style={{
-                backgroundColor: "#fdfbf9",
-                borderColor: "color-mix(in srgb, var(--dash-brand) 12%, var(--dash-border))",
-                color: "var(--dash-brand-active)",
-              }}
-            >
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fbf7f3] text-sm font-bold text-[#c96f4c]">
               {getResponseInitials(response.guestName)}
             </div>
-            <div className="min-w-0 space-y-0.5">
-              <p className="truncate text-base font-bold text-gray-900">{response.guestName}</p>
-              <p className="truncate text-[13px] font-medium text-gray-500">
+            <div>
+              <p className="font-bold text-[#2b2521]">{response.guestName}</p>
+              <p className="text-xs font-medium text-[#8a7c72]">
                 {response.email ?? "No email added"}
               </p>
             </div>
@@ -95,50 +61,38 @@ export function getRsvpResponseColumns({
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const isAttending = row.original.status === "attending";
-        return (
-          <div className="min-w-[120px]">
-            <RsvpChip
-              icon={isAttending ? CheckCircle2 : XCircle}
-              label={isAttending ? "Attending" : "Not attending"}
-              variant={isAttending ? "attending" : "not_attending"}
-            />
-          </div>
-        );
-      },
+      cell: ({ row }) => <StatusChip status={row.original.status as "attending" | "not_attending"} />,
     },
     {
       accessorKey: "partySize",
       header: "Party",
       cell: ({ row }) => (
-        <div className="min-w-[80px]">
-          <RsvpChip icon={Users} label={row.original.partySize} variant="party" />
-        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fbf7f3] px-3 py-1 text-xs font-bold text-[#65584f]">
+          <Users className="h-3.5 w-3.5" aria-hidden="true" />
+          {row.original.partySize}
+        </span>
       ),
     },
     {
       id: "message",
       header: "Message",
-      cell: ({ row }) => (
-        <div className="min-w-[120px]">
-          {row.original.message ? (
-            <RsvpChip icon={MessageCircle} label="Has message" variant="message" />
-          ) : (
-            <span className="text-[13px] text-gray-400">-</span>
-          )}
-        </div>
-      ),
+      cell: ({ row }) =>
+        row.original.message ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#c96f4c]">
+            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+            Has message
+          </span>
+        ) : (
+          <span className="text-[#a89b91]">—</span>
+        ),
     },
     {
       accessorKey: "submittedAt",
       header: "Submitted",
       cell: ({ row }) => (
-        <div className="min-w-[120px]">
-          <span className="text-[13px] font-medium text-gray-500">
-            {formatResponseSubmittedTable(row.original.submittedAt)}
-          </span>
-        </div>
+        <span className="text-sm font-medium text-[#75675e]">
+          {formatResponseSubmittedTable(row.original.submittedAt)}
+        </span>
       ),
     },
     {
@@ -149,15 +103,15 @@ export function getRsvpResponseColumns({
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
-            className="ml-auto rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-900"
+            size="icon"
+            className="ml-auto h-9 w-9 rounded-xl p-0 text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
             aria-label={`Open response details for ${row.original.guestName}`}
             onClick={(event) => {
               event.stopPropagation();
               onOpenResponse(row.original);
             }}
           >
-            <MoreHorizontal className="size-4" aria-hidden="true" />
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       ),

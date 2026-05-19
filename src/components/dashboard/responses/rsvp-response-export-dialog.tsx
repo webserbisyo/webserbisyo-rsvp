@@ -1,11 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useState } from "react";
-import { CheckCircle2, Download, FileSpreadsheet, FileText, XIcon } from "lucide-react";
+import { Check, Download, FileSpreadsheet, FileText, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +24,6 @@ import {
   exportRsvpResponses,
   type RsvpResponsesExportMetadata,
 } from "./rsvp-responses-export";
-import { RESPONSES_PORTAL_THEME_STYLE } from "./rsvp-responses-theme";
 import type {
   RsvpResponseRecord,
   RsvpResponsesExportFormat,
@@ -108,10 +105,7 @@ export function RsvpResponseExportDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent
-          style={RESPONSES_PORTAL_THEME_STYLE}
-          className="max-h-[88vh] rounded-t-[28px] border-[color:var(--responses-border)] bg-[var(--responses-surface)] text-[color:var(--responses-foreground)] shadow-[var(--responses-shadow-lg)]"
-        >
+        <DrawerContent className="max-h-[88vh] rounded-t-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] shadow-2xl">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Download guest list</DrawerTitle>
             <DrawerDescription>Choose an export format and fields.</DrawerDescription>
@@ -125,9 +119,8 @@ export function RsvpResponseExportDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        style={RESPONSES_PORTAL_THEME_STYLE}
         showCloseButton={false}
-        className="max-w-[calc(100%-1rem)] overflow-hidden rounded-[30px] border border-[color:var(--responses-border)] bg-[var(--responses-surface)] p-0 text-[color:var(--responses-foreground)] shadow-[var(--responses-shadow-lg)] ring-0 sm:max-w-2xl"
+        className="max-w-[calc(100%-1rem)] overflow-hidden rounded-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] p-0 shadow-2xl shadow-[#2b2521]/20 ring-0 sm:max-w-xl"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Download guest list</DialogTitle>
@@ -168,204 +161,134 @@ function RsvpResponseExportContent({
 }) {
   const fileName = buildRsvpResponsesExportFilename(metadata, format === "csv" ? "csv" : "pdf");
 
+  const formats = [
+    { id: "csv", label: "CSV", note: "Best for spreadsheets", icon: FileSpreadsheet },
+    { id: "pdf_summary", label: "PDF summary", note: "Best for sharing", icon: FileText },
+  ];
+
+  const scopes = [
+    { id: "current_view", label: "Current view", note: `${currentViewCount} filtered responses` },
+    { id: "all_responses", label: "All responses", note: `${allResponsesCount} total responses` },
+  ];
+
   return (
-    <div className="flex max-h-[88vh] flex-col bg-[var(--responses-surface)] text-[color:var(--responses-foreground)]">
-      <div className="sticky top-0 z-10 border-b border-[color:var(--responses-border)] bg-[var(--responses-surface)] px-4 py-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold tracking-[0.24em] text-[color:var(--responses-heading-muted)] uppercase">
-              Export responses
-            </p>
-            <h2 className="text-xl font-semibold text-[color:var(--responses-foreground)]">
-              Download guest list
-            </h2>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full text-[color:var(--responses-muted)] hover:bg-[var(--responses-surface-muted)] hover:text-[color:var(--responses-foreground)]"
-            aria-label="Close export responses dialog"
-            onClick={onClose}
-          >
-            <XIcon className="size-4" aria-hidden="true" />
-          </Button>
+    <div className="flex max-h-[88vh] flex-col bg-[#fffaf6] text-[#2b2521]">
+      <div className="flex items-start justify-between gap-4 border-b border-[#eadbd0] bg-white/80 p-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a88d7f]">Export responses</p>
+          <h2 className="mt-1 text-xl font-bold tracking-tight text-[#2b2521]">Download guest list</h2>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-xl text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
+          onClick={onClose}
+          aria-label="Close export"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </Button>
       </div>
 
-      <div className="overflow-y-auto px-4 py-4">
-        <div className="space-y-5">
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">
-              Format
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <SelectableCard
-                active={format === "csv"}
-                description="Best for spreadsheets"
-                icon={<FileSpreadsheet className="size-4" aria-hidden="true" />}
-                title="CSV"
-                onClick={() => onFormatChange("csv")}
-              />
-              <SelectableCard
-                active={format === "pdf_summary"}
-                description="Best for sharing"
-                icon={<FileText className="size-4" aria-hidden="true" />}
-                title="PDF summary"
-                onClick={() => onFormatChange("pdf_summary")}
-              />
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">Rows</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <SelectableCard
-                active={rows === "current_view"}
-                description={`${currentViewCount} filtered responses`}
-                title="Current view"
-                onClick={() => onRowsChange("current_view")}
-              />
-              <SelectableCard
-                active={rows === "all_responses"}
-                description={`${allResponsesCount} total responses`}
-                title="All responses"
-                onClick={() => onRowsChange("all_responses")}
-              />
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">
-              File preview
-            </h3>
-            <div
-              className="rounded-[22px] border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
-              style={{
-                borderColor: "var(--responses-border)",
-                backgroundColor: "var(--responses-surface-muted)",
-              }}
-            >
-              <p className="text-xs font-semibold tracking-[0.16em] text-[color:var(--responses-heading-muted)] uppercase">
-                File
-              </p>
-              <p className="mt-1 text-sm font-medium text-[color:var(--responses-foreground)]">
-                {fileName}
-              </p>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-[color:var(--responses-foreground)]">
-              Include
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {EXPORT_INCLUDES.map((item) => (
-                <label
+      <div className="space-y-5 overflow-y-auto p-5">
+        <section>
+          <p className="mb-2 text-sm font-bold text-[#2b2521]">Format</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {formats.map((item) => {
+              const Icon = item.icon;
+              const active = format === item.id;
+              return (
+                <button
                   key={item.id}
+                  type="button"
+                  onClick={() => onFormatChange(item.id as RsvpResponsesExportFormat)}
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-[22px] border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition-colors",
-                    includes[item.id] && "shadow-[var(--responses-shadow-sm)]",
+                    "flex items-center gap-3 rounded-2xl border p-3 text-left transition",
+                    active ? "border-[#d9896c] bg-[#fff0e8]" : "border-[#eadbd0] bg-white hover:bg-[#fff8f3]"
                   )}
-                  style={{
-                    borderColor: includes[item.id]
-                      ? "color-mix(in srgb, var(--responses-brand) 42%, var(--responses-border))"
-                      : "var(--responses-border)",
-                    backgroundColor: "var(--responses-surface)",
-                  }}
                 >
-                  <Checkbox
-                    className="border-[color:var(--responses-border)] bg-[var(--responses-surface)] data-checked:border-[color:var(--responses-brand)] data-checked:bg-[color:var(--responses-brand)] data-checked:text-white"
-                    checked={includes[item.id]}
-                    onCheckedChange={(checked) => onIncludeToggle(item.id, checked === true)}
-                    aria-label={`Include ${item.label}`}
-                  />
-                  <span className="text-sm font-medium text-[color:var(--responses-foreground)]">
-                    {item.label}
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-[#c96f4c] shadow-sm">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
                   </span>
-                </label>
-              ))}
-            </div>
-          </section>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-bold text-[#2b2521]">{item.label}</span>
+                    <span className="block text-xs font-medium text-[#8a7c72]">{item.note}</span>
+                  </span>
+                  {active && <Check className="h-4 w-4 text-[#c96f4c]" aria-hidden="true" />}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-2 text-sm font-bold text-[#2b2521]">Rows</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {scopes.map((item) => {
+              const active = rows === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onRowsChange(item.id as RsvpResponsesExportRows)}
+                  className={cn(
+                    "rounded-2xl border p-3 text-left transition",
+                    active ? "border-[#d9896c] bg-[#fff0e8]" : "border-[#eadbd0] bg-white hover:bg-[#fff8f3]"
+                  )}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span>
+                      <span className="block font-bold text-[#2b2521]">{item.label}</span>
+                      <span className="block text-xs font-medium text-[#8a7c72]">{item.note}</span>
+                    </span>
+                    {active && <Check className="h-4 w-4 text-[#c96f4c]" aria-hidden="true" />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-2 text-sm font-bold text-[#2b2521]">Include</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {EXPORT_INCLUDES.map((item) => (
+              <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#eadbd0] bg-white px-3 py-2.5 hover:bg-[#fff8f3]">
+                <input
+                  type="checkbox"
+                  checked={includes[item.id]}
+                  onChange={(event) => onIncludeToggle(item.id, event.target.checked)}
+                  className="h-4 w-4 accent-[#c96f4c]"
+                />
+                <span className="text-sm font-semibold text-[#3b342f]">{item.label}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <div className="rounded-2xl border border-[#eadbd0] bg-white px-4 py-3 text-sm text-[#65584f]">
+          <span className="font-semibold text-[#2b2521]">File:</span> {fileName}
         </div>
       </div>
 
-      <div className="border-t border-[color:var(--responses-border)] bg-[var(--responses-surface-muted)] px-4 py-3.5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-[color:var(--responses-border)] bg-[var(--responses-surface)] text-[color:var(--responses-foreground)] hover:bg-[var(--responses-surface)]"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            className="border border-transparent bg-[color:var(--responses-brand)] text-white shadow-[var(--responses-shadow-sm)] hover:bg-[color:var(--responses-brand-hover,var(--responses-brand-active))]"
-            onClick={onExport}
-          >
-            <Download className="size-4" aria-hidden="true" />
-            Export {exportCount} response{exportCount === 1 ? "" : "s"}
-          </Button>
-        </div>
+      <div className="flex flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 sm:flex-row sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#e7d7ca] bg-white px-4 text-sm font-semibold text-[#3b342f] hover:bg-[#fff8f3]"
+          onClick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#c96f4c] px-4 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143]"
+          onClick={onExport}
+        >
+          <Download className="h-4 w-4" aria-hidden="true" />
+          Export {exportCount} response{exportCount === 1 ? "" : "s"}
+        </Button>
       </div>
     </div>
-  );
-}
-
-function SelectableCard({
-  active,
-  description,
-  icon,
-  onClick,
-  title,
-}: {
-  active: boolean;
-  description: string;
-  icon?: ReactNode;
-  onClick: () => void;
-  title: string;
-}) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "cursor-pointer rounded-[24px] border px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition-colors",
-        active && "shadow-sm",
-      )}
-      style={{
-        borderColor: active ? "var(--responses-brand)" : "var(--responses-border)",
-        backgroundColor: active ? "var(--responses-brand-subtle)" : "var(--responses-surface)",
-      }}
-      onClick={onClick}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          {icon ? (
-            <span
-              className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-[18px] border text-[color:var(--responses-brand-active)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_10px_20px_rgba(62,39,23,0.05)]"
-              style={{
-                borderColor: "color-mix(in srgb, var(--responses-border) 78%, white)",
-                backgroundColor: "var(--responses-surface)",
-              }}
-            >
-              {icon}
-            </span>
-          ) : null}
-          <div>
-            <p className="font-semibold text-[color:var(--responses-foreground)]">{title}</p>
-            <p className="mt-1 text-sm leading-6 text-[color:var(--responses-muted)]">
-              {description}
-            </p>
-          </div>
-        </div>
-        {active ? (
-          <span className="shrink-0 text-[color:var(--responses-brand)]">
-            <CheckCircle2 className="size-5" aria-hidden="true" />
-          </span>
-        ) : null}
-      </div>
-    </button>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-
 import {
   CheckCircle2,
   ExternalLink,
@@ -11,10 +10,9 @@ import {
   Users,
   Utensils,
   XCircle,
-  XIcon,
+  X,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,20 +28,38 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   formatResponseSubmittedAt,
   getResponseInitials,
   getResponseSourceLabel,
   type RsvpResponseRecord,
 } from "./rsvp-responses-types";
-import { RESPONSES_PORTAL_THEME_STYLE } from "./rsvp-responses-theme";
 
 type RsvpResponseDetailDialogProps = {
   onOpenChange: (open: boolean) => void;
   open: boolean;
   response: RsvpResponseRecord | null;
 };
+
+function StatusChip({ status }: { status: "attending" | "not_attending" }) {
+  const isAttending = status === "attending";
+  const Icon = isAttending ? CheckCircle2 : XCircle;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+        isAttending
+          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+          : "bg-rose-50 text-rose-700 ring-rose-200"
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {isAttending ? "Attending" : "Not attending"}
+    </span>
+  );
+}
 
 export function RsvpResponseDetailDialog({
   onOpenChange,
@@ -61,10 +77,7 @@ export function RsvpResponseDetailDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent
-          style={RESPONSES_PORTAL_THEME_STYLE}
-          className="max-h-[88vh] rounded-t-[28px] border-[color:var(--responses-border)] bg-[var(--responses-surface)] text-[color:var(--responses-foreground)] shadow-[var(--responses-shadow-lg)]"
-        >
+        <DrawerContent className="max-h-[88vh] rounded-t-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] shadow-2xl">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Guest response</DrawerTitle>
             <DrawerDescription>Response details for {response.guestName}</DrawerDescription>
@@ -78,9 +91,8 @@ export function RsvpResponseDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        style={RESPONSES_PORTAL_THEME_STYLE}
         showCloseButton={false}
-        className="max-w-[calc(100%-1rem)] overflow-hidden rounded-[30px] border border-[color:var(--responses-border)] bg-[var(--responses-surface)] p-0 text-[color:var(--responses-foreground)] shadow-[var(--responses-shadow-lg)] ring-0 sm:max-w-3xl"
+        className="max-h-[92vh] max-w-[calc(100%-1rem)] overflow-hidden rounded-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] p-0 shadow-2xl shadow-[#2b2521]/20 ring-0 sm:max-w-3xl"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Guest response</DialogTitle>
@@ -92,6 +104,20 @@ export function RsvpResponseDetailDialog({
   );
 }
 
+function ModalInfo({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#efe3da] bg-[#fffdfb] px-3 py-3">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#fff0e8] text-[#c96f4c]">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#a88d7f]">{label}</p>
+        <p className="truncate text-sm font-semibold text-[#3b342f]">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 function RsvpResponseDetailContent({
   onClose,
   response,
@@ -99,251 +125,114 @@ function RsvpResponseDetailContent({
   onClose: () => void;
   response: RsvpResponseRecord;
 }) {
-  const isAttending = response.status === "attending";
+  const hasCompanions = response.companions.length > 0;
+  const hasDietaryNote = Boolean(response.dietaryNotes && response.dietaryNotes.trim());
+  const hasMessage = Boolean(response.message && response.message.trim());
 
   return (
-    <div className="flex max-h-[88vh] flex-col bg-[var(--responses-surface)] text-[color:var(--responses-foreground)]">
-      <div className="sticky top-0 z-10 border-b border-[color:var(--responses-border)] bg-[var(--responses-surface)] px-4 py-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-4">
-            <div
-              className="flex size-14 shrink-0 items-center justify-center rounded-[22px] text-lg font-semibold"
-              style={{
-                backgroundColor: "var(--responses-brand-subtle)",
-                color: "var(--responses-brand-active)",
-              }}
-            >
-              {getResponseInitials(response.guestName)}
-            </div>
-            <div className="min-w-0 space-y-1">
-              <p className="text-[11px] font-semibold tracking-[0.24em] text-[color:var(--responses-heading-muted)] uppercase">
-                Guest response
-              </p>
-              <h2 className="text-xl font-semibold text-[color:var(--responses-foreground)]">
-                {response.guestName}
-              </h2>
-            </div>
+    <div className="flex flex-col">
+      <div className="flex items-start justify-between gap-4 border-b border-[#eadbd0] bg-white/80 p-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#fff0e8] text-sm font-bold text-[#c96f4c] ring-1 ring-[#f0d7ca]">
+            {getResponseInitials(response.guestName)}
           </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a88d7f]">Guest response</p>
+            <h2 className="mt-1 truncate text-xl font-bold tracking-tight text-[#2b2521]">{response.guestName}</h2>
+          </div>
+        </div>
 
-          <div className="flex shrink-0 items-start gap-3">
-            <div className="space-y-2 text-right">
-              <Badge
-                variant="outline"
-                className="rounded-full border px-2.5 py-1 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
-                style={{
-                  borderColor: isAttending
-                    ? "var(--responses-success)"
-                    : "var(--responses-destructive)",
-                  backgroundColor: isAttending
-                    ? "var(--responses-success-subtle)"
-                    : "var(--responses-destructive-subtle)",
-                  color: isAttending
-                    ? "var(--responses-success)"
-                    : "var(--responses-destructive)",
-                }}
-              >
-                {isAttending ? (
-                  <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <XCircle className="size-3.5" aria-hidden="true" />
-                )}
-                {isAttending ? "Attending" : "Not attending"}
-              </Badge>
-              <p className="text-xs text-[color:var(--responses-muted)]">
-                {formatResponseSubmittedAt(response.submittedAt)}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="shrink-0 rounded-full text-[color:var(--responses-muted)] hover:bg-[var(--responses-surface-muted)] hover:text-[color:var(--responses-foreground)]"
-              aria-label="Close guest response details"
-              onClick={onClose}
-            >
-              <XIcon className="size-4" aria-hidden="true" />
-            </Button>
+        <div className="flex shrink-0 items-start gap-3">
+          <div className="hidden text-right sm:block">
+            <StatusChip status={response.status as "attending" | "not_attending"} />
+            <p className="mt-2 text-xs font-medium text-[#8a7c72]">
+              {formatResponseSubmittedAt(response.submittedAt)}
+            </p>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xl text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
+            aria-label="Close details"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
-      <div className="overflow-y-auto px-4 py-4">
+      <div className="max-h-[calc(92vh-96px)] overflow-y-auto p-5">
+        <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
+          <StatusChip status={response.status as "attending" | "not_attending"} />
+          <p className="text-xs font-medium text-[#8a7c72]">
+            {formatResponseSubmittedAt(response.submittedAt)}
+          </p>
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
-          <DetailStat
+          <ModalInfo
+            icon={Users}
             label="Party"
-            value={`${response.partySize} ${response.partySize === 1 ? "guest" : "guests"}`}
-            icon={<Users className="size-4" aria-hidden="true" />}
+            value={`${response.partySize} guest${response.partySize > 1 ? "s" : ""}`}
           />
-          <DetailStat
+          <ModalInfo
+            icon={ExternalLink}
             label="Source"
             value={getResponseSourceLabel(response.source)}
-            icon={<ExternalLink className="size-4" aria-hidden="true" />}
           />
-          <DetailStat
+          <ModalInfo
+            icon={Mail}
             label="Email"
-            value={response.email ?? "No email added."}
-            icon={<Mail className="size-4" aria-hidden="true" />}
+            value={response.email ?? "No email"}
           />
-          <DetailStat
+          <ModalInfo
+            icon={Phone}
             label="Phone"
-            value={response.phone ?? "No phone added."}
-            icon={<Phone className="size-4" aria-hidden="true" />}
+            value={response.phone ?? "No phone"}
           />
         </div>
 
-        <Separator className="my-4 bg-[color:var(--responses-divider)]" />
-
-        <div className="space-y-4">
-          <section
-            className="rounded-[24px] border px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-            style={{
-              borderColor: "color-mix(in srgb, var(--responses-border) 86%, white)",
-              backgroundColor: "color-mix(in srgb, var(--responses-surface) 96%, white)",
-            }}
-          >
-            <div className="mb-3 flex items-center gap-3">
-              <span
-                className="flex size-9 items-center justify-center rounded-[18px] text-[color:var(--responses-brand-active)]"
-                style={{ backgroundColor: "var(--responses-brand-subtle)" }}
-              >
-                <Users className="size-4" aria-hidden="true" />
-              </span>
-              <span className="text-xs font-semibold tracking-[0.16em] text-[color:var(--responses-heading-muted)] uppercase">
-                Companions
-              </span>
+        <div className="mt-5 grid gap-4">
+          <section className="rounded-2xl border border-[#eadbd0] bg-white/70 p-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#2b2521]">
+              <Users className="h-4 w-4 text-[#c96f4c]" aria-hidden="true" />
+              Companions
             </div>
-            {response.companions.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {response.companions.map((companion) => (
-                  <span
-                    key={companion}
-                    className="inline-flex items-center rounded-full border px-3 py-1 text-sm"
-                    style={{
-                      borderColor: "var(--responses-border)",
-                      backgroundColor: "var(--responses-surface)",
-                      color: "var(--responses-foreground)",
-                    }}
-                  >
-                    {companion}
+            {hasCompanions ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {response.companions.map((name) => (
+                  <span key={name} className="rounded-full border border-[#eadbd0] bg-[#fffaf6] px-3 py-1.5 text-xs font-semibold text-[#65584f]">
+                    {name}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm leading-6 text-[color:var(--responses-muted)]">No companions added.</p>
+              <p className="mt-2 text-sm text-[#8a7c72]">No companions added.</p>
             )}
           </section>
 
-          <section>
-            <DetailMessageCard
-              icon={<Utensils className="size-4" aria-hidden="true" />}
-              title="Dietary notes"
-            >
-              {response.dietaryNotes ?? "No dietary notes."}
-            </DetailMessageCard>
-          </section>
-
-          <section>
-            <div
-              className="rounded-[24px] border px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-              style={{
-                borderColor: "color-mix(in srgb, var(--responses-brand) 24%, var(--responses-border))",
-                backgroundColor: "var(--responses-brand-subtle)",
-                color: "var(--responses-foreground)",
-              }}
-            >
-              <div className="mb-2.5 flex items-center gap-3 text-[color:var(--responses-brand-active)]">
-                <span
-                  className="flex size-9 items-center justify-center rounded-[18px]"
-                  style={{ backgroundColor: "rgba(255,255,255,0.5)" }}
-                >
-                  <MessageCircle className="size-4" aria-hidden="true" />
-                </span>
-                <span className="text-xs font-semibold tracking-[0.16em] uppercase">Message</span>
-              </div>
-              <p className="text-sm leading-6">{response.message ?? "No message added."}</p>
+          <section className="rounded-2xl border border-[#eadbd0] bg-white/70 p-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#2b2521]">
+              <Utensils className="h-4 w-4 text-[#c96f4c]" aria-hidden="true" />
+              Dietary notes
             </div>
+            <p className="mt-3 text-sm leading-6 text-[#65584f]">
+              {hasDietaryNote ? response.dietaryNotes : "No dietary notes."}
+            </p>
+          </section>
+
+          <section className="rounded-2xl border border-[#efcfbd] bg-[#fff6ef] p-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#2b2521]">
+              <MessageCircle className="h-4 w-4 text-[#c96f4c]" aria-hidden="true" />
+              Message
+            </div>
+            <blockquote className="mt-3 text-sm leading-6 text-[#65584f]">
+              {hasMessage ? `“${response.message}”` : "No message added."}
+            </blockquote>
           </section>
         </div>
       </div>
-    </div>
-  );
-}
-
-function DetailStat({
-  icon,
-  label,
-  value,
-}: {
-  icon?: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div
-      className="rounded-[24px] border px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-      style={{
-        borderColor: "color-mix(in srgb, var(--responses-border) 86%, white)",
-        backgroundColor: "color-mix(in srgb, var(--responses-surface) 96%, white)",
-      }}
-    >
-      <div className="flex items-start gap-3">
-        {icon ? (
-          <span
-            className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[18px] text-[color:var(--responses-brand-active)]"
-            style={{ backgroundColor: "var(--responses-brand-subtle)" }}
-          >
-            {icon}
-          </span>
-        ) : null}
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold tracking-[0.16em] text-[color:var(--responses-heading-muted)] uppercase">
-            {label}
-          </p>
-          <p className="mt-1 min-w-0 break-words text-sm font-medium leading-5 text-[color:var(--responses-foreground)]">
-            {value}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailMessageCard({
-  children,
-  icon,
-  title,
-}: {
-  children: ReactNode;
-  icon?: ReactNode;
-  title?: string;
-}) {
-  return (
-    <div
-      className="rounded-[24px] border px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-      style={{
-        borderColor: "color-mix(in srgb, var(--responses-border) 86%, white)",
-        backgroundColor: "color-mix(in srgb, var(--responses-surface) 96%, white)",
-        color: "var(--responses-foreground)",
-      }}
-    >
-      {icon ? (
-        <div className="mb-2.5 flex items-start gap-3 text-[color:var(--responses-brand-active)]">
-          <span
-            className="mt-0.5 flex size-9 items-center justify-center rounded-[18px]"
-            style={{ backgroundColor: "var(--responses-brand-subtle)" }}
-          >
-            {icon}
-          </span>
-          <div className="min-w-0">
-            {title ? (
-              <span className="text-[11px] font-semibold tracking-[0.16em] text-[color:var(--responses-heading-muted)] uppercase">
-                {title}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-      <p className="text-sm leading-6">{children}</p>
     </div>
   );
 }

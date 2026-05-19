@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Mail, Users, XCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type RsvpResponsesStatsProps = {
   attendingCount: number;
@@ -21,63 +21,55 @@ export function RsvpResponsesStats({
       label: "Total responses",
       value: totalResponses,
       icon: Mail,
-      accent: "var(--dash-brand-subtle)",
-      color: "var(--dash-brand-active)",
+      tone: "terracotta" as const,
     },
     {
       label: "Attending",
       value: attendingCount,
       icon: CheckCircle2,
-      accent: "var(--dash-success-subtle)",
-      color: "var(--dash-success)",
+      tone: "green" as const,
     },
     {
       label: "Not attending",
       value: notAttendingCount,
       icon: XCircle,
-      accent: "var(--dash-destructive-subtle)",
-      color: "var(--dash-destructive)",
+      tone: "red" as const,
     },
     {
       label: "Total party size",
       value: totalPartySize,
       icon: Users,
-      accent: "var(--dash-surface-muted)",
-      color: "var(--dash-brand)",
+      tone: "neutral" as const,
     },
   ];
 
+  const tones = {
+    neutral: "bg-[#fbf7f3] text-[#7b6255]",
+    green: "bg-emerald-50 text-emerald-700",
+    red: "bg-rose-50 text-rose-700",
+    terracotta: "bg-[#fff0e8] text-[#c96f4c]",
+  };
+
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
 
         return (
-          <Card
+          <div
             key={stat.label}
-            className="rsvp-panel min-h-[116px] rounded-[28px] border-[color:var(--dash-border)] bg-[color:var(--dash-surface)] py-0 shadow-[var(--dash-shadow-sm)]"
+            className="rounded-[1.6rem] border border-[#eadbd0] bg-white/80 p-4 shadow-sm shadow-[#8a4b2e]/5"
           >
-            <CardContent className="flex h-full items-start justify-between gap-3 px-4 py-3.5">
-              <div className="flex flex-1 flex-col gap-2.5">
-                <p className="text-[1.8rem] font-semibold tracking-tight text-[--dash-foreground]">
-                  {stat.value}
-                </p>
-                <p className="text-sm font-medium leading-5" style={{ color: "var(--dash-muted)" }}>
-                  {stat.label}
-                </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-2xl font-bold tracking-tight text-[#2b2521]">{stat.value}</p>
+                <p className="mt-1 text-sm font-medium text-[#8a7c72]">{stat.label}</p>
               </div>
-              <div
-                className="flex size-11 shrink-0 items-center justify-center rounded-[18px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
-                style={{
-                  backgroundColor: stat.accent,
-                  borderColor: "color-mix(in srgb, var(--dash-border) 78%, white)",
-                  color: stat.color,
-                }}
-              >
-                <Icon className="size-5" aria-hidden="true" />
+              <div className={cn("grid h-10 w-10 place-items-center rounded-2xl", tones[stat.tone])}>
+                <Icon className="h-5 w-5" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
     </section>
