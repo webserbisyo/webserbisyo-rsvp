@@ -79,8 +79,6 @@ type NotesColumn = {
   render: (row: RsvpResponseRecord) => string;
 };
 
-type StatCardIcon = "responses" | "attending" | "not_attending" | "party_size";
-
 export function getExportRows({ allResponses, currentViewResponses, rows }: ExportRowsInput) {
   return rows === "current_view" ? currentViewResponses : allResponses;
 }
@@ -254,18 +252,17 @@ async function downloadLandscapePdf(
   });
 
   const stats = buildExportStats(rows);
-  const statCards: Array<{ icon: StatCardIcon; label: string; value: number }> = [
-    { icon: "responses", label: "Total responses", value: stats.totalResponses },
-    { icon: "attending", label: "Attending", value: stats.attendingCount },
-    { icon: "not_attending", label: "Not attending", value: stats.notAttendingCount },
-    { icon: "party_size", label: "Total party size", value: stats.totalPartySize },
+  const statCards: Array<{ label: string; value: number }> = [
+    { label: "Total responses", value: stats.totalResponses },
+    { label: "Attending", value: stats.attendingCount },
+    { label: "Not attending", value: stats.notAttendingCount },
+    { label: "Total party size", value: stats.totalPartySize },
   ];
 
   statCards.forEach((card, index) => {
     const x = marginX + index * (statWidth + statsGap);
     drawStatCard(doc, {
       height: statsHeight,
-      icon: card.icon,
       label: card.label,
       value: card.value,
       width: statWidth,
@@ -274,7 +271,7 @@ async function downloadLandscapePdf(
     });
   });
 
-  const columns = buildLandscapeColumns(includes);
+  const columns = buildLandscapeColumns(contentWidth, includes);
   const body = rows.map((row) => columns.map((column) => column.render(row))) satisfies RowInput[];
 
   autoTable(doc, {
@@ -331,7 +328,7 @@ async function downloadLandscapePdf(
     },
   });
 
-  const notesColumns = buildNotesColumns(includes);
+  const notesColumns = buildNotesColumns(contentWidth, includes);
 
   if (notesColumns.length > 0) {
     doc.addPage("a4", "landscape");
@@ -438,7 +435,6 @@ function drawStatCard(
   doc: jsPDF,
   {
     height,
-    icon,
     label,
     value,
     width,
@@ -446,7 +442,6 @@ function drawStatCard(
     y,
   }: {
     height: number;
-    icon: StatCardIcon;
     label: string;
     value: number;
     width: number;
@@ -468,73 +463,160 @@ function drawStatCard(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(label, x + 14, y + 42);
-
-  drawStatCardIcon(doc, {
-    icon,
-    x: x + width - 52,
-    y: y + 10,
-  });
 }
 
-function buildLandscapeColumns(includes: ExportIncludeState): LandscapeColumn[] {
-  const columns: LandscapeColumn[] = [
+function buildLandscapeColumns(
+  contentWidth: number,
+  includes: ExportIncludeState,
+): LandscapeColumn[] {
+  if (includes.contact_details && includes.companions) {
+    return [
+      {
+        header: "Guest",
+        key: "guest",
+        width: contentWidth * 0.16,
+        render: (row) => row.guestName,
+      },
+      {
+        header: "Contact",
+        key: "contact",
+        width: contentWidth * 0.24,
+        render: (row) => [row.email, row.phone].filter(Boolean).join("\n") || "—",
+      },
+      {
+        header: "Status",
+        key: "status",
+        width: contentWidth * 0.11,
+        render: (row) => getResponseStatusLabel(row.status),
+      },
+      {
+        header: "Party",
+        key: "party",
+        width: contentWidth * 0.07,
+        render: (row) => String(row.partySize),
+      },
+      {
+        header: "Companions",
+        key: "companions",
+        width: contentWidth * 0.27,
+        render: (row) => (row.companions.length ? row.companions.join(", ") : "—"),
+      },
+      {
+        header: "Submitted",
+        key: "submitted",
+        width: contentWidth * 0.15,
+        render: (row) => formatResponseSubmittedTable(row.submittedAt),
+      },
+    ];
+  }
+
+  if (includes.contact_details) {
+    return [
+      {
+        header: "Guest",
+        key: "guest",
+        width: contentWidth * 0.2,
+        render: (row) => row.guestName,
+      },
+      {
+        header: "Contact",
+        key: "contact",
+        width: contentWidth * 0.32,
+        render: (row) => [row.email, row.phone].filter(Boolean).join("\n") || "—",
+      },
+      {
+        header: "Status",
+        key: "status",
+        width: contentWidth * 0.14,
+        render: (row) => getResponseStatusLabel(row.status),
+      },
+      {
+        header: "Party",
+        key: "party",
+        width: contentWidth * 0.08,
+        render: (row) => String(row.partySize),
+      },
+      {
+        header: "Submitted",
+        key: "submitted",
+        width: contentWidth * 0.26,
+        render: (row) => formatResponseSubmittedTable(row.submittedAt),
+      },
+    ];
+  }
+
+  if (includes.companions) {
+    return [
+      {
+        header: "Guest",
+        key: "guest",
+        width: contentWidth * 0.22,
+        render: (row) => row.guestName,
+      },
+      {
+        header: "Status",
+        key: "status",
+        width: contentWidth * 0.14,
+        render: (row) => getResponseStatusLabel(row.status),
+      },
+      {
+        header: "Party",
+        key: "party",
+        width: contentWidth * 0.08,
+        render: (row) => String(row.partySize),
+      },
+      {
+        header: "Companions",
+        key: "companions",
+        width: contentWidth * 0.38,
+        render: (row) => (row.companions.length ? row.companions.join(", ") : "—"),
+      },
+      {
+        header: "Submitted",
+        key: "submitted",
+        width: contentWidth * 0.18,
+        render: (row) => formatResponseSubmittedTable(row.submittedAt),
+      },
+    ];
+  }
+
+  return [
     {
       header: "Guest",
       key: "guest",
-      width: includes.contact_details ? 104 : 156,
+      width: contentWidth * 0.31,
       render: (row) => row.guestName,
     },
-  ];
-
-  if (includes.contact_details) {
-    columns.push({
-      header: "Contact",
-      key: "contact",
-      width: includes.companions ? 156 : 184,
-      render: (row) => [row.email, row.phone].filter(Boolean).join("\n") || "—",
-    });
-  }
-
-  columns.push(
     {
       header: "Status",
       key: "status",
-      width: 70,
+      width: contentWidth * 0.18,
       render: (row) => getResponseStatusLabel(row.status),
     },
     {
       header: "Party",
       key: "party",
-      width: 46,
+      width: contentWidth * 0.1,
       render: (row) => String(row.partySize),
     },
-  );
-
-  if (includes.companions) {
-    columns.push({
-      header: "Companions",
-      key: "companions",
-      width: includes.contact_details ? 176 : 250,
-      render: (row) => (row.companions.length ? row.companions.join(", ") : "—"),
-    });
-  }
-
-  columns.push({
-    header: "Submitted",
-    key: "submitted",
-    width: includes.contact_details ? 122 : 138,
-    render: (row) => formatResponseSubmittedTable(row.submittedAt),
-  });
-
-  return columns;
+    {
+      header: "Submitted",
+      key: "submitted",
+      width: contentWidth * 0.41,
+      render: (row) => formatResponseSubmittedTable(row.submittedAt),
+    },
+  ];
 }
 
-function buildNotesColumns(includes: ExportIncludeState): NotesColumn[] {
+function buildNotesColumns(contentWidth: number, includes: ExportIncludeState): NotesColumn[] {
   const columns: NotesColumn[] = [
     {
       header: "Guest",
       key: "guest",
-      width: includes.dietary_notes && includes.messages ? 128 : 170,
+      width:
+        includes.dietary_notes && includes.messages
+          ? contentWidth * 0.2
+          : contentWidth * 0.3,
       render: (row) => row.guestName,
     },
   ];
@@ -543,7 +625,7 @@ function buildNotesColumns(includes: ExportIncludeState): NotesColumn[] {
     columns.push({
       header: "Dietary Notes",
       key: "dietary",
-      width: includes.messages ? 270 : 560,
+      width: includes.messages ? contentWidth * 0.3 : contentWidth * 0.7,
       render: (row) => row.dietaryNotes?.trim() || "—",
     });
   }
@@ -552,7 +634,7 @@ function buildNotesColumns(includes: ExportIncludeState): NotesColumn[] {
     columns.push({
       header: "Message",
       key: "message",
-      width: includes.dietary_notes ? 334 : 560,
+      width: includes.dietary_notes ? contentWidth * 0.5 : contentWidth * 0.7,
       render: (row) => row.message?.trim() || "—",
     });
   }
@@ -567,70 +649,4 @@ function buildExportStats(rows: RsvpResponseRecord[]) {
     notAttendingCount: rows.filter((row) => row.status === "not_attending").length,
     totalPartySize: rows.reduce((sum, row) => sum + row.partySize, 0),
   };
-}
-
-function drawStatCardIcon(
-  doc: jsPDF,
-  {
-    icon,
-    x,
-    y,
-  }: {
-    icon: StatCardIcon;
-    x: number;
-    y: number;
-  },
-) {
-  doc.setDrawColor(...LANDSCAPE_COLORS.borderStrong);
-  doc.setTextColor(...LANDSCAPE_COLORS.brandStrong);
-  doc.setLineWidth(1.6);
-
-  switch (icon) {
-    case "responses":
-      drawResponsesIcon(doc, x, y);
-      return;
-    case "attending":
-      drawAttendingIcon(doc, x, y);
-      return;
-    case "not_attending":
-      drawNotAttendingIcon(doc, x, y);
-      return;
-    case "party_size":
-      drawPartySizeIcon(doc, x, y);
-      return;
-  }
-}
-
-function drawResponsesIcon(doc: jsPDF, x: number, y: number) {
-  doc.roundedRect(x, y, 26, 34, 5, 5);
-  doc.line(x + 18, y, x + 26, y + 8);
-  doc.line(x + 17, y + 1, x + 17, y + 9);
-  doc.line(x + 4, y + 13, x + 19, y + 13);
-  doc.line(x + 4, y + 19, x + 22, y + 19);
-  doc.line(x + 4, y + 25, x + 16, y + 25);
-}
-
-function drawAttendingIcon(doc: jsPDF, x: number, y: number) {
-  doc.circle(x + 15, y + 18, 13);
-  doc.line(x + 8, y + 18, x + 13, y + 23);
-  doc.line(x + 13, y + 23, x + 23, y + 12);
-}
-
-function drawNotAttendingIcon(doc: jsPDF, x: number, y: number) {
-  doc.circle(x + 15, y + 18, 13);
-  doc.line(x + 9, y + 12, x + 21, y + 24);
-  doc.line(x + 21, y + 12, x + 9, y + 24);
-}
-
-function drawPartySizeIcon(doc: jsPDF, x: number, y: number) {
-  doc.circle(x + 10, y + 12, 5);
-  doc.circle(x + 21, y + 14, 4);
-  doc.line(x + 4, y + 29, x + 7, y + 21);
-  doc.line(x + 7, y + 21, x + 13, y + 21);
-  doc.line(x + 13, y + 21, x + 16, y + 29);
-  doc.line(x + 16, y + 29, x + 4, y + 29);
-  doc.line(x + 17, y + 29, x + 19, y + 23);
-  doc.line(x + 19, y + 23, x + 24, y + 23);
-  doc.line(x + 24, y + 23, x + 26, y + 29);
-  doc.line(x + 26, y + 29, x + 17, y + 29);
 }
