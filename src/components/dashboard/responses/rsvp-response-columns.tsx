@@ -25,19 +25,23 @@ export function getRsvpResponseColumns({
         const response = row.original;
 
         return (
-          <div className="flex min-w-[220px] items-center gap-3">
+          <div className="flex min-w-[230px] items-center gap-3.5">
             <div
-              className="flex size-10 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold"
+              className="flex size-11 shrink-0 items-center justify-center rounded-[18px] text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.58)]"
               style={{
-                backgroundColor: "var(--dash-brand-subtle)",
-                color: "var(--dash-brand-active)",
+                backgroundColor: "var(--responses-brand-subtle)",
+                color: "var(--responses-brand-active)",
               }}
             >
               {getResponseInitials(response.guestName)}
             </div>
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-[--dash-foreground]">{response.guestName}</p>
-              <p className="truncate text-sm text-[--dash-muted]">{response.email ?? "No email added"}</p>
+            <div className="min-w-0 space-y-1">
+              <p className="truncate text-[15px] font-semibold text-[var(--responses-foreground)]">
+                {response.guestName}
+              </p>
+              <p className="truncate text-sm text-[var(--responses-muted)]">
+                {response.email ?? "No email added"}
+              </p>
             </div>
           </div>
         );
@@ -52,13 +56,13 @@ export function getRsvpResponseColumns({
         return (
           <Badge
             variant="outline"
-            className="rounded-full border px-2.5 py-1 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+            className="rounded-full border px-3 py-1.5 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
             style={{
-              borderColor: isAttending ? "var(--dash-success)" : "var(--dash-destructive)",
+              borderColor: isAttending ? "var(--responses-success)" : "var(--responses-destructive)",
               backgroundColor: isAttending
-                ? "var(--dash-success-subtle)"
-                : "var(--dash-destructive-subtle)",
-              color: isAttending ? "var(--dash-success)" : "var(--dash-destructive)",
+                ? "var(--responses-success-subtle)"
+                : "var(--responses-destructive-subtle)",
+              color: isAttending ? "var(--responses-success)" : "var(--responses-destructive)",
             }}
           >
             {isAttending ? (
@@ -76,11 +80,11 @@ export function getRsvpResponseColumns({
       header: "Party",
       cell: ({ row }) => (
         <span
-          className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
           style={{
-            borderColor: "var(--dash-border)",
-            backgroundColor: "var(--dash-surface-muted)",
-            color: "var(--dash-foreground)",
+            borderColor: "var(--responses-border)",
+            backgroundColor: "var(--responses-surface-muted)",
+            color: "var(--responses-foreground)",
           }}
         >
           <Users className="size-3.5" aria-hidden="true" />
@@ -95,25 +99,25 @@ export function getRsvpResponseColumns({
         row.original.message ? (
           <Badge
             variant="outline"
-            className="rounded-full border px-2.5 py-1 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+            className="rounded-full border px-3 py-1.5 text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
             style={{
-              borderColor: "color-mix(in srgb, var(--dash-brand) 48%, white)",
-              backgroundColor: "var(--dash-brand-subtle)",
-              color: "var(--dash-brand-active)",
+              borderColor: "color-mix(in srgb, var(--responses-brand) 34%, white)",
+              backgroundColor: "var(--responses-brand-subtle)",
+              color: "var(--responses-brand-active)",
             }}
           >
             <MessageCircle className="size-3.5" aria-hidden="true" />
             Has message
           </Badge>
         ) : (
-          <span className="text-sm text-[--dash-subtle]">-</span>
+          <span className="text-sm text-[var(--responses-subtle)]">-</span>
         ),
     },
     {
       accessorKey: "submittedAt",
       header: "Submitted",
       cell: ({ row }) => (
-        <span className="text-sm text-[--dash-muted]">
+        <span className="text-sm text-[var(--responses-muted)]">
           {formatResponseSubmittedTable(row.original.submittedAt)}
         </span>
       ),
@@ -126,7 +130,7 @@ export function getRsvpResponseColumns({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="rounded-full text-[--dash-muted] hover:bg-[color:var(--dash-surface-muted)] hover:text-[--dash-foreground]"
+          className="rounded-full text-[var(--responses-muted)] hover:bg-[color:var(--responses-surface-muted)] hover:text-[var(--responses-foreground)]"
           aria-label={`Open response details for ${row.original.guestName}`}
           onClick={(event) => {
             event.stopPropagation();
