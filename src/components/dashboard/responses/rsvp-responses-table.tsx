@@ -13,6 +13,13 @@ import { ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal, Chevron
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -144,19 +151,27 @@ export function RsvpResponsesTable({
             />
           </div>
 
-          <div className="relative sm:w-56">
-            <SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]" aria-hidden="true" />
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as RsvpResponsesStatusFilter)}
-              className="h-11 w-full appearance-none rounded-2xl border border-[#eadbd0] bg-white px-10 text-sm font-semibold text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
-              aria-label="Filter by status"
-            >
-              <option value="all">All statuses</option>
-              <option value="attending">Attending</option>
-              <option value="not_attending">Not attending</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]" aria-hidden="true" />
+          <div className="w-full sm:w-[240px]">
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as RsvpResponsesStatusFilter)}>
+              <SelectTrigger
+                className="h-11 w-full rounded-2xl border border-[#eadbd0] bg-white px-4 text-sm font-semibold text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
+              >
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <SlidersHorizontal className="h-4 w-4 text-[#a88d7f]" aria-hidden="true" />
+                  <SelectValue placeholder="All statuses" />
+                </span>
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                sideOffset={8}
+                align="start"
+                className="z-[80] rounded-[20px] border border-[#eadbd0] bg-[#fffaf6] p-1 text-[#2b2521] shadow-lg shadow-[#2b2521]/10 ring-0"
+              >
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="all">All statuses</SelectItem>
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="attending">Attending</SelectItem>
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="not_attending">Not attending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -195,7 +210,7 @@ export function RsvpResponsesTable({
                   onClick={() => onOpenResponse(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="p-0 align-middle border-0">
+                    <TableCell key={cell.id} className="px-5 py-4 align-middle border-0">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -212,24 +227,35 @@ export function RsvpResponsesTable({
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <label className="flex items-center gap-2 text-sm font-semibold text-[#75675e]">
-            Rows per page
-            <select
-              value={pagination.pageSize}
-              onChange={(event) =>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-[#75675e]">Rows per page</span>
+            <Select
+              value={String(pagination.pageSize)}
+              onValueChange={(value) =>
                 setPagination({
                   pageIndex: 0,
-                  pageSize: Number(event.target.value),
+                  pageSize: Number(value),
                 })
               }
-              className="h-9 rounded-xl border border-[#eadbd0] bg-white px-3 text-sm font-bold text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
             >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-          </label>
+              <SelectTrigger
+                className="h-9 w-[72px] rounded-xl border border-[#eadbd0] bg-white px-3 text-sm font-bold text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                sideOffset={8}
+                align="end"
+                className="z-[80] rounded-[20px] border border-[#eadbd0] bg-[#fffaf6] p-1 text-[#2b2521] shadow-lg shadow-[#2b2521]/10 ring-0"
+              >
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="5">5</SelectItem>
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="10">10</SelectItem>
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="25">25</SelectItem>
+                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex items-center gap-2">
             <Button
