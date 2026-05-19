@@ -8,7 +8,6 @@ import { RsvpResponseExportDialog } from "./rsvp-response-export-dialog";
 import { RsvpResponsesEmptyState } from "./rsvp-responses-empty-state";
 import { RsvpResponsesStats } from "./rsvp-responses-stats";
 import { RsvpResponsesTable } from "./rsvp-responses-table";
-import { RESPONSES_PORTAL_THEME_STYLE } from "./rsvp-responses-theme";
 import {
   matchesResponseSearch,
   matchesResponseStatusFilter,
@@ -59,30 +58,30 @@ export function RsvpResponsesPage({
   const canRenderResponses = !errorMessage && hasCurrentEvent;
 
   return (
-    <div style={RESPONSES_PORTAL_THEME_STYLE} className="space-y-5 pb-24 md:space-y-6 md:pb-8">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-4 pb-24 md:pb-8">
+      <header className="flex flex-col gap-1.5 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <p className="text-[11px] font-semibold tracking-[0.28em] text-[var(--responses-heading-muted)] uppercase">
+          <p className="text-[11px] font-semibold tracking-[0.28em] text-[--dash-heading-muted] uppercase">
             Dashboard
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--responses-foreground)] md:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-[--dash-foreground] md:text-4xl">
             RSVP Responses
           </h1>
         </div>
 
         <Badge
           variant="outline"
-          className="inline-flex h-10 items-center gap-2.5 self-start rounded-full border px-4 text-sm font-medium shadow-[var(--responses-shadow-sm)] md:self-auto"
+          className="inline-flex h-9 items-center gap-2 self-start rounded-full border px-3.5 text-sm font-medium shadow-[var(--dash-shadow-sm)] md:self-auto"
           style={{
-            borderColor: "var(--responses-border)",
-            backgroundColor: "var(--responses-surface)",
-            color: "var(--responses-foreground)",
+            borderColor: "var(--dash-border)",
+            backgroundColor: "var(--dash-surface)",
+            color: "var(--dash-foreground)",
           }}
         >
           <span
             className="inline-flex size-2.5 rounded-full"
             style={{
-              backgroundColor: "var(--responses-success)",
+              backgroundColor: "var(--dash-success)",
             }}
           />
           Responses
