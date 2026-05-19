@@ -9,7 +9,7 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -137,6 +137,7 @@ export function RsvpResponsesTable({
         </div>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          {/* Search input — native, h-11, rounded-2xl */}
           <div className="relative flex-1">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]"
@@ -151,27 +152,26 @@ export function RsvpResponsesTable({
             />
           </div>
 
-          <div className="w-full sm:w-[240px]">
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as RsvpResponsesStatusFilter)}>
-              <SelectTrigger
-                className="h-11 w-full rounded-2xl border border-[#eadbd0] bg-white px-4 text-sm font-semibold text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
-              >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <SlidersHorizontal className="h-4 w-4 text-[#a88d7f]" aria-hidden="true" />
-                  <SelectValue placeholder="All statuses" />
-                </span>
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                sideOffset={8}
-                align="start"
-                className="z-[80] rounded-[20px] border border-[#eadbd0] bg-[#fffaf6] p-1 text-[#2b2521] shadow-lg shadow-[#2b2521]/10 ring-0"
-              >
-                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="all">All statuses</SelectItem>
-                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="attending">Attending</SelectItem>
-                <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="not_attending">Not attending</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Status filter — native <select>, same h-11/rounded-2xl as search input */}
+          <div className="relative w-full sm:w-[240px]">
+            <SlidersHorizontal
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]"
+              aria-hidden="true"
+            />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as RsvpResponsesStatusFilter)}
+              className="h-11 w-full appearance-none rounded-2xl border border-[#eadbd0] bg-white py-0 pl-10 pr-10 text-sm font-medium text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
+              aria-label="Filter by status"
+            >
+              <option value="all">All statuses</option>
+              <option value="attending">Attending</option>
+              <option value="not_attending">Not attending</option>
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]"
+              aria-hidden="true"
+            />
           </div>
         </div>
       </div>
@@ -181,44 +181,48 @@ export function RsvpResponsesTable({
           <RsvpResponsesEmptyState variant={hasResponses ? "no-results" : "empty"} />
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <Table className="w-full min-w-[820px] text-left text-sm border-0">
-            <TableHeader className="border-b border-[#eadbd0] bg-[#fffaf6] text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="border-0 hover:bg-transparent">
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className={cn(
-                        "h-auto px-5 py-4 font-bold text-[#9a8b80]",
-                        header.id === "action" && "text-right"
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="divide-y divide-[#f0e5dc] border-0">
-              {pageRows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer border-0 transition hover:bg-[#fff8f3]"
-                  onClick={() => onOpenResponse(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-5 py-4 align-middle border-0">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        // No manual overflow-x-auto wrapper — Shadcn Table provides its own
+        <Table className="w-full min-w-[820px] text-left text-sm border-0">
+          <TableHeader className="text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
+            {table.getHeaderGroups().map((headerGroup) => (
+              // Background + border live on the row so they span table-column width
+              // and avoid thead paint-clipping artifacts in overflow containers
+              <TableRow
+                key={headerGroup.id}
+                className="border-b border-[#eadbd0] bg-[#fffaf6] hover:bg-[#fffaf6]"
+              >
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      "h-auto px-5 py-4 font-bold text-[#9a8b80]",
+                      header.id === "action" && "text-right"
+                    )}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody className="divide-y divide-[#f0e5dc] border-0">
+            {pageRows.map((row) => (
+              <TableRow
+                key={row.id}
+                className="cursor-pointer border-0 transition hover:bg-[#fff8f3]"
+                onClick={() => onOpenResponse(row.original)}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className="px-5 py-4 align-middle border-0">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       <div className="flex flex-col gap-3 border-t border-[#eadbd0] bg-white/70 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
