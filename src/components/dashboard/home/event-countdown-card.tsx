@@ -163,7 +163,7 @@ export function EventCountdownCard({
         </Link>
 
         <div className="ws-hero-left">
-          <div className="ws-kicker">Countdown to your event</div>
+          <div className="ws-kicker">Event Countdown</div>
           <h2>
             When is the
             <br />
@@ -207,7 +207,7 @@ export function EventCountdownCard({
       </Link>
 
       <div className="ws-hero-left">
-        <div className="ws-kicker">Countdown to your event</div>
+        <div className="ws-kicker">Event Countdown</div>
 
         {isAfterEvent ? (
           <h2>
@@ -258,7 +258,7 @@ export function EventCountdownCard({
             </div>
             <div className="ws-countdown-footer">
               <CountdownProgress progressValue={progressValue} reduceMotion={shouldReduceMotion} />
-              <p className="ws-timer-caption">Time remaining until your special day</p>
+              <p className="ws-timer-caption">Time remaining until your event</p>
             </div>
           </div>
         )}
