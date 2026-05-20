@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/feedback/error-state";
 import { RsvpResponseDetailDialog } from "./rsvp-response-detail-dialog";
 import { RsvpResponseExportDialog } from "./rsvp-response-export-dialog";
@@ -58,36 +57,7 @@ export function RsvpResponsesPage({
   const canRenderResponses = !errorMessage && hasCurrentEvent;
 
   return (
-    <div className="space-y-4 pb-24 md:pb-8">
-      <header className="flex flex-col gap-1.5 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-1">
-          <p className="text-[11px] font-semibold tracking-[0.28em] text-[--dash-heading-muted] uppercase">
-            Dashboard
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-[--dash-foreground] md:text-4xl">
-            RSVP Responses
-          </h1>
-        </div>
-
-        <Badge
-          variant="outline"
-          className="inline-flex h-9 items-center gap-2 self-start rounded-full border px-3.5 text-sm font-medium shadow-[var(--dash-shadow-sm)] md:self-auto"
-          style={{
-            borderColor: "var(--dash-border)",
-            backgroundColor: "var(--dash-surface)",
-            color: "var(--dash-foreground)",
-          }}
-        >
-          <span
-            className="inline-flex size-2.5 rounded-full"
-            style={{
-              backgroundColor: "var(--dash-success)",
-            }}
-          />
-          Responses
-        </Badge>
-      </header>
-
+    <div className="space-y-6 pt-6 pb-24 md:pb-8">
       {errorMessage ? (
         <ErrorState title="RSVP responses could not be loaded" description={errorMessage} />
       ) : !hasCurrentEvent ? (
