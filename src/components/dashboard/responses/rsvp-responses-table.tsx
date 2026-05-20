@@ -91,7 +91,7 @@ export function RsvpResponsesTable({
     totalRows === 0 ? 0 : Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalRows);
 
   return (
-    <Card className="overflow-hidden rounded-[1.6rem] border border-[#eadbd0] bg-white/80 shadow-sm shadow-[#8a4b2e]/5 p-0">
+    <Card className="overflow-hidden rounded-[1.6rem] border border-[#eadbd0] bg-white/80 shadow-sm shadow-[#8a4b2e]/5 p-0 gap-0">
       <div className="border-b border-[#eadbd0] bg-white/70 p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <ScrollArea className="w-full whitespace-nowrap lg:w-auto">
