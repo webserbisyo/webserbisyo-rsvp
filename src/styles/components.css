@@ -717,15 +717,15 @@
   border-radius: 22px;
   padding: 44px 40px 40px 44px;
   color: #3D2314;
-  background-color: #c4927a;
+  background-color: #f8f2eb;
   background-image: url("/images/countdown-bg.jpeg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border: 1px solid rgba(180, 125, 95, 0.16);
+  border: 0;
   box-shadow:
-    0 22px 48px rgba(94, 69, 50, 0.12),
-    0 8px 20px rgba(141, 112, 88, 0.08);
+    0 18px 38px rgba(72, 58, 46, 0.07),
+    0 6px 14px rgba(72, 58, 46, 0.04);
 }
 
 [data-dashboard] .ws-countdown-hero::before {
@@ -735,11 +735,13 @@
 [data-dashboard] .ws-countdown-overlay {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   z-index: 2;
   background:
-    linear-gradient(90deg, rgba(255, 248, 238, 0.76) 0%, rgba(255, 248, 238, 0.62) 44%, rgba(255, 248, 238, 0.52) 100%),
-    radial-gradient(circle at 24% 35%, rgba(255, 251, 246, 0.28), transparent 38%),
-    radial-gradient(circle at 78% 48%, rgba(255, 250, 244, 0.14), transparent 32%);
+    linear-gradient(180deg, rgba(255, 249, 241, 0.66) 0%, rgba(255, 249, 241, 0.52) 100%),
+    linear-gradient(90deg, rgba(255, 248, 238, 0.8) 0%, rgba(255, 248, 238, 0.66) 44%, rgba(255, 248, 238, 0.54) 100%),
+    radial-gradient(circle at 24% 35%, rgba(255, 251, 246, 0.24), transparent 38%),
+    radial-gradient(circle at 78% 48%, rgba(255, 250, 244, 0.12), transparent 32%);
   pointer-events: none;
 }
 
@@ -874,22 +876,30 @@
   flex-direction: column;
   justify-content: center;
   align-items: flex-end;
-  gap: 12px;
-  padding-top: 22px;
+  gap: 10px;
+  padding-top: 8px;
 }
 
 [data-dashboard] .ws-countdown-panel {
   width: min(100%, 34rem);
   margin-left: auto;
+  display: grid;
+  gap: 12px;
 }
 
 [data-dashboard] .ws-countdown-footer {
   width: 100%;
-  margin-top: 16px;
-  padding: 12px 10px 0;
-  border-top: 0;
-  display: grid;
-  gap: 10px;
+  margin-top: 0;
+  padding: 0 8px;
+}
+
+[data-dashboard] .ws-countdown-footer::before {
+  content: "";
+  display: block;
+  width: min(72%, 360px);
+  height: 1px;
+  margin: 0 auto 12px;
+  background: rgba(86, 58, 42, 0.12);
 }
 
 [data-dashboard] .ws-count-grid {
@@ -951,48 +961,6 @@
 }
 
 /* Progress Glow */
-[data-dashboard] .ws-progress-row {
-  position: relative;
-  width: 100%;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  margin: 0;
-}
-
-[data-dashboard] .ws-progress-track {
-  width: 100%;
-  height: 8px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(157, 119, 93, 0.16);
-  border: 1px solid rgba(177, 136, 106, 0.18);
-  box-shadow: inset 0 1px 2px rgba(92, 66, 48, 0.08);
-}
-
-[data-dashboard] .ws-progress-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #d59670 0%, #c98258 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 242, 231, 0.28);
-}
-
-[data-dashboard] .ws-progress-dot {
-  position: absolute;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  transform: translateY(-50%);
-  background: #fff9f2;
-  border: 2px solid #c98258;
-  box-shadow:
-    0 0 0 2px rgba(232, 186, 146, 0.18),
-    0 4px 10px rgba(120, 81, 54, 0.14);
-  pointer-events: none;
-}
-
 [data-dashboard] .ws-timer-caption {
   margin: 0;
   text-align: center;
@@ -1719,6 +1687,7 @@
 
   [data-dashboard] .ws-hero-right {
     align-items: stretch;
+    padding-top: 0;
   }
 
   [data-dashboard] .ws-countdown-panel {
@@ -1786,10 +1755,6 @@
 
   [data-dashboard] .ws-count-tile-wrap:not(:last-child)::after {
     display: none;
-  }
-
-  [data-dashboard] .ws-progress-row {
-    width: 100%;
   }
 
   [data-dashboard] .ws-after-copy h3 {

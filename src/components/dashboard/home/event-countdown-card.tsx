@@ -6,10 +6,6 @@ import { Calendar, MessageSquare, Pencil } from "lucide-react";
 import { isSameDay } from "date-fns";
 import Link from "next/link";
 
-function clampProgress(value: number) {
-  return Math.min(100, Math.max(0, value));
-}
-
 function getTimeLeft(targetDate: Date, now: Date) {
   const diff = Math.max(0, targetDate.getTime() - now.getTime());
 
@@ -20,35 +16,6 @@ function getTimeLeft(targetDate: Date, now: Date) {
     seconds: Math.floor((diff / 1000) % 60),
     totalMs: diff,
   };
-}
-
-function getProgressValue({
-  countdownStartAt,
-  now,
-  targetDate,
-}: {
-  countdownStartAt?: Date | null;
-  now: Date;
-  targetDate: Date;
-}) {
-  const deadlineDate = new Date(targetDate);
-  deadlineDate.setDate(deadlineDate.getDate() - 30);
-
-  let progressStart = deadlineDate;
-  let progressEnd = targetDate;
-
-  if (countdownStartAt && countdownStartAt.getTime() < deadlineDate.getTime()) {
-    progressStart = countdownStartAt;
-    progressEnd = deadlineDate;
-  }
-
-  const duration = progressEnd.getTime() - progressStart.getTime();
-  if (duration <= 0) {
-    return 72;
-  }
-
-  const elapsed = now.getTime() - progressStart.getTime();
-  return clampProgress((elapsed / duration) * 100);
 }
 
 function parseDate(value?: string | null) {
@@ -97,33 +64,7 @@ function CountdownMessage({
   );
 }
 
-function CountdownProgress({
-  progressValue,
-  reduceMotion,
-}: {
-  progressValue: number;
-  reduceMotion: boolean | null;
-}) {
-  const clampedValue = clampProgress(progressValue);
-  const dotLeft = `calc(${clampedValue}% - 7px)`;
-
-  return (
-    <div className="ws-progress-row" aria-hidden="true">
-      <div className="ws-progress-track">
-        <div className="ws-progress-fill" style={{ width: `${clampedValue}%` }} />
-      </div>
-      <motion.span
-        animate={reduceMotion ? {} : { opacity: [0.82, 1, 0.82], scale: [1, 1.16, 1] }}
-        className="ws-progress-dot"
-        style={{ left: dotLeft }}
-        transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity }}
-      />
-    </div>
-  );
-}
-
 export function EventCountdownCard({
-  countdownStartAt,
   eventDateTime,
   rsvpDeadlineLabel,
 }: {
@@ -133,7 +74,6 @@ export function EventCountdownCard({
 }) {
   const shouldReduceMotion = useReducedMotion();
   const targetDate = useMemo(() => parseDate(eventDateTime), [eventDateTime]);
-  const countdownStartDate = useMemo(() => parseDate(countdownStartAt), [countdownStartAt]);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -185,12 +125,6 @@ export function EventCountdownCard({
   const timeLeft = getTimeLeft(targetDate, now);
   const isEventDay = isSameDay(now, targetDate);
   const isAfterEvent = now > targetDate && !isEventDay;
-  const progressValue = getProgressValue({
-    countdownStartAt: countdownStartDate,
-    now,
-    targetDate,
-  });
-
   return (
     <motion.section
       animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
@@ -257,7 +191,6 @@ export function EventCountdownCard({
               <CountdownTile label="Seconds" value={timeLeft.seconds} />
             </div>
             <div className="ws-countdown-footer">
-              <CountdownProgress progressValue={progressValue} reduceMotion={shouldReduceMotion} />
               <p className="ws-timer-caption">Time remaining until your event</p>
             </div>
           </div>
