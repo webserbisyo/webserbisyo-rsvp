@@ -715,27 +715,21 @@
   align-items: center;
   gap: 28px;
   border-radius: 22px;
-  padding: 44px 44px 40px 110px;
-  color: #fff8ee;
-  background:
-    radial-gradient(circle at 42% 16%, rgba(255, 219, 177, 0.18), transparent 180px),
-    radial-gradient(circle at 91% 80%, rgba(255, 188, 142, 0.14), transparent 240px),
-    linear-gradient(135deg, #b95738 0%, #8f3322 50%, #64251d 100%);
-  border: 1px solid rgba(255, 224, 196, 0.32);
+  padding: 44px 40px 40px 44px;
+  color: #3D2314;
+  background-color: #c4927a;
+  background-image: url("/images/countdown-bg.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(191, 139, 105, 0.28);
   box-shadow:
-    0 26px 58px rgba(121, 51, 30, 0.19),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    0 24px 54px rgba(104, 63, 36, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 [data-dashboard] .ws-countdown-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 39% 13%, rgba(255, 255, 255, 0.2) 0 2px, transparent 3px),
-    radial-gradient(circle at 90% 22%, rgba(255, 220, 180, 0.22) 0 2px, transparent 3px),
-    radial-gradient(circle at 76% 62%, rgba(255, 220, 180, 0.2) 0 3px, transparent 4px);
-  pointer-events: none;
+  display: none;
 }
 
 [data-dashboard] .ws-countdown-overlay {
@@ -743,52 +737,32 @@
   inset: 0;
   z-index: 2;
   background:
-    radial-gradient(circle at 30% 48%, rgba(28, 9, 5, 0.38), transparent 44%),
-    radial-gradient(circle at 73% 42%, rgba(28, 9, 5, 0.34), transparent 42%),
-    linear-gradient(135deg,
-      rgba(32, 11, 6, 0.4) 0%,
-      rgba(70, 24, 13, 0.32) 42%,
-      rgba(30, 10, 6, 0.44) 100%);
+    linear-gradient(90deg, rgba(255, 248, 238, 0.74) 0%, rgba(255, 248, 238, 0.58) 42%, rgba(255, 248, 238, 0.5) 100%),
+    radial-gradient(circle at 24% 35%, rgba(255, 251, 246, 0.34), transparent 38%),
+    radial-gradient(circle at 78% 48%, rgba(255, 250, 244, 0.18), transparent 32%);
   pointer-events: none;
 }
 
 /* Flower Clusters */
 [data-dashboard] .ws-flower-cluster {
-  position: absolute;
-  z-index: 1;
-  left: -18px;
-  bottom: -20px;
-  width: 188px;
-  height: 238px;
-  filter: drop-shadow(0 16px 22px rgba(70, 25, 12, 0.16));
-  opacity: 0.98;
+  display: none;
 }
 
 [data-dashboard] .ws-flower-right {
-  left: auto;
-  right: -19px;
-  transform: scaleX(-1);
+  display: none;
 }
 
 [data-dashboard] .ws-blossom {
-  filter: drop-shadow(0 6px 14px rgba(69, 24, 10, 0.25));
+  display: none;
 }
 
 /* Falling Petals */
 [data-dashboard] .ws-petals {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  overflow: hidden;
+  display: none;
 }
 
 [data-dashboard] .ws-petal {
-  position: absolute;
-  top: 0;
-  border-radius: 95% 0 95% 0;
-  background: radial-gradient(circle at 28% 28%, #ffe5d1, #f0a982 52%, #cf684b 100%);
-  box-shadow: 0 8px 16px rgba(91, 30, 13, 0.16);
+  display: none;
 }
 
 /* Edit Date Button */
@@ -801,25 +775,34 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 8px;
+  border-radius: 999px;
   padding: 0 12px;
-  color: rgba(255, 248, 238, 0.94);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  backdrop-filter: blur(10px);
+  color: #3D2314;
+  background: rgba(255, 250, 244, 0.84);
+  border: 1px solid rgba(170, 129, 100, 0.24);
+  box-shadow:
+    0 10px 22px rgba(99, 62, 36, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;
   text-decoration: none;
   transition:
     background 0.18s ease,
-    color 0.18s ease;
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
   white-space: nowrap;
 }
 
 [data-dashboard] .ws-edit-date:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff8ee;
+  background: rgba(255, 252, 247, 0.96);
+  border-color: rgba(170, 129, 100, 0.34);
+  box-shadow:
+    0 14px 28px rgba(99, 62, 36, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  color: #3D2314;
 }
 
 [data-dashboard] .ws-edit-date-short {
@@ -844,11 +827,9 @@
   letter-spacing: 0.22em;
   font-size: 13px;
   font-weight: 850;
-  color: rgba(255, 247, 238, 0.96);
+  color: rgba(61, 35, 20, 0.7);
   margin-bottom: 15px;
-  text-shadow:
-    0 1px 2px rgba(35, 10, 5, 0.28),
-    0 8px 24px rgba(35, 10, 5, 0.2);
+  text-shadow: none;
 }
 
 [data-dashboard] .ws-hero-left h2 {
@@ -858,26 +839,33 @@
   line-height: 1.08;
   font-weight: 520;
   letter-spacing: -0.045em;
-  text-shadow:
-    0 1px 2px rgba(35, 10, 5, 0.28),
-    0 8px 24px rgba(35, 10, 5, 0.2);
+  color: #3D2314;
+  text-shadow: none;
 }
 
 [data-dashboard] .ws-deadline {
   margin-top: 22px;
-  display: flex;
+  display: inline-flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.72);
+  border: 1px solid rgba(179, 140, 109, 0.2);
+  box-shadow:
+    0 8px 22px rgba(99, 62, 36, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(10px);
   font-size: 16px;
-  color: rgba(255, 244, 230, 0.97);
-  text-shadow:
-    0 1px 2px rgba(35, 10, 5, 0.28),
-    0 8px 24px rgba(35, 10, 5, 0.2);
+  color: rgba(61, 35, 20, 0.9);
+  text-shadow: none;
 }
 
 [data-dashboard] .ws-deadline strong {
-  color: #fff8ee;
+  color: #3D2314;
+  font-weight: 700;
 }
 
 /* Count Grid */
@@ -887,7 +875,7 @@
   justify-content: center;
   align-items: flex-end;
   gap: 12px;
-  padding-top: 30px;
+  padding-top: 22px;
 }
 
 [data-dashboard] .ws-countdown-panel {
@@ -897,7 +885,9 @@
 
 [data-dashboard] .ws-countdown-footer {
   width: 100%;
-  padding-top: 6px;
+  margin-top: 14px;
+  padding: 12px 14px 0;
+  border-top: 1px solid rgba(169, 131, 101, 0.16);
 }
 
 [data-dashboard] .ws-count-grid {
@@ -920,7 +910,7 @@
   right: -11px;
   font-size: 34px;
   font-weight: 800;
-  color: rgba(255, 225, 195, 0.65);
+  color: rgba(124, 86, 58, 0.38);
   animation: wsPulse 1s infinite ease-in-out;
 }
 
@@ -929,23 +919,19 @@
   border-radius: 15px;
   display: grid;
   place-items: center;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(45, 14, 8, 0.32)), rgba(45, 14, 8, 0.16);
-  border: 1px solid rgba(255, 236, 214, 0.42);
+  background: rgba(255, 250, 244, 0.86);
+  border: 1px solid rgba(177, 136, 106, 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -10px 22px rgba(86, 29, 15, 0.18),
-    0 0 22px rgba(255, 203, 151, 0.18),
-    0 14px 28px rgba(35, 10, 5, 0.18);
-  -webkit-backdrop-filter: blur(14px) saturate(135%);
-  backdrop-filter: blur(14px) saturate(135%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 14px 30px rgba(104, 63, 36, 0.12),
+    0 3px 8px rgba(104, 63, 36, 0.06);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 54px;
   line-height: 1;
-  color: #fffaf2;
-  text-shadow:
-    0 1px 2px rgba(38, 10, 5, 0.3),
-    0 0 18px rgba(255, 221, 177, 0.62);
+  color: #3D2314;
+  text-shadow: none;
 }
 
 [data-dashboard] .ws-count-label {
@@ -954,10 +940,8 @@
   letter-spacing: 0.13em;
   font-size: 12px;
   font-weight: 850;
-  color: rgba(255, 246, 235, 0.98);
-  text-shadow:
-    0 1px 2px rgba(35, 10, 5, 0.28),
-    0 8px 24px rgba(35, 10, 5, 0.2);
+  color: rgba(61, 35, 20, 0.72);
+  text-shadow: none;
 }
 
 /* Progress Glow */
@@ -976,14 +960,14 @@
   position: relative;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 221, 191, 0.28);
+  background: rgba(209, 174, 144, 0.34);
 }
 
 [data-dashboard] .ws-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 218, 171, 0.72), #ffd8a8);
-  box-shadow: 0 0 20px rgba(255, 216, 168, 0.78);
+  background: linear-gradient(90deg, #d28c63 0%, #c8774d 100%);
+  box-shadow: 0 0 10px rgba(200, 119, 77, 0.28);
 }
 
 [data-dashboard] .ws-progress-dot {
@@ -992,10 +976,10 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff5e8;
+  background: #fff7ed;
   box-shadow:
-    0 0 0 4px rgba(255, 210, 155, 0.22),
-    0 0 24px #ffd19b;
+    0 0 0 3px rgba(232, 186, 146, 0.22),
+    0 4px 12px rgba(120, 81, 54, 0.16);
   pointer-events: none;
 }
 
@@ -1004,11 +988,9 @@
   text-align: center;
   font-family: Georgia, "Times New Roman", serif;
   font-style: italic;
-  color: rgba(255, 242, 226, 0.97);
+  color: rgba(61, 35, 20, 0.76);
   font-size: 16px;
-  text-shadow:
-    0 1px 2px rgba(35, 10, 5, 0.28),
-    0 8px 24px rgba(35, 10, 5, 0.2);
+  text-shadow: none;
 }
 
 /* After-event celebration state */
@@ -1029,11 +1011,12 @@
   font-size: 34px;
   line-height: 1.02;
   font-weight: 520;
+  color: #3D2314;
 }
 
 [data-dashboard] .ws-after-event p {
   margin: 0;
-  color: rgba(255, 235, 217, 0.9);
+  color: rgba(61, 35, 20, 0.76);
   font-size: 16px;
   line-height: 1.55;
 }
@@ -1045,18 +1028,28 @@
   height: 38px;
   padding: 0 18px;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-  color: #fff8ee;
+  background: rgba(255, 250, 244, 0.84);
+  border: 1px solid rgba(170, 129, 100, 0.24);
+  backdrop-filter: blur(12px);
+  color: #3D2314;
   font-size: 13px;
   font-weight: 650;
   text-decoration: none;
-  transition: background 0.18s ease;
+  box-shadow:
+    0 10px 22px rgba(99, 62, 36, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 [data-dashboard] .ws-after-cta:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 252, 247, 0.96);
+  border-color: rgba(170, 129, 100, 0.34);
+  box-shadow:
+    0 14px 28px rgba(99, 62, 36, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 @keyframes wsPulse {
@@ -1646,7 +1639,8 @@
 @media (max-width: 1150px) {
   [data-dashboard] .ws-countdown-hero {
     grid-template-columns: 1fr;
-    padding: 42px 34px 34px 92px;
+    background-position: center 42%;
+    padding: 42px 34px 34px;
   }
 
   [data-dashboard] .ws-hero-right {
@@ -1694,11 +1688,12 @@
   }
 
   [data-dashboard] .ws-countdown-hero {
+    background-position: center 36%;
     padding: 38px 22px 28px;
   }
 
   [data-dashboard] .ws-flower-cluster {
-    opacity: 0.54;
+    display: none;
   }
 
   [data-dashboard] .ws-hero-left h2 {
@@ -1737,23 +1732,11 @@
   [data-dashboard] .ws-countdown-hero {
     min-height: auto;
     gap: 22px;
+    background-position: 58% center;
     padding: 54px 18px 24px;
   }
-
-  [data-dashboard] .ws-countdown-overlay {
-    background:
-      radial-gradient(circle at 30% 48%, rgba(28, 9, 5, 0.26), transparent 44%),
-      radial-gradient(circle at 73% 42%, rgba(28, 9, 5, 0.22), transparent 42%),
-      linear-gradient(135deg,
-        rgba(32, 11, 6, 0.24) 0%,
-        rgba(70, 24, 13, 0.2) 42%,
-        rgba(30, 10, 6, 0.28) 100%);
-  }
-
   [data-dashboard] .ws-flower-cluster {
-    width: 140px;
-    height: 188px;
-    opacity: 0.28;
+    display: none;
   }
 
   [data-dashboard] .ws-edit-date {
@@ -1774,7 +1757,9 @@
   }
 
   [data-dashboard] .ws-deadline {
+    display: flex;
     font-size: 14px;
+    padding: 9px 12px;
   }
 
   [data-dashboard] .ws-count-grid {
@@ -1858,6 +1843,10 @@
 }
 
 @media (max-width: 420px) {
+  [data-dashboard] .ws-countdown-hero {
+    background-position: 61% center;
+  }
+
   [data-dashboard] .ws-edit-date-full {
     display: none;
   }
