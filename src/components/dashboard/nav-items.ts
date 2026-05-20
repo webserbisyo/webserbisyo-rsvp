@@ -1,5 +1,4 @@
 import {
-  Activity,
   CalendarSearch,
   CreditCard,
   Globe,
@@ -46,12 +45,6 @@ export const dashboardNavItems: DashboardNavItem[] = [
     label: "Billing",
     icon: CreditCard,
     description: "View your package, payment status, and renewal info",
-  },
-  {
-    href: "/dashboard/activity",
-    label: "Activity",
-    icon: Activity,
-    description: "Audit log and recent account activity",
   },
   {
     href: "/dashboard/settings",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/client";
 import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
-import { Activity, ChevronRight, CreditCard, Globe, LogOut, Settings2 } from "lucide-react";
+import { ChevronRight, CreditCard, Globe, LogOut, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type DashboardMoreDrawerProps = {
@@ -24,7 +24,6 @@ export function DashboardMoreDrawer({
   const remainingItems = [
     { href: "/dashboard/website-access", label: "Website Access", icon: Globe },
     { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
-    { href: "/dashboard/activity", label: "Activity", icon: Activity },
     { href: "/dashboard/settings", label: "Settings", icon: Settings2 },
   ];
   void email;
