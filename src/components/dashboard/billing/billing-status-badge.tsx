@@ -1,23 +1,31 @@
 import type { ReactNode } from "react";
+import type { BillingPaymentStatus } from "@/components/dashboard/billing/billing-types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type BillingPaymentStatus = "confirmed" | "pending" | "partial" | "unpaid";
-
 const STATUS_LABELS: Record<BillingPaymentStatus, string> = {
   confirmed: "Confirmed",
+  expired: "Expired",
+  missing: "Pending",
   partial: "Partial",
   pending: "Pending",
+  refunded: "Refunded",
   unpaid: "Unpaid",
 };
 
 const STATUS_STYLES: Record<BillingPaymentStatus, string> = {
   confirmed:
     "border-[color:color-mix(in_srgb,var(--dash-success)_30%,transparent)] bg-[color:var(--dash-success-subtle)] text-[color:color-mix(in_srgb,var(--dash-success)_88%,#283618)]",
+  expired:
+    "border-[color:color-mix(in_srgb,var(--dash-destructive)_26%,transparent)] bg-[color:var(--dash-destructive-subtle)] text-[color:color-mix(in_srgb,var(--dash-destructive)_82%,#5c1f1f)]",
+  missing:
+    "border-[color:color-mix(in_srgb,var(--dash-border)_88%,white)] bg-[color:color-mix(in_srgb,var(--dash-surface-muted)_84%,white)] text-[color:var(--dash-heading-muted)]",
   partial:
     "border-[color:color-mix(in_srgb,var(--dash-warning)_32%,transparent)] bg-[color:var(--dash-warning-subtle)] text-[color:color-mix(in_srgb,var(--dash-warning)_86%,#5a3a10)]",
   pending:
     "border-[color:color-mix(in_srgb,var(--dash-warning)_26%,transparent)] bg-[color:color-mix(in_srgb,var(--dash-warning-subtle)_72%,white)] text-[color:color-mix(in_srgb,var(--dash-warning)_82%,#5a3a10)]",
+  refunded:
+    "border-[color:color-mix(in_srgb,var(--dash-brand)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--dash-brand-subtle)_82%,white)] text-[color:var(--dash-brand)]",
   unpaid:
     "border-[color:color-mix(in_srgb,var(--dash-destructive)_26%,transparent)] bg-[color:var(--dash-destructive-subtle)] text-[color:color-mix(in_srgb,var(--dash-destructive)_82%,#5c1f1f)]",
 };
@@ -25,8 +33,11 @@ const STATUS_STYLES: Record<BillingPaymentStatus, string> = {
 /** Dot colour per status — matches the status text colour family. */
 const DOT_STYLES: Record<BillingPaymentStatus, string> = {
   confirmed: "bg-[color:var(--dash-success)]",
+  expired: "bg-[color:var(--dash-destructive)]",
+  missing: "bg-[color:var(--dash-heading-muted)]",
   partial: "bg-[color:var(--dash-warning)]",
   pending: "bg-[color:var(--dash-warning)]",
+  refunded: "bg-[color:var(--dash-brand)]",
   unpaid: "bg-[color:var(--dash-destructive)]",
 };
 

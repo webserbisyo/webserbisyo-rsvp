@@ -1,80 +1,14 @@
 import { BillingCard } from "@/components/dashboard/billing/billing-card";
 import { BillingDetailRow } from "@/components/dashboard/billing/billing-detail-row";
 import { BillingStatCard } from "@/components/dashboard/billing/billing-stat-card";
-import { BillingStatusBadge, type BillingPaymentStatus } from "@/components/dashboard/billing/billing-status-badge";
+import { BillingStatusBadge } from "@/components/dashboard/billing/billing-status-badge";
+import type { BillingPageData } from "@/components/dashboard/billing/billing-types";
 import { MessengerLogo } from "@/components/dashboard/billing/messenger-logo";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ChevronRight, ReceiptText, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
 
-type BillingPlan = "max" | "pro";
-
-type BillingPageData = {
-  currentPlan: BillingPlan;
-  latestPayment: {
-    amountLabel: string;
-    confirmedAtLabel: string;
-    methodLabel: string;
-    referenceLabel: string;
-    status: BillingPaymentStatus;
-  };
-  overview: {
-    amountPaidLabel: string;
-    paymentStatus: BillingPaymentStatus;
-    remainingBalanceLabel: string;
-    totalPackageLabel: string;
-  };
-  servicePeriod: {
-    endsLabel: string;
-    helperText: string;
-    renewalLabel: string;
-    startsLabel: string;
-  };
-};
-
-const PLAN_DESCRIPTIONS: Record<BillingPlan, string> = {
-  max: "Max includes designer-created monogram details, richer animations, and a more customized event website experience than Pro.",
-  pro: "Pro includes a polished event website with refined standard styling, essential animations, and a clean guest-friendly RSVP experience.",
-};
-
-const PAYMENT_INSTRUCTIONS_COPY: Record<BillingPaymentStatus, string> = {
-  confirmed: "Your payment is complete. No further action needed.",
-  partial:
-    "Please complete your remaining balance using the payment instructions shared by WebSerbisyo. Your billing status will update after confirmation.",
-  pending:
-    "Please send your payment using the payment instructions shared by WebSerbisyo. Your billing status will update after confirmation.",
-  unpaid:
-    "Please complete your payment using the payment instructions shared by WebSerbisyo. Your billing status will update after confirmation.",
-};
-
-// TODO: Replace mock billing data with a tenant-scoped billing query.
-const BILLING_PAGE_DATA: BillingPageData = {
-  currentPlan: "max",
-  latestPayment: {
-    amountLabel: "₱8,500",
-    confirmedAtLabel: "May 2, 2026",
-    methodLabel: "GCash",
-    referenceLabel: "#REF12345",
-    status: "confirmed",
-  },
-  overview: {
-    amountPaidLabel: "₱8,500",
-    paymentStatus: "confirmed",
-    remainingBalanceLabel: "₱0",
-    totalPackageLabel: "₱8,500",
-  },
-  servicePeriod: {
-    endsLabel: "Jun 30, 2026",
-    helperText: "Your website and RSVP dashboard will be active through your service period.",
-    renewalLabel: "Jun 15, 2026",
-    startsLabel: "Jun 1, 2026",
-  },
-};
-
-// TODO: Replace mock support URL with the admin/platform settings support link.
-const SUPPORT_URL = "https://m.me/webserbisyo";
-
-export function BillingPage() {
-  const planLabel = BILLING_PAGE_DATA.currentPlan === "max" ? "Max" : "Pro";
+export function BillingPage({ data }: { data: BillingPageData }) {
+  const latestPaymentStatus = data.latestPayment?.status ?? data.paymentStatus;
 
   return (
     <div className="space-y-6 pb-24 pt-2 md:pb-8">
@@ -94,11 +28,11 @@ export function BillingPage() {
               </p>
               {/* Plan name — large serif terracotta */}
               <h2 className="mt-3 font-serif text-[3.25rem] font-black leading-[0.92] tracking-tight text-[color:var(--dash-brand)]">
-                {planLabel}
+                {data.planName}
               </h2>
               {/* Plan description */}
               <p className="mt-5 text-[17px] font-semibold leading-relaxed text-[color:color-mix(in_srgb,var(--dash-foreground)_72%,var(--dash-heading-muted))]">
-                {PLAN_DESCRIPTIONS[BILLING_PAGE_DATA.currentPlan]}
+                {data.planDescription}
               </p>
             </div>
           </BillingCard>
@@ -108,22 +42,22 @@ export function BillingPage() {
             <BillingStatCard
               icon={<WalletCards className="h-[18px] w-[18px]" aria-hidden="true" />}
               label="Total Package"
-              value={BILLING_PAGE_DATA.overview.totalPackageLabel}
+              value={formatCurrency(data.totalPackageAmount, data.currency, "Pending")}
             />
             <BillingStatCard
               icon={<ShieldCheck className="h-[18px] w-[18px]" aria-hidden="true" />}
               label="Amount Paid"
-              value={BILLING_PAGE_DATA.overview.amountPaidLabel}
+              value={formatCurrency(data.amountPaid, data.currency)}
             />
             <BillingStatCard
               icon={<ReceiptText className="h-[18px] w-[18px]" aria-hidden="true" />}
               label="Remaining Balance"
-              value={BILLING_PAGE_DATA.overview.remainingBalanceLabel}
+              value={formatCurrency(data.remainingBalance, data.currency, "Pending")}
             />
             <BillingStatCard
               icon={<Sparkles className="h-[18px] w-[18px]" aria-hidden="true" />}
               label="Payment Status"
-              value={<BillingStatusBadge status={BILLING_PAGE_DATA.overview.paymentStatus} />}
+              value={<BillingStatusBadge status={data.paymentStatus} />}
             />
           </section>
 
@@ -133,14 +67,20 @@ export function BillingPage() {
               Latest Payment
             </p>
             <div className="mt-4">
+              <BillingDetailRow label="Status" value={<BillingStatusBadge status={latestPaymentStatus} />} />
               <BillingDetailRow
-                label="Status"
-                value={<BillingStatusBadge status={BILLING_PAGE_DATA.latestPayment.status} />}
+                label="Amount"
+                value={formatCurrency(data.latestPayment?.amount ?? null, data.currency)}
               />
-              <BillingDetailRow label="Amount" value={BILLING_PAGE_DATA.latestPayment.amountLabel} />
-              <BillingDetailRow label="Method" value={BILLING_PAGE_DATA.latestPayment.methodLabel} />
-              <BillingDetailRow label="Confirmed" value={BILLING_PAGE_DATA.latestPayment.confirmedAtLabel} />
-              <BillingDetailRow label="Reference" value={BILLING_PAGE_DATA.latestPayment.referenceLabel} />
+              <BillingDetailRow
+                label="Method"
+                value={formatPaymentMethod(data.latestPayment?.method)}
+              />
+              <BillingDetailRow
+                label="Confirmed"
+                value={formatDateLabel(data.latestPayment?.confirmedAt)}
+              />
+              <BillingDetailRow label="Reference" value={data.latestPayment?.reference ?? "—"} />
             </div>
           </BillingCard>
         </div>
@@ -159,7 +99,7 @@ export function BillingPage() {
                   <span className="text-[15px] font-medium">Starts</span>
                 </div>
                 <span className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
-                  {BILLING_PAGE_DATA.servicePeriod.startsLabel}
+                  {formatServiceDateLabel(data.servicePeriod.startsAt, data.serviceState)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-5 border-b border-[color:var(--dash-divider)] py-3.5 last:border-b-0">
@@ -168,7 +108,7 @@ export function BillingPage() {
                   <span className="text-[15px] font-medium">Ends</span>
                 </div>
                 <span className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
-                  {BILLING_PAGE_DATA.servicePeriod.endsLabel}
+                  {formatServiceDateLabel(data.servicePeriod.endsAt, data.serviceState)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-5 py-3.5">
@@ -177,12 +117,12 @@ export function BillingPage() {
                   <span className="text-[15px] font-medium">Renewal</span>
                 </div>
                 <span className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
-                  {BILLING_PAGE_DATA.servicePeriod.renewalLabel}
+                  {formatServiceDateLabel(data.servicePeriod.renewalAt, data.serviceState)}
                 </span>
               </div>
             </div>
             <p className="mt-3 text-sm font-medium leading-relaxed text-[color:var(--dash-heading-muted)]">
-              {BILLING_PAGE_DATA.servicePeriod.helperText}
+              {data.serviceDescription}
             </p>
           </BillingCard>
 
@@ -192,8 +132,28 @@ export function BillingPage() {
               Payment Instructions
             </p>
             <p className="mt-4 text-base font-medium leading-relaxed text-[color:var(--dash-muted)]">
-              {PAYMENT_INSTRUCTIONS_COPY[BILLING_PAGE_DATA.overview.paymentStatus]}
+              {data.paymentInstructions.description}
             </p>
+            {data.paymentInstructions.options.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {data.paymentInstructions.options.map((option) => (
+                  <div
+                    key={option.provider}
+                    className="rounded-[1.15rem] border border-[color:var(--dash-divider)] bg-[color:color-mix(in_srgb,var(--dash-surface-muted)_60%,white)] px-4 py-3"
+                  >
+                    <p className="text-sm font-black text-[color:var(--dash-foreground)]">
+                      {option.provider}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-[color:var(--dash-muted)]">
+                      {option.accountName || "Account name pending"}
+                    </p>
+                    <p className="text-sm font-semibold text-[color:var(--dash-foreground)]">
+                      {option.accountNumber || "Account number pending"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </BillingCard>
 
           {/* Need help? */}
@@ -213,21 +173,82 @@ export function BillingPage() {
                 </p>
               </div>
             </div>
-            {/* TODO: Replace with admin/platform settings support link. */}
-            <Button
-              asChild
-              className="mt-5 h-11 w-full rounded-full bg-[color:var(--dash-brand)] px-5 text-sm font-black text-white shadow-[0_12px_26px_rgba(201,107,72,0.28)] hover:bg-[color:var(--dash-brand-hover)] focus-visible:ring-[color:color-mix(in_srgb,var(--dash-brand)_28%,white)]"
-            >
-              <a href={SUPPORT_URL} target="_blank" rel="noreferrer">
+            {data.support.isEnabled && data.support.url ? (
+              <Button
+                asChild
+                className="mt-5 h-11 w-full rounded-full bg-[color:var(--dash-brand)] px-5 text-sm font-black text-white shadow-[0_12px_26px_rgba(201,107,72,0.28)] hover:bg-[color:var(--dash-brand-hover)] focus-visible:ring-[color:color-mix(in_srgb,var(--dash-brand)_28%,white)]"
+              >
+                <a href={data.support.url} target="_blank" rel="noreferrer">
+                  <span className="flex items-center justify-center gap-2">
+                    {data.support.label}
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                </a>
+              </Button>
+            ) : (
+              <Button
+                disabled
+                className="mt-5 h-11 w-full rounded-full bg-[color:var(--dash-brand)] px-5 text-sm font-black text-white shadow-[0_12px_26px_rgba(201,107,72,0.2)] disabled:cursor-not-allowed disabled:opacity-70"
+              >
                 <span className="flex items-center justify-center gap-2">
-                  Contact Support
+                  {data.support.label}
                   <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </span>
-              </a>
-            </Button>
+              </Button>
+            )}
           </BillingCard>
         </aside>
       </div>
     </div>
   );
+}
+
+function formatCurrency(value: number | null, currency: string, fallback = "—") {
+  if (value === null) {
+    return fallback;
+  }
+
+  return new Intl.NumberFormat("en-PH", {
+    currency,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    style: "currency",
+  }).format(value);
+}
+
+function formatDateLabel(value: string | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Manila",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatPaymentMethod(value: string | null | undefined) {
+  switch (value) {
+    case "gcash":
+      return "GCash";
+    case "maya":
+      return "Maya";
+    case "manual":
+      return "Manual";
+    default:
+      return value || "—";
+  }
+}
+
+function formatServiceDateLabel(
+  value: string | null,
+  serviceState: BillingPageData["serviceState"],
+) {
+  if (!value) {
+    return serviceState === "unpaid" ? "Pending" : "—";
+  }
+
+  return formatDateLabel(value);
 }

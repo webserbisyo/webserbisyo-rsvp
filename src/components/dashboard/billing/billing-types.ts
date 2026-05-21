@@ -1,0 +1,59 @@
+export type BillingPlanType = "pro" | "max" | "unknown";
+
+export type BillingPaymentStatus =
+  | "confirmed"
+  | "pending"
+  | "partial"
+  | "unpaid"
+  | "refunded"
+  | "expired"
+  | "missing";
+
+export type BillingServiceState =
+  | "active"
+  | "ending_soon"
+  | "expired"
+  | "unpaid"
+  | "missing_date"
+  | "refunded";
+
+export type BillingPageData = {
+  amountPaid: number;
+  clientId: string;
+  currency: "PHP" | string;
+  latestPayment: {
+    amount: number | null;
+    confirmedAt: string | null;
+    method: string | null;
+    reference: string | null;
+    status: BillingPaymentStatus;
+  } | null;
+  paymentInstructions: {
+    description: string;
+    options: Array<{
+      accountName: string | null;
+      accountNumber: string | null;
+      provider: string;
+      qrImagePath?: string | null;
+    }>;
+    title: string;
+  };
+  paymentStatus: BillingPaymentStatus;
+  planDescription: string;
+  planName: string;
+  planType: BillingPlanType;
+  remainingBalance: number | null;
+  serviceDescription: string;
+  servicePeriod: {
+    endsAt: string | null;
+    renewalAt: string | null;
+    startsAt: string | null;
+  };
+  serviceState: BillingServiceState;
+  support: {
+    isEnabled: boolean;
+    label: "Contact Support";
+    url: string | null;
+  };
+  totalPackageAmount: number | null;
+};
