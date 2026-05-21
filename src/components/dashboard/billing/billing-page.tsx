@@ -129,7 +129,10 @@ export function BillingPage({ data }: { data: BillingPageData }) {
 
           {/* Payment Instructions */}
           <BillingCard contentClassName="px-5 py-5 sm:px-6 sm:py-6">
-            <BillingPaymentInstructions paymentInstructions={data.paymentInstructions} />
+            <BillingPaymentInstructions
+              paymentInstructions={data.paymentInstructions}
+              support={data.support}
+            />
           </BillingCard>
 
           {/* Need help? */}
