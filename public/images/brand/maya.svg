@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" role="img" aria-labelledby="mayaTitle">
+  <title id="mayaTitle">Maya</title>
+  <rect width="120" height="36" rx="18" fill="#ECFFF8"/>
+  <circle cx="18" cy="18" r="9" fill="#19A974"/>
+  <path d="M13.7 22V14h2.18l2.13 3.36L20.14 14h2.17v8h-2.05v-4.56l-1.68 2.6h-1.16l-1.67-2.6V22Z" fill="#fff"/>
+  <text x="36" y="22.3" fill="#157A58" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" letter-spacing=".15">maya</text>
+</svg>

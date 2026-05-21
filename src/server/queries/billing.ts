@@ -1,7 +1,6 @@
 import "server-only";
 
 import { addDays, subDays } from "date-fns";
-import { getPaymentOptionLabel } from "@/lib/apply/public-payment-option-dto";
 import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -15,6 +14,7 @@ import type {
 
 const DEFAULT_CURRENCY = "PHP";
 const DEFAULT_RENEWAL_WINDOW_DAYS = 30;
+const PAYMENT_QR_BUCKET = "payment-qr-images";
 
 const PLAN_COPY: Record<
   Exclude<BillingPlanType, "unknown">,
@@ -172,6 +172,7 @@ export async function getBillingPageData(): Promise<BillingPageData> {
         }
       : null,
     paymentInstructions: buildPaymentInstructions({
+      adminSupabase,
       options: paymentOptions,
       paymentStatus,
     }),
@@ -193,9 +194,11 @@ export async function getBillingPageData(): Promise<BillingPageData> {
 }
 
 function buildPaymentInstructions({
+  adminSupabase,
   options,
   paymentStatus,
 }: {
+  adminSupabase: ReturnType<typeof createAdminClient>;
   options: PaymentOptionRow[];
   paymentStatus: BillingPaymentStatus;
 }): BillingPageData["paymentInstructions"] {
@@ -221,8 +224,9 @@ function buildPaymentInstructions({
     .map((option) => ({
       accountName: option.account_name,
       accountNumber: option.account_number,
-      provider: formatPaymentOptionProvider(option.provider),
+      provider: option.provider,
       qrImagePath: option.qr_image_path,
+      qrImageUrl: getPaymentQrPublicUrl(adminSupabase, option.qr_image_path),
     }));
 
   return {
@@ -315,14 +319,6 @@ function getPlanDescription(planType: BillingPlanType) {
 
 function getPlanName(planType: BillingPlanType) {
   return PLAN_COPY[planType as keyof typeof PLAN_COPY]?.name ?? "Package pending";
-}
-
-function formatPaymentOptionProvider(provider: string) {
-  if (provider === "gcash" || provider === "maya") {
-    return getPaymentOptionLabel(provider) ?? provider;
-  }
-
-  return provider;
 }
 
 function normalizePlanType(value: string | null | undefined): BillingPlanType {
@@ -486,6 +482,18 @@ async function safeLoadPaymentOptions(adminSupabase: ReturnType<typeof createAdm
     logBillingAuxiliaryError("payment options", error);
     return [];
   }
+}
+
+function getPaymentQrPublicUrl(
+  adminSupabase: ReturnType<typeof createAdminClient>,
+  path: string | null,
+) {
+  if (!path) {
+    return null;
+  }
+
+  const { data } = adminSupabase.storage.from(PAYMENT_QR_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 async function safeLoadRefunds(

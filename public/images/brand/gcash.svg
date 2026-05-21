@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" role="img" aria-labelledby="gcashTitle">
+  <title id="gcashTitle">GCash</title>
+  <rect width="120" height="36" rx="18" fill="#EEF4FF"/>
+  <circle cx="20" cy="18" r="10" fill="#1B64F1"/>
+  <path d="M19.2 12.7a5.65 5.65 0 1 0 4.64 8.85h-3.17a2.77 2.77 0 1 1-1.47-5.12h4.4v2.2h3.07v-5.9Z" fill="#fff"/>
+  <text x="40" y="22.3" fill="#1B64F1" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing=".2">GCash</text>
+</svg>

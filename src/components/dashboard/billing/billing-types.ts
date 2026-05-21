@@ -17,6 +17,14 @@ export type BillingServiceState =
   | "missing_date"
   | "refunded";
 
+export type BillingPaymentOption = {
+  accountName: string | null;
+  accountNumber: string | null;
+  provider: string;
+  qrImagePath?: string | null;
+  qrImageUrl?: string | null;
+};
+
 export type BillingPageData = {
   amountPaid: number;
   clientId: string;
@@ -30,12 +38,7 @@ export type BillingPageData = {
   } | null;
   paymentInstructions: {
     description: string;
-    options: Array<{
-      accountName: string | null;
-      accountNumber: string | null;
-      provider: string;
-      qrImagePath?: string | null;
-    }>;
+    options: BillingPaymentOption[];
     title: string;
   };
   paymentStatus: BillingPaymentStatus;

@@ -1,5 +1,6 @@
 import { BillingCard } from "@/components/dashboard/billing/billing-card";
 import { BillingDetailRow } from "@/components/dashboard/billing/billing-detail-row";
+import { BillingPaymentInstructions } from "@/components/dashboard/billing/billing-payment-instructions";
 import { BillingStatCard } from "@/components/dashboard/billing/billing-stat-card";
 import { BillingStatusBadge } from "@/components/dashboard/billing/billing-status-badge";
 import type { BillingPageData } from "@/components/dashboard/billing/billing-types";
@@ -128,32 +129,7 @@ export function BillingPage({ data }: { data: BillingPageData }) {
 
           {/* Payment Instructions */}
           <BillingCard contentClassName="px-5 py-5 sm:px-6 sm:py-6">
-            <p className="text-xs font-bold uppercase tracking-[0.17em] text-[color:var(--dash-heading-muted)]">
-              Payment Instructions
-            </p>
-            <p className="mt-4 text-base font-medium leading-relaxed text-[color:var(--dash-muted)]">
-              {data.paymentInstructions.description}
-            </p>
-            {data.paymentInstructions.options.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {data.paymentInstructions.options.map((option) => (
-                  <div
-                    key={option.provider}
-                    className="rounded-[1.15rem] border border-[color:var(--dash-divider)] bg-[color:color-mix(in_srgb,var(--dash-surface-muted)_60%,white)] px-4 py-3"
-                  >
-                    <p className="text-sm font-black text-[color:var(--dash-foreground)]">
-                      {option.provider}
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-[color:var(--dash-muted)]">
-                      {option.accountName || "Account name pending"}
-                    </p>
-                    <p className="text-sm font-semibold text-[color:var(--dash-foreground)]">
-                      {option.accountNumber || "Account number pending"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <BillingPaymentInstructions paymentInstructions={data.paymentInstructions} />
           </BillingCard>
 
           {/* Need help? */}
