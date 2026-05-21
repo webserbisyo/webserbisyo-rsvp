@@ -1,7 +1,7 @@
 import {
   CalendarSearch,
   CreditCard,
-  Globe,
+  KeyRound,
   LayoutDashboard,
   Settings2,
   Users,
@@ -37,7 +37,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   {
     href: "/dashboard/website-access",
     label: "Website Access",
-    icon: Globe,
+    icon: KeyRound,
     description: "Manage link visibility, slug, QR codes, and sharing",
   },
   {

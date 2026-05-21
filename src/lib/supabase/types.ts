@@ -831,6 +831,8 @@ export type Database = {
           created_at: string;
           custom_frontend_enabled: boolean;
           custom_frontend_url: string | null;
+          draft_event_slug: string;
+          draft_visibility: string;
           event_date: string | null;
           event_slug: string;
           event_time: string | null;
@@ -847,6 +849,7 @@ export type Database = {
           venue_address: string | null;
           venue_name: string | null;
           visibility: string;
+          website_access_updated_at: string;
         };
         Insert: {
           archived_at?: string | null;
@@ -854,6 +857,8 @@ export type Database = {
           created_at?: string;
           custom_frontend_enabled?: boolean;
           custom_frontend_url?: string | null;
+          draft_event_slug?: string;
+          draft_visibility?: string;
           event_date?: string | null;
           event_slug: string;
           event_time?: string | null;
@@ -870,6 +875,7 @@ export type Database = {
           venue_address?: string | null;
           venue_name?: string | null;
           visibility?: string;
+          website_access_updated_at?: string;
         };
         Update: {
           archived_at?: string | null;
@@ -877,6 +883,8 @@ export type Database = {
           created_at?: string;
           custom_frontend_enabled?: boolean;
           custom_frontend_url?: string | null;
+          draft_event_slug?: string;
+          draft_visibility?: string;
           event_date?: string | null;
           event_slug?: string;
           event_time?: string | null;
@@ -893,6 +901,7 @@ export type Database = {
           venue_address?: string | null;
           venue_name?: string | null;
           visibility?: string;
+          website_access_updated_at?: string;
         };
         Relationships: [
           {

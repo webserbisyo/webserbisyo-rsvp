@@ -2,13 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import {
+  mapAppVisibilityToDb,
+  mapDbVisibilityToApp,
+  sanitizeSlug,
+  validateSlug,
+} from "@/components/dashboard/website-access/website-access-utils";
 import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   publishEventWebsite,
   unpublishEventWebsite,
+  updateWebsiteAccessDraftSlug,
+  updateWebsiteAccessDraftVisibility,
 } from "@/server/services/publish-event-website";
+import { ServiceError } from "@/server/services/service-error";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
+
+const UpdateWebsiteAccessDraftVisibilityActionSchema = z.object({
+  eventId: z.uuid(),
+  visibility: z.enum(["private", "open"]),
+});
+
+const UpdateWebsiteAccessDraftSlugActionSchema = z.object({
+  eventId: z.uuid(),
+  slug: z.string().trim().min(1),
+});
 
 const PublishEventWebsiteActionSchema = z.object({
   confirmWarnings: z.boolean().optional(),
@@ -18,6 +37,65 @@ const PublishEventWebsiteActionSchema = z.object({
 const UnpublishEventWebsiteActionSchema = z.object({
   eventId: z.uuid(),
 });
+
+export async function updateWebsiteAccessDraftVisibilityAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(UpdateWebsiteAccessDraftVisibilityActionSchema, input);
+    const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    const mappedVisibility = mapAppVisibilityToDb(payload.visibility);
+
+    if (!mappedVisibility) {
+      throw new ServiceError("Restricted access is not available yet.");
+    }
+
+    if (mappedVisibility !== "private" && mappedVisibility !== "public") {
+      throw new ServiceError("The selected guest access mode is not supported.");
+    }
+
+    const result = await updateWebsiteAccessDraftVisibility({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      draftVisibility: mappedVisibility,
+      eventId: event.id,
+    });
+
+    return actionSuccess({
+      draftVisibility: mapDbVisibilityToApp(result.draftVisibility),
+      updatedAt: result.updatedAt,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function updateWebsiteAccessDraftSlugAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(UpdateWebsiteAccessDraftSlugActionSchema, input);
+    const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    const draftSlug = sanitizeSlug(payload.slug);
+    const slugError = validateSlug(draftSlug);
+
+    if (slugError) {
+      throw new ServiceError(slugError);
+    }
+
+    const result = await updateWebsiteAccessDraftSlug({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      draftSlug,
+      eventId: event.id,
+    });
+
+    return actionSuccess({
+      draftSlug: result.draftSlug,
+      updatedAt: result.updatedAt,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
 
 export async function publishEventWebsiteAction(input: unknown) {
   try {
@@ -32,8 +110,21 @@ export async function publishEventWebsiteAction(input: unknown) {
     });
 
     revalidatePath("/dashboard/website-access");
+    revalidatePath("/dashboard/event");
+
+    const publicPaths = new Set<string>();
     if (event.event_slug) {
-      revalidatePath(`/r/${event.event_slug}`);
+      publicPaths.add(`/r/${event.event_slug}`);
+    }
+    if (result.previousPublishedSlug) {
+      publicPaths.add(`/r/${result.previousPublishedSlug}`);
+    }
+    if (result.publishedSlug) {
+      publicPaths.add(`/r/${result.publishedSlug}`);
+    }
+
+    for (const path of publicPaths) {
+      revalidatePath(path);
     }
 
     return actionSuccess(result);
@@ -54,8 +145,18 @@ export async function unpublishEventWebsiteAction(input: unknown) {
     });
 
     revalidatePath("/dashboard/website-access");
+    revalidatePath("/dashboard/event");
+
+    const publicPaths = new Set<string>();
     if (event.event_slug) {
-      revalidatePath(`/r/${event.event_slug}`);
+      publicPaths.add(`/r/${event.event_slug}`);
+    }
+    if (result.previousPublishedSlug) {
+      publicPaths.add(`/r/${result.previousPublishedSlug}`);
+    }
+
+    for (const path of publicPaths) {
+      revalidatePath(path);
     }
 
     return actionSuccess(result);

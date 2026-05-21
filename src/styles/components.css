@@ -4842,3 +4842,16 @@
     margin-left: auto;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Website Access — scoped dialog overlay
+ * Uses the data-wa-dialog attribute added to DialogContent / AlertDialogContent
+ * to warm-tint only the website-access overlays without affecting other dialogs.
+ * ------------------------------------------------------------------------- */
+
+[data-slot="dialog-overlay"]:has(~ [data-wa-dialog]),
+[data-slot="alert-dialog-overlay"]:has(~ [data-wa-dialog]) {
+  background-color: rgba(45, 31, 26, 0.24);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
