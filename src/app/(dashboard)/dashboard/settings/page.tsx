@@ -1,12 +1,8 @@
-export default function DashboardSettingsPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-medium" style={{ color: "var(--dash-foreground)" }}>
-        Settings
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "var(--dash-muted)" }}>
-        Coming soon.
-      </p>
-    </div>
-  );
+import { SettingsPage } from "@/components/dashboard/settings/settings-page";
+import { getSettingsPageData } from "@/server/queries/settings";
+
+export default async function DashboardSettingsPage() {
+  const data = await getSettingsPageData();
+
+  return <SettingsPage data={data} />;
 }
