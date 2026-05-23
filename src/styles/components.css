@@ -1550,18 +1550,6 @@
   line-height: 1;
 }
 
-[data-dashboard] .ws-intro-pill {
-  margin-left: auto;
-  color: var(--dash-brand-active);
-  border: 1px solid #de9575;
-  background: #fff5ee;
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-weight: 750;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
 /* ─── Summary Grid ──────────────────────────────────────────────────────── */
 
 [data-dashboard] .ws-summary-grid {
@@ -1611,10 +1599,6 @@
     white-space: normal;
   }
 
-  [data-dashboard] .ws-intro-pill {
-    margin-left: 0;
-  }
-
   [data-dashboard] .ws-countdown-hero {
     background-position: center 36%;
     padding: 38px 22px 28px;
@@ -1651,11 +1635,6 @@
 
   [data-dashboard] .ws-intro p {
     font-size: 14px;
-  }
-
-  [data-dashboard] .ws-intro-pill {
-    padding: 9px 16px;
-    font-size: 13px;
   }
 
   [data-dashboard] .ws-countdown-hero {

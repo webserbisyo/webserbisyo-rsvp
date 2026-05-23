@@ -20,7 +20,6 @@ export default async function DashboardPage() {
             </span>
           </h2>
         </div>
-        <span className="ws-intro-pill">Client dashboard</span>
       </section>
 
       <EventCountdownCard
