@@ -24,6 +24,7 @@ export function EditableGuestLimitStat({
   const canEdit = Boolean(eventId);
   const canSave = canEdit && hasChanged && !validationError && !isPending;
   const displayValue = persistedValue ? `${persistedValue}` : "To be finalized";
+  const rowClassName = `ws-stat-row ws-stat-row-editable${isEditing ? " is-editing" : ""}`;
 
   function handleCancel() {
     setDraftValue(persistedValue ? `${persistedValue}` : "");
@@ -56,7 +57,7 @@ export function EditableGuestLimitStat({
   }
 
   return (
-    <div className="ws-stat-row ws-stat-row-editable">
+    <div className={rowClassName}>
       <span className="grid h-6 w-6 place-items-center text-[var(--dash-muted)]" aria-hidden="true">
         <Users size={18} />
       </span>
@@ -66,7 +67,7 @@ export function EditableGuestLimitStat({
           {!isEditing ? (
             <button
               type="button"
-              className="inline-flex h-7 items-center rounded-full border border-[var(--dash-border)] bg-white px-2.5 text-[12px] font-semibold text-[var(--dash-brand-active)] transition hover:border-[var(--dash-border-hover)] hover:bg-[var(--dash-brand-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dash-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[var(--dash-border)] bg-white px-2.5 text-[12px] font-semibold leading-none text-[var(--dash-brand-active)] transition hover:border-[var(--dash-border-hover)] hover:bg-[var(--dash-brand-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dash-ring)] disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => setIsEditing(true)}
               disabled={!canEdit}
             >
@@ -75,9 +76,8 @@ export function EditableGuestLimitStat({
             </button>
           ) : null}
         </div>
-        <p className="mt-1 text-xs text-[var(--dash-subtle)]">Maximum allowed RSVP guests</p>
         {isEditing ? (
-          <div className="mt-3 space-y-2">
+          <div className="mt-2 space-y-2">
             <input
               type="text"
               inputMode="numeric"

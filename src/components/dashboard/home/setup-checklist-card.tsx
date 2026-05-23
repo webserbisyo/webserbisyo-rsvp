@@ -5,6 +5,11 @@ export function SetupChecklistCard({
   items,
 }: {
   items: Array<{
+    children?: Array<{
+      completed: boolean;
+      id: string;
+      label: string;
+    }>;
     completed: boolean;
     href: string;
     id: string;
@@ -33,18 +38,32 @@ export function SetupChecklistCard({
           const isNext = index === nextItemIndex;
 
           return (
-            <div
-              key={item.id}
-              className={`ws-check-row ${item.completed ? "done" : ""} ${isNext ? "next" : ""}`}
-            >
-              <span className="ws-check-circle">
-                {item.completed ? <Check size={13} strokeWidth={3} /> : null}
-              </span>
-              <span className="ws-check-label">{item.label}</span>
-              {!item.completed && isNext ? (
-                <Link href={item.href} className="ws-check-review">
-                  Review <span aria-hidden="true">→</span>
-                </Link>
+            <div key={item.id} className="ws-check-item">
+              <div className={`ws-check-row ${item.completed ? "done" : ""} ${isNext ? "next" : ""}`}>
+                <span className="ws-check-circle">
+                  {item.completed ? <Check size={13} strokeWidth={3} /> : null}
+                </span>
+                <span className="ws-check-label">{item.label}</span>
+                {!item.completed && isNext ? (
+                  <Link href={item.href} className="ws-check-review">
+                    Review <span aria-hidden="true">→</span>
+                  </Link>
+                ) : null}
+              </div>
+              {item.children?.length ? (
+                <div className="ws-check-subrows" aria-label={`${item.label} required sections`}>
+                  {item.children.map((child) => (
+                    <div
+                      key={child.id}
+                      className={`ws-check-subrow ${child.completed ? "done" : ""}`}
+                    >
+                      <span className="ws-check-subcircle">
+                        {child.completed ? <Check size={11} strokeWidth={3} /> : null}
+                      </span>
+                      <span className="ws-check-sublabel">{child.label}</span>
+                    </div>
+                  ))}
+                </div>
               ) : null}
             </div>
           );

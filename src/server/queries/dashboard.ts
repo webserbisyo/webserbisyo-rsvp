@@ -11,6 +11,11 @@ import { EventWebsiteContentPatchSchema } from "@/lib/validations/event-website.
 import { getEventResponseCount } from "@/server/queries/responses";
 
 type DashboardChecklistItem = {
+  children?: Array<{
+    completed: boolean;
+    id: string;
+    label: string;
+  }>;
   completed: boolean;
   href: string;
   id: string;
@@ -229,6 +234,23 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const websiteContentCompleted = optionalSectionSummary.completedCount > 0;
   const checklistItems: DashboardChecklistItem[] = [
     {
+      children: [
+        {
+          completed: hostInfoCompleted,
+          id: "couple-info",
+          label: "Couple Info",
+        },
+        {
+          completed: mainEventCompleted,
+          id: "ceremony",
+          label: "Ceremony",
+        },
+        {
+          completed: venueCompleted,
+          id: "venue",
+          label: "Venue",
+        },
+      ],
       completed: eventDetailsCompleted,
       href: "/dashboard/event",
       id: "event-details",
