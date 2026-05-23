@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Calendar, MessageSquare, Pencil } from "lucide-react";
 import { isSameDay } from "date-fns";
@@ -22,6 +22,15 @@ function parseDate(value?: string | null) {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function subscribeToNothing() {
+  return () => {};
+}
+
+function subscribeToClock(onStoreChange: () => void) {
+  const interval = window.setInterval(onStoreChange, 1000);
+  return () => window.clearInterval(interval);
 }
 
 function CountdownTile({ label, value }: { label: string; value: number }) {
@@ -65,28 +74,29 @@ function CountdownMessage({
 }
 
 export function EventCountdownCard({
+  eventDateLabel,
   eventDateTime,
+  hasEventDate,
+  hasEventTime,
   rsvpDeadlineLabel,
 }: {
-  countdownStartAt?: string;
+  eventDateLabel?: string;
   eventDateTime?: string;
+  hasEventDate: boolean;
+  hasEventTime: boolean;
   rsvpDeadlineLabel: string;
 }) {
   const shouldReduceMotion = useReducedMotion();
   const targetDate = useMemo(() => parseDate(eventDateTime), [eventDateTime]);
-  const [now, setNow] = useState(() => new Date());
+  const hasMounted = useSyncExternalStore(subscribeToNothing, () => true, () => false);
+  const nowTimestamp = useSyncExternalStore(
+    targetDate ? subscribeToClock : subscribeToNothing,
+    () => Date.now(),
+    () => 0,
+  );
+  const now = hasMounted && targetDate ? new Date(nowTimestamp) : null;
 
-  useEffect(() => {
-    if (!targetDate) return;
-
-    const interval = window.setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, [targetDate]);
-
-  if (!targetDate) {
+  if (!hasEventDate) {
     return (
       <motion.section
         animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
@@ -96,7 +106,7 @@ export function EventCountdownCard({
       >
         <div className="ws-countdown-overlay" aria-hidden="true" />
 
-        <Link href="/dashboard/event" className="ws-edit-date">
+        <Link href="/dashboard/event?section=main_event" className="ws-edit-date">
           <Pencil size={13} />
           <span className="ws-edit-date-full">Edit date &amp; time</span>
           <span className="ws-edit-date-short">Edit date</span>
@@ -122,9 +132,50 @@ export function EventCountdownCard({
     );
   }
 
-  const timeLeft = getTimeLeft(targetDate, now);
-  const isEventDay = isSameDay(now, targetDate);
-  const isAfterEvent = now > targetDate && !isEventDay;
+  if (!hasEventTime || !targetDate) {
+    return (
+      <motion.section
+        animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+        className="ws-countdown-hero"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
+      >
+        <div className="ws-countdown-overlay" aria-hidden="true" />
+
+        <Link href="/dashboard/event?section=main_event" className="ws-edit-date">
+          <Pencil size={13} />
+          <span className="ws-edit-date-full">Edit date &amp; time</span>
+          <span className="ws-edit-date-short">Edit date</span>
+        </Link>
+
+        <div className="ws-hero-left">
+          <div className="ws-kicker">Event Countdown</div>
+          <h2>
+            Date set,
+            <br />
+            add your time ✦
+          </h2>
+          <div className="ws-deadline">
+            <Calendar size={16} />
+            <span>
+              Event date: <strong>{eventDateLabel ?? "Date set"}</strong>
+            </span>
+          </div>
+        </div>
+
+        <div className="ws-hero-right ws-hero-empty">
+          <p>
+            Your event date is saved. Add the ceremony time to unlock the live countdown and guest-facing timeline.
+          </p>
+        </div>
+      </motion.section>
+    );
+  }
+
+  const timeLeft = now ? getTimeLeft(targetDate, now) : null;
+  const isEventDay = Boolean(now && isSameDay(now, targetDate));
+  const isAfterEvent = Boolean(now && now > targetDate && !isEventDay);
+
   return (
     <motion.section
       animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
@@ -134,7 +185,7 @@ export function EventCountdownCard({
     >
       <div className="ws-countdown-overlay" aria-hidden="true" />
 
-      <Link href="/dashboard/event" className="ws-edit-date">
+      <Link href="/dashboard/event?section=main_event" className="ws-edit-date">
         <Pencil size={13} />
         <span className="ws-edit-date-full">Edit date &amp; time</span>
         <span className="ws-edit-date-short">Edit date</span>
@@ -185,13 +236,15 @@ export function EventCountdownCard({
         ) : (
           <div className="ws-countdown-panel">
             <div className="ws-count-grid">
-              <CountdownTile label="Days" value={timeLeft.days} />
-              <CountdownTile label="Hours" value={timeLeft.hours} />
-              <CountdownTile label="Minutes" value={timeLeft.minutes} />
-              <CountdownTile label="Seconds" value={timeLeft.seconds} />
+              <CountdownTile label="Days" value={timeLeft?.days ?? 0} />
+              <CountdownTile label="Hours" value={timeLeft?.hours ?? 0} />
+              <CountdownTile label="Minutes" value={timeLeft?.minutes ?? 0} />
+              <CountdownTile label="Seconds" value={timeLeft?.seconds ?? 0} />
             </div>
             <div className="ws-countdown-footer">
-              <p className="ws-timer-caption">Time remaining until your event</p>
+              <p className="ws-timer-caption">
+                {hasMounted ? "Time remaining until your event" : "Countdown starting..."}
+              </p>
             </div>
           </div>
         )}

@@ -26,6 +26,7 @@ export function EditableGuestLimitStat({
   const [draftValue, setDraftValue] = useState(initialGuestLimit ? `${initialGuestLimit}` : "");
   const [serverError, setServerError] = useState<string | null>(null);
   const errorId = useId();
+  const inputId = useId();
 
   const validationError = getGuestLimitError(draftValue);
   const hasChanged = draftValue !== (persistedValue ? `${persistedValue}` : "");
@@ -109,7 +110,11 @@ export function EditableGuestLimitStat({
               </PopoverTitle>
             </PopoverHeader>
             <div className="space-y-3">
+              <label htmlFor={inputId} className="sr-only">
+                Guest limit
+              </label>
               <input
+                id={inputId}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -120,6 +125,7 @@ export function EditableGuestLimitStat({
                 }}
                 aria-invalid={validationError || serverError ? "true" : "false"}
                 aria-describedby={validationError || serverError ? errorId : undefined}
+                aria-label="Guest limit"
                 className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm font-semibold text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
                 placeholder="Enter guest limit"
               />

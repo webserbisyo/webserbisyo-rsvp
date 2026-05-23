@@ -1,21 +1,53 @@
 "use client";
 
+import { useMemo, useSyncExternalStore } from "react";
 import { Copy, ExternalLink, Globe, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { buildPublicRsvpUrl, normalizePublicAppUrl } from "@/lib/public-rsvp-url";
+
+function subscribeToNothing() {
+  return () => {};
+}
 
 export function RsvpWebsiteCard({
+  isShareable,
+  publicUrl,
+  shareHint,
   slug,
 }: {
+  isShareable: boolean;
+  publicUrl: string | null;
+  shareHint: string;
   slug: string | null;
 }) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com";
-  const url = slug ? `${baseUrl}/r/${slug}` : null;
-  const displayUrl = url ? url.replace(/^https?:\/\//, "") : "Slug pending";
+  const clientOrigin = useSyncExternalStore(
+    subscribeToNothing,
+    () => normalizePublicAppUrl(window.location.origin),
+    () => null,
+  );
+
+  const url = useMemo(() => {
+    if (!isShareable || !slug) {
+      return null;
+    }
+
+    if (publicUrl) {
+      return publicUrl;
+    }
+
+    if (clientOrigin) {
+      return buildPublicRsvpUrl(clientOrigin, slug);
+    }
+
+    return null;
+  }, [clientOrigin, isShareable, publicUrl, slug]);
+
+  const displayUrl = url ? url.replace(/^https?:\/\//, "") : "Publish pending";
 
   async function handleCopy() {
     if (!url) {
-      toast.error("Your RSVP link will be available once the slug is ready.");
+      toast.error(shareHint);
       return;
     }
 
@@ -35,7 +67,7 @@ export function RsvpWebsiteCard({
         </div>
       </div>
 
-      <div className={`ws-link-field ${!url ? "is-disabled" : ""}`} title={url ?? "Slug pending"}>
+      <div className={`ws-link-field ${!url ? "is-disabled" : ""}`} title={url ?? shareHint}>
         <Globe size={18} />
         <span>{displayUrl}</span>
         <button onClick={() => void handleCopy()} aria-label="Copy RSVP link" disabled={!url}>
@@ -43,34 +75,27 @@ export function RsvpWebsiteCard({
         </button>
       </div>
 
-      {!url ? <p className="ws-website-hint">Your RSVP preview and share link will appear once the slug is assigned.</p> : null}
+      {!url ? <p className="ws-website-hint">{shareHint}</p> : null}
 
       <div className="ws-website-actions">
         {url ? (
-          <>
-            <a href={url} target="_blank" rel="noreferrer" className="ws-preview-btn">
-              <ExternalLink size={16} />
-              View website
-            </a>
-            <button className="ws-copy-btn" onClick={() => void handleCopy()}>
-              <LinkIcon size={16} />
-              Copy link
-            </button>
-            <Link href="/dashboard/website-access" className="ws-manage-btn">
-              Manage access
-            </Link>
-          </>
+          <a href={url} target="_blank" rel="noreferrer" className="ws-preview-btn">
+            <ExternalLink size={16} />
+            View website
+          </a>
         ) : (
-          <>
-            <Link href="/dashboard/website-access" className="ws-preview-btn">
-              <ExternalLink size={16} />
-              Manage access
-            </Link>
-            <Link href="/dashboard/website-access" className="ws-manage-btn">
-              Share / QR
-            </Link>
-          </>
+          <button type="button" className="ws-preview-btn" disabled aria-disabled="true">
+            <ExternalLink size={16} />
+            View website
+          </button>
         )}
+        <button className="ws-copy-btn" onClick={() => void handleCopy()} disabled={!url}>
+          <LinkIcon size={16} />
+          Copy link
+        </button>
+        <Link href="/dashboard/website-access" className="ws-manage-btn">
+          Manage access
+        </Link>
       </div>
     </section>
   );

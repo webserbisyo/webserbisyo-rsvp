@@ -27,17 +27,30 @@ import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event
 
 type EventWebsiteWorkspaceProps = {
   eventWebsiteData: DashboardEventWebsiteData;
+  initialSelectedSection?: string | null;
 };
 
-export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspaceProps) {
+export function EventWebsiteWorkspace({
+  eventWebsiteData,
+  initialSelectedSection = null,
+}: EventWebsiteWorkspaceProps) {
   const [isPending, startTransition] = useTransition();
-  const [selectedSection, setSelectedSection] = useState<EventWebsiteSectionKey>("host_info");
-  const [previewScrollRequest, setPreviewScrollRequest] = useState(0);
-  const [savedContent, setSavedContent] = useState(eventWebsiteData.eventWebsiteContent);
   const resolvedSections = useMemo(
     () => resolveEventWebsiteSections(eventWebsiteData.eventType),
     [eventWebsiteData.eventType],
   );
+  const [savedContent, setSavedContent] = useState(eventWebsiteData.eventWebsiteContent);
+  const initialSectionKey = useMemo(
+    () =>
+      resolveInitialSelectedSection({
+        enabledSections: eventWebsiteData.eventWebsiteContent.layout.enabledSections,
+        requestedSection: initialSelectedSection,
+        resolvedSections,
+      }),
+    [eventWebsiteData.eventWebsiteContent.layout.enabledSections, initialSelectedSection, resolvedSections],
+  );
+  const [selectedSection, setSelectedSection] = useState<EventWebsiteSectionKey>(initialSectionKey);
+  const [previewScrollRequest, setPreviewScrollRequest] = useState(0);
   const editableSections = useMemo(
     () => [...resolvedSections.requiredSections, ...resolvedSections.optionalSections],
     [resolvedSections.optionalSections, resolvedSections.requiredSections],
@@ -198,4 +211,40 @@ export function EventWebsiteWorkspace({ eventWebsiteData }: EventWebsiteWorkspac
       />
     </>
   );
+}
+
+function resolveInitialSelectedSection(input: {
+  enabledSections: Record<string, boolean | undefined>;
+  requestedSection: string | null;
+  resolvedSections: ReturnType<typeof resolveEventWebsiteSections>;
+}) {
+  const requestedSection = input.requestedSection?.trim();
+
+  if (!requestedSection) {
+    return "host_info";
+  }
+
+  if (requestedSection === "website_content") {
+    return getDefaultWebsiteContentSection(input) ?? "host_info";
+  }
+
+  const validKeys = new Set<EventWebsiteSectionKey>([
+    ...input.resolvedSections.requiredSections.map((section) => section.key),
+    ...input.resolvedSections.optionalSections.map((section) => section.key),
+  ]);
+
+  return validKeys.has(requestedSection as EventWebsiteSectionKey)
+    ? (requestedSection as EventWebsiteSectionKey)
+    : "host_info";
+}
+
+function getDefaultWebsiteContentSection(input: {
+  enabledSections: Record<string, boolean | undefined>;
+  resolvedSections: ReturnType<typeof resolveEventWebsiteSections>;
+}) {
+  const enabledOptionalSection = input.resolvedSections.optionalSections.find(
+    (section) => input.enabledSections[section.key] !== false,
+  );
+
+  return enabledOptionalSection?.key ?? input.resolvedSections.optionalSections[0]?.key ?? null;
 }

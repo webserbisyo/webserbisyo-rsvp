@@ -1,10 +1,12 @@
 import "server-only";
 
-import { resolveEventWebsiteSections } from "@/config/event-website-sections";
 import { formatUserRoleLabel } from "@/lib/auth/role-labels";
+import { buildManilaOffsetDateTime } from "@/lib/event-website/canonical";
 import { mergeEventWebsiteContent } from "@/lib/event-website/hydration";
+import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
-import { requireTenantMember } from "@/lib/permissions";
+import { PermissionError, requireTenantMember, type AuthenticatedProfile } from "@/lib/permissions";
+import { buildPublicRsvpUrl, resolveConfiguredPublicAppUrl } from "@/lib/public-rsvp-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { EventWebsiteContentPatchSchema } from "@/lib/validations/event-website.schema";
@@ -21,6 +23,77 @@ type DashboardChecklistState = {
   items: DashboardChecklistItem[];
 };
 
+type DashboardPaymentState = "confirmed" | "missing" | "partial" | "pending" | "refunded" | "unpaid";
+
+type DashboardPaymentSummary = {
+  description: string;
+  isConfirmed: boolean;
+  label: string;
+  state: DashboardPaymentState;
+};
+
+type DashboardEventRow = {
+  draft_event_slug: string | null;
+  draft_visibility: string | null;
+  event_content:
+    | {
+        content_json: unknown;
+        published_at: string | null;
+        published_content_json: unknown;
+      }
+    | Array<{
+        content_json: unknown;
+        published_at: string | null;
+        published_content_json: unknown;
+      }>
+    | null;
+  event_date: string | null;
+  event_slug: string | null;
+  event_time: string | null;
+  event_type: string | null;
+  fallback_page_enabled: boolean | null;
+  id: string;
+  max_guest_count: number | null;
+  published_at: string | null;
+  rsvp_close_at: string | null;
+  status: string | null;
+  title: string | null;
+  venue_address: string | null;
+  venue_name: string | null;
+  visibility: string | null;
+};
+
+type DashboardPaymentRow = {
+  amount_due: number | null;
+  amount_paid: number | null;
+  created_at: string | null;
+  currency: string | null;
+  hosting_ends_at: string | null;
+  hosting_starts_at: string | null;
+  id: string;
+  paid_at: string | null;
+  payment_method: string | null;
+  payment_status: string | null;
+  plan_type: string | null;
+  updated_at: string | null;
+};
+
+type DashboardClientRow = {
+  contact_email: string | null;
+  contact_name: string | null;
+  hosting_ends_at: string | null;
+  hosting_starts_at: string | null;
+  id: string;
+  name: string;
+  plan_type: "pro" | "max" | string;
+  status: string;
+};
+
+type DashboardPackageSettingsRow = {
+  default_amount: number | null;
+  default_hosting_days: number | null;
+};
+
 export type DashboardHomeData = {
   checklist: DashboardChecklistState;
   client: {
@@ -34,13 +107,18 @@ export type DashboardHomeData = {
     status: string;
   };
   event: {
-    countdownStartAt?: string;
-    eventId: string | null;
+    eventDateLabel?: string;
     eventDateTime?: string;
+    eventId: string | null;
+    hasEventDate: boolean;
+    hasEventTime: boolean;
     isPublished: boolean;
+    isShareable: boolean;
+    publicUrl: string | null;
     rsvpDeadlineLabel: string;
-    statusChipLabel: "Draft" | "Published" | "Unpublished";
+    shareHint: string;
     slug?: string;
+    statusChipLabel: "Draft" | "Published" | "Unpublished";
   };
   packageDefaults?: {
     defaultAccessDays?: number;
@@ -65,17 +143,37 @@ export type DashboardHomeData = {
     responsesLabel: string;
     rsvpCoverageLabel: string;
   };
+  warning: string | null;
 };
+
+const DEFAULT_PUBLIC_APP_URL = resolveConfiguredPublicAppUrl(
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.NEXT_PUBLIC_SITE_URL,
+  process.env.SITE_URL,
+);
 
 export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const profile = await requireTenantMember();
-  const supabase = await createServerSupabaseClient();
-  const adminSupabase = createAdminClient();
   const clientId = profile.client_id;
 
   if (!clientId) {
-    throw new Error("Client tenant profile is missing client_id.");
+    throw new PermissionError("Client tenant access is required.");
   }
+
+  try {
+    return await loadDashboardSummary(profile, clientId);
+  } catch (error) {
+    logDashboardSummaryError(error);
+    return buildFallbackDashboardSummary(profile);
+  }
+}
+
+async function loadDashboardSummary(
+  profile: AuthenticatedProfile,
+  clientId: string,
+): Promise<DashboardHomeData> {
+  const supabase = await createServerSupabaseClient();
+  const adminSupabase = createAdminClient();
 
   const [
     { data: client, error: clientError },
@@ -89,7 +187,7 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
         "id, name, contact_email, contact_name, status, plan_type, hosting_starts_at, hosting_ends_at",
       )
       .eq("id", clientId)
-      .single(),
+      .maybeSingle(),
     supabase
       .from("rsvp_events")
       .select(
@@ -111,7 +209,9 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
           visibility,
           draft_visibility,
           event_content (
-            content_json
+            content_json,
+            published_at,
+            published_content_json
           )
         `,
       )
@@ -121,10 +221,12 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
     supabase
       .from("payments")
       .select(
-        "id, amount_due, amount_paid, currency, paid_at, payment_method, payment_status, updated_at",
+        "id, plan_type, amount_due, amount_paid, currency, paid_at, payment_method, payment_status, hosting_starts_at, hosting_ends_at, updated_at, created_at",
       )
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false })
+      .order("paid_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1),
     supabase
       .from("rsvp_applications")
@@ -138,57 +240,57 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   if (eventError) throw eventError;
   if (paymentError) throw paymentError;
   if (applicationError) throw applicationError;
+  if (!client) throw new Error("Dashboard could not load the current tenant client record.");
 
-  const event = events?.[0] ?? null;
-  const payment = payments?.[0] ?? null;
+  const event = (events?.[0] ?? null) as DashboardEventRow | null;
+  const payment = (payments?.[0] ?? null) as DashboardPaymentRow | null;
   const application = applications?.[0] ?? null;
+  const eventContent = normalizeEventContentRelation(event?.event_content);
 
-  const [{ data: packageSettings, error: packageSettingsError }, responseCount] = await Promise.all([
-    adminSupabase
-      .from("platform_package_settings")
-      .select("default_amount, default_hosting_days")
-      .eq("plan_type", client.plan_type)
-      .maybeSingle(),
-    event?.id ? getEventResponseCount({ clientId, eventId: event.id, supabase }) : 0,
+  const [packageSettings, refunds, responseCount] = await Promise.all([
+    safeLoadPackageSettings(adminSupabase, client.plan_type),
+    safeLoadRefunds(adminSupabase, clientId, payment?.id ?? null),
+    event?.id ? getEventResponseCount({ clientId, eventId: event.id, supabase }) : Promise.resolve(0),
   ]);
-
-  if (packageSettingsError) throw packageSettingsError;
 
   const displayName = profile.full_name ?? client.contact_name ?? client.name ?? "there";
   const planLabel = formatPlanLabel(client.plan_type);
-  const defaultAccessDays =
-    packageSettings?.default_hosting_days ??
-    getCoverageDays(client.hosting_starts_at, client.hosting_ends_at) ??
-    365;
+  const defaultAccessDays = packageSettings?.default_hosting_days ?? null;
   const defaultAmount = packageSettings?.default_amount ?? null;
-  const paymentStatus = normalizePaymentStatus(payment?.payment_status, payment?.amount_paid);
-  const paymentAmount = payment?.amount_paid ?? payment?.amount_due ?? defaultAmount;
-  const websitePublished = isPublishedEvent(event?.status, event?.published_at);
+  const refundTotal = refunds.reduce((sum, refund) => sum + (refund.amount ?? 0), 0);
+  const paymentSummary = getDashboardPaymentSummary({
+    amountDue: payment?.amount_due ?? defaultAmount,
+    amountPaid: payment?.amount_paid ?? 0,
+    paymentStatus: payment?.payment_status ?? null,
+    refundTotal,
+  });
+  const netAmountPaid = payment ? Math.max((payment.amount_paid ?? 0) - refundTotal, 0) : 0;
+  const paymentAmount = getDashboardPaymentAmount({
+    defaultAmount,
+    netAmountPaid,
+    payment,
+    paymentState: paymentSummary.state,
+  });
+  const publishState = getDashboardPublishState({
+    fallbackPageEnabled: event?.fallback_page_enabled ?? false,
+    publishedAt: event?.published_at ?? null,
+    status: event?.status ?? null,
+  });
+  const shareable = publishState && Boolean(event?.event_slug && hasPublishedSnapshot(eventContent));
+  const websiteAccessConfigured = hasWebsiteAccessConfigured({
+    draftSlug: event?.draft_event_slug,
+    draftVisibility: event?.draft_visibility,
+    publishedSlug: event?.event_slug,
+    visibility: event?.visibility,
+  });
+  const publicUrl =
+    shareable && event?.event_slug && DEFAULT_PUBLIC_APP_URL
+      ? buildPublicRsvpUrl(DEFAULT_PUBLIC_APP_URL, event.event_slug)
+      : null;
   const roleLabel = profile.role === "client_staff" ? "Client Staff" : "Client Admin";
-  const rawContentJson = normalizeEventContentRelation(event?.event_content)?.content_json ?? null;
+  const rawContentJson = eventContent?.content_json ?? null;
   const parsedContentPatch = EventWebsiteContentPatchSchema.safeParse(rawContentJson);
   const websiteContent = mergeEventWebsiteContent(rawContentJson, {
-    application,
-    client: {
-      contactName: client.contact_name ?? client.name,
-      name: client.name,
-    },
-    event: {
-      eventDate: event?.event_date ?? null,
-      eventTime: event?.event_time ?? null,
-      eventType: event?.event_type ?? null,
-      maxGuestCount: event?.max_guest_count ?? null,
-      rsvpCloseAt: event?.rsvp_close_at ?? null,
-      title: event?.title ?? null,
-      venueAddress: event?.venue_address ?? null,
-      venueName: event?.venue_name ?? null,
-    },
-    profile: {
-      email: profile.email,
-      fullName: profile.full_name,
-    },
-  });
-  const defaultWebsiteContent = mergeEventWebsiteContent({}, {
     application,
     client: {
       contactName: client.contact_name ?? client.name,
@@ -213,58 +315,16 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
     parsedContentPatch.success && hasHostInfoContent(websiteContent.sections.host_info);
   const mainEventCompleted = Boolean(event?.event_date && event?.event_time && event?.rsvp_close_at);
   const venueCompleted = Boolean(event?.venue_name && event?.venue_address);
-  const websiteAccessConfigured = hasWebsiteAccessConfigured({
-    draftSlug: event?.draft_event_slug,
-    draftVisibility: event?.draft_visibility,
-    publishedSlug: event?.event_slug,
-    visibility: event?.visibility,
+  const websiteContentCompleted = Boolean(getEventWebsiteSavedAt(websiteContent));
+  const checklistItems = buildChecklistItems({
+    hostInfoCompleted,
+    mainEventCompleted,
+    paymentCompleted: paymentSummary.isConfirmed,
+    publishCompleted: shareable,
+    venueCompleted,
+    websiteContentCompleted,
   });
-  const optionalSectionSummary = summarizeOptionalSections({
-    defaultContent: defaultWebsiteContent,
-    eventType: event?.event_type,
-    parsedContentPatch: parsedContentPatch.success ? parsedContentPatch.data : null,
-    savedContent: websiteContent,
-  });
-  const websiteContentCompleted = optionalSectionSummary.completedCount > 0;
-  const checklistItems: DashboardChecklistItem[] = [
-    {
-      completed: hostInfoCompleted,
-      href: "/dashboard/event",
-      id: "couple-info",
-      label: "Couple Info",
-    },
-    {
-      completed: mainEventCompleted,
-      href: "/dashboard/event",
-      id: "ceremony",
-      label: "Ceremony",
-    },
-    {
-      completed: venueCompleted,
-      href: "/dashboard/event",
-      id: "venue",
-      label: "Venue",
-    },
-    {
-      completed: websiteContentCompleted,
-      href: "/dashboard/event",
-      id: "website-content",
-      label: "Website Content",
-    },
-    {
-      completed: paymentStatus.isConfirmed,
-      href: "/dashboard/billing",
-      id: "payment-status",
-      label: "Payment Status",
-    },
-    {
-      completed: websitePublished,
-      href: "/dashboard/website-access",
-      id: "publish-website",
-      label: "Publish Website",
-    },
-  ];
-  const statusChipLabel = websitePublished
+  const statusChipLabel = publishState
     ? "Published"
     : websiteAccessConfigured
       ? "Draft"
@@ -275,7 +335,7 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
       items: checklistItems,
     },
     client: {
-      accessDays: defaultAccessDays,
+      accessDays: defaultAccessDays ?? undefined,
       contactName: client.contact_name ?? client.name,
       name: client.name,
       planDescription: getPlanDescription(client.plan_type),
@@ -285,26 +345,36 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
       status: formatUserRoleLabel(profile.role),
     },
     event: {
-      countdownStartAt: getCountdownStartAt(client.hosting_starts_at),
-      eventId: event?.id ?? null,
+      eventDateLabel: formatEventDateLabel(event?.event_date),
       eventDateTime: buildEventDateTime(event?.event_date, event?.event_time),
-      isPublished: websitePublished,
-      rsvpDeadlineLabel: formatDeadlineLabel(event?.event_date),
-      statusChipLabel,
+      eventId: event?.id ?? null,
+      hasEventDate: Boolean(event?.event_date),
+      hasEventTime: Boolean(event?.event_time),
+      isPublished: publishState,
+      isShareable: shareable,
+      publicUrl,
+      rsvpDeadlineLabel: formatDeadlineLabel(event?.rsvp_close_at),
+      shareHint: getWebsiteShareHint({
+        hasFallbackPageEnabled: event?.fallback_page_enabled ?? false,
+        hasPublishedSnapshot: hasPublishedSnapshot(eventContent),
+        hasSlug: Boolean(event?.event_slug),
+        isPublished: publishState,
+      }),
       slug: event?.event_slug ?? undefined,
+      statusChipLabel,
     },
     packageDefaults:
       defaultAmount !== null || defaultAccessDays
         ? {
-            defaultAccessDays,
+            defaultAccessDays: defaultAccessDays ?? undefined,
             defaultAmount: defaultAmount ?? undefined,
           }
         : undefined,
     payment: {
       amountLabel: paymentAmount !== null ? formatCurrency(paymentAmount) : "Amount pending",
-      description: getPaymentDescription(paymentStatus.isConfirmed, paymentAmount),
-      isConfirmed: paymentStatus.isConfirmed,
-      status: paymentStatus.label,
+      description: paymentSummary.description,
+      isConfirmed: paymentSummary.isConfirmed,
+      status: paymentSummary.label,
     },
     profile: {
       displayName,
@@ -317,14 +387,131 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
       guestLimitValue: event?.max_guest_count ?? null,
       guestLimitLabel: event?.max_guest_count ? `${event.max_guest_count}` : "To be finalized",
       responsesLabel: `${responseCount} so far`,
-      rsvpCoverageLabel: `${defaultAccessDays} days`,
+      rsvpCoverageLabel: getCoverageLabel({
+        client,
+        defaultAccessDays,
+        payment,
+      }),
     },
+    warning: null,
   };
 }
 
+function buildFallbackDashboardSummary(profile: AuthenticatedProfile): DashboardHomeData {
+  const displayName = profile.full_name ?? "there";
+  const roleLabel = profile.role === "client_staff" ? "Client Staff" : "Client Admin";
+
+  return {
+    checklist: {
+      items: buildChecklistItems({
+        hostInfoCompleted: false,
+        mainEventCompleted: false,
+        paymentCompleted: false,
+        publishCompleted: false,
+        venueCompleted: false,
+        websiteContentCompleted: false,
+      }),
+    },
+    client: {
+      contactName: displayName,
+      name: displayName,
+      planDescription: "Your dashboard details are temporarily unavailable while we reconnect your data.",
+      planLabel: "Package pending",
+      planType: "pro",
+      roleLabel,
+      status: formatUserRoleLabel(profile.role),
+    },
+    event: {
+      eventDateTime: undefined,
+      eventId: null,
+      hasEventDate: false,
+      hasEventTime: false,
+      isPublished: false,
+      isShareable: false,
+      publicUrl: null,
+      rsvpDeadlineLabel: "Set RSVP deadline",
+      shareHint: "Publish your website to activate this link.",
+      statusChipLabel: "Unpublished",
+    },
+    packageDefaults: undefined,
+    payment: {
+      amountLabel: "Amount pending",
+      description: "Payment details are temporarily unavailable. Please refresh or try again shortly.",
+      isConfirmed: false,
+      status: "Pending",
+    },
+    profile: {
+      displayName,
+      email: profile.email,
+      firstName: getFirstName(displayName),
+      roleLabel,
+    },
+    stats: {
+      eventId: null,
+      guestLimitValue: null,
+      guestLimitLabel: "To be finalized",
+      responsesLabel: "0 so far",
+      rsvpCoverageLabel: "Coverage pending",
+    },
+    warning:
+      "Some dashboard details are temporarily unavailable. Core account access is still active.",
+  };
+}
+
+function buildChecklistItems(input: {
+  hostInfoCompleted: boolean;
+  mainEventCompleted: boolean;
+  paymentCompleted: boolean;
+  publishCompleted: boolean;
+  venueCompleted: boolean;
+  websiteContentCompleted: boolean;
+}) {
+  return [
+    {
+      completed: input.hostInfoCompleted,
+      href: buildDashboardEventHref("host_info"),
+      id: "couple-info",
+      label: "Couple Info",
+    },
+    {
+      completed: input.mainEventCompleted,
+      href: buildDashboardEventHref("main_event"),
+      id: "ceremony",
+      label: "Ceremony",
+    },
+    {
+      completed: input.venueCompleted,
+      href: buildDashboardEventHref("venue"),
+      id: "venue",
+      label: "Venue",
+    },
+    {
+      completed: input.websiteContentCompleted,
+      href: buildDashboardEventHref("website_content"),
+      id: "website-content",
+      label: "Website Content",
+    },
+    {
+      completed: input.paymentCompleted,
+      href: "/dashboard/billing",
+      id: "payment-status",
+      label: "Payment Status",
+    },
+    {
+      completed: input.publishCompleted,
+      href: "/dashboard/website-access",
+      id: "publish-website",
+      label: "Publish Website",
+    },
+  ] satisfies DashboardChecklistItem[];
+}
+
+function buildDashboardEventHref(section: string) {
+  return `/dashboard/event?section=${section}`;
+}
+
 function buildEventDateTime(eventDate?: string | null, eventTime?: string | null) {
-  if (!eventDate) return undefined;
-  return `${eventDate}T${eventTime || "23:59:59"}`;
+  return buildManilaOffsetDateTime(eventDate, eventTime) ?? undefined;
 }
 
 function formatCurrency(value: number) {
@@ -336,18 +523,23 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function formatDeadlineLabel(eventDate?: string | null) {
-  if (!eventDate) {
-    return "Set your event date to unlock the RSVP timeline.";
-  }
+function formatDeadlineLabel(value?: string | null) {
+  const parsed = parseDateTime(value);
 
-  const parsed = parseDateOnly(eventDate);
   if (!parsed) {
-    return "Set your event date to unlock the RSVP timeline.";
+    return "Set RSVP deadline";
   }
 
-  parsed.setUTCDate(parsed.getUTCDate() - 30);
-  return formatDateOnly(parsed);
+  return new Intl.DateTimeFormat("en-PH", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Asia/Manila",
+  }).format(parsed);
+}
+
+function formatEventDateLabel(value?: string | null) {
+  const parsed = value ? parseDateOnly(value) : null;
+  return parsed ? formatDateOnly(parsed) : undefined;
 }
 
 function formatDateOnly(value: Date) {
@@ -365,12 +557,9 @@ function formatPlanLabel(planType: string | null | undefined) {
   return "Package pending";
 }
 
-function getCountdownStartAt(hostingStartsAt?: string | null) {
-  return hostingStartsAt ?? undefined;
-}
-
 function getCoverageDays(start?: string | null, end?: string | null) {
   if (!start || !end) return null;
+
   const startDate = new Date(start);
   const endDate = new Date(end);
 
@@ -384,24 +573,184 @@ function getCoverageDays(start?: string | null, end?: string | null) {
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
+function getCoverageLabel(input: {
+  client: DashboardClientRow;
+  defaultAccessDays: number | null;
+  payment: DashboardPaymentRow | null;
+}) {
+  const servicePeriod = resolveCoveragePeriod(input);
+
+  if (servicePeriod.startsAt && servicePeriod.endsAt) {
+    const startsAt = parseDateTime(servicePeriod.startsAt);
+    const endsAt = parseDateTime(servicePeriod.endsAt);
+
+    if (startsAt && endsAt) {
+      return `${formatCoverageDate(startsAt)} - ${formatCoverageDate(endsAt)}`;
+    }
+  }
+
+  if (servicePeriod.days) {
+    return `${servicePeriod.days}-day package`;
+  }
+
+  return "Coverage pending";
+}
+
+function formatCoverageDate(value: Date) {
+  return new Intl.DateTimeFormat("en-PH", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Manila",
+  }).format(value);
+}
+
+function resolveCoveragePeriod(input: {
+  client: DashboardClientRow;
+  defaultAccessDays: number | null;
+  payment: DashboardPaymentRow | null;
+}) {
+  const startsAt =
+    input.payment?.hosting_starts_at ??
+    input.client.hosting_starts_at ??
+    (input.payment?.payment_status === "paid" ? input.payment.paid_at : null) ??
+    null;
+  const endsAt =
+    input.payment?.hosting_ends_at ??
+    input.client.hosting_ends_at ??
+    computeEndsAt(startsAt, input.defaultAccessDays);
+
+  return {
+    days:
+      getCoverageDays(input.payment?.hosting_starts_at, input.payment?.hosting_ends_at) ??
+      getCoverageDays(input.client.hosting_starts_at, input.client.hosting_ends_at) ??
+      input.defaultAccessDays,
+    endsAt,
+    startsAt,
+  };
+}
+
+function computeEndsAt(startsAt: string | null, defaultHostingDays: number | null) {
+  const startsAtDate = parseDateTime(startsAt);
+
+  if (!startsAtDate || !defaultHostingDays || defaultHostingDays <= 0) {
+    return null;
+  }
+
+  const endsAt = new Date(startsAtDate.getTime() + defaultHostingDays * 24 * 60 * 60 * 1000);
+  return endsAt.toISOString();
+}
+
 function getFirstName(displayName: string) {
   const trimmed = displayName.trim();
   if (!trimmed) return "there";
   return trimmed.split(/\s+/)[0] ?? "there";
 }
 
-function getPaymentDescription(isConfirmed: boolean, paymentAmount: number | null) {
-  if (isConfirmed) {
-    return paymentAmount !== null
-      ? `Confirmed amount: ${formatCurrency(paymentAmount)}.`
-      : "Confirmed payment received.";
+function getDashboardPaymentSummary(input: {
+  amountDue: number | null;
+  amountPaid: number;
+  paymentStatus: string | null;
+  refundTotal: number;
+}): DashboardPaymentSummary {
+  const state = deriveDashboardPaymentState(input);
+  const netAmountPaid = Math.max(input.amountPaid - input.refundTotal, 0);
+
+  switch (state) {
+    case "confirmed":
+      return {
+        description:
+          netAmountPaid > 0
+            ? `Confirmed amount: ${formatCurrency(netAmountPaid)}.`
+            : "Confirmed payment received.",
+        isConfirmed: true,
+        label: "Confirmed",
+        state,
+      };
+    case "partial":
+      return {
+        description: "A partial payment is recorded. Review Billing for the remaining balance.",
+        isConfirmed: false,
+        label: "Partial",
+        state,
+      };
+    case "refunded":
+      return {
+        description: "A refund is recorded on this billing account. Review Billing for the current balance.",
+        isConfirmed: false,
+        label: "Refunded",
+        state,
+      };
+    case "pending":
+      return {
+        description: "Payment is pending review. Follow up in Billing if confirmation is delayed.",
+        isConfirmed: false,
+        label: "Pending",
+        state,
+      };
+    case "unpaid":
+      return {
+        description: "Payment has not been completed yet. Review Billing for the latest instructions.",
+        isConfirmed: false,
+        label: "Unpaid",
+        state,
+      };
+    case "missing":
+    default:
+      return {
+        description: "Payment details will appear here once your billing setup is ready.",
+        isConfirmed: false,
+        label: "Pending",
+        state: "missing",
+      };
+  }
+}
+
+function deriveDashboardPaymentState(input: {
+  amountDue: number | null;
+  amountPaid: number;
+  paymentStatus: string | null;
+  refundTotal: number;
+}): DashboardPaymentState {
+  const normalizedStatus = input.paymentStatus?.toLowerCase() ?? null;
+
+  if (!normalizedStatus) {
+    return "missing";
   }
 
-  if (paymentAmount !== null) {
-    return `Awaiting confirmation for ${formatCurrency(paymentAmount)}. Follow up on Messenger.`;
+  if (normalizedStatus === "refunded" || input.refundTotal > 0) {
+    return "refunded";
   }
 
-  return "Amount pending. Follow up on Messenger or contact our Facebook page for payment assistance.";
+  if (normalizedStatus === "pending") {
+    return input.amountPaid > 0 ? "partial" : "pending";
+  }
+
+  if (normalizedStatus === "paid" || normalizedStatus === "confirmed") {
+    if (input.amountDue !== null && input.amountPaid > 0 && input.amountPaid < input.amountDue) {
+      return "partial";
+    }
+
+    return "confirmed";
+  }
+
+  if (normalizedStatus === "failed" || normalizedStatus === "cancelled") {
+    return "unpaid";
+  }
+
+  return "missing";
+}
+
+function getDashboardPaymentAmount(input: {
+  defaultAmount: number | null;
+  netAmountPaid: number;
+  payment: DashboardPaymentRow | null;
+  paymentState: DashboardPaymentState;
+}) {
+  if (input.paymentState === "confirmed" || input.paymentState === "partial" || input.paymentState === "refunded") {
+    return input.netAmountPaid || input.payment?.amount_due || input.defaultAmount;
+  }
+
+  return input.payment?.amount_due ?? input.defaultAmount;
 }
 
 function getPlanDescription(planType: string | null | undefined) {
@@ -416,18 +765,33 @@ function getPlanDescription(planType: string | null | undefined) {
   return "Package assignment is still being finalized for your dashboard.";
 }
 
-function isPublishedEvent(status?: string | null, publishedAt?: string | null) {
-  return status === "published" && Boolean(publishedAt);
+function getDashboardPublishState(input: {
+  fallbackPageEnabled: boolean;
+  publishedAt: string | null;
+  status: string | null;
+}) {
+  return input.status === "published" && Boolean(input.publishedAt) && input.fallbackPageEnabled;
 }
 
-function normalizePaymentStatus(status?: string | null, amountPaid?: number | null) {
-  const normalized = status?.toLowerCase() ?? "";
-  const isConfirmed = normalized === "paid" || normalized === "confirmed" || Boolean(amountPaid);
+function getWebsiteShareHint(input: {
+  hasFallbackPageEnabled: boolean;
+  hasPublishedSnapshot: boolean;
+  hasSlug: boolean;
+  isPublished: boolean;
+}) {
+  if (!input.hasSlug) {
+    return "Add a website URL in Manage access to activate this link.";
+  }
 
-  return {
-    isConfirmed,
-    label: isConfirmed ? "Confirmed" : "Pending",
-  };
+  if (!input.isPublished || !input.hasFallbackPageEnabled) {
+    return "Publish your website to activate this link.";
+  }
+
+  if (!input.hasPublishedSnapshot) {
+    return "Publish your latest website draft to activate this link.";
+  }
+
+  return "Your live RSVP website is ready to share.";
 }
 
 function parseDateOnly(value: string) {
@@ -447,16 +811,17 @@ function parseDateOnly(value: string) {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
+function parseDateTime(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function normalizeEventContentRelation(
-  relation:
-    | {
-        content_json: unknown;
-      }
-    | Array<{
-        content_json: unknown;
-      }>
-    | null
-    | undefined,
+  relation: DashboardEventRow["event_content"] | null | undefined,
 ) {
   if (Array.isArray(relation)) {
     return relation[0] ?? null;
@@ -472,6 +837,18 @@ function hasHostInfoContent(section: EventWebsiteContent["sections"]["host_info"
     section.groomName,
     section.hostLine,
   );
+}
+
+function hasPublishedSnapshot(
+  relation:
+    | {
+        published_at: string | null;
+        published_content_json: unknown;
+      }
+    | null
+    | undefined,
+) {
+  return Boolean(relation?.published_at && relation.published_content_json);
 }
 
 function hasWebsiteAccessConfigured(input: {
@@ -490,41 +867,60 @@ function hasAnyNonEmptyText(...values: Array<string | null | undefined>) {
   return values.some((value) => typeof value === "string" && value.trim().length > 0);
 }
 
-function summarizeOptionalSections({
-  defaultContent,
-  eventType,
-  parsedContentPatch,
-  savedContent,
-}: {
-  defaultContent: EventWebsiteContent;
-  eventType?: string | null;
-  parsedContentPatch: {
-    layout?: {
-      enabledSections?: Record<string, boolean | undefined>;
-    };
-  } | null;
-  savedContent: EventWebsiteContent;
-}) {
-  const resolvedSections = resolveEventWebsiteSections(eventType);
-  const enabledOptionalKeys = resolvedSections.optionalSections
-    .map((section) => section.key)
-    .filter((key) => parsedContentPatch?.layout?.enabledSections?.[key] === true);
-  const completedCount = enabledOptionalKeys.filter((key) =>
-    isSectionCustomized(
-      savedContent.sections[key as keyof EventWebsiteContent["sections"]],
-      defaultContent.sections[key as keyof EventWebsiteContent["sections"]],
-    ),
-  ).length;
+async function safeLoadPackageSettings(
+  adminSupabase: ReturnType<typeof createAdminClient>,
+  planType: string | null | undefined,
+) {
+  if (!planType) {
+    return null;
+  }
 
-  return {
-    completedCount,
-    enabledCount: enabledOptionalKeys.length,
-  };
+  try {
+    const { data, error } = await adminSupabase
+      .from("platform_package_settings")
+      .select("default_amount, default_hosting_days")
+      .eq("plan_type", planType)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data as DashboardPackageSettingsRow | null;
+  } catch (error) {
+    console.error("[dashboard] Failed to load package settings", error);
+    return null;
+  }
 }
 
-function isSectionCustomized(
-  savedSection: EventWebsiteContent["sections"][keyof EventWebsiteContent["sections"]],
-  defaultSection: EventWebsiteContent["sections"][keyof EventWebsiteContent["sections"]],
+async function safeLoadRefunds(
+  adminSupabase: ReturnType<typeof createAdminClient>,
+  clientId: string,
+  paymentId: string | null,
 ) {
-  return JSON.stringify(savedSection) !== JSON.stringify(defaultSection);
+  if (!paymentId) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await adminSupabase
+      .from("payment_refunds")
+      .select("amount")
+      .eq("client_id", clientId)
+      .eq("payment_id", paymentId);
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? [];
+  } catch (error) {
+    console.error("[dashboard] Failed to load payment refunds", error);
+    return [];
+  }
+}
+
+function logDashboardSummaryError(error: unknown) {
+  console.error("[dashboard] Failed to load dashboard summary", error);
 }

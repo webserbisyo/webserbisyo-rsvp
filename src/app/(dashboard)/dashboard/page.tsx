@@ -22,9 +22,17 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {summary.warning ? (
+        <div className="mb-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-brand-subtle)] px-4 py-3 text-sm text-[var(--dash-ink)]" role="status">
+          {summary.warning}
+        </div>
+      ) : null}
+
       <EventCountdownCard
-        countdownStartAt={summary.event.countdownStartAt}
+        eventDateLabel={summary.event.eventDateLabel}
         eventDateTime={summary.event.eventDateTime}
+        hasEventDate={summary.event.hasEventDate}
+        hasEventTime={summary.event.hasEventTime}
         rsvpDeadlineLabel={summary.event.rsvpDeadlineLabel}
       />
 
@@ -49,7 +57,7 @@ export default async function DashboardPage() {
           title={summary.client.planLabel}
         />
         <HomeSummaryCard
-          chip={summary.payment.isConfirmed ? "Confirmed" : "Pending review"}
+          chip={summary.payment.isConfirmed ? "Confirmed" : summary.payment.status}
           chipTone={summary.payment.isConfirmed ? "success" : "warning"}
           icon={<Wallet size={22} />}
           label="Payment"
@@ -71,7 +79,12 @@ export default async function DashboardPage() {
       <section className="ws-bottom-grid">
         <SetupChecklistCard items={summary.checklist.items} />
         <div className="ws-right-stack">
-          <RsvpWebsiteCard slug={summary.event.slug ?? null} />
+          <RsvpWebsiteCard
+            isShareable={summary.event.isShareable}
+            publicUrl={summary.event.publicUrl}
+            shareHint={summary.event.shareHint}
+            slug={summary.event.slug ?? null}
+          />
           <QuickStatsCard
             coverageLabel={summary.stats.rsvpCoverageLabel}
             eventId={summary.stats.eventId}
