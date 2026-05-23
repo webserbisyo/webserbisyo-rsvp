@@ -1526,16 +1526,6 @@
   text-align: right;
 }
 
-[data-dashboard] .ws-stat-row-editable {
-  min-height: 38px;
-}
-
-[data-dashboard] .ws-stat-row-editable.is-editing {
-  align-items: start;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
 /* ─── DASHBOARD HOME: Bottom Grid ───────────────────────────────────────── */
 
 [data-dashboard] .ws-bottom-grid {
