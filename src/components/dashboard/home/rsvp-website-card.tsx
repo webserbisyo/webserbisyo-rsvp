@@ -6,10 +6,8 @@ import { toast } from "sonner";
 
 export function RsvpWebsiteCard({
   slug,
-  statusChipLabel,
 }: {
   slug: string | null;
-  statusChipLabel: "Draft" | "Published" | "Unpublished";
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com";
   const url = slug ? `${baseUrl}/r/${slug}` : null;
@@ -34,7 +32,6 @@ export function RsvpWebsiteCard({
       <div className="ws-website-head">
         <div className="min-w-0">
           <h3>Your RSVP Website</h3>
-          <span className="ws-draft-badge">{statusChipLabel}</span>
         </div>
       </div>
 

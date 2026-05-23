@@ -1319,17 +1319,6 @@
   font-weight: 900;
 }
 
-[data-dashboard] .ws-website-head .ws-draft-badge {
-  margin-top: 10px;
-  display: inline-flex;
-  background: #f0e8e1;
-  color: #62544d;
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
 [data-dashboard] .ws-status-dots {
   display: inline-flex;
   width: 1.4em;

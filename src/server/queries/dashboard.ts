@@ -18,12 +18,7 @@ type DashboardChecklistItem = {
 };
 
 type DashboardChecklistState = {
-  optionalContent: {
-    completedEnabledSectionCount: number;
-    enabledSectionCount: number;
-    href: string;
-  };
-  requiredItems: DashboardChecklistItem[];
+  items: DashboardChecklistItem[];
 };
 
 export type DashboardHomeData = {
@@ -219,14 +214,20 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const mainEventCompleted = Boolean(event?.event_date && event?.event_time && event?.rsvp_close_at);
   const venueCompleted = Boolean(event?.venue_name && event?.venue_address);
   const eventDetailsCompleted = hostInfoCompleted && mainEventCompleted && venueCompleted;
-  const rsvpFormCompleted = parsedContentPatch.success;
   const websiteAccessConfigured = hasWebsiteAccessConfigured({
     draftSlug: event?.draft_event_slug,
     draftVisibility: event?.draft_visibility,
     publishedSlug: event?.event_slug,
     visibility: event?.visibility,
   });
-  const requiredItems: DashboardChecklistItem[] = [
+  const optionalSectionSummary = summarizeOptionalSections({
+    defaultContent: defaultWebsiteContent,
+    eventType: event?.event_type,
+    parsedContentPatch: parsedContentPatch.success ? parsedContentPatch.data : null,
+    savedContent: websiteContent,
+  });
+  const websiteContentCompleted = optionalSectionSummary.completedCount > 0;
+  const checklistItems: DashboardChecklistItem[] = [
     {
       completed: eventDetailsCompleted,
       href: "/dashboard/event",
@@ -234,16 +235,16 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
       label: "Event Details",
     },
     {
-      completed: rsvpFormCompleted,
+      completed: websiteContentCompleted,
       href: "/dashboard/event",
-      id: "rsvp-form",
-      label: "RSVP Form",
+      id: "website-content",
+      label: "Website Content",
     },
     {
-      completed: websiteAccessConfigured,
-      href: "/dashboard/website-access",
-      id: "website-access",
-      label: "Website Access",
+      completed: paymentStatus.isConfirmed,
+      href: "/dashboard/billing",
+      id: "payment-status",
+      label: "Payment Status",
     },
     {
       completed: websitePublished,
@@ -252,12 +253,6 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
       label: "Publish Website",
     },
   ];
-  const optionalSectionSummary = summarizeOptionalSections({
-    defaultContent: defaultWebsiteContent,
-    eventType: event?.event_type,
-    parsedContentPatch: parsedContentPatch.success ? parsedContentPatch.data : null,
-    savedContent: websiteContent,
-  });
   const statusChipLabel = websitePublished
     ? "Published"
     : websiteAccessConfigured
@@ -266,12 +261,7 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
 
   return {
     checklist: {
-      optionalContent: {
-        completedEnabledSectionCount: optionalSectionSummary.completedCount,
-        enabledSectionCount: optionalSectionSummary.enabledCount,
-        href: "/dashboard/event",
-      },
-      requiredItems,
+      items: checklistItems,
     },
     client: {
       accessDays: defaultAccessDays,

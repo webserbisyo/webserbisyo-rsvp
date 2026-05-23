@@ -70,15 +70,9 @@ export default async function DashboardPage() {
       </section>
 
       <section className="ws-bottom-grid">
-        <SetupChecklistCard
-          optionalContent={summary.checklist.optionalContent}
-          requiredItems={summary.checklist.requiredItems}
-        />
+        <SetupChecklistCard items={summary.checklist.items} />
         <div className="ws-right-stack">
-          <RsvpWebsiteCard
-            slug={summary.event.slug ?? null}
-            statusChipLabel={summary.event.statusChipLabel}
-          />
+          <RsvpWebsiteCard slug={summary.event.slug ?? null} />
           <QuickStatsCard
             coverageLabel={summary.stats.rsvpCoverageLabel}
             eventId={summary.stats.eventId}
