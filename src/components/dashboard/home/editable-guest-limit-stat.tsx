@@ -97,13 +97,14 @@ export function EditableGuestLimitStat({
           </PopoverTrigger>
           <PopoverContent
             align="end"
+            data-dashboard
             sideOffset={10}
             avoidCollisions
             collisionPadding={16}
-            className="w-[min(20rem,calc(100vw-2rem))] gap-3 rounded-[1.25rem] border border-[var(--dash-border)] bg-[color:var(--dash-surface-glass-strong)] p-4 shadow-[var(--dash-shadow-lg)] backdrop-blur-[var(--dash-blur-md)]"
+            className="min-w-[18rem] w-[min(19rem,calc(100vw-2rem))] gap-3 rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-lg"
           >
             <PopoverHeader className="gap-1">
-              <PopoverTitle className="text-sm font-semibold text-[var(--dash-foreground)]">
+              <PopoverTitle className="text-sm font-semibold text-foreground">
                 Edit guest limit
               </PopoverTitle>
             </PopoverHeader>
@@ -119,13 +120,13 @@ export function EditableGuestLimitStat({
                 }}
                 aria-invalid={validationError || serverError ? "true" : "false"}
                 aria-describedby={validationError || serverError ? errorId : undefined}
-                className="h-11 w-full rounded-2xl border border-[var(--dash-border)] bg-white px-3 text-sm font-semibold text-[var(--dash-foreground)] shadow-sm outline-none transition focus:border-[var(--dash-brand)] focus:ring-2 focus:ring-[color:var(--dash-brand-subtle)]"
+                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm font-semibold text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
                 placeholder="Enter guest limit"
               />
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="inline-flex h-10 items-center rounded-xl bg-[var(--dash-brand)] px-3.5 text-sm font-semibold text-white transition hover:bg-[var(--dash-brand-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dash-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-10 items-center rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
                   onClick={handleSave}
                   disabled={!canSave}
                 >
@@ -133,7 +134,7 @@ export function EditableGuestLimitStat({
                 </button>
                 <button
                   type="button"
-                  className="inline-flex h-10 items-center rounded-xl border border-[var(--dash-border)] bg-white px-3.5 text-sm font-semibold text-[var(--dash-muted)] transition hover:border-[var(--dash-border-hover)] hover:bg-[var(--dash-surface-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dash-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-10 items-center rounded-xl border border-border bg-secondary px-3.5 text-sm font-semibold text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={handleCancel}
                   disabled={isPending}
                 >

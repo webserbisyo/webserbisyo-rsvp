@@ -11,11 +11,6 @@ import { EventWebsiteContentPatchSchema } from "@/lib/validations/event-website.
 import { getEventResponseCount } from "@/server/queries/responses";
 
 type DashboardChecklistItem = {
-  children?: Array<{
-    completed: boolean;
-    id: string;
-    label: string;
-  }>;
   completed: boolean;
   href: string;
   id: string;
@@ -218,7 +213,6 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
     parsedContentPatch.success && hasHostInfoContent(websiteContent.sections.host_info);
   const mainEventCompleted = Boolean(event?.event_date && event?.event_time && event?.rsvp_close_at);
   const venueCompleted = Boolean(event?.venue_name && event?.venue_address);
-  const eventDetailsCompleted = hostInfoCompleted && mainEventCompleted && venueCompleted;
   const websiteAccessConfigured = hasWebsiteAccessConfigured({
     draftSlug: event?.draft_event_slug,
     draftVisibility: event?.draft_visibility,
@@ -234,27 +228,22 @@ export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const websiteContentCompleted = optionalSectionSummary.completedCount > 0;
   const checklistItems: DashboardChecklistItem[] = [
     {
-      children: [
-        {
-          completed: hostInfoCompleted,
-          id: "couple-info",
-          label: "Couple Info",
-        },
-        {
-          completed: mainEventCompleted,
-          id: "ceremony",
-          label: "Ceremony",
-        },
-        {
-          completed: venueCompleted,
-          id: "venue",
-          label: "Venue",
-        },
-      ],
-      completed: eventDetailsCompleted,
+      completed: hostInfoCompleted,
       href: "/dashboard/event",
-      id: "event-details",
-      label: "Event Details",
+      id: "couple-info",
+      label: "Couple Info",
+    },
+    {
+      completed: mainEventCompleted,
+      href: "/dashboard/event",
+      id: "ceremony",
+      label: "Ceremony",
+    },
+    {
+      completed: venueCompleted,
+      href: "/dashboard/event",
+      id: "venue",
+      label: "Venue",
     },
     {
       completed: websiteContentCompleted,

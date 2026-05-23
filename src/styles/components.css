@@ -1284,41 +1284,6 @@
   min-width: 0;
 }
 
-[data-dashboard] .ws-check-subrows {
-  margin: -2px 0 8px 35px;
-  display: grid;
-  gap: 8px;
-}
-
-[data-dashboard] .ws-check-subrow {
-  min-height: 24px;
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  color: var(--dash-muted);
-  font-size: 13px;
-}
-
-[data-dashboard] .ws-check-subcircle {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  border: 1.25px solid #dfccba;
-  display: grid;
-  place-items: center;
-  color: white;
-}
-
-[data-dashboard] .ws-check-subrow.done .ws-check-subcircle {
-  background: var(--dash-success);
-  border-color: var(--dash-success);
-}
-
-[data-dashboard] .ws-check-sublabel {
-  min-width: 0;
-}
-
 [data-dashboard] .ws-check-review {
   border: 0;
   background: #ffe8dd;
