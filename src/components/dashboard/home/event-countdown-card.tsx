@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Calendar, MessageSquare, Pencil } from "lucide-react";
 import { isSameDay } from "date-fns";
@@ -22,15 +22,6 @@ function parseDate(value?: string | null) {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function subscribeToNothing() {
-  return () => {};
-}
-
-function subscribeToClock(onStoreChange: () => void) {
-  const interval = window.setInterval(onStoreChange, 1000);
-  return () => window.clearInterval(interval);
 }
 
 function CountdownTile({ label, value }: { label: string; value: number }) {
@@ -88,13 +79,27 @@ export function EventCountdownCard({
 }) {
   const shouldReduceMotion = useReducedMotion();
   const targetDate = useMemo(() => parseDate(eventDateTime), [eventDateTime]);
-  const hasMounted = useSyncExternalStore(subscribeToNothing, () => true, () => false);
-  const nowTimestamp = useSyncExternalStore(
-    targetDate ? subscribeToClock : subscribeToNothing,
-    () => Date.now(),
-    () => 0,
-  );
+  const [nowTimestamp, setNowTimestamp] = useState<number | null>(null);
+  const hasMounted = nowTimestamp !== null;
   const now = hasMounted && targetDate ? new Date(nowTimestamp) : null;
+
+  useEffect(() => {
+    if (!targetDate) {
+      return;
+    }
+
+    const tick = () => {
+      setNowTimestamp(Date.now());
+    };
+
+    const initialTick = window.setTimeout(tick, 0);
+    const interval = window.setInterval(tick, 1000);
+
+    return () => {
+      window.clearTimeout(initialTick);
+      window.clearInterval(interval);
+    };
+  }, [targetDate]);
 
   if (!hasEventDate) {
     return (
