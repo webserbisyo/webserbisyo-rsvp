@@ -9,38 +9,6 @@ import { getDashboardSummary } from "@/server/queries/dashboard";
 export default async function DashboardPage() {
   const summary = await getDashboardSummary();
 
-  const checklistItems = [
-    {
-      completed: true,
-      id: "account",
-      label: "Account created",
-    },
-    {
-      completed: summary.checklist.paymentConfirmed,
-      href: summary.checklist.paymentConfirmed ? undefined : "/dashboard/billing",
-      id: "payment",
-      label: "Payment confirmed",
-    },
-    {
-      completed: summary.checklist.eventDetailsCompleted,
-      href: "/dashboard/event",
-      id: "details",
-      label: "Event details",
-    },
-    {
-      completed: summary.checklist.websiteContentCompleted,
-      href: "/dashboard/website-content",
-      id: "content",
-      label: "Website content",
-    },
-    {
-      completed: summary.checklist.websitePublished,
-      href: "/dashboard/website-access",
-      id: "publish",
-      label: "RSVP page published",
-    },
-  ];
-
   return (
     <div className="ws-home-page pb-24 md:pb-8">
       <section className="ws-intro">
@@ -51,15 +19,6 @@ export default async function DashboardPage() {
               ✦
             </span>
           </h2>
-          <div className="ws-intro-event">
-            <strong className="ws-intro-event-title" title={summary.event.title}>
-              {summary.event.title}
-            </strong>
-            <span aria-hidden="true">·</span>
-            <span className="ws-intro-venue" title={summary.event.venueLabel}>
-              {summary.event.venueLabel}
-            </span>
-          </div>
         </div>
         <span className="ws-intro-pill">Client dashboard</span>
       </section>
@@ -100,27 +59,30 @@ export default async function DashboardPage() {
           title={summary.payment.status}
         />
         <HomeSummaryCard
-          chip={summary.event.isPublished ? "Published" : "Building"}
+          chip={summary.event.statusChipLabel}
           chipTone={summary.event.isPublished ? "success" : "brand"}
           icon={<Globe size={22} />}
           label="Website"
-          subtitle={summary.event.websiteDescription}
+          subtitle="Open your live RSVP page, manage guest access, and continue publishing updates."
           theme="website"
-          title={summary.event.websiteStatus}
+          title={summary.event.statusChipLabel}
         />
       </section>
 
       <section className="ws-bottom-grid">
-        <SetupChecklistCard items={checklistItems} />
+        <SetupChecklistCard
+          optionalContent={summary.checklist.optionalContent}
+          requiredItems={summary.checklist.requiredItems}
+        />
         <div className="ws-right-stack">
           <RsvpWebsiteCard
-            isPublished={summary.event.isPublished}
             slug={summary.event.slug ?? null}
-            status={summary.event.websiteStatus}
+            statusChipLabel={summary.event.statusChipLabel}
           />
           <QuickStatsCard
             coverageLabel={summary.stats.rsvpCoverageLabel}
-            guestLimitLabel={summary.stats.guestLimitLabel}
+            eventId={summary.stats.eventId}
+            guestLimitValue={summary.stats.guestLimitValue}
             responsesLabel={summary.stats.responsesLabel}
           />
         </div>

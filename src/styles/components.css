@@ -1330,27 +1330,6 @@
   font-weight: 800;
 }
 
-[data-dashboard] .ws-website-status {
-  margin-top: 14px;
-}
-
-[data-dashboard] .ws-website-status strong {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  color: var(--dash-foreground);
-  font-size: 24px;
-  font-weight: 650;
-  letter-spacing: -0.03em;
-}
-
-[data-dashboard] .ws-website-status p {
-  margin: 6px 0 0;
-  color: var(--dash-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 [data-dashboard] .ws-status-dots {
   display: inline-flex;
   width: 1.4em;
@@ -1419,12 +1398,13 @@
 [data-dashboard] .ws-website-actions {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
 }
 
 [data-dashboard] .ws-preview-btn,
-[data-dashboard] .ws-copy-btn {
+[data-dashboard] .ws-copy-btn,
+[data-dashboard] .ws-manage-btn {
   height: 39px;
   border-radius: 9px;
   font-weight: 850;
@@ -1451,6 +1431,19 @@
 
 [data-dashboard] .ws-copy-btn:hover {
   box-shadow: 0 12px 28px rgba(207, 112, 77, 0.3);
+}
+
+[data-dashboard] .ws-manage-btn,
+[data-dashboard] .ws-preview-btn {
+  border: 1px solid var(--dash-border);
+  background: #fffdf9;
+  color: var(--dash-foreground);
+}
+
+[data-dashboard] .ws-manage-btn:hover,
+[data-dashboard] .ws-preview-btn:hover {
+  background: var(--dash-surface-muted);
+  border-color: var(--dash-border-hover);
 }
 
 [data-dashboard] .ws-preview-btn:disabled,
@@ -1565,33 +1558,6 @@
   line-height: 1;
 }
 
-[data-dashboard] .ws-intro-event {
-  color: var(--dash-muted);
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  align-items: center;
-  font-size: 15px;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-[data-dashboard] .ws-intro-event-title {
-  color: #3f332c;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-[data-dashboard] .ws-intro-venue {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 [data-dashboard] .ws-intro-pill {
   margin-left: auto;
   color: var(--dash-brand-active);
@@ -1650,16 +1616,6 @@
   }
 
   [data-dashboard] .ws-intro h2 {
-    white-space: normal;
-  }
-
-  [data-dashboard] .ws-intro-event {
-    flex-basis: 100%;
-    white-space: normal;
-  }
-
-  [data-dashboard] .ws-intro-event-title,
-  [data-dashboard] .ws-intro-venue {
     white-space: normal;
   }
 
@@ -1795,7 +1751,8 @@
   }
 
   [data-dashboard] .ws-preview-btn,
-  [data-dashboard] .ws-copy-btn {
+  [data-dashboard] .ws-copy-btn,
+  [data-dashboard] .ws-manage-btn {
     width: 100%;
   }
 

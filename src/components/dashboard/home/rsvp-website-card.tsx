@@ -1,16 +1,15 @@
 "use client";
 
 import { Copy, ExternalLink, Globe, Link as LinkIcon } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 export function RsvpWebsiteCard({
   slug,
-  status,
-  isPublished,
+  statusChipLabel,
 }: {
   slug: string | null;
-  status: string;
-  isPublished: boolean;
+  statusChipLabel: "Draft" | "Published" | "Unpublished";
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com";
   const url = slug ? `${baseUrl}/r/${slug}` : null;
@@ -35,16 +34,9 @@ export function RsvpWebsiteCard({
       <div className="ws-website-head">
         <div className="min-w-0">
           <h3>Your RSVP Website</h3>
-          <span className="ws-draft-badge">{isPublished ? "Published" : "Setup in progress"}</span>
+          <span className="ws-draft-badge">{statusChipLabel}</span>
         </div>
       </div>
-
-      {isPublished ? (
-        <div className="ws-website-status">
-          <strong>{status}</strong>
-          <p>Your RSVP website is live and ready to share.</p>
-        </div>
-      ) : null}
 
       <div className={`ws-link-field ${!url ? "is-disabled" : ""}`} title={url ?? "Slug pending"}>
         <Globe size={18} />
@@ -58,20 +50,30 @@ export function RsvpWebsiteCard({
 
       <div className="ws-website-actions">
         {url ? (
-          <a href={url} target="_blank" rel="noreferrer" className="ws-preview-btn">
-            <ExternalLink size={16} />
-            Preview website
-          </a>
+          <>
+            <a href={url} target="_blank" rel="noreferrer" className="ws-preview-btn">
+              <ExternalLink size={16} />
+              View website
+            </a>
+            <button className="ws-copy-btn" onClick={() => void handleCopy()}>
+              <LinkIcon size={16} />
+              Copy link
+            </button>
+            <Link href="/dashboard/website-access" className="ws-manage-btn">
+              Manage access
+            </Link>
+          </>
         ) : (
-          <button className="ws-preview-btn" disabled>
-            <ExternalLink size={16} />
-            Preview website
-          </button>
+          <>
+            <Link href="/dashboard/website-access" className="ws-preview-btn">
+              <ExternalLink size={16} />
+              Manage access
+            </Link>
+            <Link href="/dashboard/website-access" className="ws-manage-btn">
+              Share / QR
+            </Link>
+          </>
         )}
-        <button className="ws-copy-btn" onClick={() => void handleCopy()} disabled={!url}>
-          <LinkIcon size={16} />
-          Copy RSVP link
-        </button>
       </div>
     </section>
   );
