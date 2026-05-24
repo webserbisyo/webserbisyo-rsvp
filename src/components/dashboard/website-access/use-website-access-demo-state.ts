@@ -14,12 +14,16 @@ import {
   getPublishStatusState,
   getVisibilityLabel,
 } from "./website-access-utils";
-import { sanitizePublicRsvpSlug, validatePublicRsvpSlug } from "@/lib/public-rsvp-slugs";
-import { buildPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
+import { sanitizePublicRsvpSlug, validateOptionalPublicRsvpSlug } from "@/lib/public-rsvp-slugs";
+import {
+  buildPublicRsvpUrl,
+  buildWildcardRsvpPreviewUrl,
+  getPublicAppUrl,
+} from "@/lib/public-rsvp-url";
 import {
   publishEventWebsiteAction,
   unpublishEventWebsiteAction,
-  updateWebsiteAccessDraftSlugAction,
+  updateWebsiteAccessDraftSubdomainAction,
   updateWebsiteAccessDraftVisibilityAction,
 } from "@/server/actions/website-access";
 
@@ -28,77 +32,92 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const [isPending, startTransition] = useTransition();
   const [serverState, setServerState] = useState(initialData);
   const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(initialData.draftVisibility);
-  const [draftSlug, setDraftSlug] = useState(initialData.draftSlug ?? initialData.publishedSlug ?? "");
+  const [draftSubdomain, setDraftSubdomain] = useState(initialData.draftSubdomain ?? "");
   const [slugModalOpen, setSlugModalOpen] = useState(false);
-  const [slugModalValue, setSlugModalValue] = useState(initialData.draftSlug ?? initialData.publishedSlug ?? "");
-  const persistedDraftSlugRef = useRef(initialData.draftSlug ?? initialData.publishedSlug ?? "");
+  const [slugModalValue, setSlugModalValue] = useState(initialData.draftSubdomain ?? "");
+  const persistedDraftSubdomainRef = useRef(initialData.draftSubdomain ?? "");
 
   const publicBaseUrl = useMemo(
     () => getPublicAppUrl({ baseUrl: serverState.publicBaseUrl }),
     [serverState.publicBaseUrl],
   );
-  const slugDraftError = useMemo(() => validatePublicRsvpSlug(draftSlug), [draftSlug]);
+  const subdomainDraftError = useMemo(
+    () => validateOptionalPublicRsvpSlug(draftSubdomain),
+    [draftSubdomain],
+  );
   const slugModalSanitized = useMemo(
     () => sanitizePublicRsvpSlug(slugModalValue),
     [slugModalValue],
   );
   const slugModalError = useMemo(
-    () => validatePublicRsvpSlug(slugModalSanitized),
+    () => validateOptionalPublicRsvpSlug(slugModalSanitized),
     [slugModalSanitized],
   );
   const publishedSlug = serverState.publishedSlug ?? "";
+  const publishedSubdomain = serverState.publishedSubdomain ?? "";
   const isPublished = serverState.publishState === "published";
   const hasEverPublished = serverState.hasEverPublished;
-  const isSlugLocked = hasEverPublished;
+  const isSubdomainLocked = hasEverPublished;
   const publishedVisibility = serverState.publishedVisibility;
-  const hasSlugChange = Boolean(draftSlug && draftSlug !== publishedSlug);
+  const hasSlugChange = serverState.hasSlugPendingChanges;
+  const hasSubdomainChange = draftSubdomain !== (serverState.publishedSubdomain ?? "");
   const hasVisibilityDraft = draftVisibility !== publishedVisibility;
   const hasContentPendingChanges = serverState.hasContentPendingChanges;
-  const hasPendingChanges = hasVisibilityDraft || hasSlugChange || hasContentPendingChanges;
+  const hasPendingChanges =
+    hasVisibilityDraft ||
+    hasSlugChange ||
+    hasSubdomainChange ||
+    hasContentPendingChanges;
   const publishStatusState = getPublishStatusState(isPublished, hasPendingChanges);
   const websiteUrlPublished = serverState.publicUrl ?? "";
-  const websiteUrlDraft =
-    draftSlug && publicBaseUrl
-      ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: draftSlug }) ?? "")
-      : "";
+  const websiteUrlFallback = serverState.fallbackPublicUrl ?? "";
+  const websiteUrlDraft = draftSubdomain
+    ? (buildWildcardRsvpPreviewUrl({
+        baseDomain: serverState.wildcardBaseDomain,
+        subdomain: draftSubdomain,
+      }) ?? "")
+    : (serverState.draftSlug && publicBaseUrl
+        ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: serverState.draftSlug }) ?? "")
+        : "");
   const rsvpUrlPublished = serverState.rsvpUrl ?? "";
   const changesSummary = buildChangeSummary({
     hasAccessPendingChanges: hasVisibilityDraft,
     hasContentPendingChanges,
     hasSlugPendingChanges: hasSlugChange,
+    hasSubdomainPendingChanges: hasSubdomainChange,
     isPublished,
   });
   const visibilityLabel = getVisibilityLabel(draftVisibility);
   const canShareLiveUrl = Boolean(websiteUrlPublished && rsvpUrlPublished);
 
   useEffect(() => {
-    if (isSlugLocked || !serverState.eventId) {
+    if (isSubdomainLocked || !serverState.eventId) {
       return;
     }
 
-    if (slugDraftError || draftSlug === persistedDraftSlugRef.current) {
+    if (subdomainDraftError || draftSubdomain === persistedDraftSubdomainRef.current) {
       return;
     }
 
-    const nextDraftSlug = draftSlug;
+    const nextDraftSubdomain = draftSubdomain;
     const timeoutId = window.setTimeout(() => {
       startTransition(async () => {
-        const result = await updateWebsiteAccessDraftSlugAction({
+        const result = await updateWebsiteAccessDraftSubdomainAction({
           eventId: serverState.eventId,
-          slug: nextDraftSlug,
+          subdomain: nextDraftSubdomain,
         });
 
         if (!result.ok) {
           toast.error(result.error);
-          setDraftSlug(persistedDraftSlugRef.current);
+          setDraftSubdomain(persistedDraftSubdomainRef.current);
           return;
         }
 
-        persistedDraftSlugRef.current = result.data.draftSlug;
-        setDraftSlug(result.data.draftSlug);
+        persistedDraftSubdomainRef.current = result.data.draftSubdomain ?? "";
+        setDraftSubdomain(result.data.draftSubdomain ?? "");
         setServerState((current) => ({
           ...current,
-          draftSlug: result.data.draftSlug,
+          draftSubdomain: result.data.draftSubdomain ?? null,
           lastEditedAt: result.data.updatedAt ?? current.lastEditedAt,
           websiteAccessUpdatedAt: result.data.updatedAt ?? current.websiteAccessUpdatedAt,
         }));
@@ -106,7 +125,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [draftSlug, isSlugLocked, serverState.eventId, slugDraftError, startTransition]);
+  }, [draftSubdomain, isSubdomainLocked, serverState.eventId, startTransition, subdomainDraftError]);
 
   function updateLocalTimestamp(updatedAt: string | null) {
     setServerState((current) => ({
@@ -151,17 +170,17 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   }
 
   function handleDraftSlugInput(value: string) {
-    setDraftSlug(sanitizePublicRsvpSlug(value));
+    setDraftSubdomain(sanitizePublicRsvpSlug(value));
   }
 
   function openSlugModal() {
-    setSlugModalValue(draftSlug);
+    setSlugModalValue(draftSubdomain);
     setSlugModalOpen(true);
   }
 
   function closeSlugModal() {
     setSlugModalOpen(false);
-    setSlugModalValue(draftSlug);
+    setSlugModalValue(draftSubdomain);
   }
 
   function confirmSlugChange() {
@@ -169,15 +188,15 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       return;
     }
 
-    if (slugModalSanitized === persistedDraftSlugRef.current) {
+    if (slugModalSanitized === persistedDraftSubdomainRef.current) {
       setSlugModalOpen(false);
       return;
     }
 
     startTransition(async () => {
-      const result = await updateWebsiteAccessDraftSlugAction({
+      const result = await updateWebsiteAccessDraftSubdomainAction({
         eventId: serverState.eventId,
-        slug: slugModalSanitized,
+        subdomain: slugModalSanitized,
       });
 
       if (!result.ok) {
@@ -185,15 +204,15 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         return;
       }
 
-      persistedDraftSlugRef.current = result.data.draftSlug;
-      setDraftSlug(result.data.draftSlug);
+      persistedDraftSubdomainRef.current = result.data.draftSubdomain ?? "";
+      setDraftSubdomain(result.data.draftSubdomain ?? "");
       updateLocalTimestamp(result.data.updatedAt);
       setServerState((current) => ({
         ...current,
-        draftSlug: result.data.draftSlug,
+        draftSubdomain: result.data.draftSubdomain ?? null,
       }));
       setSlugModalOpen(false);
-      toast.success("URL change added. Publish to apply.");
+      toast.success("Subdomain change added. Publish to apply.");
     });
   }
 
@@ -295,11 +314,11 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     handleVisibilitySelect,
     hasEverPublished,
     hasPendingChanges,
-    hasSlugChange,
+    hasSlugChange: hasSubdomainChange,
     hasVisibilityDraft,
     isInteractionPending: isPending,
     isPublished,
-    isSlugLocked,
+    isSlugLocked: isSubdomainLocked,
     lastEditedAt: parseIsoDate(serverState.lastEditedAt ?? serverState.websiteAccessUpdatedAt),
     lastEditedLabel: formatWebsiteAccessDate(
       parseIsoDate(serverState.lastEditedAt ?? serverState.websiteAccessUpdatedAt),
@@ -310,21 +329,25 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     publishWebsite,
     publishedAt: parseIsoDate(serverState.publishedAt),
     publishedAtLabel: formatWebsiteAccessDate(parseIsoDate(serverState.publishedAt)),
-    publishedVisibility: publishedVisibility,
+    publishedSubdomain,
+    publishedVisibility,
     qrActionsEnabled: canShareLiveUrl,
     rsvpUrlPublished,
     setSlugModalValue,
-    slugDraft: draftSlug,
-    slugDraftError,
+    slugDraft: draftSubdomain,
+    slugDraftError: subdomainDraftError,
     slugModalError,
     slugModalOpen,
     slugModalSanitized,
     slugModalValue,
     slugPublished: publishedSlug,
+    subdomainBaseDomain: serverState.wildcardBaseDomain,
+    subdomainConfigured: serverState.wildcardDomainConfigured,
     unpublishWebsite,
     visibility: draftVisibility,
     visibilityLabel,
     websiteUrlDraft,
+    websiteUrlFallback,
     websiteUrlPublished,
   };
 }

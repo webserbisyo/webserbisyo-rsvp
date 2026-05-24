@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildPublicRsvpUrl } from "@/lib/public-rsvp-url";
+import { getBestPublicRsvpUrl } from "@/lib/public-rsvp-url";
 import type { Database, Tables } from "@/lib/supabase/types";
 import {
   type ClientPaymentDisplayStatus,
@@ -306,6 +306,7 @@ type EventRow = Pick<
   | "max_guest_count"
   | "published_at"
   | "status"
+  | "subdomain_slug"
   | "title"
   | "updated_at"
   | "venue_address"
@@ -414,7 +415,7 @@ const CLIENT_COLUMNS =
 const APPLICATION_COLUMNS =
   "id, approved_client_id, reference_code, status, submitted_at, approved_at, updated_at, event_location, estimated_guest_count, preferred_manual_payment_option";
 const EVENT_COLUMNS =
-  "id, client_id, title, event_type, event_date, event_slug, status, visibility, venue_name, venue_address, max_guest_count, published_at, custom_frontend_enabled, custom_frontend_url, updated_at";
+  "id, client_id, title, event_type, event_date, event_slug, subdomain_slug, status, visibility, venue_name, venue_address, max_guest_count, published_at, custom_frontend_enabled, custom_frontend_url, updated_at";
 const PAYMENT_COLUMNS =
   "id, client_id, application_id, plan_type, amount_due, amount_paid, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, created_at, updated_at";
 const REFUND_COLUMNS =
@@ -1578,7 +1579,10 @@ function getPublishedEventPublicUrl(event: EventRow | null) {
     return null;
   }
 
-  return buildPublicRsvpUrl({ slug: event.event_slug });
+  return getBestPublicRsvpUrl({
+    slug: event.event_slug,
+    subdomain: event.subdomain_slug,
+  });
 }
 
 function formatPublicPreviewLabel(event: EventRow | null, publicUrl: string | null) {

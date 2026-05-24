@@ -2,6 +2,16 @@ function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
 }
 
+function appendHashToUrl(url: string | null, hash: string) {
+  if (!url) {
+    return null;
+  }
+
+  return `${url.replace(/#.*$/, "")}${hash.startsWith("#") ? hash : `#${hash}`}`;
+}
+
+export const DEFAULT_RSVP_WILDCARD_PREVIEW_DOMAIN = "rsvp.webserbisyo.com";
+
 function normalizeUrlLikeValue(value?: string | null) {
   if (!value) {
     return null;
@@ -125,11 +135,31 @@ export function getRsvpBaseDomain(baseDomain?: string | null) {
   );
 }
 
+export function getRsvpPreviewBaseDomain(baseDomain?: string | null) {
+  return (
+    getRsvpBaseDomain(baseDomain) ??
+    normalizeHostname(baseDomain ?? DEFAULT_RSVP_WILDCARD_PREVIEW_DOMAIN)
+  );
+}
+
 export function buildWildcardRsvpUrl(input: {
   baseDomain?: string | null;
   subdomain: string;
 }) {
   const hostname = getRsvpBaseDomain(input.baseDomain);
+
+  if (!hostname) {
+    return null;
+  }
+
+  return `https://${input.subdomain}.${hostname}`;
+}
+
+export function buildWildcardRsvpPreviewUrl(input: {
+  baseDomain?: string | null;
+  subdomain: string;
+}) {
+  const hostname = getRsvpPreviewBaseDomain(input.baseDomain);
 
   if (!hostname) {
     return null;
@@ -166,6 +196,19 @@ export function getBestPublicRsvpUrl(input: {
     baseUrl: input.baseUrl,
     slug: input.slug,
   });
+}
+
+export function getBestPublicRsvpFormUrl(input: {
+  baseUrl?: string | null;
+  customDomain?: string | null;
+  slug: string;
+  subdomain?: string | null;
+  wildcardBaseDomain?: string | null;
+}) {
+  return appendHashToUrl(
+    getBestPublicRsvpUrl(input),
+    "#rsvp-form",
+  );
 }
 
 export function isPublishedPublicRsvpReady(input: {

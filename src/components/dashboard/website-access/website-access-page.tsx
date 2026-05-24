@@ -63,6 +63,9 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         onDraftSlugInput={state.handleDraftSlugInput}
         slugDraft={state.slugDraft}
         slugDraftError={state.slugDraftError}
+        subdomainBaseDomain={state.subdomainBaseDomain}
+        subdomainConfigured={state.subdomainConfigured}
+        websiteUrlFallback={state.websiteUrlFallback}
         websiteUrlDraft={state.websiteUrlDraft}
         websiteUrlPublished={state.websiteUrlPublished}
       />
@@ -77,7 +80,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
       />
 
       <SlugChangeDialog
-        currentSlug={state.slugPublished}
+        currentSlug={state.publishedSubdomain}
         errorMessage={state.slugModalError}
         onConfirm={state.confirmSlugChange}
         onOpenChange={(open) => {
@@ -91,6 +94,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         onValueChange={state.setSlugModalValue}
         open={state.slugModalOpen}
         pending={state.isInteractionPending}
+        suffix={state.subdomainBaseDomain}
         value={state.slugModalValue}
       />
     </div>

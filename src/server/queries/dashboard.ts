@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { PostgrestError } from "@supabase/supabase-js";
 import { formatUserRoleLabel } from "@/lib/auth/role-labels";
 import { buildManilaOffsetDateTime } from "@/lib/event-website/canonical";
 import { mergeEventWebsiteContent } from "@/lib/event-website/hydration";
@@ -7,7 +8,7 @@ import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
 import { PermissionError, requireTenantMember, type AuthenticatedProfile } from "@/lib/permissions";
 import {
-  buildPublicRsvpUrl,
+  getBestPublicRsvpUrl,
   getPublicAppUrl,
   isPublishedPublicRsvpReady,
 } from "@/lib/public-rsvp-url";
@@ -38,6 +39,7 @@ type DashboardPaymentSummary = {
 
 type DashboardEventRow = {
   draft_event_slug: string | null;
+  draft_subdomain_slug: string | null;
   draft_visibility: string | null;
   event_content:
     | {
@@ -61,6 +63,7 @@ type DashboardEventRow = {
   published_at: string | null;
   rsvp_close_at: string | null;
   status: string | null;
+  subdomain_slug: string | null;
   title: string | null;
   venue_address: string | null;
   venue_name: string | null;
@@ -96,6 +99,11 @@ type DashboardClientRow = {
 type DashboardPackageSettingsRow = {
   default_amount: number | null;
   default_hosting_days: number | null;
+};
+
+type DashboardEventResult = {
+  row: DashboardEventRow | null;
+  subdomainFieldsInstalled: boolean;
 };
 
 export type DashboardHomeData = {
@@ -177,7 +185,7 @@ async function loadDashboardSummary(
 
   const [
     { data: client, error: clientError },
-    { data: events, error: eventError },
+    eventResult,
     { data: payments, error: paymentError },
     { data: applications, error: applicationError },
   ] = await Promise.all([
@@ -188,36 +196,7 @@ async function loadDashboardSummary(
       )
       .eq("id", clientId)
       .maybeSingle(),
-    supabase
-      .from("rsvp_events")
-      .select(
-        `
-          id,
-          event_slug,
-          draft_event_slug,
-          event_type,
-          event_date,
-          event_time,
-          fallback_page_enabled,
-          max_guest_count,
-          published_at,
-          rsvp_close_at,
-          status,
-          title,
-          venue_address,
-          venue_name,
-          visibility,
-          draft_visibility,
-          event_content (
-            content_json,
-            published_at,
-            published_content_json
-          )
-        `,
-      )
-      .eq("client_id", clientId)
-      .order("created_at", { ascending: false })
-      .limit(1),
+    getLatestDashboardEventRow(supabase, clientId),
     supabase
       .from("payments")
       .select(
@@ -237,12 +216,11 @@ async function loadDashboardSummary(
   ]);
 
   if (clientError) throw clientError;
-  if (eventError) throw eventError;
   if (paymentError) throw paymentError;
   if (applicationError) throw applicationError;
   if (!client) throw new Error("Dashboard could not load the current tenant client record.");
 
-  const event = (events?.[0] ?? null) as DashboardEventRow | null;
+  const event = eventResult.row;
   const payment = (payments?.[0] ?? null) as DashboardPaymentRow | null;
   const application = applications?.[0] ?? null;
   const eventContent = normalizeEventContentRelation(event?.event_content);
@@ -286,13 +264,24 @@ async function loadDashboardSummary(
   });
   const websiteAccessConfigured = hasWebsiteAccessConfigured({
     draftSlug: event?.draft_event_slug,
+    draftSubdomain: event?.draft_subdomain_slug,
     draftVisibility: event?.draft_visibility,
     publishedSlug: event?.event_slug,
+    publishedSubdomain: event?.subdomain_slug,
     visibility: event?.visibility,
   });
   const publicUrl =
     shareable && event?.event_slug && DEFAULT_PUBLIC_APP_URL
-      ? buildPublicRsvpUrl({ baseUrl: DEFAULT_PUBLIC_APP_URL, slug: event.event_slug })
+      ? eventResult.subdomainFieldsInstalled
+        ? getBestPublicRsvpUrl({
+            baseUrl: DEFAULT_PUBLIC_APP_URL,
+            slug: event.event_slug,
+            subdomain: event.subdomain_slug,
+          })
+        : getBestPublicRsvpUrl({
+            baseUrl: DEFAULT_PUBLIC_APP_URL,
+            slug: event.event_slug,
+          })
       : null;
   const roleLabel = profile.role === "client_staff" ? "Client Staff" : "Client Admin";
   const rawContentJson = eventContent?.content_json ?? null;
@@ -860,11 +849,13 @@ function hasPublishedSnapshot(
 
 function hasWebsiteAccessConfigured(input: {
   draftSlug?: string | null;
+  draftSubdomain?: string | null;
   draftVisibility?: string | null;
   publishedSlug?: string | null;
+  publishedSubdomain?: string | null;
   visibility?: string | null;
 }) {
-  const slug = input.draftSlug ?? input.publishedSlug;
+  const slug = input.draftSubdomain ?? input.publishedSubdomain ?? input.draftSlug ?? input.publishedSlug;
   const visibility = input.draftVisibility ?? input.visibility;
 
   return Boolean(slug && visibility && ["private", "public", "unlisted"].includes(visibility));
@@ -872,6 +863,176 @@ function hasWebsiteAccessConfigured(input: {
 
 function hasAnyNonEmptyText(...values: Array<string | null | undefined>) {
   return values.some((value) => typeof value === "string" && value.trim().length > 0);
+}
+
+async function getLatestDashboardEventRow(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  clientId: string,
+): Promise<DashboardEventResult> {
+  const primaryResult = await supabase
+    .from("rsvp_events")
+    .select(
+      `
+        id,
+        event_slug,
+        draft_event_slug,
+        subdomain_slug,
+        draft_subdomain_slug,
+        event_type,
+        event_date,
+        event_time,
+        fallback_page_enabled,
+        max_guest_count,
+        published_at,
+        rsvp_close_at,
+        status,
+        title,
+        venue_address,
+        venue_name,
+        visibility,
+        draft_visibility,
+        event_content (
+          content_json,
+          published_at,
+          published_content_json
+        )
+      `,
+    )
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (!primaryResult.error) {
+    return {
+      row: (primaryResult.data?.[0] ?? null) as DashboardEventRow | null,
+      subdomainFieldsInstalled: true,
+    };
+  }
+
+  if (
+    !isMissingDashboardSubdomainColumnError(primaryResult.error) &&
+    !isMissingDashboardDraftColumnError(primaryResult.error)
+  ) {
+    throw primaryResult.error;
+  }
+
+  const fallbackResult = await supabase
+    .from("rsvp_events")
+    .select(
+      `
+        id,
+        event_slug,
+        draft_event_slug,
+        event_type,
+        event_date,
+        event_time,
+        fallback_page_enabled,
+        max_guest_count,
+        published_at,
+        rsvp_close_at,
+        status,
+        title,
+        venue_address,
+        venue_name,
+        visibility,
+        draft_visibility,
+        event_content (
+          content_json,
+          published_at,
+          published_content_json
+        )
+      `,
+    )
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (!fallbackResult.error) {
+    const event = fallbackResult.data?.[0];
+
+    return {
+      row: event
+        ? ({
+            ...event,
+            draft_subdomain_slug: event.draft_event_slug ?? event.event_slug,
+            subdomain_slug: event.event_slug,
+          } as DashboardEventRow)
+        : null,
+      subdomainFieldsInstalled: false,
+    };
+  }
+
+  if (!isMissingDashboardDraftColumnError(fallbackResult.error)) {
+    throw fallbackResult.error;
+  }
+
+  const legacyResult = await supabase
+    .from("rsvp_events")
+    .select(
+      `
+        id,
+        event_slug,
+        event_type,
+        event_date,
+        event_time,
+        fallback_page_enabled,
+        max_guest_count,
+        published_at,
+        rsvp_close_at,
+        status,
+        title,
+        venue_address,
+        venue_name,
+        visibility,
+        event_content (
+          content_json,
+          published_at,
+          published_content_json
+        )
+      `,
+    )
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (legacyResult.error) {
+    throw legacyResult.error;
+  }
+
+  const legacyEvent = legacyResult.data?.[0];
+
+  return {
+    row: legacyEvent
+      ? ({
+          ...legacyEvent,
+          draft_event_slug: legacyEvent.event_slug,
+          draft_subdomain_slug: legacyEvent.event_slug,
+          draft_visibility: legacyEvent.visibility,
+          subdomain_slug: legacyEvent.event_slug,
+        } as DashboardEventRow)
+      : null,
+    subdomainFieldsInstalled: false,
+  };
+}
+
+function isMissingDashboardDraftColumnError(error: PostgrestError) {
+  if (error.code !== "42703") {
+    return false;
+  }
+
+  return ["draft_event_slug", "draft_visibility"].some((columnName) =>
+    error.message.includes(columnName),
+  );
+}
+
+function isMissingDashboardSubdomainColumnError(error: PostgrestError) {
+  if (error.code !== "42703") {
+    return false;
+  }
+
+  return ["draft_subdomain_slug", "subdomain_slug"].some((columnName) =>
+    error.message.includes(columnName),
+  );
 }
 
 async function safeLoadPackageSettings(

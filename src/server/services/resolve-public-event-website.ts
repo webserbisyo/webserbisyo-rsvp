@@ -3,10 +3,39 @@ import "server-only";
 import { cache } from "react";
 import {
   buildPublicEventDto,
+  PUBLIC_EVENT_RENDER_VISIBILITIES,
   PublicEventSlugSchema,
   type PublicEventDto,
 } from "@/lib/event-website/public-event";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+type PublicEventRecord = {
+  archived_at: string | null;
+  event_content:
+    | {
+        published_at: string | null;
+        published_content_json: unknown;
+      }
+    | Array<{
+        published_at: string | null;
+        published_content_json: unknown;
+      }>
+    | null;
+  event_date: string | null;
+  event_slug: string;
+  event_time: string | null;
+  event_type: string;
+  fallback_page_enabled: boolean;
+  published_at: string | null;
+  rsvp_close_at: string | null;
+  rsvp_open_at: string | null;
+  status: string;
+  subdomain_slug: string | null;
+  title: string;
+  venue_address: string | null;
+  venue_name: string | null;
+  visibility: "private" | "public" | "unlisted";
+};
 
 export const resolvePublicEventWebsite = cache(
   async (eventSlugInput: string): Promise<PublicEventDto | null> => {
@@ -16,90 +45,172 @@ export const resolvePublicEventWebsite = cache(
       return null;
     }
 
-    const supabase = createAdminClient();
-    const { data: event, error } = await supabase
+    return loadPublishedPublicEvent({
+      lookupColumn: "event_slug",
+      lookupValue: parsedSlug.data,
+    });
+  },
+);
+
+export const resolvePublicEventWebsiteBySubdomain = cache(
+  async (subdomainSlugInput: string): Promise<PublicEventDto | null> => {
+    const parsedSlug = PublicEventSlugSchema.safeParse(subdomainSlugInput);
+
+    if (!parsedSlug.success) {
+      return null;
+    }
+
+    try {
+      return await loadPublishedPublicEvent({
+        lookupColumn: "subdomain_slug",
+        lookupValue: parsedSlug.data,
+      });
+    } catch (error) {
+      if (isMissingSubdomainLookupColumnError(error)) {
+        return null;
+      }
+
+      throw error;
+    }
+  },
+);
+
+async function loadPublishedPublicEvent(input: {
+  lookupColumn: "event_slug" | "subdomain_slug";
+  lookupValue: string;
+}) {
+  const supabase = createAdminClient();
+  const baseSelect = `
+        title,
+        event_type,
+        event_date,
+        event_time,
+        venue_name,
+        venue_address,
+        visibility,
+        status,
+        published_at,
+        archived_at,
+        fallback_page_enabled,
+        rsvp_open_at,
+        rsvp_close_at,
+        event_content (
+          published_content_json,
+          published_at
+        )
+      `;
+  const { data: event, error } = await supabase
+    .from("rsvp_events")
+    .select(
+      `
+        event_slug,
+        subdomain_slug,
+        ${baseSelect}
+      `,
+    )
+    .eq(input.lookupColumn, input.lookupValue)
+    .eq("status", "published")
+    .eq("fallback_page_enabled", true)
+    .in("visibility", PUBLIC_EVENT_RENDER_VISIBILITIES)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  if (error) {
+    if (!isMissingSubdomainLookupColumnError(error) || input.lookupColumn === "subdomain_slug") {
+      throw error;
+    }
+
+    const { data: fallbackEvent, error: fallbackError } = await supabase
       .from("rsvp_events")
       .select(
         `
           event_slug,
-          title,
-          event_type,
-          event_date,
-          event_time,
-          venue_name,
-          venue_address,
-          visibility,
-          status,
-          published_at,
-          archived_at,
-          fallback_page_enabled,
-          rsvp_open_at,
-          rsvp_close_at,
-          event_content (
-            published_content_json,
-            published_at
-          )
+          ${baseSelect}
         `,
       )
-      .eq("event_slug", parsedSlug.data)
+      .eq("event_slug", input.lookupValue)
       .eq("status", "published")
       .eq("fallback_page_enabled", true)
-      // Current MVP treats private visibility as direct-link access to the published fallback page.
-      // Invite-code restricted access is deferred until a separate gating flow exists.
-      .in("visibility", ["public", "unlisted", "private"])
+      .in("visibility", PUBLIC_EVENT_RENDER_VISIBILITIES)
       .is("archived_at", null)
       .maybeSingle();
 
-    if (error) {
-      throw error;
+    if (fallbackError) {
+      throw fallbackError;
     }
 
-    if (!event || !event.published_at) {
-      return null;
-    }
-
-    const eventContent = Array.isArray(event.event_content)
-      ? (event.event_content[0] ?? null)
-      : event.event_content;
-
-    if (!eventContent?.published_content_json || !eventContent.published_at) {
-      return null;
-    }
-
-    const { mergeEventWebsiteContent, parseEventWebsiteContentJson } = await import(
-      "@/lib/event-website/hydration"
+    return toPublicEventDto(
+      fallbackEvent
+        ? ({
+            ...fallbackEvent,
+            subdomain_slug: null,
+          } as PublicEventRecord)
+        : null,
     );
-    const parsedContent = parseEventWebsiteContentJson(eventContent.published_content_json);
+  }
 
-    if (!parsedContent) {
-      return null;
-    }
+  return toPublicEventDto(event as PublicEventRecord | null);
+}
 
-    const content = mergeEventWebsiteContent(parsedContent, {
-      event: {
-        eventDate: event.event_date,
-        eventTime: event.event_time,
-        eventType: event.event_type,
-        rsvpCloseAt: event.rsvp_close_at,
-        title: event.title,
-        venueAddress: event.venue_address,
-        venueName: event.venue_name,
-      },
-    });
+async function toPublicEventDto(event: PublicEventRecord | null) {
+  if (!event || !event.published_at) {
+    return null;
+  }
 
-    return buildPublicEventDto({
-      content,
+  const eventContent = Array.isArray(event.event_content)
+    ? (event.event_content[0] ?? null)
+    : event.event_content;
+
+  if (!eventContent?.published_content_json || !eventContent.published_at) {
+    return null;
+  }
+
+  const { mergeEventWebsiteContent, parseEventWebsiteContentJson } = await import(
+    "@/lib/event-website/hydration"
+  );
+  const parsedContent = parseEventWebsiteContentJson(eventContent.published_content_json);
+
+  if (!parsedContent) {
+    return null;
+  }
+
+  const content = mergeEventWebsiteContent(parsedContent, {
+    event: {
       eventDate: event.event_date,
-      eventSlug: event.event_slug,
       eventTime: event.event_time,
-      eventTitle: event.title,
       eventType: event.event_type,
-      publishedAt: event.published_at,
       rsvpCloseAt: event.rsvp_close_at,
-      rsvpOpenAt: event.rsvp_open_at,
+      title: event.title,
       venueAddress: event.venue_address,
       venueName: event.venue_name,
-      visibility: event.visibility as "private" | "public" | "unlisted",
-    });
-  },
-);
+    },
+  });
+
+  return buildPublicEventDto({
+    content,
+    eventDate: event.event_date,
+    eventSlug: event.event_slug,
+    eventTime: event.event_time,
+    eventTitle: event.title,
+    eventType: event.event_type,
+    publishedAt: event.published_at,
+    rsvpCloseAt: event.rsvp_close_at,
+    rsvpOpenAt: event.rsvp_open_at,
+    subdomainSlug: event.subdomain_slug,
+    venueAddress: event.venue_address,
+    venueName: event.venue_name,
+    visibility: event.visibility,
+  });
+}
+
+function isMissingSubdomainLookupColumnError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    "message" in error &&
+    (error as { code?: string }).code === "42703" &&
+    typeof (error as { message?: string }).message === "string" &&
+    (error as { message: string }).message.includes("subdomain_slug")
+  );
+}

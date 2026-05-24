@@ -832,6 +832,7 @@ export type Database = {
           custom_frontend_enabled: boolean;
           custom_frontend_url: string | null;
           draft_event_slug: string;
+          draft_subdomain_slug: string | null;
           draft_visibility: string;
           event_date: string | null;
           event_slug: string;
@@ -844,6 +845,7 @@ export type Database = {
           rsvp_close_at: string | null;
           rsvp_open_at: string | null;
           status: string;
+          subdomain_slug: string | null;
           title: string;
           updated_at: string;
           venue_address: string | null;
@@ -858,6 +860,7 @@ export type Database = {
           custom_frontend_enabled?: boolean;
           custom_frontend_url?: string | null;
           draft_event_slug?: string;
+          draft_subdomain_slug?: string | null;
           draft_visibility?: string;
           event_date?: string | null;
           event_slug: string;
@@ -870,6 +873,7 @@ export type Database = {
           rsvp_close_at?: string | null;
           rsvp_open_at?: string | null;
           status?: string;
+          subdomain_slug?: string | null;
           title: string;
           updated_at?: string;
           venue_address?: string | null;
@@ -884,6 +888,7 @@ export type Database = {
           custom_frontend_enabled?: boolean;
           custom_frontend_url?: string | null;
           draft_event_slug?: string;
+          draft_subdomain_slug?: string | null;
           draft_visibility?: string;
           event_date?: string | null;
           event_slug?: string;
@@ -896,6 +901,7 @@ export type Database = {
           rsvp_close_at?: string | null;
           rsvp_open_at?: string | null;
           status?: string;
+          subdomain_slug?: string | null;
           title?: string;
           updated_at?: string;
           venue_address?: string | null;

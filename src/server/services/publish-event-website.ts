@@ -1,10 +1,10 @@
 import "server-only";
 
 import type { PostgrestError } from "@supabase/supabase-js";
+import { ZodError } from "zod";
 import { mergeEventWebsiteContent, normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesUpdate } from "@/lib/supabase/types";
-import { ZodError } from "zod";
 import { assertServiceData, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
@@ -18,6 +18,7 @@ type EventContentRecord = {
 type EventWebsiteRecord = {
   client_id: string;
   draft_event_slug: string;
+  draft_subdomain_slug: string | null;
   draft_visibility: string;
   event_content: EventContentRecord | EventContentRecord[] | null;
   event_date: string | null;
@@ -28,10 +29,11 @@ type EventWebsiteRecord = {
   published_at: string | null;
   rsvp_close_at: string | null;
   status: string;
+  subdomain_slug: string | null;
   venue_address: string | null;
   venue_name: string | null;
   visibility: string;
-  websiteAccessSchemaMode: "draft_live" | "legacy";
+  websiteAccessSchemaMode: "draft_live" | "legacy" | "slug_only";
 };
 
 export type UpdateWebsiteAccessDraftVisibilityInput = {
@@ -58,6 +60,18 @@ export type UpdateWebsiteAccessDraftSlugResult = {
   updatedAt: string | null;
 };
 
+export type UpdateWebsiteAccessDraftSubdomainInput = {
+  actorUserId: string;
+  clientId: string;
+  draftSubdomain: string | null;
+  eventId: string;
+};
+
+export type UpdateWebsiteAccessDraftSubdomainResult = {
+  draftSubdomain: string | null;
+  updatedAt: string | null;
+};
+
 export type PublishEventWebsiteInput = {
   actorUserId: string;
   clientId: string;
@@ -67,8 +81,10 @@ export type PublishEventWebsiteInput = {
 
 export type PublishEventWebsiteResult = {
   previousPublishedSlug: string | null;
+  previousPublishedSubdomain: string | null;
   publishedAt: string;
   publishedSlug: string;
+  publishedSubdomain: string | null;
   publishedVisibility: "private" | "public" | "unlisted";
   state: "published";
 };
@@ -81,6 +97,7 @@ export type UnpublishEventWebsiteInput = {
 
 export type UnpublishEventWebsiteResult = {
   previousPublishedSlug: string | null;
+  previousPublishedSubdomain: string | null;
   state: "unpublished";
 };
 
@@ -186,6 +203,64 @@ export async function updateWebsiteAccessDraftSlug(
   };
 }
 
+export async function updateWebsiteAccessDraftSubdomain(
+  input: UpdateWebsiteAccessDraftSubdomainInput,
+): Promise<UpdateWebsiteAccessDraftSubdomainResult> {
+  const supabase = createAdminClient();
+  const eventRecord = await getOwnedEventRecord(supabase, input.eventId, input.clientId);
+
+  assertWebsiteAccessSubdomainSchema(eventRecord);
+
+  if ((eventRecord.draft_subdomain_slug ?? null) === input.draftSubdomain) {
+    return {
+      draftSubdomain: eventRecord.draft_subdomain_slug,
+      updatedAt: null,
+    };
+  }
+
+  if (input.draftSubdomain) {
+    await assertSubdomainIsAvailable(supabase, input.eventId, input.draftSubdomain);
+  }
+
+  const { data: updatedEvent, error } = await supabase
+    .from("rsvp_events")
+    .update({
+      draft_subdomain_slug: input.draftSubdomain,
+    })
+    .eq("id", input.eventId)
+    .eq("client_id", input.clientId)
+    .select("draft_subdomain_slug, website_access_updated_at")
+    .single();
+
+  if (error) {
+    if (isSubdomainUniqueViolation(error)) {
+      throw new ServiceError("That RSVP subdomain is already being used by another event.");
+    }
+
+    throw new ServiceError("Failed to save the Website Access RSVP subdomain.", error);
+  }
+
+  assertServiceData(updatedEvent, "Website Access draft subdomain update returned no row.");
+
+  await writeAuditLog({
+    action: "website_access_draft_subdomain_updated",
+    actorUserId: input.actorUserId,
+    clientId: input.clientId,
+    entityId: input.eventId,
+    entityType: "rsvp_events",
+    eventId: input.eventId,
+    metadata: {
+      next_subdomain: input.draftSubdomain,
+      previous_subdomain: eventRecord.draft_subdomain_slug,
+    },
+  });
+
+  return {
+    draftSubdomain: updatedEvent.draft_subdomain_slug,
+    updatedAt: updatedEvent.website_access_updated_at,
+  };
+}
+
 export async function publishEventWebsite(
   input: PublishEventWebsiteInput,
 ): Promise<PublishEventWebsiteResult> {
@@ -203,6 +278,10 @@ export async function publishEventWebsite(
   }
 
   await assertSlugIsAvailable(supabase, input.eventId, eventRecord.draft_event_slug);
+
+  if (eventRecord.websiteAccessSchemaMode === "draft_live" && eventRecord.draft_subdomain_slug) {
+    await assertSubdomainIsAvailable(supabase, input.eventId, eventRecord.draft_subdomain_slug);
+  }
 
   const eventContent = Array.isArray(eventRecord.event_content)
     ? (eventRecord.event_content[0] ?? null)
@@ -236,6 +315,10 @@ export async function publishEventWebsite(
 
   const publishedAt = new Date().toISOString();
   const previousPublishedSlug = eventRecord.published_at ? eventRecord.event_slug : null;
+  const previousPublishedSubdomain =
+    eventRecord.websiteAccessSchemaMode === "draft_live"
+      ? (eventRecord.published_at ? eventRecord.subdomain_slug : null)
+      : (eventRecord.published_at ? eventRecord.event_slug : null);
   const previousVisibility = eventRecord.visibility;
   const contentRow: TablesUpdate<"event_content"> = {
     published_at: publishedAt,
@@ -248,20 +331,38 @@ export async function publishEventWebsite(
     status: "published",
     visibility: eventRecord.draft_visibility,
   };
+  const draftLiveEventRow: TablesUpdate<"rsvp_events"> =
+    eventRecord.websiteAccessSchemaMode === "draft_live"
+      ? {
+          ...eventRow,
+          subdomain_slug: eventRecord.draft_subdomain_slug,
+        }
+      : eventRow;
 
-  const { data: publishedEvent, error: eventUpdateError } = await supabase
+  const eventUpdateQuery = supabase
     .from("rsvp_events")
-    .update(eventRow)
+    .update(draftLiveEventRow)
     .eq("id", input.eventId)
-    .eq("client_id", input.clientId)
-    .select("id, event_slug, visibility")
-    .single();
+    .eq("client_id", input.clientId);
+  const { data: publishedEvent, error: eventUpdateError } =
+    eventRecord.websiteAccessSchemaMode === "draft_live"
+      ? await eventUpdateQuery.select("id, event_slug, subdomain_slug, visibility").single()
+      : await eventUpdateQuery.select("id, event_slug, visibility").single();
 
   if (eventUpdateError) {
+    if (isSubdomainUniqueViolation(eventUpdateError)) {
+      throw new ServiceError("That RSVP subdomain is already being used by another event.");
+    }
+
     throw new ServiceError("Failed to mark the Event Website as published.", eventUpdateError);
   }
 
   assertServiceData(publishedEvent, "Publish state update returned no event row.");
+  const normalizedPublishedEvent = publishedEvent as {
+    event_slug: string;
+    subdomain_slug?: string | null;
+    visibility: string;
+  };
 
   const { data: contentUpdate, error: contentError } = await supabase
     .from("event_content")
@@ -275,6 +376,12 @@ export async function publishEventWebsite(
   }
 
   assertServiceData(contentUpdate, "Published Event Website snapshot update returned no row.");
+  const publishedSubdomainValue =
+    eventRecord.websiteAccessSchemaMode === "draft_live"
+      ? (typeof normalizedPublishedEvent.subdomain_slug === "string"
+          ? normalizedPublishedEvent.subdomain_slug
+          : null)
+      : normalizedPublishedEvent.event_slug;
 
   await writeAuditLog({
     action: "event_website_published",
@@ -284,9 +391,11 @@ export async function publishEventWebsite(
     entityType: "event_content",
     eventId: input.eventId,
     metadata: {
-      next_slug: publishedEvent.event_slug,
-      next_visibility: publishedEvent.visibility,
+      next_slug: normalizedPublishedEvent.event_slug,
+      next_subdomain: publishedSubdomainValue,
+      next_visibility: normalizedPublishedEvent.visibility,
       previous_slug: eventRecord.event_slug,
+      previous_subdomain: previousPublishedSubdomain,
       previous_visibility: previousVisibility,
       version: normalizedDraft.version,
     },
@@ -294,9 +403,11 @@ export async function publishEventWebsite(
 
   return {
     previousPublishedSlug,
+    previousPublishedSubdomain,
     publishedAt,
-    publishedSlug: publishedEvent.event_slug,
-    publishedVisibility: publishedEvent.visibility as "private" | "public" | "unlisted",
+    publishedSlug: normalizedPublishedEvent.event_slug,
+    publishedSubdomain: publishedSubdomainValue,
+    publishedVisibility: normalizedPublishedEvent.visibility as "private" | "public" | "unlisted",
     state: "published",
   };
 }
@@ -313,6 +424,10 @@ export async function unpublishEventWebsite(
   assertServiceData(eventContent, "The Event Website content record is missing.");
 
   const previousPublishedSlug = eventRecord.event_slug ?? null;
+  const previousPublishedSubdomain =
+    eventRecord.websiteAccessSchemaMode === "draft_live"
+      ? eventRecord.subdomain_slug ?? null
+      : eventRecord.event_slug ?? null;
 
   const { data: eventUpdate, error: eventError } = await supabase
     .from("rsvp_events")
@@ -356,12 +471,14 @@ export async function unpublishEventWebsite(
     eventId: input.eventId,
     metadata: {
       previous_slug: previousPublishedSlug,
+      previous_subdomain: previousPublishedSubdomain,
       previous_visibility: eventRecord.visibility,
     },
   });
 
   return {
     previousPublishedSlug,
+    previousPublishedSubdomain,
     state: "unpublished",
   };
 }
@@ -373,6 +490,82 @@ async function getOwnedEventRecord(
   includeContent = false,
 ): Promise<EventWebsiteRecord> {
   const primarySelect = includeContent
+    ? `
+        id,
+        client_id,
+        event_slug,
+        draft_event_slug,
+        draft_subdomain_slug,
+        subdomain_slug,
+        visibility,
+        draft_visibility,
+        status,
+        published_at,
+        fallback_page_enabled,
+        event_date,
+        event_time,
+        rsvp_close_at,
+        venue_name,
+        venue_address,
+        event_content (
+          id,
+          content_json,
+          published_content_json,
+          published_at
+        )
+      `
+    : `
+        id,
+        client_id,
+        event_slug,
+        draft_event_slug,
+        draft_subdomain_slug,
+        subdomain_slug,
+        visibility,
+        draft_visibility,
+        status,
+        published_at,
+        fallback_page_enabled,
+        event_date,
+        event_time,
+        rsvp_close_at,
+        venue_name,
+        venue_address
+      `;
+
+  const { data: eventRecord, error } = await supabase
+    .from("rsvp_events")
+    .select(primarySelect)
+    .eq("id", eventId)
+    .eq("client_id", clientId)
+    .single();
+
+  if (!error) {
+    assertServiceData(eventRecord, "The selected event could not be found.");
+    return {
+      ...(eventRecord as unknown as Omit<EventWebsiteRecord, "websiteAccessSchemaMode">),
+      websiteAccessSchemaMode: "draft_live",
+    };
+  }
+
+  if (!isMissingWebsiteAccessSubdomainColumnError(error)) {
+    if (!isMissingWebsiteAccessDraftColumnError(error)) {
+      throw new ServiceError("Failed to load the event Website record.", error);
+    }
+
+    return getDraftSchemaFallbackRecord(supabase, eventId, clientId, includeContent);
+  }
+
+  return getDraftSchemaFallbackRecord(supabase, eventId, clientId, includeContent);
+}
+
+async function getDraftSchemaFallbackRecord(
+  supabase: ReturnType<typeof createAdminClient>,
+  eventId: string,
+  clientId: string,
+  includeContent: boolean,
+): Promise<EventWebsiteRecord> {
+  const fallbackSelect = includeContent
     ? `
         id,
         client_id,
@@ -412,26 +605,33 @@ async function getOwnedEventRecord(
         venue_address
       `;
 
-  const { data: eventRecord, error } = await supabase
+  const { data: draftSchemaEventRecord, error: draftSchemaError } = await supabase
     .from("rsvp_events")
-    .select(primarySelect)
+    .select(fallbackSelect)
     .eq("id", eventId)
     .eq("client_id", clientId)
     .single();
 
-  if (!error) {
-    assertServiceData(eventRecord, "The selected event could not be found.");
+  if (!draftSchemaError) {
+    assertServiceData(draftSchemaEventRecord, "The selected event could not be found.");
+    const draftSchemaEvent = draftSchemaEventRecord as unknown as Omit<
+      EventWebsiteRecord,
+      "draft_subdomain_slug" | "subdomain_slug" | "websiteAccessSchemaMode"
+    >;
+
     return {
-      ...(eventRecord as unknown as Omit<EventWebsiteRecord, "websiteAccessSchemaMode">),
-      websiteAccessSchemaMode: "draft_live",
+      ...draftSchemaEvent,
+      draft_subdomain_slug: draftSchemaEvent.draft_event_slug,
+      subdomain_slug: draftSchemaEvent.event_slug,
+      websiteAccessSchemaMode: "slug_only",
     };
   }
 
-  if (!isMissingWebsiteAccessDraftColumnError(error)) {
-    throw new ServiceError("Failed to load the event Website record.", error);
+  if (!isMissingWebsiteAccessDraftColumnError(draftSchemaError)) {
+    throw new ServiceError("Failed to load the event Website record.", draftSchemaError);
   }
 
-  const fallbackSelect = includeContent
+  const legacySelect = includeContent
     ? `
         id,
         client_id,
@@ -469,7 +669,7 @@ async function getOwnedEventRecord(
 
   const { data: legacyEventRecord, error: legacyError } = await supabase
     .from("rsvp_events")
-    .select(fallbackSelect)
+    .select(legacySelect)
     .eq("id", eventId)
     .eq("client_id", clientId)
     .single();
@@ -481,13 +681,15 @@ async function getOwnedEventRecord(
   assertServiceData(legacyEventRecord, "The selected event could not be found.");
   const legacyEvent = legacyEventRecord as unknown as Omit<
     EventWebsiteRecord,
-    "draft_event_slug" | "draft_visibility" | "websiteAccessSchemaMode"
+    "draft_event_slug" | "draft_subdomain_slug" | "draft_visibility" | "subdomain_slug" | "websiteAccessSchemaMode"
   >;
 
   return {
     ...legacyEvent,
     draft_event_slug: legacyEvent.event_slug,
+    draft_subdomain_slug: legacyEvent.event_slug,
     draft_visibility: legacyEvent.visibility,
+    subdomain_slug: legacyEvent.event_slug,
     websiteAccessSchemaMode: "legacy",
   };
 }
@@ -534,13 +736,51 @@ async function assertSlugIsAvailable(
   }
 }
 
+async function assertSubdomainIsAvailable(
+  supabase: ReturnType<typeof createAdminClient>,
+  eventId: string,
+  subdomain: string,
+) {
+  const { data: conflictingEvent, error } = await supabase
+    .from("rsvp_events")
+    .select("id")
+    .neq("id", eventId)
+    .or(`subdomain_slug.eq.${subdomain},draft_subdomain_slug.eq.${subdomain}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (error && isMissingWebsiteAccessSubdomainColumnError(error)) {
+    throw new ServiceError(
+      "RSVP subdomain fields are not installed on the connected database yet. Apply migration 20260524100000_add_rsvp_subdomain_fields.sql first.",
+    );
+  }
+
+  if (error) {
+    throw new ServiceError("Failed to check RSVP subdomain availability.", error);
+  }
+
+  if (conflictingEvent) {
+    throw new ServiceError("That RSVP subdomain is already being used by another event.");
+  }
+}
+
 function assertWebsiteAccessDraftSchema(eventRecord: EventWebsiteRecord) {
-  if (eventRecord.websiteAccessSchemaMode === "draft_live") {
+  if (eventRecord.websiteAccessSchemaMode === "draft_live" || eventRecord.websiteAccessSchemaMode === "slug_only") {
     return;
   }
 
   throw new ServiceError(
     "Website Access draft fields are not installed on the connected database yet. Apply migration 20260521060125_website_access_draft_live_fields.sql first.",
+  );
+}
+
+function assertWebsiteAccessSubdomainSchema(eventRecord: EventWebsiteRecord) {
+  if (eventRecord.websiteAccessSchemaMode === "draft_live") {
+    return;
+  }
+
+  throw new ServiceError(
+    "RSVP subdomain fields are not installed on the connected database yet. Apply migration 20260524100000_add_rsvp_subdomain_fields.sql first.",
   );
 }
 
@@ -552,4 +792,18 @@ function isMissingWebsiteAccessDraftColumnError(error: PostgrestError) {
   return ["draft_event_slug", "draft_visibility", "website_access_updated_at"].some((columnName) =>
     error.message.includes(columnName),
   );
+}
+
+function isMissingWebsiteAccessSubdomainColumnError(error: PostgrestError) {
+  if (error.code !== "42703") {
+    return false;
+  }
+
+  return ["draft_subdomain_slug", "subdomain_slug"].some((columnName) =>
+    error.message.includes(columnName),
+  );
+}
+
+function isSubdomainUniqueViolation(error: PostgrestError) {
+  return error.code === "23505" && /subdomain_slug/i.test(error.message);
 }

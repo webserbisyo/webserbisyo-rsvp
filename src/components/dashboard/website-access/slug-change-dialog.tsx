@@ -21,6 +21,7 @@ type SlugChangeDialogProps = {
   onValueChange: (value: string) => void;
   open: boolean;
   pending?: boolean;
+  suffix?: string;
   value: string;
 };
 
@@ -32,6 +33,7 @@ export function SlugChangeDialog({
   onValueChange,
   open,
   pending = false,
+  suffix = "rsvp.webserbisyo.com",
   value,
 }: SlugChangeDialogProps) {
   return (
@@ -53,7 +55,7 @@ export function SlugChangeDialog({
               </div>
 
               <DialogTitle className="text-base font-semibold tracking-tight text-[#2D1F1A]">
-                Change URL name?
+                Change RSVP subdomain?
               </DialogTitle>
             </div>
 
@@ -71,8 +73,7 @@ export function SlugChangeDialog({
 
           {/* Subtitle */}
           <DialogDescription className="mt-3 text-sm leading-relaxed text-[#A38376]">
-            Use this only for a typo, wrong name, or test link before guests
-            receive the final website.
+            Use this only for a typo, wrong name, or test link before guests receive the final website.
           </DialogDescription>
         </DialogHeader>
 
@@ -82,12 +83,18 @@ export function SlugChangeDialog({
           {/* Current URL section */}
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[#A38376]">
-              Current URL name
+              Current RSVP subdomain
             </label>
             <div className="flex h-11 items-center gap-2 rounded-xl border border-[#e9dcd2] bg-[#FBF4EF]/50 px-3.5 opacity-80">
               <Lock className="h-4 w-4 shrink-0 text-[#B49B90]" aria-hidden="true" />
-              <span className="text-sm font-medium text-[#A38376]">/r/</span>
-              <span className="font-mono text-sm font-semibold text-[#8C766C]">{currentSlug}</span>
+              {currentSlug ? (
+                <>
+                  <span className="font-mono text-sm font-semibold text-[#8C766C]">{currentSlug}</span>
+                  <span className="text-xs text-[#A38376]">.{suffix}</span>
+                </>
+              ) : (
+                <span className="text-sm text-[#A38376]">Not set yet</span>
+              )}
             </div>
           </div>
 
@@ -97,7 +104,7 @@ export function SlugChangeDialog({
               htmlFor="website-access-slug-dialog"
               className="text-xs font-semibold uppercase tracking-[0.14em] text-[#A38376]"
             >
-              New URL name
+              New RSVP subdomain
             </label>
             <div
               className={cn(
@@ -118,7 +125,6 @@ export function SlugChangeDialog({
                   aria-hidden="true"
                 />
               )}
-              <span className="text-sm font-medium text-[#A38376]">/r/</span>
               <Input
                 id="website-access-slug-dialog"
                 value={value}
@@ -127,13 +133,13 @@ export function SlugChangeDialog({
                 onChange={(event) => onValueChange(event.target.value)}
                 className="h-auto border-0 bg-transparent px-0 py-0 font-mono text-sm font-semibold text-[#2D1F1A] shadow-none focus-visible:ring-0"
               />
+              <span className="shrink-0 text-xs text-[#A38376]">.{suffix}</span>
             </div>
             {errorMessage ? (
               <p className="text-sm text-[#A86F2A]">{errorMessage}</p>
             ) : (
               <p className="text-sm text-[#A38376]">
-                Lowercase letters, numbers, and hyphens only. The final URL
-                applies on publish.
+                Lowercase letters, numbers, and hyphens only. The final live subdomain applies on publish.
               </p>
             )}
           </div>
@@ -179,7 +185,7 @@ export function SlugChangeDialog({
             onClick={onConfirm}
             className="h-10 rounded-xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] disabled:bg-[#c96f4c]/40 disabled:text-white/80 disabled:shadow-none"
           >
-            Confirm URL change
+            Confirm subdomain change
           </Button>
         </div>
       </DialogContent>

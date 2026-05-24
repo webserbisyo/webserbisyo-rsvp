@@ -78,3 +78,11 @@ export function validatePublicRsvpSlug(value: string) {
 
   return null;
 }
+
+export function validateOptionalPublicRsvpSlug(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  return validatePublicRsvpSlug(value);
+}

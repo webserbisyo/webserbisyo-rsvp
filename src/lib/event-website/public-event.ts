@@ -23,6 +23,11 @@ export const PublicEventSlugSchema = z
   .regex(PUBLIC_RSVP_SLUG_PATTERN);
 
 export type PublicEventVisibility = "private" | "public" | "unlisted";
+export const PUBLIC_EVENT_RENDER_VISIBILITIES: PublicEventVisibility[] = [
+  "public",
+  "unlisted",
+  "private",
+];
 
 export type PublicEventRsvpState = {
   availabilityMessage: string | null;
@@ -43,6 +48,7 @@ export type PublicEventDto = {
   renderModel: EventWebsiteRenderModel;
   rsvp: PublicEventRsvpState;
   sections: EventWebsiteSectionKey[];
+  subdomainSlug: string | null;
   venueAddress: string | null;
   venueName: string | null;
   visibility: PublicEventVisibility;
@@ -58,6 +64,7 @@ export function buildPublicEventDto({
   publishedAt,
   rsvpCloseAt,
   rsvpOpenAt,
+  subdomainSlug,
   venueAddress,
   venueName,
   visibility,
@@ -71,6 +78,7 @@ export function buildPublicEventDto({
   publishedAt: string;
   rsvpCloseAt: string | null;
   rsvpOpenAt: string | null;
+  subdomainSlug: string | null;
   venueAddress: string | null;
   venueName: string | null;
   visibility: PublicEventVisibility;
@@ -88,6 +96,7 @@ export function buildPublicEventDto({
     renderModel: buildEventWebsiteRenderModel(publicContent),
     rsvp: getPublicEventRsvpState(publicContent.sections.rsvp_form, rsvpOpenAt, rsvpCloseAt),
     sections: buildPublicRenderableSections(publicContent, eventType),
+    subdomainSlug,
     venueAddress,
     venueName,
     visibility,

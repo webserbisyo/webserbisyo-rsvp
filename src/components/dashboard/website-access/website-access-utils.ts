@@ -81,16 +81,21 @@ export function buildChangeSummary({
   hasAccessPendingChanges,
   hasContentPendingChanges,
   hasSlugPendingChanges,
+  hasSubdomainPendingChanges = false,
   isPublished,
 }: {
   hasAccessPendingChanges: boolean;
   hasContentPendingChanges: boolean;
   hasSlugPendingChanges: boolean;
+  hasSubdomainPendingChanges?: boolean;
   isPublished: boolean;
 }) {
-  const pendingCount = [hasAccessPendingChanges, hasSlugPendingChanges, hasContentPendingChanges].filter(
-    Boolean,
-  ).length;
+  const pendingCount = [
+    hasAccessPendingChanges,
+    hasSlugPendingChanges,
+    hasSubdomainPendingChanges,
+    hasContentPendingChanges,
+  ].filter(Boolean).length;
 
   if (!isPublished) {
     return "Draft ready to publish";
@@ -106,6 +111,10 @@ export function buildChangeSummary({
 
   if (hasContentPendingChanges) {
     return "Website content pending";
+  }
+
+  if (hasSubdomainPendingChanges) {
+    return "Subdomain change pending";
   }
 
   if (hasSlugPendingChanges) {

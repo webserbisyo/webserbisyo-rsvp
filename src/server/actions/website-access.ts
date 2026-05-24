@@ -13,6 +13,7 @@ import {
   publishEventWebsite,
   unpublishEventWebsite,
   updateWebsiteAccessDraftSlug,
+  updateWebsiteAccessDraftSubdomain,
   updateWebsiteAccessDraftVisibility,
 } from "@/server/services/publish-event-website";
 import { ServiceError } from "@/server/services/service-error";
@@ -26,6 +27,11 @@ const UpdateWebsiteAccessDraftVisibilityActionSchema = z.object({
 const UpdateWebsiteAccessDraftSlugActionSchema = z.object({
   eventId: z.uuid(),
   slug: z.string().trim().min(1),
+});
+
+const UpdateWebsiteAccessDraftSubdomainActionSchema = z.object({
+  eventId: z.uuid(),
+  subdomain: z.string().trim(),
 });
 
 const PublishEventWebsiteActionSchema = z.object({
@@ -89,6 +95,34 @@ export async function updateWebsiteAccessDraftSlugAction(input: unknown) {
 
     return actionSuccess({
       draftSlug: result.draftSlug,
+      updatedAt: result.updatedAt,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function updateWebsiteAccessDraftSubdomainAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(UpdateWebsiteAccessDraftSubdomainActionSchema, input);
+    const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    const draftSubdomain = sanitizePublicRsvpSlug(payload.subdomain);
+    const subdomainError = validatePublicRsvpSlug(draftSubdomain);
+
+    if (draftSubdomain && subdomainError) {
+      throw new ServiceError(subdomainError);
+    }
+
+    const result = await updateWebsiteAccessDraftSubdomain({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      draftSubdomain: draftSubdomain || null,
+      eventId: event.id,
+    });
+
+    return actionSuccess({
+      draftSubdomain: result.draftSubdomain,
       updatedAt: result.updatedAt,
     });
   } catch (error) {
