@@ -8,14 +8,19 @@ import {
   eventWebsiteRenderModelSectionKeys,
   type EventWebsiteRenderModel,
 } from "@/lib/event-website/render-model";
+import {
+  PUBLIC_RSVP_SLUG_MAX_LENGTH,
+  PUBLIC_RSVP_SLUG_MIN_LENGTH,
+  PUBLIC_RSVP_SLUG_PATTERN,
+} from "@/lib/public-rsvp-slugs";
 import type { EventWebsiteContent, EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
 
 export const PublicEventSlugSchema = z
   .string()
   .trim()
-  .min(1)
-  .max(200)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  .min(PUBLIC_RSVP_SLUG_MIN_LENGTH)
+  .max(PUBLIC_RSVP_SLUG_MAX_LENGTH)
+  .regex(PUBLIC_RSVP_SLUG_PATTERN);
 
 export type PublicEventVisibility = "private" | "public" | "unlisted";
 

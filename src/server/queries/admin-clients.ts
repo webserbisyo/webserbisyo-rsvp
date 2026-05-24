@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildPublicRsvpUrl } from "@/lib/public-rsvp-url";
 import type { Database, Tables } from "@/lib/supabase/types";
 import {
   type ClientPaymentDisplayStatus,
@@ -1572,13 +1573,12 @@ function getPublishedEventPublicUrl(event: EventRow | null) {
   if (
     !event?.event_slug ||
     event.status !== "published" ||
-    !event.published_at ||
-    !["public", "unlisted"].includes(event.visibility)
+    !event.published_at
   ) {
     return null;
   }
 
-  return `/r/${event.event_slug}`;
+  return buildPublicRsvpUrl({ slug: event.event_slug });
 }
 
 function formatPublicPreviewLabel(event: EventRow | null, publicUrl: string | null) {

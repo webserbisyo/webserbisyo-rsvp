@@ -3,16 +3,19 @@ import "server-only";
 import type { PostgrestError } from "@supabase/supabase-js";
 import {
   buildChangeSummary,
-  buildShareUrl,
   mapDbVisibilityToApp,
 } from "@/components/dashboard/website-access/website-access-utils";
 import type { WebsiteAccessInitialData } from "@/components/dashboard/website-access/website-access-types";
 import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
 import { requireTenantMember } from "@/lib/permissions";
+import {
+  buildPublicRsvpFormUrl,
+  buildPublicRsvpUrl,
+  getPublicAppUrl,
+  isPublishedPublicRsvpReady,
+} from "@/lib/public-rsvp-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-
-const DEFAULT_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com";
 
 type WebsiteAccessDataRow = {
   draft_event_slug: string;
@@ -70,6 +73,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       hasPendingChanges: false,
       hasSlugPendingChanges: false,
       lastEditedAt: null,
+      publicBaseUrl: getPublicAppUrl(),
       publicUrl: null,
       publishState: "unpublished",
       publishedAt: null,
@@ -118,12 +122,29 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const hasEverPublished = Boolean(
     eventContent?.published_content_json || event.published_at || eventContent?.published_at,
   );
-  const publicUrl = publishedSlug ? buildShareUrl(DEFAULT_ORIGIN, publishedSlug) : null;
-  const rsvpUrl = publishedSlug ? buildShareUrl(DEFAULT_ORIGIN, publishedSlug, "rsvp-form") : null;
+  const publicBaseUrl = getPublicAppUrl();
+  const hasPublishedSnapshot = Boolean(
+    eventContent?.published_at && eventContent?.published_content_json,
+  );
+  const isShareable = isPublishedPublicRsvpReady({
+    fallbackPageEnabled: event.fallback_page_enabled,
+    hasPublishedSnapshot,
+    publishedAt: event.published_at,
+    slug: publishedSlug,
+    status: event.status,
+  });
+  const publicUrl =
+    isShareable && publishedSlug
+      ? buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: publishedSlug })
+      : null;
+  const rsvpUrl =
+    isShareable && publishedSlug
+      ? buildPublicRsvpFormUrl({ baseUrl: publicBaseUrl, slug: publishedSlug })
+      : null;
 
   return {
-    canDownloadQr: publishState === "published" && Boolean(publishedSlug),
-    canOpenWebsite: publishState === "published" && Boolean(publicUrl),
+    canDownloadQr: Boolean(rsvpUrl),
+    canOpenWebsite: Boolean(publicUrl),
     changesSummary: buildChangeSummary({
       hasAccessPendingChanges,
       hasContentPendingChanges,
@@ -140,6 +161,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     hasPendingChanges,
     hasSlugPendingChanges,
     lastEditedAt: event.website_access_updated_at ?? contentDraftSavedAt,
+    publicBaseUrl,
     publicUrl,
     publishState,
     publishedAt: event.published_at ?? null,

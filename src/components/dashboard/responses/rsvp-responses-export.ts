@@ -2,6 +2,7 @@
 
 import type { jsPDF } from "jspdf";
 import type { CellHookData, RowInput } from "jspdf-autotable";
+import { buildPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
 import {
   formatResponseSubmittedTable,
   getResponseStatusLabel,
@@ -190,7 +191,16 @@ function slugifyExportFilename(value?: string | null) {
 }
 
 function buildExportLinkLabel(metadata: RsvpResponsesExportMetadata) {
-  return metadata.eventSlug ? `webserbisyo.app/r/${metadata.eventSlug}` : "webserbisyo.app";
+  if (!metadata.eventSlug) {
+    return getPublicAppUrl()?.replace(/^https?:\/\//, "") ?? "RSVP link pending";
+  }
+
+  return (
+    buildPublicRsvpUrl({
+      baseUrl: getPublicAppUrl(),
+      slug: metadata.eventSlug,
+    })?.replace(/^https?:\/\//, "") ?? "RSVP link pending"
+  );
 }
 
 function buildExportDateLabel() {

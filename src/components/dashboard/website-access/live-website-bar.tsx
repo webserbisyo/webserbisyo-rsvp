@@ -17,6 +17,8 @@ export function LiveWebsiteBar({
   onPublish,
   websiteUrl,
 }: LiveWebsiteBarProps) {
+  const canOpenWebsite = isPublished && Boolean(websiteUrl);
+
   return (
     <section className="rounded-2xl border border-[#eadbd0] bg-white/90 px-5 py-4 shadow-sm shadow-[#8a4b2e]/5 sm:px-7">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -35,7 +37,7 @@ export function LiveWebsiteBar({
           </p>
         </div>
 
-        {isPublished ? (
+        {canOpenWebsite ? (
           <Button
             asChild
             type="button"
@@ -45,6 +47,15 @@ export function LiveWebsiteBar({
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               Open website
             </a>
+          </Button>
+        ) : isPublished ? (
+          <Button
+            type="button"
+            disabled
+            className="h-10 rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 disabled:opacity-60"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            Open website
           </Button>
         ) : (
           <Button

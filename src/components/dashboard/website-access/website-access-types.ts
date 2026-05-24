@@ -25,6 +25,7 @@ export type WebsiteAccessInitialData = {
   hasPendingChanges: boolean;
   hasSlugPendingChanges: boolean;
   lastEditedAt: string | null;
+  publicBaseUrl: string | null;
   publicUrl: string | null;
   publishState: PublishState;
   publishedAt: string | null;

@@ -1,47 +1,19 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
 import { Copy, ExternalLink, Globe, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { buildPublicRsvpUrl, normalizePublicAppUrl } from "@/lib/public-rsvp-url";
-
-function subscribeToNothing() {
-  return () => {};
-}
 
 export function RsvpWebsiteCard({
   isShareable,
   publicUrl,
   shareHint,
-  slug,
 }: {
   isShareable: boolean;
   publicUrl: string | null;
   shareHint: string;
-  slug: string | null;
 }) {
-  const clientOrigin = useSyncExternalStore(
-    subscribeToNothing,
-    () => normalizePublicAppUrl(window.location.origin),
-    () => null,
-  );
-
-  const url = useMemo(() => {
-    if (!isShareable || !slug) {
-      return null;
-    }
-
-    if (publicUrl) {
-      return publicUrl;
-    }
-
-    if (clientOrigin) {
-      return buildPublicRsvpUrl(clientOrigin, slug);
-    }
-
-    return null;
-  }, [clientOrigin, isShareable, publicUrl, slug]);
+  const url = isShareable ? publicUrl : null;
 
   const displayUrl = url ? url.replace(/^https?:\/\//, "") : "Publish pending";
 

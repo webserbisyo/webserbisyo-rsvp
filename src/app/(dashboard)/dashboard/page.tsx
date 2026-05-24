@@ -83,7 +83,6 @@ export default async function DashboardPage() {
             isShareable={summary.event.isShareable}
             publicUrl={summary.event.publicUrl}
             shareHint={summary.event.shareHint}
-            slug={summary.event.slug ?? null}
           />
           <QuickStatsCard
             coverageLabel={summary.stats.rsvpCoverageLabel}

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/index";
 
 type WebsiteLinkCardProps = {
+  canCopy: boolean;
   hasSlugChange: boolean;
   isSlugLocked: boolean;
   isUpdating?: boolean;
@@ -19,6 +20,7 @@ type WebsiteLinkCardProps = {
 };
 
 export function WebsiteLinkCard({
+  canCopy,
   hasSlugChange,
   isSlugLocked,
   isUpdating = false,
@@ -51,7 +53,7 @@ export function WebsiteLinkCard({
           </div>
           <Button
             type="button"
-            disabled={isUpdating}
+            disabled={isUpdating || !canCopy}
             onClick={onCopy}
             aria-label="Copy website link"
             className="h-12 rounded-xl border border-[#eacdbf] bg-[#FFF7F3] px-5 text-sm font-semibold text-[#A7583C] shadow-none hover:bg-[#fff0e8]"

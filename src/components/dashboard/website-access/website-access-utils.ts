@@ -1,52 +1,5 @@
 import type { DbVisibilityMode, VisibilityMode } from "./website-access-types";
 
-const RESERVED_SLUGS = new Set([
-  "admin",
-  "api",
-  "apply",
-  "dashboard",
-  "login",
-  "logout",
-  "offline",
-  "r",
-  "signup",
-]);
-
-export function sanitizeSlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60);
-}
-
-export function validateSlug(value: string) {
-  if (!value) {
-    return "Enter a URL name.";
-  }
-
-  if (value.length < 3) {
-    return "Use at least 3 characters.";
-  }
-
-  if (value.length > 60) {
-    return "Use 60 characters or fewer.";
-  }
-
-  if (!/^[a-z0-9-]+$/.test(value)) {
-    return "Use lowercase letters, numbers, and hyphens only.";
-  }
-
-  if (RESERVED_SLUGS.has(value)) {
-    return "That URL name is reserved.";
-  }
-
-  return null;
-}
-
 export function formatWebsiteAccessDate(value: Date | null) {
   if (!value) {
     return "Not published yet";
@@ -57,12 +10,6 @@ export function formatWebsiteAccessDate(value: Date | null) {
     timeStyle: "short",
     timeZone: "Asia/Manila",
   }).format(value);
-}
-
-export function buildShareUrl(origin: string, slug: string, hash?: string) {
-  const baseOrigin = origin.replace(/\/$/, "");
-  const suffix = hash ? `#${hash}` : "";
-  return `${baseOrigin}/r/${slug}${suffix}`;
 }
 
 export function mapAppVisibilityToDb(visibility: VisibilityMode): DbVisibilityMode | null {

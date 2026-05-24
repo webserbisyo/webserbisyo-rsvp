@@ -6,7 +6,11 @@ import { mergeEventWebsiteContent } from "@/lib/event-website/hydration";
 import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
 import { PermissionError, requireTenantMember, type AuthenticatedProfile } from "@/lib/permissions";
-import { buildPublicRsvpUrl, resolveConfiguredPublicAppUrl } from "@/lib/public-rsvp-url";
+import {
+  buildPublicRsvpUrl,
+  getPublicAppUrl,
+  isPublishedPublicRsvpReady,
+} from "@/lib/public-rsvp-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { EventWebsiteContentPatchSchema } from "@/lib/validations/event-website.schema";
@@ -146,11 +150,7 @@ export type DashboardHomeData = {
   warning: string | null;
 };
 
-const DEFAULT_PUBLIC_APP_URL = resolveConfiguredPublicAppUrl(
-  process.env.NEXT_PUBLIC_APP_URL,
-  process.env.NEXT_PUBLIC_SITE_URL,
-  process.env.SITE_URL,
-);
+const DEFAULT_PUBLIC_APP_URL = getPublicAppUrl();
 
 export async function getDashboardSummary(): Promise<DashboardHomeData> {
   const profile = await requireTenantMember();
@@ -271,12 +271,19 @@ async function loadDashboardSummary(
     payment,
     paymentState: paymentSummary.state,
   });
+  const publishedSnapshotReady = hasPublishedSnapshot(eventContent);
   const publishState = getDashboardPublishState({
     fallbackPageEnabled: event?.fallback_page_enabled ?? false,
     publishedAt: event?.published_at ?? null,
     status: event?.status ?? null,
   });
-  const shareable = publishState && Boolean(event?.event_slug && hasPublishedSnapshot(eventContent));
+  const shareable = isPublishedPublicRsvpReady({
+    fallbackPageEnabled: event?.fallback_page_enabled,
+    hasPublishedSnapshot: publishedSnapshotReady,
+    publishedAt: event?.published_at,
+    slug: event?.event_slug,
+    status: event?.status,
+  });
   const websiteAccessConfigured = hasWebsiteAccessConfigured({
     draftSlug: event?.draft_event_slug,
     draftVisibility: event?.draft_visibility,
@@ -285,7 +292,7 @@ async function loadDashboardSummary(
   });
   const publicUrl =
     shareable && event?.event_slug && DEFAULT_PUBLIC_APP_URL
-      ? buildPublicRsvpUrl(DEFAULT_PUBLIC_APP_URL, event.event_slug)
+      ? buildPublicRsvpUrl({ baseUrl: DEFAULT_PUBLIC_APP_URL, slug: event.event_slug })
       : null;
   const roleLabel = profile.role === "client_staff" ? "Client Staff" : "Client Admin";
   const rawContentJson = eventContent?.content_json ?? null;
@@ -356,7 +363,7 @@ async function loadDashboardSummary(
       rsvpDeadlineLabel: formatDeadlineLabel(event?.rsvp_close_at),
       shareHint: getWebsiteShareHint({
         hasFallbackPageEnabled: event?.fallback_page_enabled ?? false,
-        hasPublishedSnapshot: hasPublishedSnapshot(eventContent),
+        hasPublishedSnapshot: publishedSnapshotReady,
         hasSlug: Boolean(event?.event_slug),
         isPublished: publishState,
       }),

@@ -5,9 +5,8 @@ import { z } from "zod";
 import {
   mapAppVisibilityToDb,
   mapDbVisibilityToApp,
-  sanitizeSlug,
-  validateSlug,
 } from "@/components/dashboard/website-access/website-access-utils";
+import { sanitizePublicRsvpSlug, validatePublicRsvpSlug } from "@/lib/public-rsvp-slugs";
 import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -74,8 +73,8 @@ export async function updateWebsiteAccessDraftSlugAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(UpdateWebsiteAccessDraftSlugActionSchema, input);
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
-    const draftSlug = sanitizeSlug(payload.slug);
-    const slugError = validateSlug(draftSlug);
+    const draftSlug = sanitizePublicRsvpSlug(payload.slug);
+    const slugError = validatePublicRsvpSlug(draftSlug);
 
     if (slugError) {
       throw new ServiceError(slugError);

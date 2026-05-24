@@ -54,6 +54,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
       </div>
 
       <WebsiteLinkCard
+        canCopy={Boolean(state.websiteUrlPublished)}
         hasSlugChange={state.hasSlugChange}
         isSlugLocked={state.isSlugLocked}
         isUpdating={state.isInteractionPending}

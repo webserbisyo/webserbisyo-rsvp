@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  isValidPublicRsvpSlug,
+  sanitizePublicRsvpSlug,
+} from "@/lib/public-rsvp-slugs";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/supabase/types";
 import { assertServiceData, assertServiceSuccess, ServiceError } from "./service-error";
@@ -15,12 +19,14 @@ export type CreateDraftEventInput = {
 };
 
 function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
+  const sanitized = sanitizePublicRsvpSlug(value);
+
+  if (isValidPublicRsvpSlug(sanitized)) {
+    return sanitized;
+  }
+
+  const fallback = sanitizePublicRsvpSlug(sanitized ? `${sanitized}-event` : "event");
+  return isValidPublicRsvpSlug(fallback) ? fallback : "event";
 }
 
 async function resolveUniqueSlug(baseSlug: string): Promise<string> {

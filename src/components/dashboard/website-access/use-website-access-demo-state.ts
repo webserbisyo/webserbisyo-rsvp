@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type {
@@ -10,21 +10,18 @@ import type {
 } from "./website-access-types";
 import {
   buildChangeSummary,
-  buildShareUrl,
   formatWebsiteAccessDate,
   getPublishStatusState,
   getVisibilityLabel,
-  sanitizeSlug,
-  validateSlug,
 } from "./website-access-utils";
+import { sanitizePublicRsvpSlug, validatePublicRsvpSlug } from "@/lib/public-rsvp-slugs";
+import { buildPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
 import {
   publishEventWebsiteAction,
   unpublishEventWebsiteAction,
   updateWebsiteAccessDraftSlugAction,
   updateWebsiteAccessDraftVisibilityAction,
 } from "@/server/actions/website-access";
-
-const DEFAULT_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://webserbisyo.com";
 
 export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const router = useRouter();
@@ -36,14 +33,19 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const [slugModalValue, setSlugModalValue] = useState(initialData.draftSlug ?? initialData.publishedSlug ?? "");
   const persistedDraftSlugRef = useRef(initialData.draftSlug ?? initialData.publishedSlug ?? "");
 
-  const origin = useSyncExternalStore(
-    () => () => undefined,
-    () => window.location.origin,
-    () => DEFAULT_ORIGIN,
+  const publicBaseUrl = useMemo(
+    () => getPublicAppUrl({ baseUrl: serverState.publicBaseUrl }),
+    [serverState.publicBaseUrl],
   );
-  const slugDraftError = useMemo(() => validateSlug(draftSlug), [draftSlug]);
-  const slugModalSanitized = useMemo(() => sanitizeSlug(slugModalValue), [slugModalValue]);
-  const slugModalError = useMemo(() => validateSlug(slugModalSanitized), [slugModalSanitized]);
+  const slugDraftError = useMemo(() => validatePublicRsvpSlug(draftSlug), [draftSlug]);
+  const slugModalSanitized = useMemo(
+    () => sanitizePublicRsvpSlug(slugModalValue),
+    [slugModalValue],
+  );
+  const slugModalError = useMemo(
+    () => validatePublicRsvpSlug(slugModalSanitized),
+    [slugModalSanitized],
+  );
   const publishedSlug = serverState.publishedSlug ?? "";
   const isPublished = serverState.publishState === "published";
   const hasEverPublished = serverState.hasEverPublished;
@@ -54,9 +56,12 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const hasContentPendingChanges = serverState.hasContentPendingChanges;
   const hasPendingChanges = hasVisibilityDraft || hasSlugChange || hasContentPendingChanges;
   const publishStatusState = getPublishStatusState(isPublished, hasPendingChanges);
-  const websiteUrlPublished = publishedSlug ? buildShareUrl(origin, publishedSlug) : "";
-  const websiteUrlDraft = draftSlug ? buildShareUrl(origin, draftSlug) : "";
-  const rsvpUrlPublished = publishedSlug ? buildShareUrl(origin, publishedSlug, "rsvp-form") : "";
+  const websiteUrlPublished = serverState.publicUrl ?? "";
+  const websiteUrlDraft =
+    draftSlug && publicBaseUrl
+      ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: draftSlug }) ?? "")
+      : "";
+  const rsvpUrlPublished = serverState.rsvpUrl ?? "";
   const changesSummary = buildChangeSummary({
     hasAccessPendingChanges: hasVisibilityDraft,
     hasContentPendingChanges,
@@ -64,7 +69,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     isPublished,
   });
   const visibilityLabel = getVisibilityLabel(draftVisibility);
-  const canShareLiveUrl = isPublished && Boolean(publishedSlug);
+  const canShareLiveUrl = Boolean(websiteUrlPublished && rsvpUrlPublished);
 
   useEffect(() => {
     if (isSlugLocked || !serverState.eventId) {
@@ -146,7 +151,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   }
 
   function handleDraftSlugInput(value: string) {
-    setDraftSlug(sanitizeSlug(value));
+    setDraftSlug(sanitizePublicRsvpSlug(value));
   }
 
   function openSlugModal() {
@@ -300,7 +305,6 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       parseIsoDate(serverState.lastEditedAt ?? serverState.websiteAccessUpdatedAt),
     ),
     openSlugModal,
-    origin,
     publishLatestChanges,
     publishStatusState: publishStatusState as PublishStatusState,
     publishWebsite,

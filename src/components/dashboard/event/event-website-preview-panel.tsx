@@ -8,6 +8,7 @@ import type {
   EventWebsiteSectionDefinition,
   EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { buildPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
 import {
   previewSupportedSectionKeys,
   type EventWebsitePreviewDevice,
@@ -24,6 +25,11 @@ type EventWebsitePreviewPanelProps = {
 };
 
 const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(previewSupportedSectionKeys);
+const previewAddress =
+  buildPublicRsvpUrl({
+    baseUrl: getPublicAppUrl(),
+    slug: "juan-and-maria",
+  })?.replace(/^https?:\/\//, "") ?? "your-rsvp-link.example/r/juan-and-maria";
 
 export function EventWebsitePreviewPanel({
   enabledSections,
@@ -88,7 +94,7 @@ export function EventWebsitePreviewPanel({
               <span className="event-preview-browser-dot is-red" />
               <span className="event-preview-browser-dot is-green" />
               <span className="event-preview-browser-dot is-neutral" />
-              <span className="event-preview-address">webserbisyo.app/r/juan-and-maria</span>
+              <span className="event-preview-address">{previewAddress}</span>
               <PreviewDeviceTabs device={device} onDeviceChange={setDevice} />
             </div>
           ) : (
