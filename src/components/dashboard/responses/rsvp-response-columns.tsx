@@ -3,24 +3,17 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   CheckCircle2,
+  Eye,
   MessageCircle,
   MessageCircleHeart,
-  MoreHorizontal,
   Users,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
-  formatResponseSubmittedTable,
-  getResponseGuestbookStatusLabel,
+  getResponseSubmittedDisplay,
   getResponseInitials,
   hasResponseMessage,
   type RsvpResponseRecord,
@@ -49,32 +42,6 @@ function StatusChip({ status }: { status: "attending" | "not_attending" }) {
     >
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {isAttending ? "Attending" : "Not attending"}
-    </span>
-  );
-}
-
-function GuestbookStatusChip({
-  response,
-}: {
-  response: RsvpResponseRecord;
-}) {
-  if (!hasResponseMessage(response)) {
-    return null;
-  }
-
-  const isShown = response.messagePublicStatus === "approved";
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1",
-        isShown
-          ? "bg-amber-50 text-amber-700 ring-amber-200"
-          : "bg-slate-50 text-slate-700 ring-slate-200",
-      )}
-    >
-      {isShown ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : null}
-      {getResponseGuestbookStatusLabel(response.messagePublicStatus)}
     </span>
   );
 }
@@ -148,13 +115,10 @@ export function getRsvpResponseColumns({
       header: "Message",
       cell: ({ row }) =>
         hasResponseMessage(row.original) ? (
-          <div className="flex flex-col items-start gap-1.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#c96f4c]">
-              <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-              Has message
-            </span>
-            <GuestbookStatusChip response={row.original} />
-          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#c96f4c]">
+            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+            Has message
+          </span>
         ) : (
           <span className="text-[#a89b91]">—</span>
         ),
@@ -162,11 +126,26 @@ export function getRsvpResponseColumns({
     {
       accessorKey: "submittedAt",
       header: "Submitted",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-[#75675e]">
-          {formatResponseSubmittedTable(row.original.submittedAt)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const submitted = getResponseSubmittedDisplay(row.original.submittedAt);
+
+        return (
+          <span
+            className="block text-sm font-medium leading-5 text-[#75675e]"
+            title={submitted.fullLabel}
+            aria-label={`Submitted ${submitted.fullLabel}`}
+          >
+            <span className="hidden xl:block">{submitted.wideLabel}</span>
+            <span className="hidden whitespace-nowrap md:block xl:hidden">
+              {submitted.compactLabel}
+            </span>
+            <span className="grid gap-0.5 md:hidden">
+              <span>{submitted.mobileDateLabel}</span>
+              {submitted.mobileTimeLabel ? <span>{submitted.mobileTimeLabel}</span> : null}
+            </span>
+          </span>
+        );
+      },
     },
     {
       id: "action",
@@ -178,13 +157,15 @@ export function getRsvpResponseColumns({
         const isDisabled = isModerating || isPending;
 
         return (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {hasMessage ? (
               <Button
                 type="button"
                 variant={isShownInGuestbook ? "outline" : "default"}
                 size="sm"
                 disabled={isDisabled}
+                title={isShownInGuestbook ? "Remove from Guestbook" : "Add to Guestbook"}
+                aria-label={isShownInGuestbook ? "Remove from Guestbook" : "Add to Guestbook"}
                 className={cn(
                   "inline-flex h-9 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold",
                   isShownInGuestbook
@@ -207,38 +188,25 @@ export function getRsvpResponseColumns({
                 ) : (
                   <MessageCircleHeart className="h-3.5 w-3.5" aria-hidden="true" />
                 )}
-                {isShownInGuestbook ? "Remove" : "Show"}
+                {isShownInGuestbook ? "Remove" : "Add"}
               </Button>
             ) : null}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="ml-auto h-9 w-9 rounded-xl p-0 text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
-                  aria-label={`Open response actions for ${row.original.guestName}`}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="min-w-[180px] rounded-xl border border-[#eadbd0] bg-white p-1 text-[#2b2521] shadow-lg shadow-[#2b2521]/10"
-              >
-                <DropdownMenuItem
-                  className="cursor-pointer rounded-lg px-3 py-2 text-sm"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onOpenResponse(row.original);
-                  }}
-                >
-                  View details
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              title="View response details"
+              aria-label="View response details"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#e7d7ca] bg-white px-3 text-xs font-semibold text-[#3b342f] hover:bg-[#fff8f3]"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenResponse(row.original);
+              }}
+            >
+              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+              View
+            </Button>
           </div>
         );
       },

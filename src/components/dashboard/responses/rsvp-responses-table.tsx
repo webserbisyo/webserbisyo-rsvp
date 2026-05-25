@@ -10,7 +10,7 @@ import {
   type RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, MessageCircleHeart, Search, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -246,6 +246,11 @@ export function RsvpResponsesTable({
                     )
                   }
                 >
+                  {allEligibleSelectedAreApproved ? (
+                    <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                  ) : (
+                    <MessageCircleHeart className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
                   {allEligibleSelectedAreApproved ? "Remove from Guestbook" : "Show in Guestbook"}
                 </Button>
                 <Button

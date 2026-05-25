@@ -94,18 +94,6 @@ export function hasResponseMessage(record: RsvpResponseRecord) {
   return Boolean(record.message?.trim());
 }
 
-export function getResponseGuestbookStatusLabel(status: RsvpResponseGuestbookStatus) {
-  if (status === "approved") {
-    return "Shown";
-  }
-
-  if (status === "hidden") {
-    return "Private";
-  }
-
-  return "Needs review";
-}
-
 export function matchesResponseSearch(record: RsvpResponseRecord, query: string) {
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -161,4 +149,45 @@ export function formatResponseSubmittedTable(value: string) {
     minute: "2-digit",
     timeZone: "Asia/Manila",
   }).format(date);
+}
+
+export function getResponseSubmittedDisplay(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      compactLabel: value,
+      fullLabel: value,
+      mobileDateLabel: value,
+      mobileTimeLabel: "",
+      wideLabel: value,
+    };
+  }
+
+  const currentYear = new Date().getFullYear();
+  const includeYear = date.getFullYear() !== currentYear;
+
+  return {
+    compactLabel: new Intl.DateTimeFormat("en-PH", {
+      month: "short",
+      day: "numeric",
+      ...(includeYear ? { year: "numeric" as const } : {}),
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "Asia/Manila",
+    }).format(date),
+    fullLabel: formatResponseSubmittedTable(value),
+    mobileDateLabel: new Intl.DateTimeFormat("en-PH", {
+      month: "short",
+      day: "numeric",
+      ...(includeYear ? { year: "numeric" as const } : {}),
+      timeZone: "Asia/Manila",
+    }).format(date),
+    mobileTimeLabel: new Intl.DateTimeFormat("en-PH", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "Asia/Manila",
+    }).format(date),
+    wideLabel: formatResponseSubmittedTable(value),
+  };
 }
