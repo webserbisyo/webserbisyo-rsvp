@@ -669,7 +669,8 @@ function ResponsiveSectionEditorSurface({
   if (isTabletLayout) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent
+      <SheetContent
+          data-dashboard
           side="right"
           showCloseButton={false}
           overlayClassName="bg-black/34 supports-backdrop-filter:backdrop-blur-sm"
@@ -687,7 +688,7 @@ function ResponsiveSectionEditorSurface({
 
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
-      <DrawerContent className="event-website-mobile-editor-drawer">
+      <DrawerContent data-dashboard className="event-website-mobile-editor-drawer">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{selectedSection?.label ?? "Edit section"}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
