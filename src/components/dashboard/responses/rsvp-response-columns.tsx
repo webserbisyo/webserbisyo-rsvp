@@ -1,17 +1,37 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { CheckCircle2, MessageCircle, MoreHorizontal, Users, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  MessageCircle,
+  MessageCircleHeart,
+  MoreHorizontal,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   formatResponseSubmittedTable,
+  getResponseGuestbookStatusLabel,
   getResponseInitials,
+  hasResponseMessage,
   type RsvpResponseRecord,
 } from "./rsvp-responses-types";
 
 type GetRsvpResponseColumnsOptions = {
+  isModerating: boolean;
   onOpenResponse: (response: RsvpResponseRecord) => void;
+  onRemoveFromGuestbook: (responseId: string) => void;
+  onShowInGuestbook: (responseId: string) => void;
+  pendingResponseIds: Set<string>;
 };
 
 function StatusChip({ status }: { status: "attending" | "not_attending" }) {
@@ -33,10 +53,60 @@ function StatusChip({ status }: { status: "attending" | "not_attending" }) {
   );
 }
 
+function GuestbookStatusChip({
+  response,
+}: {
+  response: RsvpResponseRecord;
+}) {
+  if (!hasResponseMessage(response)) {
+    return null;
+  }
+
+  const isShown = response.messagePublicStatus === "approved";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1",
+        isShown
+          ? "bg-amber-50 text-amber-700 ring-amber-200"
+          : "bg-slate-50 text-slate-700 ring-slate-200",
+      )}
+    >
+      {isShown ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+      {getResponseGuestbookStatusLabel(response.messagePublicStatus)}
+    </span>
+  );
+}
+
 export function getRsvpResponseColumns({
+  isModerating,
   onOpenResponse,
+  onRemoveFromGuestbook,
+  onShowInGuestbook,
+  pendingResponseIds,
 }: GetRsvpResponseColumnsOptions): ColumnDef<RsvpResponseRecord>[] {
   return [
+    {
+      cell: ({ row }) => (
+        <Checkbox
+          aria-label={`Select response from ${row.original.guestName}`}
+          checked={row.getIsSelected()}
+          onCheckedChange={(checked) => row.toggleSelected(Boolean(checked))}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ),
+      enableSorting: false,
+      header: ({ table }) => (
+        <Checkbox
+          aria-label="Select all responses on this page"
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(checked) => table.toggleAllPageRowsSelected(Boolean(checked))}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ),
+      id: "select",
+    },
     {
       accessorKey: "guestName",
       header: "Guest",
@@ -77,11 +147,14 @@ export function getRsvpResponseColumns({
       id: "message",
       header: "Message",
       cell: ({ row }) =>
-        row.original.message ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#c96f4c]">
-            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-            Has message
-          </span>
+        hasResponseMessage(row.original) ? (
+          <div className="flex flex-col items-start gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#c96f4c]">
+              <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              Has message
+            </span>
+            <GuestbookStatusChip response={row.original} />
+          </div>
         ) : (
           <span className="text-[#a89b91]">—</span>
         ),
@@ -98,23 +171,77 @@ export function getRsvpResponseColumns({
     {
       id: "action",
       header: () => <div className="text-right">Action</div>,
-      cell: ({ row }) => (
-        <div className="text-right">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="ml-auto h-9 w-9 rounded-xl p-0 text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
-            aria-label={`Open response details for ${row.original.guestName}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenResponse(row.original);
-            }}
-          >
-            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const hasMessage = hasResponseMessage(row.original);
+        const isShownInGuestbook = row.original.messagePublicStatus === "approved";
+        const isPending = pendingResponseIds.has(row.original.id);
+        const isDisabled = isModerating || isPending;
+
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {hasMessage ? (
+              <Button
+                type="button"
+                variant={isShownInGuestbook ? "outline" : "default"}
+                size="sm"
+                disabled={isDisabled}
+                className={cn(
+                  "inline-flex h-9 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold",
+                  isShownInGuestbook
+                    ? "border border-[#efd5ce] bg-white text-[#8a4f43] hover:bg-[#fff6f2]"
+                    : "bg-[#cf734e] text-white hover:bg-[#b85f3c]",
+                )}
+                onClick={(event) => {
+                  event.stopPropagation();
+
+                  if (isShownInGuestbook) {
+                    onRemoveFromGuestbook(row.original.id);
+                    return;
+                  }
+
+                  onShowInGuestbook(row.original.id);
+                }}
+              >
+                {isShownInGuestbook ? (
+                  <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <MessageCircleHeart className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {isShownInGuestbook ? "Remove" : "Show"}
+              </Button>
+            ) : null}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto h-9 w-9 rounded-xl p-0 text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
+                  aria-label={`Open response actions for ${row.original.guestName}`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="min-w-[180px] rounded-xl border border-[#eadbd0] bg-white p-1 text-[#2b2521] shadow-lg shadow-[#2b2521]/10"
+              >
+                <DropdownMenuItem
+                  className="cursor-pointer rounded-lg px-3 py-2 text-sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenResponse(row.original);
+                  }}
+                >
+                  View details
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 }

@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { ErrorState } from "@/components/feedback/error-state";
+import {
+  removeResponseMessagesFromGuestbookAction,
+  showResponseMessagesInGuestbookAction,
+} from "@/server/actions/responses";
 import { RsvpResponseDetailDialog } from "./rsvp-response-detail-dialog";
 import { RsvpResponseExportDialog } from "./rsvp-response-export-dialog";
 import { RsvpResponsesEmptyState } from "./rsvp-responses-empty-state";
@@ -9,10 +14,8 @@ import { RsvpResponsesStats } from "./rsvp-responses-stats";
 import { RsvpResponsesTable } from "./rsvp-responses-table";
 import {
   matchesResponseSearch,
-  matchesResponseStatusFilter,
   matchesResponseTab,
   type RsvpResponseRecord,
-  type RsvpResponsesStatusFilter,
   type RsvpResponsesTab,
 } from "./rsvp-responses-types";
 
@@ -31,18 +34,16 @@ export function RsvpResponsesPage({
   hasCurrentEvent,
   initialResponses,
 }: RsvpResponsesPageProps) {
+  const [responses, setResponses] = useState(initialResponses);
   const [activeTab, setActiveTab] = useState<RsvpResponsesTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<RsvpResponsesStatusFilter>("all");
   const [selectedResponse, setSelectedResponse] = useState<RsvpResponseRecord | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [pendingResponseIds, setPendingResponseIds] = useState<string[]>([]);
+  const [isModerating, startModerationTransition] = useTransition();
 
-  const allResponses = initialResponses;
-  const scopedResponses = allResponses.filter(
-    (response) =>
-      matchesResponseTab(response, activeTab) &&
-      matchesResponseStatusFilter(response, statusFilter),
-  );
+  const allResponses = responses;
+  const scopedResponses = allResponses.filter((response) => matchesResponseTab(response, activeTab));
   const currentViewResponses = scopedResponses.filter((response) =>
     matchesResponseSearch(response, searchQuery),
   );
@@ -75,13 +76,14 @@ export function RsvpResponsesPage({
             activeTab={activeTab}
             hasResponses={allResponses.length > 0}
             onActiveTabChange={setActiveTab}
+            isModerating={isModerating}
             onExportClick={() => setIsExportOpen(true)}
+            onGuestbookModeration={handleGuestbookModeration}
             onOpenResponse={setSelectedResponse}
+            pendingResponseIds={pendingResponseIds}
             responses={scopedResponses}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
           />
 
           {canRenderResponses ? (
@@ -112,4 +114,116 @@ export function RsvpResponsesPage({
       )}
     </div>
   );
+
+  function handleGuestbookModeration(
+    mode: "approve" | "remove",
+    responseIds: string[],
+  ) {
+    const uniqueIds = Array.from(new Set(responseIds));
+
+    if (uniqueIds.length === 0) {
+      toast.error("No eligible messages selected.");
+      return;
+    }
+
+    setPendingResponseIds(uniqueIds);
+    startModerationTransition(async () => {
+      try {
+        const result =
+          mode === "approve"
+            ? await showResponseMessagesInGuestbookAction({ responseIds: uniqueIds })
+            : await removeResponseMessagesFromGuestbookAction({ responseIds: uniqueIds });
+
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+
+        const updatedCount = result.data.updatedCount;
+        const skippedNoMessageCount = result.data.skippedNoMessageCount;
+        const skippedUnauthorizedCount = result.data.skippedUnauthorizedCount;
+        const skippedAlreadySetCount = result.data.skippedAlreadySetCount;
+
+        if (updatedCount > 0) {
+          setResponses((current) =>
+            current.map((response) => {
+              const next = result.data.updated.find((item) => item.id === response.id);
+
+              if (!next) {
+                return response;
+              }
+
+              return {
+                ...response,
+                messageApprovedAt: next.messageApprovedAt,
+                messageApprovedBy: next.messageApprovedBy,
+                messagePublicConsent: next.messagePublicConsent,
+                messagePublicStatus: next.messagePublicStatus,
+                updatedAt: next.updatedAt,
+              };
+            }),
+          );
+          setSelectedResponse((current) => {
+            if (!current) {
+              return current;
+            }
+
+            const next = result.data.updated.find((item) => item.id === current.id);
+
+            return next
+              ? {
+                  ...current,
+                  messageApprovedAt: next.messageApprovedAt,
+                  messageApprovedBy: next.messageApprovedBy,
+                  messagePublicConsent: next.messagePublicConsent,
+                  messagePublicStatus: next.messagePublicStatus,
+                  updatedAt: next.updatedAt,
+                }
+              : current;
+          });
+        }
+
+        const successLabel =
+          mode === "approve"
+            ? `Added ${updatedCount} message${updatedCount === 1 ? "" : "s"} to Guestbook.`
+            : `Removed ${updatedCount} message${updatedCount === 1 ? "" : "s"} from Guestbook.`;
+        const skippedParts = [
+          skippedNoMessageCount > 0
+            ? `${skippedNoMessageCount} ${skippedNoMessageCount === 1 ? "row has" : "rows have"} no message`
+            : null,
+          skippedAlreadySetCount > 0
+            ? `${skippedAlreadySetCount} already ${mode === "approve" ? "shown" : "private"}`
+            : null,
+          skippedUnauthorizedCount > 0
+            ? `${skippedUnauthorizedCount} could not be verified`
+            : null,
+        ].filter(Boolean);
+
+        if (updatedCount === 0) {
+          toast.error(
+            skippedParts.length > 0
+              ? `No eligible messages selected. ${skippedParts.join("; ")}.`
+              : "No eligible messages selected.",
+          );
+          return;
+        }
+
+        if (skippedParts.length > 0) {
+          toast(successLabel, {
+            description: skippedParts.join("; "),
+          });
+          return;
+        }
+
+        if (mode === "approve") {
+          toast.success(successLabel);
+          return;
+        }
+
+        toast(successLabel);
+      } finally {
+        setPendingResponseIds([]);
+      }
+    });
+  }
 }

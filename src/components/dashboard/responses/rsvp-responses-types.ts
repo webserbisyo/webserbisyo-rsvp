@@ -1,9 +1,13 @@
 export type RsvpResponseStatus = "attending" | "not_attending";
+export type RsvpResponseGuestbookStatus = "approved" | "hidden" | "pending_review" | "private";
 
 export type RsvpResponseSource = string | null;
 
 export type RsvpResponseRecord = {
+  archivedAt: string | null;
   id: string;
+  clientId: string;
+  eventId: string;
   guestName: string;
   email: string | null;
   phone: string | null;
@@ -12,15 +16,24 @@ export type RsvpResponseRecord = {
   companions: string[];
   dietaryNotes: string | null;
   message: string | null;
+  messageApprovedAt: string | null;
+  messageApprovedBy: string | null;
+  messagePublicConsent: boolean;
+  messagePublicStatus: RsvpResponseGuestbookStatus;
   submittedAt: string;
+  updatedAt: string;
   // Internal-only source label for detail views and future auditing.
   // It is intentionally excluded from the main table and export defaults.
   source: RsvpResponseSource;
 };
 
-export type RsvpResponsesTab = "all" | "attending" | "not_attending" | "messages";
-
-export type RsvpResponsesStatusFilter = "all" | RsvpResponseStatus;
+export type RsvpResponsesTab =
+  | "all"
+  | "attending"
+  | "not_attending"
+  | "messages"
+  | "guestbook"
+  | "needs_review";
 
 export type RsvpResponsesExportFormat = "csv" | "pdf_summary";
 export type RsvpResponsesExportRows = "current_view" | "all_responses";
@@ -67,21 +80,30 @@ export function matchesResponseTab(record: RsvpResponseRecord, tab: RsvpResponse
     case "not_attending":
       return record.status === "not_attending";
     case "messages":
-      return Boolean(record.message?.trim());
+      return hasResponseMessage(record);
+    case "guestbook":
+      return hasResponseMessage(record) && record.messagePublicStatus === "approved";
+    case "needs_review":
+      return hasResponseMessage(record) && record.messagePublicStatus !== "approved";
     default:
       return true;
   }
 }
 
-export function matchesResponseStatusFilter(
-  record: RsvpResponseRecord,
-  statusFilter: RsvpResponsesStatusFilter,
-) {
-  if (statusFilter === "all") {
-    return true;
+export function hasResponseMessage(record: RsvpResponseRecord) {
+  return Boolean(record.message?.trim());
+}
+
+export function getResponseGuestbookStatusLabel(status: RsvpResponseGuestbookStatus) {
+  if (status === "approved") {
+    return "Shown";
   }
 
-  return record.status === statusFilter;
+  if (status === "hidden") {
+    return "Private";
+  }
+
+  return "Needs review";
 }
 
 export function matchesResponseSearch(record: RsvpResponseRecord, query: string) {

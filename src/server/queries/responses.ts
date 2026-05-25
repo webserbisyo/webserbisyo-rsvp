@@ -33,7 +33,7 @@ export async function getDashboardResponses(): Promise<DashboardResponsesData> {
   const { data: responseRows, error: responseError } = await supabase
     .from("rsvp_responses")
     .select(
-      "id, client_id, event_id, guest_name, email, phone, attendance_status, party_size, dietary_notes, message, source, submitted_at, updated_at, archived_at",
+      "id, client_id, event_id, guest_name, email, phone, attendance_status, party_size, dietary_notes, message, message_public_status, message_public_consent, message_approved_at, message_approved_by, source, submitted_at, updated_at, archived_at",
     )
     .eq("client_id", clientId)
     .eq("event_id", currentEvent.id)
@@ -68,17 +68,25 @@ export async function getDashboardResponses(): Promise<DashboardResponsesData> {
   return {
     currentEvent,
     responses: (responseRows ?? []).map((response) => ({
+      archivedAt: response.archived_at,
+      clientId: response.client_id,
       companions: companionsByResponseId.get(response.id) ?? [],
       dietaryNotes: response.dietary_notes,
       email: response.email,
+      eventId: response.event_id,
       guestName: response.guest_name,
       id: response.id,
       message: response.message,
+      messageApprovedAt: response.message_approved_at,
+      messageApprovedBy: response.message_approved_by,
+      messagePublicConsent: response.message_public_consent,
+      messagePublicStatus: normalizeMessagePublicStatus(response.message_public_status),
       partySize: response.party_size,
       phone: response.phone,
       source: response.source,
       status: normalizeResponseStatus(response.attendance_status),
       submittedAt: response.submitted_at,
+      updatedAt: response.updated_at,
     })),
   };
 }
@@ -128,4 +136,14 @@ async function getCurrentTenantEvent(
 
 function normalizeResponseStatus(status: string): RsvpResponseRecord["status"] {
   return status === "not_attending" ? "not_attending" : "attending";
+}
+
+function normalizeMessagePublicStatus(
+  status: string | null,
+): RsvpResponseRecord["messagePublicStatus"] {
+  if (status === "approved" || status === "pending_review" || status === "hidden") {
+    return status;
+  }
+
+  return "private";
 }

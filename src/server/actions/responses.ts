@@ -1,8 +1,15 @@
 "use server";
 
+import { z } from "zod";
+import { requireTenantMember } from "@/lib/permissions";
 import { PublicRsvpResponseSchema } from "@/lib/validations/rsvp-response.schema";
+import { moderateResponseGuestbookMessages } from "@/server/services/moderate-response-guestbook";
 import { submitRsvpResponse } from "@/server/services/submit-rsvp-response";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
+
+const ResponseGuestbookModerationSchema = z.object({
+  responseIds: z.array(z.string().uuid()).min(1).max(100),
+});
 
 export async function submitRsvpResponseAction(input: unknown) {
   try {
@@ -13,6 +20,40 @@ export async function submitRsvpResponseAction(input: unknown) {
       responseId: response.id,
       submittedAt: response.submitted_at,
     });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function showResponseMessagesInGuestbookAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(ResponseGuestbookModerationSchema, input);
+    const result = await moderateResponseGuestbookMessages({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      mode: "approve",
+      responseIds: payload.responseIds,
+    });
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function removeResponseMessagesFromGuestbookAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(ResponseGuestbookModerationSchema, input);
+    const result = await moderateResponseGuestbookMessages({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      mode: "remove",
+      responseIds: payload.responseIds,
+    });
+
+    return actionSuccess(result);
   } catch (error) {
     return actionFailure(error);
   }

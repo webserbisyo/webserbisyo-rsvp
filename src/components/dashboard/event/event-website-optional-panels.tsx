@@ -492,17 +492,17 @@ export function OptionalMessagesPanel({
 
   return (
     <EditorShell
-      title="Messages"
-      description="Add a simple note or message from the couple."
+      title="Guestbook"
+      description="Guestbook messages are managed from RSVP Responses. Approve guest messages there to display them on the event website."
     >
-      <EditorGroup title="Message Content">
+      <EditorGroup title="Guestbook Copy">
         <TextField
           field={{ id: "messagesSectionTitle", label: "Section Title", maxLength: 80 }}
           value={values.sectionTitle}
           onChange={(value) => updateValues("sectionTitle", value)}
         />
         <TextAreaField
-          field={{ id: "messagesBody", label: "Message Body", maxLength: 320 }}
+          field={{ id: "messagesBody", label: "Short Intro / Instructions", maxLength: 320 }}
           value={values.messageBody}
           onChange={(value) => updateValues("messageBody", value)}
         />

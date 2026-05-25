@@ -962,6 +962,10 @@ export type Database = {
           guest_name: string;
           id: string;
           message: string | null;
+          message_approved_at: string | null;
+          message_approved_by: string | null;
+          message_public_consent: boolean;
+          message_public_status: string;
           party_size: number;
           phone: string | null;
           source: string | null;
@@ -978,6 +982,10 @@ export type Database = {
           guest_name: string;
           id?: string;
           message?: string | null;
+          message_approved_at?: string | null;
+          message_approved_by?: string | null;
+          message_public_consent?: boolean;
+          message_public_status?: string;
           party_size?: number;
           phone?: string | null;
           source?: string | null;
@@ -994,6 +1002,10 @@ export type Database = {
           guest_name?: string;
           id?: string;
           message?: string | null;
+          message_approved_at?: string | null;
+          message_approved_by?: string | null;
+          message_public_consent?: boolean;
+          message_public_status?: string;
           party_size?: number;
           phone?: string | null;
           source?: string | null;
@@ -1013,6 +1025,13 @@ export type Database = {
             columns: ["event_id"];
             isOneToOne: false;
             referencedRelation: "rsvp_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rsvp_responses_message_approved_by_fkey";
+            columns: ["message_approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];

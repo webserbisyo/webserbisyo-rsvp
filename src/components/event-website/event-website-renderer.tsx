@@ -633,7 +633,7 @@ function MessagesSection({ draft }: { draft: EventWebsiteRenderModel }) {
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
-        Messages
+        Guestbook
       </Badge>
       <h3>{title}</h3>
       <div className="event-preview-message-card">

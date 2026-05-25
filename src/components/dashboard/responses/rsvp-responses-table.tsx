@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   type PaginationState,
+  type RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,77 +24,114 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { hasResponseMessage } from "./rsvp-responses-types";
 import { getRsvpResponseColumns } from "./rsvp-response-columns";
 import { RsvpResponsesEmptyState } from "./rsvp-responses-empty-state";
 import {
   matchesResponseSearch,
   type RsvpResponseRecord,
-  type RsvpResponsesStatusFilter,
   type RsvpResponsesTab,
 } from "./rsvp-responses-types";
 
 type RsvpResponsesTableProps = {
   activeTab: RsvpResponsesTab;
   hasResponses: boolean;
+  isModerating: boolean;
   onActiveTabChange: (value: RsvpResponsesTab) => void;
   onExportClick: () => void;
+  onGuestbookModeration: (mode: "approve" | "remove", responseIds: string[]) => void;
   onOpenResponse: (response: RsvpResponseRecord) => void;
+  pendingResponseIds: string[];
   responses: RsvpResponseRecord[];
   searchQuery: string;
   setSearchQuery: (value: string) => void;
-  statusFilter: RsvpResponsesStatusFilter;
-  setStatusFilter: (value: RsvpResponsesStatusFilter) => void;
 };
 
 export function RsvpResponsesTable({
   activeTab,
   hasResponses,
+  isModerating,
   onActiveTabChange,
   onExportClick,
+  onGuestbookModeration,
   onOpenResponse,
+  pendingResponseIds,
   responses,
   searchQuery,
   setSearchQuery,
-  statusFilter,
-  setStatusFilter,
 }: RsvpResponsesTableProps) {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
   });
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const pendingResponseIdSet = useMemo(() => new Set(pendingResponseIds), [pendingResponseIds]);
 
   useEffect(() => {
     setPagination((current) => ({ ...current, pageIndex: 0 }));
-  }, [activeTab, searchQuery, statusFilter]);
+    setRowSelection({});
+  }, [activeTab, searchQuery]);
+
+  const columns = useMemo(
+    () =>
+      getRsvpResponseColumns({
+        isModerating,
+        onOpenResponse,
+        onRemoveFromGuestbook: (responseId) =>
+          onGuestbookModeration("remove", [responseId]),
+        onShowInGuestbook: (responseId) =>
+          onGuestbookModeration("approve", [responseId]),
+        pendingResponseIds: pendingResponseIdSet,
+      }),
+    [isModerating, onGuestbookModeration, onOpenResponse, pendingResponseIdSet],
+  );
 
   // TanStack Table exposes an instance API that React Compiler intentionally flags.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    columns: getRsvpResponseColumns({ onOpenResponse }),
+    columns,
     data: responses,
     state: {
       globalFilter: searchQuery,
       pagination,
+      rowSelection,
     },
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getRowId: (row) => row.id,
     globalFilterFn: (row, _columnId, filterValue) =>
       matchesResponseSearch(row.original, String(filterValue ?? "")),
   });
 
   const filteredRowCount = table.getFilteredRowModel().rows.length;
   const pageRows = table.getRowModel().rows;
+  const selectedResponses = table.getSelectedRowModel().rows.map((row) => row.original);
+  const selectedEligibleResponses = selectedResponses.filter((response) => hasResponseMessage(response));
+  const allEligibleSelectedAreApproved =
+    selectedEligibleResponses.length > 0 &&
+    selectedEligibleResponses.every((response) => response.messagePublicStatus === "approved");
+  const hasMixedGuestbookSelection =
+    selectedEligibleResponses.some((response) => response.messagePublicStatus === "approved") &&
+    selectedEligibleResponses.some((response) => response.messagePublicStatus !== "approved");
+  const hasEligibleSelection = selectedEligibleResponses.length > 0;
   const totalRows = filteredRowCount;
   const firstItem = totalRows === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
   const lastItem =
     totalRows === 0 ? 0 : Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalRows);
+  const showGuestbookHelper = activeTab === "guestbook" || activeTab === "needs_review";
+  const emptyVariant = getEmptyVariant({
+    activeTab,
+    hasResponses,
+    searchQuery,
+  });
 
   return (
     <Card className="overflow-hidden rounded-[1.6rem] border border-[#eadbd0] bg-white/80 shadow-sm shadow-[#8a4b2e]/5 p-0 gap-0">
       <div className="border-b border-[#eadbd0] bg-white/70 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3">
           <ScrollArea className="w-full whitespace-nowrap lg:w-auto">
             <Tabs value={activeTab} onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}>
               <TabsList className="flex overflow-x-auto rounded-2xl bg-[#fbf7f3] p-1 h-auto w-auto justify-start border-0">
@@ -121,23 +159,24 @@ export function RsvpResponsesTable({
                 >
                   Messages
                 </TabsTrigger>
+                <TabsTrigger
+                  className="rounded-xl px-3 py-2 text-sm font-semibold text-[#8a7c72] transition hover:text-[#2b2521] data-[state=active]:bg-white data-[state=active]:text-[#c96f4c] data-[state=active]:shadow-sm border-0"
+                  value="guestbook"
+                >
+                  Guestbook
+                </TabsTrigger>
+                <TabsTrigger
+                  className="rounded-xl px-3 py-2 text-sm font-semibold text-[#8a7c72] transition hover:text-[#2b2521] data-[state=active]:bg-white data-[state=active]:text-[#c96f4c] data-[state=active]:shadow-sm border-0"
+                  value="needs_review"
+                >
+                  Needs review
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </ScrollArea>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#e7d7ca] bg-white px-3 text-sm font-semibold text-[#3b342f] hover:bg-[#fff8f3]"
-            onClick={onExportClick}
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Export
-          </Button>
         </div>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          {/* Search input — native, h-11, rounded-2xl */}
           <div className="relative flex-1">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]"
@@ -152,77 +191,123 @@ export function RsvpResponsesTable({
             />
           </div>
 
-          {/* Status filter — native <select>, same h-11/rounded-2xl as search input */}
-          <div className="relative w-full sm:w-[240px]">
-            <SlidersHorizontal
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]"
-              aria-hidden="true"
-            />
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as RsvpResponsesStatusFilter)}
-              className="h-11 w-full appearance-none rounded-2xl border border-[#eadbd0] bg-white py-0 pl-10 pr-10 text-sm font-medium text-[#2b2521] outline-none focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
-              aria-label="Filter by status"
-            >
-              <option value="all">All statuses</option>
-              <option value="attending">Attending</option>
-              <option value="not_attending">Not attending</option>
-            </select>
-            <ChevronDown
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a88d7f]"
-              aria-hidden="true"
-            />
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#e7d7ca] bg-white px-4 text-sm font-semibold text-[#3b342f] hover:bg-[#fff8f3] sm:w-auto"
+            onClick={onExportClick}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export
+          </Button>
         </div>
+
+        {showGuestbookHelper ? (
+          <p className="mt-3 text-xs font-medium text-[#8a7c72]">
+            Guestbook shows approved messages. Review pending messages before showing them publicly.
+          </p>
+        ) : null}
       </div>
 
       {!hasResponses || filteredRowCount === 0 ? (
         <div className="px-6 py-8">
-          <RsvpResponsesEmptyState variant={hasResponses ? "no-results" : "empty"} />
+          <RsvpResponsesEmptyState variant={emptyVariant} />
         </div>
       ) : (
-        // No manual overflow-x-auto wrapper — Shadcn Table provides its own
-        <Table className="w-full min-w-[820px] text-left text-sm border-0">
-          <TableHeader className="bg-[#fffaf6] text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
-            {table.getHeaderGroups().map((headerGroup) => (
-              // Background + border live on the row so they span table-column width
-              // and avoid thead paint-clipping artifacts in overflow containers
-              <TableRow
-                key={headerGroup.id}
-                className="border-b border-[#eadbd0] bg-[#fffaf6] hover:bg-[#fffaf6] transition-none"
-              >
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className={cn(
-                      "h-auto px-5 py-4 font-bold text-[#9a8b80]",
-                      header.id === "action" && "text-right"
-                    )}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody className="divide-y divide-[#f0e5dc] border-0">
-            {pageRows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="cursor-pointer border-0 transition hover:bg-[#fff8f3]"
-                onClick={() => onOpenResponse(row.original)}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-5 py-4 align-middle border-0">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <>
+          {selectedResponses.length > 0 ? (
+            <div className="flex flex-col gap-2 border-b border-[#eadbd0] bg-[#fffaf6] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-[#2b2521]">
+                  {selectedResponses.length} selected
+                </p>
+                {hasMixedGuestbookSelection ? (
+                  <p className="text-xs font-medium text-[#8a7c72]">
+                    Only messages not yet shown will be added.
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={isModerating || !hasEligibleSelection}
+                  variant={allEligibleSelectedAreApproved ? "outline" : "default"}
+                  className={cn(
+                    "rounded-xl px-3",
+                    allEligibleSelectedAreApproved
+                      ? "border border-[#efd5ce] bg-white text-[#8a4f43] hover:bg-[#fff6f2]"
+                      : "bg-[#cf734e] text-white hover:bg-[#b85f3c]",
+                  )}
+                  onClick={() =>
+                    onGuestbookModeration(
+                      allEligibleSelectedAreApproved ? "remove" : "approve",
+                      selectedResponses.map((response) => response.id),
+                    )
+                  }
+                >
+                  {allEligibleSelectedAreApproved ? "Remove from Guestbook" : "Show in Guestbook"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl text-[#776b62] hover:bg-[#f8eee7] hover:text-[#3b342f]"
+                  onClick={() => table.resetRowSelection()}
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <Table className="w-full min-w-[980px] text-left text-sm border-0">
+            <TableHeader className="bg-[#fffaf6] text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-b border-[#eadbd0] bg-[#fffaf6] hover:bg-[#fffaf6] transition-none"
+                >
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className={cn(
+                        "h-auto px-5 py-4 font-bold text-[#9a8b80]",
+                        header.id === "action" && "text-right",
+                        header.id === "select" && "w-12 px-4",
+                      )}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody className="divide-y divide-[#f0e5dc] border-0">
+              {pageRows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer border-0 transition hover:bg-[#fff8f3]"
+                  onClick={() => onOpenResponse(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        "px-5 py-4 align-middle border-0",
+                        cell.column.id === "select" && "px-4",
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
       )}
 
       <div className="flex flex-col gap-3 border-t border-[#eadbd0] bg-white/70 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -287,4 +372,36 @@ export function RsvpResponsesTable({
       </div>
     </Card>
   );
+}
+
+function getEmptyVariant({
+  activeTab,
+  hasResponses,
+  searchQuery,
+}: {
+  activeTab: RsvpResponsesTab;
+  hasResponses: boolean;
+  searchQuery: string;
+}) {
+  if (!hasResponses) {
+    return "empty" as const;
+  }
+
+  if (searchQuery.trim()) {
+    return "no-results" as const;
+  }
+
+  if (activeTab === "messages") {
+    return "messages-empty" as const;
+  }
+
+  if (activeTab === "guestbook") {
+    return "guestbook-empty" as const;
+  }
+
+  if (activeTab === "needs_review") {
+    return "needs-review-empty" as const;
+  }
+
+  return "no-results" as const;
 }

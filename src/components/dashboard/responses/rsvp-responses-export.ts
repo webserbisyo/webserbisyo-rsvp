@@ -156,7 +156,7 @@ function buildRsvpResponsesCsv(rows: RsvpResponseRecord[], includes: ExportInclu
 }
 
 function formatCsvCell(value: string) {
-  const normalized = String(value ?? "");
+  const normalized = sanitizeCsvCellValue(String(value ?? ""));
   const escaped = normalized.replaceAll('"', '""');
 
   if (/[",\r\n]/.test(escaped)) {
@@ -164,6 +164,14 @@ function formatCsvCell(value: string) {
   }
 
   return escaped;
+}
+
+function sanitizeCsvCellValue(value: string) {
+  if (!value) {
+    return value;
+  }
+
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
 function downloadCsv(filename: string, csv: string) {
