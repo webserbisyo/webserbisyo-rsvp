@@ -607,11 +607,12 @@ function ResponsiveSectionEditorSurface({
 }) {
   const Icon = selectedSection?.icon;
   const description =
-    workflowStatus.state === "draft_newer_than_published"
+    selectedSection?.helper ??
+    (workflowStatus.state === "draft_newer_than_published"
       ? "Draft changes are ready to review before publishing."
       : autoSaveEnabled
         ? "Changes save automatically while you edit this section."
-        : "Use Save changes at the bottom when you're ready.";
+        : "Use Save changes at the bottom when you're ready.");
 
   const content = (
     <>
@@ -627,7 +628,6 @@ function ResponsiveSectionEditorSurface({
               </span>
             ) : null}
             <div className="min-w-0">
-              <p className="event-website-mobile-editor-shell__eyebrow">Section editor</p>
               <h2 className="event-website-mobile-editor-shell__title">
                 {selectedSection?.label ?? "Edit section"}
               </h2>
