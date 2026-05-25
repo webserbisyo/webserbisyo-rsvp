@@ -15,7 +15,7 @@ export default async function DashboardEventPage({ searchParams }: DashboardEven
     : resolvedSearchParams?.section;
 
   return (
-    <div className="event-website-page event-website-workspace pb-24 md:pb-8">
+    <div className="event-website-page pb-24 md:pb-8">
       <EventWebsiteWorkspace
         eventWebsiteData={eventWebsiteData}
         initialSelectedSection={requestedSection ?? null}

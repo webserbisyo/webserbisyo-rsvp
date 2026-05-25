@@ -16,6 +16,7 @@ type EventWebsiteStatusCardProps = {
   onToggleAutoSave: () => void;
   sectionSummary: EventWebsiteSectionSummary;
   statusPill: EventWebsiteStatusPill;
+  sticky?: boolean;
   websiteAccessHref: string;
   workflowStatus: EventWebsiteOperationalStatus;
 };
@@ -26,6 +27,7 @@ export function EventWebsiteStatusCard({
   onToggleAutoSave,
   sectionSummary,
   statusPill,
+  sticky = true,
   websiteAccessHref,
   workflowStatus,
 }: EventWebsiteStatusCardProps) {
@@ -35,8 +37,13 @@ export function EventWebsiteStatusCard({
       workflowStatus.state === "draft_newer_than_published");
 
   return (
-    <Card className="event-website-status-card sticky top-[calc(var(--dash-header-height)+1rem)] z-20 gap-0 px-4 py-3">
-      <div className="flex items-center justify-between gap-2">
+    <Card
+      className={cn(
+        "event-website-status-card gap-0 px-4 py-3",
+        sticky && "sticky top-[calc(var(--dash-header-height)+1rem)] z-20",
+      )}
+    >
+      <div className="event-status-card-top-row flex items-center justify-between gap-2">
         {statusPill.href ? (
           <Link
             href={statusPill.href}
@@ -64,7 +71,7 @@ export function EventWebsiteStatusCard({
             {statusPill.label}
           </span>
         )}
-        <span className="text-sm font-semibold tabular-nums text-[--dash-foreground]">
+        <span className="event-status-card-count text-sm font-semibold tabular-nums text-[--dash-foreground]">
           {sectionSummary.activeSectionCount}/{sectionSummary.totalSectionCount}
         </span>
       </div>
@@ -75,19 +82,19 @@ export function EventWebsiteStatusCard({
         className="event-website-progress my-2.5"
       />
 
-      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[--dash-muted]">
+      <div className="event-status-card-meta-row mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[--dash-muted]">
         <span className="event-status-sections">
           {sectionSummary.activeSectionCount} active section
           {sectionSummary.activeSectionCount === 1 ? "" : "s"}
         </span>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="event-status-card-action-row flex items-center justify-between gap-2">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="event-status-preview-btn h-7 gap-1 px-2 text-xs"
+          className="event-status-autosave-btn h-8 gap-1.5 px-2.5 text-xs"
           aria-pressed={autoSaveEnabled}
           title={autoSaveEnabled ? "Turn auto-save off" : "Turn auto-save on"}
           onClick={onToggleAutoSave}

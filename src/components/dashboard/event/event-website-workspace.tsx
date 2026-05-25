@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
@@ -17,29 +25,53 @@ import {
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsitePreviewPanel } from "@/components/dashboard/event/event-website-preview-panel";
+import { EventWebsiteStatusCard } from "@/components/dashboard/event/event-website-status-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getEventTypeAvailability,
   isDashboardBuilderEventTypeEnabled,
 } from "@/config/event-type-availability";
 import {
   resolveEventWebsiteSections,
+  type EventWebsiteSectionDefinition,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
 import {
+  type EventWebsiteOperationalStatus,
   getEventWebsiteSavedAt,
   getEventWebsiteWorkspaceStatus,
   summarizeEventWebsiteSections,
 } from "@/lib/event-website/readiness";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
-import { ArrowUpRight, LockKeyhole } from "lucide-react";
+import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
 
 const DEFAULT_AUTOSAVE_DELAY_MS = 900;
 const FAST_AUTOSAVE_DELAY_MS = 300;
+const DESKTOP_LAYOUT_QUERY = "(min-width: 1200px)";
+const TABLET_LAYOUT_QUERY = "(min-width: 768px)";
 
 type DraftSaveState = "error" | "idle" | "saved" | "saving";
+type ResponsiveWorkspaceMode = "flow" | "preview";
 
 type EventWebsiteWorkspaceProps = {
   eventWebsiteData: DashboardEventWebsiteData;
@@ -53,6 +85,29 @@ function areContentsEqual(
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function subscribeToMediaQuery(query: string, callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const mediaQueryList = window.matchMedia(query);
+  mediaQueryList.addEventListener("change", callback);
+
+  return () => mediaQueryList.removeEventListener("change", callback);
+}
+
+function getMediaQuerySnapshot(query: string) {
+  return typeof window !== "undefined" ? window.matchMedia(query).matches : false;
+}
+
+function useMediaQuery(query: string, serverSnapshot: boolean) {
+  return useSyncExternalStore(
+    (callback) => subscribeToMediaQuery(query, callback),
+    () => getMediaQuerySnapshot(query),
+    () => serverSnapshot,
+  );
+}
+
 export function EventWebsiteWorkspace({
   eventWebsiteData,
   initialSelectedSection = null,
@@ -61,15 +116,17 @@ export function EventWebsiteWorkspace({
 
   if (!isDashboardBuilderEventTypeEnabled(eventWebsiteData.eventType)) {
     return (
-      <LockedEventWebsiteWorkspace
-        eventSlug={eventWebsiteData.eventSlug}
-        eventTypeLabel={eventTypeAvailability?.label ?? "This"}
-        lockedTitle={eventTypeAvailability?.lockedTitle ?? "This Event Website is in development"}
-        lockedDescription={
-          eventTypeAvailability?.lockedDescription ??
-          "Wedding websites are available now. This event type is already supported in our system, but its dedicated website builder is still being prepared."
-        }
-      />
+      <div className="event-website-workspace">
+        <LockedEventWebsiteWorkspace
+          eventSlug={eventWebsiteData.eventSlug}
+          eventTypeLabel={eventTypeAvailability?.label ?? "This"}
+          lockedTitle={eventTypeAvailability?.lockedTitle ?? "This Event Website is in development"}
+          lockedDescription={
+            eventTypeAvailability?.lockedDescription ??
+            "Wedding websites are available now. This event type is already supported in our system, but its dedicated website builder is still being prepared."
+          }
+        />
+      </div>
     );
   }
 
@@ -86,7 +143,11 @@ function EnabledEventWebsiteWorkspace({
   initialSelectedSection = null,
 }: EventWebsiteWorkspaceProps) {
   const [isPending, startTransition] = useTransition();
+  const isDesktopLayout = useMediaQuery(DESKTOP_LAYOUT_QUERY, true);
+  const isTabletLayout = useMediaQuery(TABLET_LAYOUT_QUERY, false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [responsiveMode, setResponsiveMode] = useState<ResponsiveWorkspaceMode>("flow");
+  const [isResponsiveEditorOpen, setIsResponsiveEditorOpen] = useState(false);
   const resolvedSections = useMemo(
     () => resolveEventWebsiteSections(eventWebsiteData.eventType),
     [eventWebsiteData.eventType],
@@ -215,6 +276,12 @@ function EnabledEventWebsiteWorkspace({
   function handleSelectedSectionChange(section: EventWebsiteSectionKey) {
     setSelectedSection(section);
     setPreviewScrollRequest((current) => current + 1);
+  }
+
+  function handleResponsiveSectionSelect(section: EventWebsiteSectionKey) {
+    handleSelectedSectionChange(section);
+    setResponsiveMode("flow");
+    setIsResponsiveEditorOpen(true);
   }
 
   const persistDraft = useCallback(async (trigger: "auto" | "manual") => {
@@ -363,48 +430,271 @@ function EnabledEventWebsiteWorkspace({
         ? "Save changes"
         : "All changes saved";
 
-  return (
-    <>
-      <EventWebsiteLeftPane
-        autoSaveEnabled={autoSaveEnabled}
-        enabledSections={enabledSections}
-        defaultWebsiteFlowSections={defaultWebsiteFlowSections}
-        eventSlug={eventWebsiteData.eventSlug}
-        futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
-        onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
-        selectedSection={selectedSection}
-        sectionSummary={sectionSummary}
-        statusPill={statusPill}
-        websiteFlowSections={websiteFlowSections}
-        workflowStatus={workflowStatus}
-        onEnabledSectionChange={updateEnabledSection}
-        onResetWebsiteFlowOrder={resetWebsiteFlowOrder}
-        onSelectedSectionChange={handleSelectedSectionChange}
-        onWebsiteFlowSectionsChange={updateWebsiteFlowSections}
-      />
-      <div className="event-website-middle-space grid content-start gap-4">
-        <EventWebsiteEditorPanel
-          eventData={eventWebsiteData}
-          onPreviewDraftChange={updatePreviewDraft}
+  const saveButtonProps = {
+    disabled: isPending || !eventWebsiteData.eventId || !isDirty,
+    hidden: autoSaveEnabled,
+    label: saveButtonLabel,
+    onClick: handleSaveChanges,
+  };
+  const responsiveEditorIsOpen = responsiveMode === "flow" && isResponsiveEditorOpen;
+
+  if (isDesktopLayout) {
+    return (
+      <div className="event-website-workspace">
+        <EventWebsiteLeftPane
+          autoSaveEnabled={autoSaveEnabled}
+          enabledSections={enabledSections}
+          defaultWebsiteFlowSections={defaultWebsiteFlowSections}
+          eventSlug={eventWebsiteData.eventSlug}
+          futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
+          onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
+          selectedSection={selectedSection}
+          sectionSummary={sectionSummary}
+          statusPill={statusPill}
+          websiteFlowSections={websiteFlowSections}
+          workflowStatus={workflowStatus}
+          onEnabledSectionChange={updateEnabledSection}
+          onResetWebsiteFlowOrder={resetWebsiteFlowOrder}
+          onSelectedSectionChange={handleSelectedSectionChange}
+          onWebsiteFlowSectionsChange={updateWebsiteFlowSections}
+        />
+        <div className="event-website-middle-space grid content-start gap-4">
+          <EventWebsiteEditorPanel
+            eventData={eventWebsiteData}
+            onPreviewDraftChange={updatePreviewDraft}
+            previewDraft={previewDraft}
+            resolvedSections={resolvedSections}
+            saveButtonProps={saveButtonProps}
+            selectedSectionId={selectedSection}
+          />
+        </div>
+        <EventWebsitePreviewPanel
+          enabledSections={enabledSections}
+          previewScrollRequest={previewScrollRequest}
           previewDraft={previewDraft}
-          resolvedSections={resolvedSections}
-          saveButtonProps={{
-            disabled: isPending || !eventWebsiteData.eventId || !isDirty,
-            hidden: autoSaveEnabled,
-            label: saveButtonLabel,
-            onClick: handleSaveChanges,
-          }}
-          selectedSectionId={selectedSection}
+          selectedSection={selectedSectionDefinition}
+          websiteFlowSections={websiteFlowSections}
         />
       </div>
-      <EventWebsitePreviewPanel
-        enabledSections={enabledSections}
-        previewScrollRequest={previewScrollRequest}
-        previewDraft={previewDraft}
-        selectedSection={selectedSectionDefinition}
-        websiteFlowSections={websiteFlowSections}
+    );
+  }
+
+  return (
+    <div className="event-website-responsive-shell">
+      <EventWebsiteStatusCard
+        autoSaveEnabled={autoSaveEnabled}
+        eventSlug={eventWebsiteData.eventSlug}
+        onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
+        sectionSummary={sectionSummary}
+        statusPill={statusPill}
+        sticky={false}
+        websiteAccessHref="/dashboard/website-access"
+        workflowStatus={workflowStatus}
       />
+
+      <Tabs
+        value={responsiveMode}
+        onValueChange={(value) => {
+          const nextMode = value as ResponsiveWorkspaceMode;
+          setResponsiveMode(nextMode);
+
+          if (nextMode === "preview") {
+            setIsResponsiveEditorOpen(false);
+          }
+        }}
+        className="event-website-responsive-tabs"
+      >
+        <TabsList className="event-website-mode-tabs" aria-label="Event Website mobile workspace">
+          <TabsTrigger value="flow" className="event-website-mode-trigger">
+            <Layers3 className="size-4" aria-hidden="true" />
+            Flow
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="event-website-mode-trigger">
+            <Eye className="size-4" aria-hidden="true" />
+            Preview
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="flow" className="event-website-mode-panel">
+          <EventWebsiteLeftPane
+            autoSaveEnabled={autoSaveEnabled}
+            className="event-website-pane--responsive-flow"
+            defaultWebsiteFlowSections={defaultWebsiteFlowSections}
+            enabledSections={enabledSections}
+            eventSlug={eventWebsiteData.eventSlug}
+            futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
+            onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
+            selectedSection={selectedSection}
+            sectionSummary={sectionSummary}
+            showStatusCard={false}
+            statusPill={statusPill}
+            statusCardSticky={false}
+            websiteFlowSections={websiteFlowSections}
+            workflowStatus={workflowStatus}
+            onEnabledSectionChange={updateEnabledSection}
+            onResetWebsiteFlowOrder={resetWebsiteFlowOrder}
+            onSelectedSectionChange={handleResponsiveSectionSelect}
+            onWebsiteFlowSectionsChange={updateWebsiteFlowSections}
+          />
+        </TabsContent>
+
+        <TabsContent value="preview" className="event-website-mode-panel">
+          <div className="event-website-responsive-preview-wrap">
+            <EventWebsitePreviewPanel
+              compactChrome
+              defaultDevice={isTabletLayout ? "desktop" : "mobile"}
+              enabledSections={enabledSections}
+              mode="responsive"
+              previewScrollRequest={previewScrollRequest}
+              previewDraft={previewDraft}
+              selectedSection={selectedSectionDefinition}
+              showDeviceTabs={false}
+              websiteFlowSections={websiteFlowSections}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <ResponsiveSectionEditorSurface
+        autoSaveEnabled={autoSaveEnabled}
+        eventData={eventWebsiteData}
+        isOpen={responsiveEditorIsOpen}
+        isTabletLayout={isTabletLayout}
+        onOpenChange={setIsResponsiveEditorOpen}
+        onPreviewDraftChange={updatePreviewDraft}
+        previewDraft={previewDraft}
+        resolvedSections={resolvedSections}
+        saveButtonProps={saveButtonProps}
+        selectedSection={selectedSectionDefinition}
+        selectedSectionId={selectedSection}
+        workflowStatus={workflowStatus}
+      />
+    </div>
+  );
+}
+
+function ResponsiveSectionEditorSurface({
+  autoSaveEnabled,
+  eventData,
+  isOpen,
+  isTabletLayout,
+  onOpenChange,
+  onPreviewDraftChange,
+  previewDraft,
+  resolvedSections,
+  saveButtonProps,
+  selectedSection,
+  selectedSectionId,
+  workflowStatus,
+}: {
+  autoSaveEnabled: boolean;
+  eventData: DashboardEventWebsiteData;
+  isOpen: boolean;
+  isTabletLayout: boolean;
+  onOpenChange: (open: boolean) => void;
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  previewDraft: EventWebsitePreviewDraft;
+  resolvedSections: ReturnType<typeof resolveEventWebsiteSections>;
+  saveButtonProps: {
+    disabled: boolean;
+    hidden: boolean;
+    label: string;
+    onClick: () => void;
+  };
+  selectedSection: EventWebsiteSectionDefinition | undefined;
+  selectedSectionId: EventWebsiteSectionKey;
+  workflowStatus: EventWebsiteOperationalStatus;
+}) {
+  const Icon = selectedSection?.icon;
+  const description =
+    workflowStatus.state === "draft_newer_than_published"
+      ? "Draft changes are ready to review before publishing."
+      : autoSaveEnabled
+        ? "Changes save automatically while you edit this section."
+        : "Use Save changes at the bottom when you're ready.";
+
+  const content = (
+    <>
+      <div className="event-website-mobile-editor-shell">
+        {!isTabletLayout ? (
+          <div className="event-website-mobile-editor-shell__handle" aria-hidden="true" />
+        ) : null}
+        <div className="event-website-mobile-editor-shell__header-row">
+          <div className="event-website-mobile-editor-shell__title-row">
+            {Icon ? (
+              <span className="event-website-mobile-editor-shell__icon" aria-hidden="true">
+                <Icon className="size-4" />
+              </span>
+            ) : null}
+            <div className="min-w-0">
+              <p className="event-website-mobile-editor-shell__eyebrow">Section editor</p>
+              <h2 className="event-website-mobile-editor-shell__title">
+                {selectedSection?.label ?? "Edit section"}
+              </h2>
+            </div>
+          </div>
+          {isTabletLayout ? (
+            <SheetClose asChild>
+              <Button type="button" variant="ghost" size="icon-sm" className="event-website-mobile-editor-shell__close">
+                <X className="size-4" aria-hidden="true" />
+                <span className="sr-only">Close editor</span>
+              </Button>
+            </SheetClose>
+          ) : (
+            <DrawerClose asChild>
+              <Button type="button" variant="ghost" size="icon-sm" className="event-website-mobile-editor-shell__close">
+                <X className="size-4" aria-hidden="true" />
+                <span className="sr-only">Close editor</span>
+              </Button>
+            </DrawerClose>
+          )}
+        </div>
+        <p className="event-website-mobile-editor-shell__description">{description}</p>
+      </div>
+      <ScrollArea className="event-website-mobile-editor-scroll">
+        <div className="event-website-mobile-editor-body">
+          <EventWebsiteEditorPanel
+            eventData={eventData}
+            onPreviewDraftChange={onPreviewDraftChange}
+            previewDraft={previewDraft}
+            resolvedSections={resolvedSections}
+            saveButtonProps={saveButtonProps}
+            selectedSectionId={selectedSectionId}
+          />
+        </div>
+      </ScrollArea>
     </>
+  );
+
+  if (isTabletLayout) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          overlayClassName="bg-black/34 supports-backdrop-filter:backdrop-blur-sm"
+          className="event-website-mobile-editor-sheet"
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>{selectedSection?.label ?? "Edit section"}</SheetTitle>
+            <SheetDescription>{description}</SheetDescription>
+          </SheetHeader>
+          {content}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Drawer open={isOpen} onOpenChange={onOpenChange}>
+      <DrawerContent className="event-website-mobile-editor-drawer">
+        <DrawerHeader className="sr-only">
+          <DrawerTitle>{selectedSection?.label ?? "Edit section"}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
+        </DrawerHeader>
+        {content}
+      </DrawerContent>
+    </Drawer>
   );
 }
 

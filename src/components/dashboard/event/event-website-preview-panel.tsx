@@ -17,10 +17,14 @@ import {
 import { cn } from "@/lib/utils";
 
 type EventWebsitePreviewPanelProps = {
+  defaultDevice?: EventWebsitePreviewDevice;
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
+  compactChrome?: boolean;
+  mode?: "desktop" | "responsive";
   previewScrollRequest: number;
   previewDraft: EventWebsitePreviewDraft;
   selectedSection: EventWebsiteSectionDefinition | undefined;
+  showDeviceTabs?: boolean;
   websiteFlowSections: EventWebsiteSectionDefinition[];
 };
 
@@ -32,13 +36,17 @@ const previewAddress =
   })?.replace(/^https?:\/\//, "") ?? "your-rsvp-link.example/r/juan-and-maria";
 
 export function EventWebsitePreviewPanel({
+  defaultDevice = "desktop",
   enabledSections,
+  compactChrome = false,
+  mode = "desktop",
   previewScrollRequest,
   previewDraft,
   selectedSection,
+  showDeviceTabs = true,
   websiteFlowSections,
 }: EventWebsitePreviewPanelProps) {
-  const [device, setDevice] = useState<EventWebsitePreviewDevice>("desktop");
+  const [device, setDevice] = useState<EventWebsitePreviewDevice>(defaultDevice);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const visiblePreviewSections = websiteFlowSections.filter(
     (section) =>
@@ -52,6 +60,7 @@ export function EventWebsitePreviewPanel({
       !enabledSections[selectedSection.key],
   );
   const selectedSectionKey = selectedSection?.key;
+  const activeDevice = showDeviceTabs ? device : defaultDevice;
 
   useEffect(() => {
     if (!selectedSectionKey || !supportedSectionKeySet.has(selectedSectionKey) || selectedSectionIsOff) {
@@ -80,7 +89,10 @@ export function EventWebsitePreviewPanel({
   }, [previewScrollRequest, selectedSectionIsOff, selectedSectionKey, visiblePreviewSections]);
 
   return (
-    <aside className="event-website-preview-space" aria-label="Website preview">
+    <aside
+      className={cn("event-website-preview-space", mode === "responsive" && "event-website-preview-space--responsive")}
+      aria-label="Website preview"
+    >
       <div className="event-preview-panel">
         {selectedSectionIsOff ? (
           <div className="event-preview-off-notice">
@@ -88,8 +100,14 @@ export function EventWebsitePreviewPanel({
           </div>
         ) : null}
 
-        <div className={cn("event-preview-frame-shell", device === "mobile" && "is-mobile")}>
-          {device === "desktop" ? (
+        <div
+          className={cn(
+            "event-preview-frame-shell",
+            activeDevice === "mobile" && "is-mobile",
+            compactChrome && "is-compact",
+          )}
+        >
+          {showDeviceTabs && activeDevice === "desktop" ? (
             <div className="event-preview-browser-bar">
               <span className="event-preview-browser-dot is-red" />
               <span className="event-preview-browser-dot is-green" />
@@ -97,11 +115,11 @@ export function EventWebsitePreviewPanel({
               <span className="event-preview-address">{previewAddress}</span>
               <PreviewDeviceTabs device={device} onDeviceChange={setDevice} />
             </div>
-          ) : (
+          ) : showDeviceTabs ? (
             <div className="event-preview-mobile-control-row">
               <PreviewDeviceTabs device={device} onDeviceChange={setDevice} />
             </div>
-          )}
+          ) : null}
 
           <div ref={previewScrollRef} className="event-preview-frame">
             <EventWebsiteRenderer

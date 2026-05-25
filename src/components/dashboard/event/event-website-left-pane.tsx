@@ -25,6 +25,7 @@ export type EventWebsiteStatusPill = {
 
 type EventWebsiteLeftPaneProps = {
   autoSaveEnabled: boolean;
+  className?: string;
   defaultWebsiteFlowSections: EventWebsiteSectionDefinition[];
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   eventSlug: string | null;
@@ -36,13 +37,16 @@ type EventWebsiteLeftPaneProps = {
   onWebsiteFlowSectionsChange: (sections: EventWebsiteSectionDefinition[]) => void;
   sectionSummary: EventWebsiteSectionSummary;
   selectedSection?: EventWebsiteSectionKey;
+  showStatusCard?: boolean;
   statusPill: EventWebsiteStatusPill;
+  statusCardSticky?: boolean;
   websiteFlowSections: EventWebsiteSectionDefinition[];
   workflowStatus: EventWebsiteOperationalStatus;
 };
 
 export function EventWebsiteLeftPane({
   autoSaveEnabled,
+  className,
   defaultWebsiteFlowSections,
   enabledSections,
   eventSlug,
@@ -54,7 +58,9 @@ export function EventWebsiteLeftPane({
   onWebsiteFlowSectionsChange,
   sectionSummary,
   selectedSection: selectedSectionProp,
+  showStatusCard = true,
   statusPill,
+  statusCardSticky = true,
   websiteFlowSections,
   workflowStatus,
 }: EventWebsiteLeftPaneProps) {
@@ -110,16 +116,19 @@ export function EventWebsiteLeftPane({
   }, [selectedSectionLabel]);
 
   return (
-    <section className="event-website-pane" aria-label="Event Website setup sections">
-      <EventWebsiteStatusCard
-        autoSaveEnabled={autoSaveEnabled}
-        eventSlug={eventSlug}
-        onToggleAutoSave={onToggleAutoSave}
-        sectionSummary={sectionSummary}
-        statusPill={statusPill}
-        websiteAccessHref="/dashboard/website-access"
-        workflowStatus={workflowStatus}
-      />
+    <section className={cn("event-website-pane", className)} aria-label="Event Website setup sections">
+      {showStatusCard ? (
+        <EventWebsiteStatusCard
+          autoSaveEnabled={autoSaveEnabled}
+          eventSlug={eventSlug}
+          onToggleAutoSave={onToggleAutoSave}
+          sectionSummary={sectionSummary}
+          statusPill={statusPill}
+          sticky={statusCardSticky}
+          websiteAccessHref="/dashboard/website-access"
+          workflowStatus={workflowStatus}
+        />
+      ) : null}
 
       <div className="event-section-group">
         <div className="event-section-heading">
