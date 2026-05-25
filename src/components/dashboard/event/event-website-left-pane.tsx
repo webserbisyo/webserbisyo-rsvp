@@ -17,7 +17,14 @@ import type {
 import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export type EventWebsiteStatusPill = {
+  href?: string;
+  label: string;
+  tone: "neutral" | "success" | "warning";
+};
+
 type EventWebsiteLeftPaneProps = {
+  autoSaveEnabled: boolean;
   defaultWebsiteFlowSections: EventWebsiteSectionDefinition[];
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   eventSlug: string | null;
@@ -25,14 +32,17 @@ type EventWebsiteLeftPaneProps = {
   onEnabledSectionChange: (section: EventWebsiteSectionKey, enabled: boolean) => void;
   onResetWebsiteFlowOrder: () => void;
   onSelectedSectionChange?: (section: EventWebsiteSectionKey) => void;
+  onToggleAutoSave: () => void;
   onWebsiteFlowSectionsChange: (sections: EventWebsiteSectionDefinition[]) => void;
   sectionSummary: EventWebsiteSectionSummary;
   selectedSection?: EventWebsiteSectionKey;
+  statusPill: EventWebsiteStatusPill;
   websiteFlowSections: EventWebsiteSectionDefinition[];
   workflowStatus: EventWebsiteOperationalStatus;
 };
 
 export function EventWebsiteLeftPane({
+  autoSaveEnabled,
   defaultWebsiteFlowSections,
   enabledSections,
   eventSlug,
@@ -40,9 +50,11 @@ export function EventWebsiteLeftPane({
   onEnabledSectionChange,
   onResetWebsiteFlowOrder,
   onSelectedSectionChange,
+  onToggleAutoSave,
   onWebsiteFlowSectionsChange,
   sectionSummary,
   selectedSection: selectedSectionProp,
+  statusPill,
   websiteFlowSections,
   workflowStatus,
 }: EventWebsiteLeftPaneProps) {
@@ -100,8 +112,11 @@ export function EventWebsiteLeftPane({
   return (
     <section className="event-website-pane" aria-label="Event Website setup sections">
       <EventWebsiteStatusCard
+        autoSaveEnabled={autoSaveEnabled}
         eventSlug={eventSlug}
+        onToggleAutoSave={onToggleAutoSave}
         sectionSummary={sectionSummary}
+        statusPill={statusPill}
         websiteAccessHref="/dashboard/website-access"
         workflowStatus={workflowStatus}
       />

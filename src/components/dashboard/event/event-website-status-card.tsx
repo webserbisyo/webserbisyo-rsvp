@@ -7,18 +7,25 @@ import type {
   EventWebsiteSectionSummary,
 } from "@/lib/event-website/readiness";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, ExternalLink } from "lucide-react";
+import { ArrowUpRight, Cloud, CloudOff, ExternalLink } from "lucide-react";
+import type { EventWebsiteStatusPill } from "@/components/dashboard/event/event-website-left-pane";
 
 type EventWebsiteStatusCardProps = {
+  autoSaveEnabled: boolean;
   eventSlug: string | null;
+  onToggleAutoSave: () => void;
   sectionSummary: EventWebsiteSectionSummary;
+  statusPill: EventWebsiteStatusPill;
   websiteAccessHref: string;
   workflowStatus: EventWebsiteOperationalStatus;
 };
 
 export function EventWebsiteStatusCard({
+  autoSaveEnabled,
   eventSlug,
+  onToggleAutoSave,
   sectionSummary,
+  statusPill,
   websiteAccessHref,
   workflowStatus,
 }: EventWebsiteStatusCardProps) {
@@ -30,17 +37,33 @@ export function EventWebsiteStatusCard({
   return (
     <Card className="event-website-status-card sticky top-[calc(var(--dash-header-height)+1rem)] z-20 gap-0 px-4 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            "event-status-badge",
-            workflowStatus.tone === "success" && "is-ready",
-            workflowStatus.tone === "warning" && "is-warning",
-            workflowStatus.tone === "neutral" && "is-neutral",
-          )}
-        >
-          <span className="event-status-badge-dot" aria-hidden="true" />
-          {workflowStatus.label}
-        </span>
+        {statusPill.href ? (
+          <Link
+            href={statusPill.href}
+            className={cn(
+              "event-status-badge event-status-badge-link",
+              statusPill.tone === "success" && "is-ready",
+              statusPill.tone === "warning" && "is-warning",
+              statusPill.tone === "neutral" && "is-neutral",
+            )}
+          >
+            <span className="event-status-badge-dot" aria-hidden="true" />
+            {statusPill.label}
+            <ArrowUpRight className="size-3" aria-hidden="true" />
+          </Link>
+        ) : (
+          <span
+            className={cn(
+              "event-status-badge",
+              statusPill.tone === "success" && "is-ready",
+              statusPill.tone === "warning" && "is-warning",
+              statusPill.tone === "neutral" && "is-neutral",
+            )}
+          >
+            <span className="event-status-badge-dot" aria-hidden="true" />
+            {statusPill.label}
+          </span>
+        )}
         <span className="text-sm font-semibold tabular-nums text-[--dash-foreground]">
           {sectionSummary.activeSectionCount}/{sectionSummary.totalSectionCount}
         </span>
@@ -60,25 +83,22 @@ export function EventWebsiteStatusCard({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        {canPreviewPublicPage ? (
-          <Button asChild type="button" variant="ghost" size="sm" className="event-status-preview-btn h-7 gap-1 px-2 text-xs">
-            <Link href={`/r/${eventSlug}`} target="_blank" rel="noreferrer">
-              Preview
-              <ArrowUpRight className="size-3.5" aria-hidden="true" />
-            </Link>
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled
-            className="event-status-preview-btn h-7 gap-1 px-2 text-xs"
-          >
-            Preview
-            <ArrowUpRight className="size-3.5" aria-hidden="true" />
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="event-status-preview-btn h-7 gap-1 px-2 text-xs"
+          aria-pressed={autoSaveEnabled}
+          title={autoSaveEnabled ? "Turn auto-save off" : "Turn auto-save on"}
+          onClick={onToggleAutoSave}
+        >
+          {autoSaveEnabled ? (
+            <Cloud className="size-3.5" aria-hidden="true" />
+          ) : (
+            <CloudOff className="size-3.5" aria-hidden="true" />
+          )}
+          {autoSaveEnabled ? "Auto-save on" : "Auto-save off"}
+        </Button>
         <Button
           asChild
           type="button"
