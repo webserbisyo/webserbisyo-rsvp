@@ -159,8 +159,12 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
     companionLimit: "1",
     companionNameEnabled: true,
     customQuestions: [],
+    emailEnabled: true,
+    emailRequired: true,
     foodAllergiesEnabled: false,
     messageToHostEnabled: true,
+    phoneEnabled: false,
+    phoneRequired: false,
     plusOneEnabled: false,
   },
   timelineProgram: {
@@ -404,8 +408,14 @@ export function buildEventWebsiteContentFromPreviewDraft({
           options: [...question.options],
           required: question.required,
         })),
+        emailEnabled: true,
+        emailRequired: true,
         foodAllergiesEnabled: previewDraft.rsvpForm.foodAllergiesEnabled,
-        messageToHostEnabled: previewDraft.rsvpForm.messageToHostEnabled,
+        messageToHostEnabled: true,
+        phoneEnabled: previewDraft.rsvpForm.phoneEnabled,
+        phoneRequired: previewDraft.rsvpForm.phoneEnabled
+          ? previewDraft.rsvpForm.phoneRequired
+          : false,
         plusOneEnabled: previewDraft.rsvpForm.plusOneEnabled,
       },
       secondary_event: {

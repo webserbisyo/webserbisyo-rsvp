@@ -24,6 +24,16 @@ import {
   eventWebsiteRenderModelSectionKeys,
   type EventWebsiteRenderModel,
 } from "@/lib/event-website/render-model";
+import {
+  RSVP_ATTENDANCE_LABEL,
+  RSVP_EMAIL_LABEL,
+  RSVP_GUEST_COUNT_LABEL,
+  RSVP_GUEST_NAME_LABEL,
+  RSVP_MESSAGE_HELPER,
+  RSVP_MESSAGE_LABEL,
+  RSVP_MESSAGE_PRIVACY_COPY,
+  RSVP_PHONE_LABEL,
+} from "@/lib/event-website/rsvp-form-copy";
 import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-response-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -488,6 +498,7 @@ function RsvpFormSection({
 }) {
   const [previewCompanionCount, setPreviewCompanionCount] = useState(0);
   const rsvp = draft.rsvpForm;
+  const shouldShowPhone = rsvp.phoneEnabled;
   const maxCompanions = Math.max(1, Number(rsvp.companionLimit) || 1);
   const companionOptions = Array.from({ length: maxCompanions + 1 }, (_, i) => i);
 
@@ -512,20 +523,35 @@ function RsvpFormSection({
       ) : (
         <form className="event-preview-rsvp-card" onSubmit={(event) => event.preventDefault()}>
           <label className="event-preview-field">
-            <span>Guest Name</span>
+            <span>{RSVP_GUEST_NAME_LABEL}</span>
             <input type="text" placeholder="Your full name" />
           </label>
 
-          <div className="event-preview-choice-group" aria-label="Attendance">
-            <button type="button" className="is-selected">
-              Yes, I will attend
-            </button>
-            <button type="button">Sorry, I can&apos;t attend</button>
+          <label className="event-preview-field">
+            <span>{RSVP_EMAIL_LABEL}</span>
+            <input type="email" placeholder="you@example.com" />
+          </label>
+
+          {shouldShowPhone ? (
+            <label className="event-preview-field">
+              <span>{RSVP_PHONE_LABEL}</span>
+              <input type="tel" placeholder="09XXXXXXXXX" />
+            </label>
+          ) : null}
+
+          <div className="event-preview-field">
+            <span>{RSVP_ATTENDANCE_LABEL}</span>
+            <div className="event-preview-choice-group" aria-label={RSVP_ATTENDANCE_LABEL}>
+              <button type="button" className="is-selected">
+                Yes, I will attend
+              </button>
+              <button type="button">Sorry, I can&apos;t attend</button>
+            </div>
           </div>
 
           {rsvp.plusOneEnabled ? (
             <div className="event-preview-field">
-              <span>Guest Count</span>
+              <span>{RSVP_GUEST_COUNT_LABEL}</span>
               <p className="mb-1 text-[11.5px] leading-snug text-[#7a746f]">
                 Choose how many companions you will bring. You may bring up to {maxCompanions}.
               </p>
@@ -584,12 +610,12 @@ function RsvpFormSection({
             </label>
           ) : null}
 
-          {rsvp.messageToHostEnabled ? (
-            <label className="event-preview-field">
-              <span>Message to the Couple</span>
-              <textarea placeholder="Leave a short message." />
-            </label>
-          ) : null}
+          <label className="event-preview-field">
+            <span>{RSVP_MESSAGE_LABEL}</span>
+            <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_HELPER}</p>
+            <textarea placeholder="Leave a short message." />
+            <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_PRIVACY_COPY}</p>
+          </label>
 
           <Button type="button" className="event-preview-submit-button">
             Submit RSVP

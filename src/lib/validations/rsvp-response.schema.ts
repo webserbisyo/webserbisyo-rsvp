@@ -19,14 +19,15 @@ function normalizeOptionalInput(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
-const OptionalEmailSchema = z
+const RequiredEmailSchema = z
   .preprocess(
     normalizeOptionalInput,
     z
       .string()
       .trim()
-      .transform((value) => (value ? value.toLowerCase() : undefined))
-      .refine((value) => value === undefined || z.email().safeParse(value).success, {
+      .min(1, "Email address is required.")
+      .transform((value) => value.toLowerCase())
+      .refine((value) => z.email().safeParse(value).success, {
         message: "Enter a valid email address.",
       }),
   );
@@ -104,7 +105,7 @@ export const PublicRsvpResponseFieldsSchema = z.object({
   companionCount: CompanionCountSchema,
   companions: z.array(CompanionSchema).max(20, "Too many companions.").optional(),
   dietaryNotes: OptionalTextSchema(1000, "Dietary notes are too long."),
-  email: OptionalEmailSchema,
+  email: RequiredEmailSchema,
   guestName: GuestNameSchema,
   message: OptionalTextSchema(1200, "Message is too long."),
   phone: OptionalPhoneSchema,

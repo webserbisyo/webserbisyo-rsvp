@@ -152,8 +152,12 @@ export function buildDefaultWeddingEventWebsiteContent(
         companionLimit: 1,
         companionNameEnabled: true,
         customQuestions: [],
+        emailEnabled: true,
+        emailRequired: true,
         foodAllergiesEnabled: false,
         messageToHostEnabled: true,
+        phoneEnabled: false,
+        phoneRequired: false,
         plusOneEnabled: false,
       },
       secondary_event: {

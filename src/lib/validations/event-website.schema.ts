@@ -260,8 +260,12 @@ export const EventWebsiteRsvpFormSectionSchema = z
     companionLimit: z.number().int().min(0).max(10),
     companionNameEnabled: z.boolean(),
     customQuestions: z.array(EventWebsiteCustomQuestionSchema).max(10),
+    emailEnabled: z.boolean().optional().default(true),
+    emailRequired: z.boolean().optional().default(true),
     foodAllergiesEnabled: z.boolean(),
-    messageToHostEnabled: z.boolean(),
+    messageToHostEnabled: z.boolean().optional().default(true),
+    phoneEnabled: z.boolean().optional().default(false),
+    phoneRequired: z.boolean().optional().default(false),
     plusOneEnabled: z.boolean(),
   })
   .strict();
@@ -492,8 +496,12 @@ export const EventWebsiteRsvpFormSectionPatchSchema = z
     companionLimit: z.number().int().min(0).max(10).optional(),
     companionNameEnabled: z.boolean().optional(),
     customQuestions: z.array(EventWebsiteCustomQuestionSchema).max(10).optional(),
+    emailEnabled: z.boolean().optional(),
+    emailRequired: z.boolean().optional(),
     foodAllergiesEnabled: z.boolean().optional(),
     messageToHostEnabled: z.boolean().optional(),
+    phoneEnabled: z.boolean().optional(),
+    phoneRequired: z.boolean().optional(),
     plusOneEnabled: z.boolean().optional(),
   })
   .strict();

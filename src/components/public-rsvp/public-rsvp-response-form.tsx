@@ -2,6 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import {
+  RSVP_ATTENDANCE_LABEL,
+  RSVP_EMAIL_LABEL,
+  RSVP_GUEST_COUNT_LABEL,
+  RSVP_GUEST_NAME_LABEL,
+  RSVP_MESSAGE_HELPER,
+  RSVP_MESSAGE_LABEL,
+  RSVP_MESSAGE_PRIVACY_COPY,
+  RSVP_PHONE_LABEL,
+} from "@/lib/event-website/rsvp-form-copy";
 import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
 import {
   PublicRsvpResponseFieldsInput,
@@ -45,6 +55,7 @@ export function PublicRsvpResponseForm({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const shouldShowCompanions =
     attendanceStatus === "attending" && settings.plusOneEnabled && settings.companionLimit > 0;
+  const shouldShowPhone = settings.phoneEnabled;
 
   function updateCompanionCount(value: number) {
     const nextCount = Math.max(0, Math.min(value, settings.companionLimit));
@@ -158,7 +169,7 @@ export function PublicRsvpResponseForm({
 
       <FieldError name="guestName" errors={fieldErrors} className="event-preview-field">
         <label htmlFor="guestName">
-          <span>Guest Name</span>
+          <span>{RSVP_GUEST_NAME_LABEL}</span>
           <input
             id="guestName"
             name="guestName"
@@ -170,9 +181,41 @@ export function PublicRsvpResponseForm({
         </label>
       </FieldError>
 
+      <FieldError name="email" errors={fieldErrors} className="event-preview-field">
+        <label htmlFor="email">
+          <span>{RSVP_EMAIL_LABEL}</span>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            disabled={isPending}
+            placeholder="you@example.com"
+            required={settings.emailRequired}
+          />
+        </label>
+      </FieldError>
+
+      {shouldShowPhone ? (
+        <FieldError name="phone" errors={fieldErrors} className="event-preview-field">
+          <label htmlFor="phone">
+            <span>{RSVP_PHONE_LABEL}</span>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              disabled={isPending}
+              placeholder="09XXXXXXXXX"
+              required={settings.phoneRequired}
+            />
+          </label>
+        </FieldError>
+      ) : null}
+
       <div className="event-preview-field">
-        <span>Attendance</span>
-        <div className="event-preview-choice-group" aria-label="Attendance">
+        <span>{RSVP_ATTENDANCE_LABEL}</span>
+        <div className="event-preview-choice-group" aria-label={RSVP_ATTENDANCE_LABEL}>
           <AttendanceOption
             id="attendance-attending"
             checked={attendanceStatus === "attending"}
@@ -192,37 +235,9 @@ export function PublicRsvpResponseForm({
         </div>
       </div>
 
-      <FieldError name="email" errors={fieldErrors} className="event-preview-field">
-        <label htmlFor="email">
-          <span>Email</span>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            disabled={isPending}
-            placeholder="you@example.com"
-          />
-        </label>
-      </FieldError>
-
-      <FieldError name="phone" errors={fieldErrors} className="event-preview-field">
-        <label htmlFor="phone">
-          <span>Phone</span>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            disabled={isPending}
-            placeholder="09XXXXXXXXX"
-          />
-        </label>
-      </FieldError>
-
       {shouldShowCompanions ? (
         <div className="event-preview-field">
-          <span>Guest Count</span>
+          <span>{RSVP_GUEST_COUNT_LABEL}</span>
           <p className="mb-1 text-[11.5px] leading-snug text-[#7a746f]">
             Choose how many companions you will bring. You may bring up to{" "}
             {settings.companionLimit}.
@@ -295,7 +310,8 @@ export function PublicRsvpResponseForm({
       {settings.messageToHostEnabled ? (
         <FieldError name="message" errors={fieldErrors} className="event-preview-field">
           <label htmlFor="message">
-            <span>Message to the Couple</span>
+            <span>{RSVP_MESSAGE_LABEL}</span>
+            <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_HELPER}</p>
             <textarea
               id="message"
               name="message"
@@ -303,6 +319,7 @@ export function PublicRsvpResponseForm({
               disabled={isPending}
               placeholder="Leave a short message."
             />
+            <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_PRIVACY_COPY}</p>
           </label>
         </FieldError>
       ) : null}

@@ -40,6 +40,13 @@ import {
   type EventWebsiteSectionKey,
   type ResolvedEventWebsiteSections,
 } from "@/config/event-website-sections";
+import {
+  RSVP_EMAIL_LABEL,
+  RSVP_MESSAGE_HELPER,
+  RSVP_MESSAGE_LABEL,
+  RSVP_MESSAGE_PRIVACY_COPY,
+  RSVP_PHONE_LABEL,
+} from "@/lib/event-website/rsvp-form-copy";
 
 export type EventWebsiteEditorData = {
   eventContent: {
@@ -714,7 +721,7 @@ function RsvpFormConfigPanel({
   const companionNameEnabled = rsvpValues.companionNameEnabled;
   const companionAgeEnabled = rsvpValues.companionAgeEnabled;
   const foodAllergiesEnabled = rsvpValues.foodAllergiesEnabled;
-  const messageToHostEnabled = rsvpValues.messageToHostEnabled;
+  const phoneEnabled = rsvpValues.phoneEnabled;
 
   return (
     <EditorShell
@@ -727,8 +734,18 @@ function RsvpFormConfigPanel({
           description="Required · always included"
         />
         <AlwaysOnRow
+          title={RSVP_EMAIL_LABEL}
+          description="Required · always included"
+        />
+        <AlwaysOnRow
           title="Attendance"
           description="Required · attending or not attending"
+        />
+        <ToggleRow
+          title={RSVP_PHONE_LABEL}
+          description="Optional contact field"
+          checked={phoneEnabled}
+          onCheckedChange={(checked) => updateRsvpValue("phoneEnabled", checked)}
         />
         <ToggleRow
           title="Plus-one / Guest Count"
@@ -768,12 +785,14 @@ function RsvpFormConfigPanel({
           checked={foodAllergiesEnabled}
           onCheckedChange={(checked) => updateRsvpValue("foodAllergiesEnabled", checked)}
         />
-        <ToggleRow
-          title="Message to Host"
-          description="Optional note or greeting"
-          checked={messageToHostEnabled}
-          onCheckedChange={(checked) => updateRsvpValue("messageToHostEnabled", checked)}
+        <AlwaysOnRow
+          title={RSVP_MESSAGE_LABEL}
+          description="Optional for guests · always included"
         />
+        <div className="rounded-2xl border border-dashed border-[#e3d4c9] bg-[#fffaf7] px-4 py-4 text-sm text-[#7c5f54]">
+          <p className="font-medium text-[#4e342b]">{RSVP_MESSAGE_HELPER}</p>
+          <p className="mt-1">{RSVP_MESSAGE_PRIVACY_COPY}</p>
+        </div>
         <div className="rounded-2xl border border-dashed border-[#e3d4c9] bg-[#fffaf7] px-4 py-4 text-sm text-[#7c5f54]">
           <p className="font-medium text-[#4e342b]">Custom questions are coming soon.</p>
           <p className="mt-1">

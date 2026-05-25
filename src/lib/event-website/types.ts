@@ -156,8 +156,12 @@ export type EventWebsiteRsvpFormSection = {
   companionLimit: number;
   companionNameEnabled: boolean;
   customQuestions: EventWebsiteCustomQuestion[];
+  emailEnabled: boolean;
+  emailRequired: boolean;
   foodAllergiesEnabled: boolean;
   messageToHostEnabled: boolean;
+  phoneEnabled: boolean;
+  phoneRequired: boolean;
   plusOneEnabled: boolean;
 };
 

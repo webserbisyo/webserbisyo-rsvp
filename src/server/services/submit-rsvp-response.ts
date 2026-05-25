@@ -59,12 +59,12 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
     attendance_status: payload.attendanceStatus,
     client_id: event.client_id,
     dietary_notes: rsvpSettings.foodAllergiesEnabled ? (payload.dietaryNotes ?? null) : null,
-    email: payload.email ?? null,
+    email: rsvpSettings.emailEnabled ? (payload.email ?? null) : null,
     event_id: event.id,
     guest_name: payload.guestName,
     message: rsvpSettings.messageToHostEnabled ? (payload.message ?? null) : null,
     party_size: partySize,
-    phone: payload.phone ?? null,
+    phone: rsvpSettings.phoneEnabled ? (payload.phone ?? null) : null,
     source: "public_fallback_page",
   };
 

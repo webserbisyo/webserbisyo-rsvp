@@ -121,8 +121,12 @@ export type EventWebsiteRenderModel = {
     companionLimit: string;
     companionNameEnabled: boolean;
     customQuestions: EventWebsiteCustomQuestionRenderModel[];
+    emailEnabled: boolean;
+    emailRequired: boolean;
     foodAllergiesEnabled: boolean;
     messageToHostEnabled: boolean;
+    phoneEnabled: boolean;
+    phoneRequired: boolean;
     plusOneEnabled: boolean;
   };
   timelineProgram: {
@@ -238,8 +242,12 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
         options: [...question.options],
         required: question.required,
       })),
+      emailEnabled: content.sections.rsvp_form.emailEnabled,
+      emailRequired: content.sections.rsvp_form.emailRequired,
       foodAllergiesEnabled: content.sections.rsvp_form.foodAllergiesEnabled,
       messageToHostEnabled: content.sections.rsvp_form.messageToHostEnabled,
+      phoneEnabled: content.sections.rsvp_form.phoneEnabled,
+      phoneRequired: content.sections.rsvp_form.phoneRequired,
       plusOneEnabled: content.sections.rsvp_form.plusOneEnabled,
     },
     timelineProgram: {

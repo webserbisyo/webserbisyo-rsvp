@@ -5319,6 +5319,373 @@
   }
 }
 
+.event-website-public-page .event-preview-major-divider,
+[data-dashboard] .event-website-page .event-preview-major-divider {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 18px 0;
+}
+
+.event-website-public-page .event-preview-major-divider::before,
+[data-dashboard] .event-website-page .event-preview-major-divider::before {
+  content: "";
+  width: 100%;
+  max-width: 144px;
+  border-top: 1px solid #dedbd6;
+  transform: translateY(50%);
+}
+
+.event-website-public-page .event-preview-major-divider span,
+[data-dashboard] .event-website-page .event-preview-major-divider span {
+  width: 8px;
+  height: 8px;
+  margin-left: -8px;
+  border: 1px solid #d2cec8;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.event-website-public-page .event-preview-internal-divider,
+[data-dashboard] .event-website-page .event-preview-internal-divider {
+  width: 100%;
+  max-width: 120px;
+  border-top: 1px solid #e3dfda;
+  background: none;
+}
+
+.event-website-public-page .event-preview-timeline-list,
+[data-dashboard] .event-website-page .event-preview-timeline-list {
+  display: grid;
+  gap: 12px;
+}
+
+.event-website-public-page .event-preview-timeline-item,
+[data-dashboard] .event-website-page .event-preview-timeline-item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+}
+
+.event-website-public-page .event-preview-timeline-rail,
+[data-dashboard] .event-website-page .event-preview-timeline-rail {
+  position: relative;
+  width: 20px;
+  height: 100%;
+}
+
+.event-website-public-page .event-preview-timeline-rail::before,
+[data-dashboard] .event-website-page .event-preview-timeline-rail::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: -14px;
+  left: 9px;
+  width: 1px;
+  background: #ddd9d4;
+}
+
+.event-website-public-page .event-preview-timeline-item:last-child .event-preview-timeline-rail::before,
+[data-dashboard] .event-website-page .event-preview-timeline-item:last-child .event-preview-timeline-rail::before {
+  bottom: 8px;
+}
+
+.event-website-public-page .event-preview-timeline-rail::after,
+[data-dashboard] .event-website-page .event-preview-timeline-rail::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 5px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #d2cec8;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.event-website-public-page .event-preview-timeline-card,
+[data-dashboard] .event-website-page .event-preview-timeline-card {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  border: 1px solid #ece9e5;
+  border-radius: 14px;
+  background: #fbfbfa;
+  padding: 12px 14px;
+}
+
+.event-website-public-page .event-preview-timeline-time,
+[data-dashboard] .event-website-page .event-preview-timeline-time {
+  color: #8a847e;
+  font-size: 10.5px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.event-website-public-page :is(
+    .event-preview-party-grid,
+    .event-preview-guidance-grid,
+    .event-preview-note-grid,
+    .event-preview-gift-grid,
+    .event-preview-sponsor-list
+  ),
+[data-dashboard] .event-website-page :is(
+    .event-preview-party-grid,
+    .event-preview-guidance-grid,
+    .event-preview-note-grid,
+    .event-preview-gift-grid,
+    .event-preview-sponsor-list
+  ) {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  justify-items: center;
+}
+
+.event-website-public-page :is(
+    .event-preview-party-card,
+    .event-preview-guidance-card,
+    .event-preview-note-card,
+    .event-preview-gift-card
+  ),
+[data-dashboard] .event-website-page :is(
+    .event-preview-party-card,
+    .event-preview-guidance-card,
+    .event-preview-note-card,
+    .event-preview-gift-card
+  ) {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  border: 1px solid #ece9e5;
+  border-radius: 14px;
+  background: #fbfbfa;
+  padding: 14px;
+  text-align: left;
+}
+
+.event-website-public-page .event-preview-sponsor-list span,
+[data-dashboard] .event-website-page .event-preview-sponsor-list span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 18rem;
+  min-width: 0;
+  min-height: 52px;
+  border: 1px solid #ece9e5;
+  border-radius: 999px;
+  background: #fbfbfa;
+  color: #4d4945;
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.event-website-public-page .event-preview-gift-card,
+[data-dashboard] .event-website-page .event-preview-gift-card {
+  max-width: 18rem;
+  align-content: start;
+  justify-items: center;
+  text-align: center;
+}
+
+.event-website-public-page :is(
+    .event-preview-party-grid,
+    .event-preview-guidance-grid,
+    .event-preview-note-grid,
+    .event-preview-gift-grid,
+    .event-preview-sponsor-list
+  ) > :only-child,
+[data-dashboard] .event-website-page :is(
+    .event-preview-party-grid,
+    .event-preview-guidance-grid,
+    .event-preview-note-grid,
+    .event-preview-gift-grid,
+    .event-preview-sponsor-list
+  ) > :only-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.event-website-public-page :is(
+    .event-preview-party-card,
+    .event-preview-guidance-card,
+    .event-preview-note-card
+  ):only-child,
+[data-dashboard] .event-website-page :is(
+    .event-preview-party-card,
+    .event-preview-guidance-card,
+    .event-preview-note-card
+  ):only-child {
+  max-width: 20rem;
+}
+
+.event-website-public-page .event-preview-gift-card:only-child,
+[data-dashboard] .event-website-page .event-preview-gift-card:only-child,
+.event-website-public-page .event-preview-sponsor-list span:only-child,
+[data-dashboard] .event-website-page .event-preview-sponsor-list span:only-child {
+  max-width: 18rem;
+}
+
+.event-website-public-page :is(.event-preview-gift-placeholder, .event-preview-gift-image),
+[data-dashboard] .event-website-page :is(.event-preview-gift-placeholder, .event-preview-gift-image) {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 8.75rem);
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px dashed #d6d2cc;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #8b8580;
+}
+
+.event-website-public-page .event-preview-gift-image img,
+[data-dashboard] .event-website-page .event-preview-gift-image img {
+  object-fit: contain;
+}
+
+.event-website-public-page .event-preview-footer-card,
+[data-dashboard] .event-website-page .event-preview-footer-card {
+  justify-items: center;
+  text-align: center;
+}
+
+.event-website-public-page .event-preview-footer-line,
+[data-dashboard] .event-website-page .event-preview-footer-line {
+  display: grid;
+  width: min(100%, 24rem);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.event-website-public-page .event-preview-footer-text,
+[data-dashboard] .event-website-page .event-preview-footer-text {
+  min-width: 0;
+}
+
+.event-website-public-page .event-preview-social-row,
+[data-dashboard] .event-website-page .event-preview-social-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.event-website-public-page .event-preview-choice-group,
+[data-dashboard] .event-website-page .event-preview-choice-group {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.event-website-public-page :is(
+    .event-preview-host-line,
+    .event-preview-copy,
+    .event-preview-address-text,
+    .event-preview-location-card strong,
+    .event-preview-location-card span,
+    .event-preview-timeline-card strong,
+    .event-preview-timeline-card p,
+    .event-preview-party-card strong,
+    .event-preview-party-card p,
+    .event-preview-guidance-card strong,
+    .event-preview-guidance-card p,
+    .event-preview-note-card strong,
+    .event-preview-note-card p,
+    .event-preview-gift-card strong,
+    .event-preview-sponsor-list span,
+    .event-preview-message-card p,
+    .event-preview-story-card strong,
+    .event-preview-story-card p,
+    .event-preview-footer-text
+  ),
+[data-dashboard] .event-website-page :is(
+    .event-preview-host-line,
+    .event-preview-copy,
+    .event-preview-address-text,
+    .event-preview-location-card strong,
+    .event-preview-location-card span,
+    .event-preview-timeline-card strong,
+    .event-preview-timeline-card p,
+    .event-preview-party-card strong,
+    .event-preview-party-card p,
+    .event-preview-guidance-card strong,
+    .event-preview-guidance-card p,
+    .event-preview-note-card strong,
+    .event-preview-note-card p,
+    .event-preview-gift-card strong,
+    .event-preview-sponsor-list span,
+    .event-preview-message-card p,
+    .event-preview-story-card strong,
+    .event-preview-story-card p,
+    .event-preview-footer-text
+  ) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.event-website-public-page :is(
+    .event-preview-copy,
+    .event-preview-note-card p,
+    .event-preview-message-card p,
+    .event-preview-story-card p
+  ),
+[data-dashboard] .event-website-page :is(
+    .event-preview-copy,
+    .event-preview-note-card p,
+    .event-preview-message-card p,
+    .event-preview-story-card p
+  ) {
+  hyphens: auto;
+}
+
+@media (max-width: 640px) {
+  .event-website-public-page :is(
+      .event-preview-countdown-grid,
+      .event-preview-detail-list,
+      .event-preview-party-grid,
+      .event-preview-guidance-grid,
+      .event-preview-note-grid,
+      .event-preview-gift-grid,
+      .event-preview-sponsor-list
+    ),
+  [data-dashboard] .event-website-page :is(
+      .event-preview-countdown-grid,
+      .event-preview-detail-list,
+      .event-preview-party-grid,
+      .event-preview-guidance-grid,
+      .event-preview-note-grid,
+      .event-preview-gift-grid,
+      .event-preview-sponsor-list
+    ) {
+    grid-template-columns: 1fr;
+  }
+
+  .event-website-public-page .event-preview-timeline-item,
+  [data-dashboard] .event-website-page .event-preview-timeline-item {
+    grid-template-columns: 1fr;
+  }
+
+  .event-website-public-page .event-preview-timeline-rail,
+  [data-dashboard] .event-website-page .event-preview-timeline-rail {
+    display: none;
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * Website Access — scoped dialog overlay
  * Uses the data-wa-dialog attribute added to DialogContent / AlertDialogContent

@@ -5,7 +5,11 @@ import {
   normalizeCanonicalText,
   normalizeCanonicalTimeInput,
 } from "@/lib/event-website/canonical";
-import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/event-website/types";
+import type {
+  EventWebsiteContent,
+  EventWebsiteDefaultsContext,
+  EventWebsiteRsvpFormSection,
+} from "@/lib/event-website/types";
 import {
   EventWebsiteContentPatchSchema,
   EventWebsiteContentSchema,
@@ -14,7 +18,7 @@ import {
 
 export function parseEventWebsiteContentJson(raw: unknown): EventWebsiteContent | null {
   const parsed = EventWebsiteContentSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+  return parsed.success ? normalizeParsedEventWebsiteContent(parsed.data) : null;
 }
 
 export function mergeEventWebsiteContent(
@@ -104,8 +108,10 @@ function mergeEventWebsiteContentPatch(
         ...(patch.sections?.principal_sponsors ?? {}),
       },
       rsvp_form: {
-        ...defaults.sections.rsvp_form,
-        ...(patch.sections?.rsvp_form ?? {}),
+        ...normalizeRsvpFormSection({
+          ...defaults.sections.rsvp_form,
+          ...(patch.sections?.rsvp_form ?? {}),
+        }),
       },
       secondary_event: {
         ...defaults.sections.secondary_event,
@@ -129,6 +135,29 @@ function mergeEventWebsiteContentPatch(
       },
     },
     version: patch.version ?? defaults.version,
+  };
+}
+
+function normalizeRsvpFormSection(settings: EventWebsiteRsvpFormSection): EventWebsiteRsvpFormSection {
+  const phoneEnabled = settings.phoneEnabled;
+
+  return {
+    ...settings,
+    emailEnabled: true,
+    emailRequired: true,
+    messageToHostEnabled: true,
+    phoneEnabled,
+    phoneRequired: phoneEnabled ? settings.phoneRequired : false,
+  };
+}
+
+function normalizeParsedEventWebsiteContent(content: EventWebsiteContent): EventWebsiteContent {
+  return {
+    ...content,
+    sections: {
+      ...content.sections,
+      rsvp_form: normalizeRsvpFormSection(content.sections.rsvp_form),
+    },
   };
 }
 
