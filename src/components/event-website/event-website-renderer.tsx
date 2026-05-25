@@ -278,7 +278,9 @@ function VenueSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <h3>{withFallback(venue.venueName, previewDefaultDraft.venue.venueName)}</h3>
       <p className="event-preview-address-copy">
         <MapPin className="size-4" aria-hidden="true" />
-        {withFallback(venue.address, previewDefaultDraft.venue.address)}
+        <span className="event-preview-address-text">
+          {withFallback(venue.address, previewDefaultDraft.venue.address)}
+        </span>
       </p>
       {mapsLink ? (
         <Button asChild variant="outline" size="sm" className="event-preview-map-button">
@@ -690,19 +692,19 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
         {contactPerson ? (
           <span className="event-preview-footer-line">
             <UsersRound className="size-4" aria-hidden="true" />
-            {contactPerson}
+            <span className="event-preview-footer-text">{contactPerson}</span>
           </span>
         ) : null}
         {contactNumber ? (
           <span className="event-preview-footer-line">
             <Phone className="size-4" aria-hidden="true" />
-            {contactNumber}
+            <span className="event-preview-footer-text">{contactNumber}</span>
           </span>
         ) : null}
         {email ? (
           <span className="event-preview-footer-line">
             <Mail className="size-4" aria-hidden="true" />
-            {email}
+            <span className="event-preview-footer-text">{email}</span>
           </span>
         ) : null}
       </div>
