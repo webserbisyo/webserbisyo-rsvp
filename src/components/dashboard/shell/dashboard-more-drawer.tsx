@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
 import { ChevronRight, CreditCard, Globe, LogOut, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 type DashboardMoreDrawerProps = {
   open: boolean;
@@ -38,16 +40,24 @@ export function DashboardMoreDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
+        data-dashboard
         side="bottom"
         showCloseButton={false}
-        overlayClassName="bg-black/40"
-        style={{ background: "var(--dash-surface)" }}
-        className="max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-[--dash-border] bg-[--dash-surface] px-0 pt-0 pb-5 text-[--dash-foreground]"
+        overlayClassName="dashboard-more-drawer-overlay"
+        className="dashboard-more-drawer"
       >
-        <div className="mx-auto mt-3 mb-2 h-1 w-8 rounded-full bg-[--dash-border]" />
-        <p className="px-4 pb-2 text-xs text-[--dash-muted]">More options</p>
+        <SheetHeader className="sr-only">
+          <SheetTitle>More</SheetTitle>
+          <SheetDescription>Account shortcuts and settings.</SheetDescription>
+        </SheetHeader>
 
-        <div className="grid gap-1">
+        <div className="dashboard-more-drawer__handle" aria-hidden="true" />
+
+        <div className="dashboard-more-drawer__header">
+          <h2 className="dashboard-more-drawer__title">More</h2>
+        </div>
+
+        <div className="dashboard-more-drawer__list" role="list">
           {remainingItems.map((item) => {
             const active = isDashboardNavItemActive(pathname, item.href);
             const Icon = item.icon;
@@ -57,42 +67,28 @@ export function DashboardMoreDrawer({
                 key={item.href}
                 href={item.href}
                 onClick={() => onOpenChange(false)}
-                className={
-                  active
-                    ? "flex w-full cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-[--dash-brand] transition-colors duration-150 hover:bg-[--dash-surface-hover]"
-                    : "flex w-full cursor-pointer items-center gap-3 rounded-md px-4 py-3 transition-colors duration-150 hover:bg-[--dash-surface-hover]"
-                }
+                className={cn("dashboard-more-drawer__item", active && "is-active")}
               >
-                <Icon
-                  className={
-                    active
-                      ? "h-5 w-5 shrink-0 text-[--dash-brand]"
-                      : "h-5 w-5 shrink-0 text-[--dash-muted]"
-                  }
-                />
-                <span
-                  className={
-                    active
-                      ? "min-w-0 flex-1 truncate text-sm text-[--dash-brand]"
-                      : "min-w-0 flex-1 truncate text-sm text-[--dash-foreground]"
-                  }
-                >
-                  {item.label}
+                <span className="dashboard-more-drawer__item-icon" aria-hidden="true">
+                  <Icon className="h-4.5 w-4.5 shrink-0" />
                 </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-[--dash-muted]" />
+                <span className="dashboard-more-drawer__item-label">{item.label}</span>
+                <ChevronRight className="dashboard-more-drawer__item-chevron h-4 w-4 shrink-0" />
               </Link>
             );
           })}
 
-          <div className="my-1 h-px bg-[--dash-border]" />
+          <Separator className="dashboard-more-drawer__separator" />
 
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex w-full cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-[--dash-destructive] transition-colors duration-150 hover:bg-[--dash-destructive-subtle]"
+            className="dashboard-more-drawer__item dashboard-more-drawer__item--signout"
           >
-            <LogOut className="h-5 w-5 shrink-0" />
-            <span className="min-w-0 flex-1 text-left text-sm">Sign out</span>
+            <span className="dashboard-more-drawer__item-icon" aria-hidden="true">
+              <LogOut className="h-4.5 w-4.5 shrink-0" />
+            </span>
+            <span className="dashboard-more-drawer__item-label">Sign out</span>
           </button>
         </div>
       </SheetContent>

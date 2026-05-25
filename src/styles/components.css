@@ -646,6 +646,150 @@
   box-shadow: 0 4px 12px color-mix(in srgb, var(--dash-brand) 12%, transparent);
 }
 
+.dashboard-more-drawer-overlay {
+  background: color-mix(in srgb, var(--dash-overlay, rgb(34 24 18 / 62%)) 100%, transparent);
+  -webkit-backdrop-filter: blur(var(--dash-blur-sm, 10px));
+  backdrop-filter: blur(var(--dash-blur-sm, 10px));
+}
+
+[data-dashboard] .dashboard-more-drawer {
+  gap: 0;
+  max-height: min(78dvh, 720px);
+  overflow: hidden;
+  border-top: 1px solid color-mix(in srgb, var(--dash-brand) 18%, var(--dash-border));
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  background:
+    radial-gradient(circle at top left,
+      color-mix(in srgb, var(--dash-brand-subtle) 34%, transparent),
+      transparent 16rem),
+    color-mix(in srgb, var(--dash-surface) 92%, rgba(255, 255, 255, 0.94));
+  box-shadow:
+    0 18px 42px rgba(62, 39, 23, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  padding: 0 0 calc(env(safe-area-inset-bottom) + 12px);
+}
+
+[data-dashboard] .dashboard-more-drawer__handle {
+  width: 42px;
+  height: 4px;
+  margin: 12px auto 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dash-border) 86%, var(--dash-muted));
+}
+
+[data-dashboard] .dashboard-more-drawer__header {
+  display: grid;
+  gap: 4px;
+  padding: 0 18px 12px;
+}
+
+[data-dashboard] .dashboard-more-drawer__title {
+  margin: 0;
+  color: var(--dash-foreground);
+  font-size: 0.95rem;
+  font-weight: 760;
+  letter-spacing: -0.01em;
+}
+
+[data-dashboard] .dashboard-more-drawer__list {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+[data-dashboard] .dashboard-more-drawer__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--dash-border) 78%, rgba(255, 248, 242, 0.55));
+  border-radius: 18px;
+  background: rgba(255, 252, 249, 0.76);
+  color: var(--dash-foreground);
+  padding: 10px 14px;
+  text-align: left;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+[data-dashboard] .dashboard-more-drawer__item:hover,
+[data-dashboard] .dashboard-more-drawer__item:active {
+  background: rgba(255, 248, 242, 0.96);
+}
+
+[data-dashboard] .dashboard-more-drawer__item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dash-ring) 60%, transparent);
+}
+
+[data-dashboard] .dashboard-more-drawer__item.is-active {
+  border-color: color-mix(in srgb, var(--dash-brand) 30%, var(--dash-border));
+  background: var(--dash-brand-subtle);
+  color: var(--dash-brand-active);
+}
+
+[data-dashboard] .dashboard-more-drawer__item-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--dash-border);
+  border-radius: 11px;
+  background: rgba(255, 253, 249, 0.82);
+  color: var(--dash-muted);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+[data-dashboard] .dashboard-more-drawer__item.is-active .dashboard-more-drawer__item-icon {
+  border-color: color-mix(in srgb, var(--dash-brand) 50%, var(--dash-border));
+  background: var(--dash-brand);
+  color: #ffffff;
+}
+
+[data-dashboard] .dashboard-more-drawer__item-label {
+  min-width: 0;
+  flex: 1;
+  font-size: 0.92rem;
+  font-weight: 620;
+  line-height: 1.25;
+}
+
+[data-dashboard] .dashboard-more-drawer__item-chevron {
+  color: var(--dash-subtle);
+}
+
+[data-dashboard] .dashboard-more-drawer__separator {
+  margin: 4px 6px 0;
+  background: color-mix(in srgb, var(--dash-brand) 12%, var(--dash-border));
+}
+
+[data-dashboard] .dashboard-more-drawer__item--signout {
+  border-color: color-mix(in srgb, var(--dash-destructive) 18%, var(--dash-border));
+  background: color-mix(in srgb, var(--dash-destructive-subtle) 42%, rgba(255, 252, 249, 0.76));
+  color: color-mix(in srgb, var(--dash-destructive) 88%, var(--dash-foreground));
+}
+
+[data-dashboard] .dashboard-more-drawer__item--signout:hover,
+[data-dashboard] .dashboard-more-drawer__item--signout:active {
+  background: color-mix(in srgb, var(--dash-destructive-subtle) 58%, rgba(255, 249, 247, 0.92));
+  color: var(--dash-destructive-hover);
+}
+
+[data-dashboard] .dashboard-more-drawer__item--signout .dashboard-more-drawer__item-icon {
+  border-color: color-mix(in srgb, var(--dash-destructive) 20%, var(--dash-border));
+  background: color-mix(in srgb, var(--dash-destructive-subtle) 58%, rgba(255, 255, 255, 0.88));
+  color: color-mix(in srgb, var(--dash-destructive) 88%, var(--dash-foreground));
+}
+
 /* ─── Dark mode sidebar nav button states ─────────────────────────────────── */
 
 .dark [data-dashboard] [data-slot="sidebar-menu-button"] {
