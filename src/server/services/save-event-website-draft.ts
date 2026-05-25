@@ -1,5 +1,6 @@
 import "server-only";
 
+import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildEventWebsiteCanonicalEventPatchInput } from "@/lib/event-website/canonical";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
@@ -17,6 +18,20 @@ export type SaveEventWebsiteDraftInput = {
 
 export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
   const supabase = createAdminClient();
+  const { data: eventRecord, error: eventLookupError } = await supabase
+    .from("rsvp_events")
+    .select("id, client_id, event_type")
+    .eq("id", input.eventId)
+    .eq("client_id", input.clientId)
+    .single();
+
+  if (eventLookupError) {
+    throw new ServiceError("Failed to load the Event Website record.", eventLookupError);
+  }
+
+  assertServiceData(eventRecord, "The Event Website record could not be resolved.");
+  assertDashboardBuilderEventTypeEnabled(eventRecord.event_type);
+
   const canonicalPatchResult = EventWebsiteCanonicalEventPatchSchema.safeParse(
     buildEventWebsiteCanonicalEventPatchInput(input.content),
   );

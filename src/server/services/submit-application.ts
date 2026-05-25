@@ -1,6 +1,7 @@
 import "server-only";
 
 import { generateApplicationReferenceCode } from "@/lib/apply/reference";
+import { assertApplicationEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import type { ApplicationInput } from "@/lib/validations/application.schema";
@@ -29,6 +30,7 @@ function isReferenceCodeConflict(error: unknown): error is SafeSupabaseError {
 
 export async function submitApplication(input: ApplicationInput) {
   const payload = ApplicationSchema.parse(input);
+  assertApplicationEventTypeEnabled(payload.eventType);
   let application: Tables<"rsvp_applications"> | null = null;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {

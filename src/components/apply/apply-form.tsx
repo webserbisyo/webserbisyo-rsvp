@@ -9,10 +9,10 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { buildMessengerFollowupMessage } from "@/lib/apply/messenger";
 import type { PublicApplyConfig } from "@/lib/apply/public-payment-option-dto";
+import { getApplicationEventTypeOptions } from "@/config/event-type-availability";
 import {
   type ApplicationInput,
   type ApplicationFormInput,
-  EVENT_TYPE_OPTIONS,
   createApplicationSchema,
 } from "@/lib/validations/application.schema";
 import { submitApplicationAction } from "@/server/actions/applications";
@@ -37,6 +37,7 @@ type ApplyFormProps = {
 };
 
 const APPLY_SUCCESS_STORAGE_KEY = "ws-rsvp-apply-success";
+const applicationEventTypeOptions = getApplicationEventTypeOptions();
 
 export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const router = useRouter();
@@ -210,13 +211,22 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                   <SelectValue placeholder="Select event type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {EVENT_TYPE_OPTIONS.map((eventType) => (
-                    <SelectItem key={eventType} value={eventType}>
-                      {eventType.replace("-", " ")}
+                  {applicationEventTypeOptions.map((eventType) => (
+                    <SelectItem
+                      key={eventType.eventType}
+                      value={eventType.eventType}
+                      disabled={eventType.disabled}
+                    >
+                      {eventType.statusLabel
+                        ? `${eventType.label} (${eventType.statusLabel})`
+                        : eventType.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-muted-foreground text-sm">
+                Wedding applications are available now. More celebration types are coming soon.
+              </p>
               {errors.eventType?.message ? (
                 <p className="text-destructive text-sm">{errors.eventType.message}</p>
               ) : null}

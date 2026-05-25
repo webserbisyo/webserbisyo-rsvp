@@ -1,15 +1,8 @@
 import { z } from "zod";
-
-const EVENT_TYPE_VALUES = [
-  "wedding",
-  "debut",
-  "birthday",
-  "baptism",
-  "reunion",
-  "anniversary",
-  "corporate",
-  "other",
-] as const;
+import {
+  EVENT_TYPE_VALUES,
+  getAvailableApplicationEventTypes,
+} from "@/config/event-type-availability";
 
 const PLAN_TYPE_VALUES = ["pro", "max"] as const;
 const MANUAL_PAYMENT_OPTION_VALUES = ["gcash", "maya"] as const;
@@ -111,6 +104,12 @@ export const ManualPaymentOptionSchema = buildSelectionSchema(
   "Select a manual payment option.",
 );
 
+const ApplicationEnabledEventTypeSchema = buildSelectionSchema(
+  getAvailableApplicationEventTypes(),
+  "Select an event type.",
+  "This event type is coming soon. Wedding applications are available right now.",
+);
+
 const OptionalDateSchema = z
   .string()
   .trim()
@@ -170,7 +169,7 @@ export function createApplicationSchema(options?: { requireManualPaymentOption?:
     estimatedGuestCount: EstimatedGuestCountSchema,
     eventDate: OptionalDateSchema,
     eventLocation: optionalText(180, "Event location is too long."),
-    eventType: EventTypeSchema,
+    eventType: ApplicationEnabledEventTypeSchema,
     fullName: FullNameSchema,
     message: optionalText(1000, "Message is too long."),
     phone: PhoneSchema,

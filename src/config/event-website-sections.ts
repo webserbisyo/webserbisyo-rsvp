@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { EventType } from "@/config/event-type-availability";
 import {
   Baby,
   BookHeart,
@@ -30,15 +31,7 @@ import {
   Utensils,
 } from "lucide-react";
 
-export type EventWebsiteEventType =
-  | "wedding"
-  | "debut"
-  | "birthday"
-  | "baptism"
-  | "reunion"
-  | "anniversary"
-  | "corporate"
-  | "other";
+export type EventWebsiteEventType = EventType;
 
 export type EventWebsiteRequiredSectionKey = "host_info" | "main_event" | "venue" | "rsvp_form";
 

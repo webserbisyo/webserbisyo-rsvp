@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import { EventWebsiteLeftPane } from "@/components/dashboard/event/event-website-left-pane";
@@ -13,6 +14,12 @@ import {
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsitePreviewPanel } from "@/components/dashboard/event/event-website-preview-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  getEventTypeAvailability,
+  isDashboardBuilderEventTypeEnabled,
+} from "@/config/event-type-availability";
 import {
   resolveEventWebsiteSections,
   type EventWebsiteSectionKey,
@@ -24,6 +31,7 @@ import {
 } from "@/lib/event-website/readiness";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
+import { ArrowUpRight, LockKeyhole } from "lucide-react";
 
 type EventWebsiteWorkspaceProps = {
   eventWebsiteData: DashboardEventWebsiteData;
@@ -31,6 +39,34 @@ type EventWebsiteWorkspaceProps = {
 };
 
 export function EventWebsiteWorkspace({
+  eventWebsiteData,
+  initialSelectedSection = null,
+}: EventWebsiteWorkspaceProps) {
+  const eventTypeAvailability = getEventTypeAvailability(eventWebsiteData.eventType);
+
+  if (!isDashboardBuilderEventTypeEnabled(eventWebsiteData.eventType)) {
+    return (
+      <LockedEventWebsiteWorkspace
+        eventSlug={eventWebsiteData.eventSlug}
+        eventTypeLabel={eventTypeAvailability?.label ?? "This"}
+        lockedTitle={eventTypeAvailability?.lockedTitle ?? "This Event Website is in development"}
+        lockedDescription={
+          eventTypeAvailability?.lockedDescription ??
+          "Wedding websites are available now. This event type is already supported in our system, but its dedicated website builder is still being prepared."
+        }
+      />
+    );
+  }
+
+  return (
+    <EnabledEventWebsiteWorkspace
+      eventWebsiteData={eventWebsiteData}
+      initialSelectedSection={initialSelectedSection}
+    />
+  );
+}
+
+function EnabledEventWebsiteWorkspace({
   eventWebsiteData,
   initialSelectedSection = null,
 }: EventWebsiteWorkspaceProps) {
@@ -209,6 +245,97 @@ export function EventWebsiteWorkspace({
         selectedSection={selectedSectionDefinition}
         websiteFlowSections={websiteFlowSections}
       />
+    </>
+  );
+}
+
+function LockedEventWebsiteWorkspace({
+  eventSlug,
+  eventTypeLabel,
+  lockedDescription,
+  lockedTitle,
+}: {
+  eventSlug: string | null;
+  eventTypeLabel: string;
+  lockedDescription: string;
+  lockedTitle: string;
+}) {
+  return (
+    <>
+      <section className="event-website-pane" aria-label="Event Website availability">
+        <div className="event-website-status-card sticky top-[calc(var(--dash-header-height)+1rem)] z-20 gap-3 px-4 py-4">
+          <Badge variant="outline" className="w-fit">
+            In development
+          </Badge>
+          <div className="space-y-1.5">
+            <h2 className="text-sm font-semibold text-[--dash-foreground]">{eventTypeLabel} Event Website</h2>
+            <p className="text-xs leading-5 text-[--dash-muted]">
+              Wedding websites are available now. Other event website builders stay locked on this page for now.
+            </p>
+          </div>
+          <Button asChild type="button" variant="outline" size="sm" className="w-fit">
+            <Link href="/dashboard/website-access">
+              Website Access
+              <ArrowUpRight className="size-3.5" aria-hidden="true" />
+            </Link>
+          </Button>
+          {eventSlug ? (
+            <p className="text-[11px] text-[--dash-muted]">Current event record: {eventSlug}</p>
+          ) : null}
+        </div>
+      </section>
+
+      <div className="event-website-middle-space grid content-start gap-4">
+        <section className="event-website-editor" aria-label="Event Website availability notice">
+          <div className="event-editor-card relative overflow-hidden">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,233,213,0.9),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(252,211,77,0.18),transparent_40%)]"
+            />
+            <header className="event-editor-header relative space-y-3">
+              <Badge variant="outline" className="w-fit">
+                Event Website availability
+              </Badge>
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-amber-100 p-2 text-amber-700">
+                  <LockKeyhole className="size-4" aria-hidden="true" />
+                </div>
+                <div className="space-y-2">
+                  <h1>{lockedTitle}</h1>
+                  <p>{lockedDescription}</p>
+                  <p className="text-sm text-[--dash-muted]">
+                    Your account and event record are safe. This builder will be unlocked in a future update.
+                  </p>
+                </div>
+              </div>
+            </header>
+          </div>
+        </section>
+      </div>
+
+      <aside className="event-website-preview-space" aria-label="Event Website preview availability">
+        <div className="event-preview-panel">
+          <div className="event-preview-frame-shell">
+            <div className="event-preview-browser-bar">
+              <span className="event-preview-browser-dot is-red" />
+              <span className="event-preview-browser-dot is-green" />
+              <span className="event-preview-browser-dot is-neutral" />
+              <span className="event-preview-address">{eventTypeLabel.toLowerCase()}.event-website.preview</span>
+            </div>
+            <div className="event-preview-frame grid place-items-center bg-[linear-gradient(180deg,#fff8ef_0%,#ffffff_55%,#fff6ec_100%)]">
+              <div className="mx-auto max-w-sm rounded-[2rem] border border-[rgba(184,122,56,0.16)] bg-white/90 p-6 text-center shadow-[0_18px_46px_rgba(70,46,20,0.08)] backdrop-blur">
+                <Badge variant="outline" className="mb-3">
+                  Preview locked
+                </Badge>
+                <h3 className="text-lg font-semibold text-slate-900">{eventTypeLabel} preview is not available yet</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  The Wedding preview stays live in production. Other event website previews remain unavailable on this page until their dedicated builder is ready.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </>
   );
 }

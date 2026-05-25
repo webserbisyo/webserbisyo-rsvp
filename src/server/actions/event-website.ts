@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
 import { normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
 import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -20,7 +21,7 @@ export async function saveEventWebsiteAction(input: unknown) {
     const supabase = await createServerSupabaseClient();
     const { data: event, error } = await supabase
       .from("rsvp_events")
-      .select("id, client_id")
+      .select("id, client_id, event_type")
       .eq("id", payload.eventId)
       .eq("client_id", profile.client_id ?? "")
       .maybeSingle();
@@ -32,6 +33,8 @@ export async function saveEventWebsiteAction(input: unknown) {
     if (!profile.client_id || !event || event.client_id !== profile.client_id) {
       throw new PermissionError("The requested event does not belong to the current tenant.");
     }
+
+    assertDashboardBuilderEventTypeEnabled(event.event_type);
 
     const normalizedContent = normalizeEventWebsiteContentForSave(payload.content);
     const contentToSave = {

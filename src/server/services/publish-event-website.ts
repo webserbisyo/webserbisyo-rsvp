@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PostgrestError } from "@supabase/supabase-js";
 import { ZodError } from "zod";
+import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
 import { mergeEventWebsiteContent, normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesUpdate } from "@/lib/supabase/types";
@@ -24,6 +25,7 @@ type EventWebsiteRecord = {
   event_date: string | null;
   event_slug: string;
   event_time: string | null;
+  event_type: string | null;
   fallback_page_enabled: boolean;
   id: string;
   published_at: string | null;
@@ -266,6 +268,7 @@ export async function publishEventWebsite(
 ): Promise<PublishEventWebsiteResult> {
   const supabase = createAdminClient();
   const eventRecord = await getOwnedEventRecord(supabase, input.eventId, input.clientId, true);
+  assertDashboardBuilderEventTypeEnabled(eventRecord.event_type);
 
   assertWebsiteAccessDraftSchema(eventRecord);
 
@@ -494,6 +497,7 @@ async function getOwnedEventRecord(
         id,
         client_id,
         event_slug,
+        event_type,
         draft_event_slug,
         draft_subdomain_slug,
         subdomain_slug,
@@ -518,6 +522,7 @@ async function getOwnedEventRecord(
         id,
         client_id,
         event_slug,
+        event_type,
         draft_event_slug,
         draft_subdomain_slug,
         subdomain_slug,
@@ -636,6 +641,7 @@ async function getDraftSchemaFallbackRecord(
         id,
         client_id,
         event_slug,
+        event_type,
         visibility,
         status,
         published_at,

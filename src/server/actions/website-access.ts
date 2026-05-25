@@ -6,6 +6,7 @@ import {
   mapAppVisibilityToDb,
   mapDbVisibilityToApp,
 } from "@/components/dashboard/website-access/website-access-utils";
+import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
 import { sanitizePublicRsvpSlug, validatePublicRsvpSlug } from "@/lib/public-rsvp-slugs";
 import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -135,6 +136,7 @@ export async function publishEventWebsiteAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(PublishEventWebsiteActionSchema, input);
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    assertDashboardBuilderEventTypeEnabled(event.event_type);
     const result = await publishEventWebsite({
       actorUserId: profile.id,
       clientId: profile.client_id ?? "",
@@ -202,7 +204,7 @@ async function requireOwnedEvent(eventId: string, clientId: string) {
   const supabase = await createServerSupabaseClient();
   const { data: event, error } = await supabase
     .from("rsvp_events")
-    .select("id, client_id, event_slug")
+    .select("id, client_id, event_slug, event_type")
     .eq("id", eventId)
     .eq("client_id", clientId)
     .maybeSingle();
