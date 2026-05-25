@@ -355,7 +355,7 @@ function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <p className="event-preview-copy">Here is the flow of the day so guests know what to expect.</p>
       <div className="event-preview-timeline-list">
         {items.map((item, index) => (
-          <div key={`${item.title}-${index}`} className="event-preview-timeline-item">
+          <div key={item.id || `timeline-${index + 1}`} className="event-preview-timeline-item">
             <div className="event-preview-timeline-rail" aria-hidden="true" />
             <div className="event-preview-timeline-card">
               {item.time ? <span className="event-preview-timeline-time">{item.time}</span> : null}
@@ -382,9 +382,9 @@ function EntourageSection({ draft }: { draft: EventWebsiteRenderModel }) {
       {intro ? <p className="event-preview-copy">{intro}</p> : null}
       <div className="event-preview-party-grid">
         {groups.map((group, index) => (
-          <div key={`${group.groupTitle}-${index}`} className="event-preview-party-card">
+          <div key={group.id || `entourage-${index + 1}`} className="event-preview-party-card">
             <strong>{group.groupTitle}</strong>
-            <p>{group.names}</p>
+            {group.names ? <p>{group.names}</p> : null}
           </div>
         ))}
       </div>
@@ -467,9 +467,9 @@ function ExtraInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
       {intro ? <p className="event-preview-copy">{intro}</p> : null}
       <div className="event-preview-note-grid">
         {items.map((item, index) => (
-          <div key={`${item.title}-${index}`} className="event-preview-note-card">
+          <div key={item.id || `extra-info-${index + 1}`} className="event-preview-note-card">
             <strong>{item.title}</strong>
-            <p>{item.details}</p>
+            {item.details ? <p>{item.details}</p> : null}
           </div>
         ))}
       </div>
@@ -614,7 +614,7 @@ function GiftDetailsSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <p className="event-preview-copy">{note}</p>
       <div className="event-preview-gift-grid">
         {options.map((option, index) => (
-          <div key={`${option.title}-${index}`} className="event-preview-gift-card">
+          <div key={option.id || `gift-option-${index + 1}`} className="event-preview-gift-card">
             <GiftPreviewMedia file={option.file} title={option.title} />
             <strong>{option.title}</strong>
           </div>
@@ -767,9 +767,13 @@ function InternalDivider() {
 }
 
 function normalizeTimelineItems(items: EventWebsiteRenderModel["timelineProgram"]["items"]) {
+  const hasDraftContent = items.some(
+    (item) => item.time.trim() || item.title.trim() || item.description.trim(),
+  );
   const cleaned = items
     .map((item) => ({
       description: item.description.trim(),
+      id: item.id,
       time: item.time.trim() ? formatPreviewTime(item.time, item.time.trim()) : "",
       title: item.title.trim(),
     }))
@@ -781,22 +785,27 @@ function normalizeTimelineItems(items: EventWebsiteRenderModel["timelineProgram"
 
   return cleaned.length > 0
     ? cleaned
-    : previewDefaultDraft.timelineProgram.items.map((item) => ({
+    : hasDraftContent
+      ? cleaned
+      : previewDefaultDraft.timelineProgram.items.map((item) => ({
         description: item.description,
+        id: item.id,
         time: formatPreviewTime(item.time, item.time),
         title: item.title,
       }));
 }
 
 function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["groups"]) {
+  const hasDraftContent = groups.some((group) => group.groupTitle.trim() || group.names.trim());
   const cleaned = groups
     .map((group) => ({
       groupTitle: group.groupTitle.trim() || (group.names.trim() ? "Wedding Party" : ""),
+      id: group.id,
       names: group.names.trim(),
     }))
-    .filter((group) => group.names);
+    .filter((group) => group.groupTitle || group.names);
 
-  return cleaned.length > 0 ? cleaned : previewDefaultDraft.entourage.groups;
+  return cleaned.length > 0 ? cleaned : hasDraftContent ? cleaned : previewDefaultDraft.entourage.groups;
 }
 
 function normalizeLineList(value: string): string[] {
@@ -809,14 +818,21 @@ function normalizeLineList(value: string): string[] {
 }
 
 function normalizeExtraInfoItems(items: EventWebsiteRenderModel["extraInfo"]["items"]) {
+  const hasDraftContent = items.some((item) => item.title.trim() || item.details.trim());
   const cleaned = items
     .map((item) => ({
       details: item.details.trim(),
-      title: item.title.trim() || (item.details.trim() ? "Note" : ""),
+      id: item.id,
+      title: item.title.trim() || (item.details.trim() ? "Note" : item.title.trim()),
     }))
-    .filter((item) => item.details);
+    .filter((item) => item.title || item.details)
+    .map((item) => ({
+      details: item.details.trim(),
+      id: item.id,
+      title: item.title.trim() || (item.details.trim() ? "Note" : ""),
+    }));
 
-  return cleaned.length > 0 ? cleaned : previewDefaultDraft.extraInfo.items;
+  return cleaned.length > 0 ? cleaned : hasDraftContent ? cleaned : previewDefaultDraft.extraInfo.items;
 }
 
 function normalizeGiftOptions(options: EventWebsiteRenderModel["giftDetails"]["options"]) {

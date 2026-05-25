@@ -8,6 +8,7 @@ import type {
   EventWebsitePreviewDraft,
   EventWebsiteTimelineItemDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
+import { createEventWebsiteDraftItemId } from "@/components/dashboard/event/event-website-preview-data";
 import {
   EditorGroup,
   EditorSaveButton,
@@ -176,7 +177,7 @@ export function OptionalTimelinePanel({
   }
 
   function addItem() {
-    updateItems([...items, { description: "", time: "", title: "" }]);
+    updateItems([...items, { description: "", id: createEventWebsiteDraftItemId("timeline-item"), time: "", title: "" }]);
   }
 
   function removeItem(index: number) {
@@ -192,7 +193,7 @@ export function OptionalTimelinePanel({
         <ListBuilder addLabel="Add program item" onAdd={addItem}>
           {items.map((item, index) => (
             <ListBuilderRow
-              key={`${index}-${item.title}`}
+              key={item.id}
               canMoveDown={index < items.length - 1}
               canMoveUp={index > 0}
               hideGripIcon
@@ -277,7 +278,7 @@ export function OptionalEntouragePanel({
   }
 
   function addGroup() {
-    updateGroups([...groups, { groupTitle: "", names: "" }]);
+    updateGroups([...groups, { groupTitle: "", id: createEventWebsiteDraftItemId("entourage-group"), names: "" }]);
   }
 
   function removeGroup(index: number) {
@@ -306,7 +307,7 @@ export function OptionalEntouragePanel({
         <ListBuilder addLabel="Add entourage group" onAdd={addGroup}>
           {groups.map((group, index) => (
             <ListBuilderRow
-              key={`${index}-${group.groupTitle}`}
+              key={group.id}
               canMoveDown={index < groups.length - 1}
               canMoveUp={index > 0}
               hideGripIcon
@@ -517,7 +518,11 @@ export function OptionalGiftDetailsPanel({
   saveButtonProps,
 }: SharedOptionalPanelProps) {
   const values = previewDraft.giftDetails;
-  const giftOptionOne = values.options[0] ?? { file: null, title: "" };
+  const giftOptionOne = values.options[0] ?? {
+    file: null,
+    id: createEventWebsiteDraftItemId("gift-option"),
+    title: "",
+  };
   const giftOptionTwo = values.options[1] ?? null;
 
   function updateValues(nextValues: EventWebsitePreviewDraft["giftDetails"]) {
@@ -629,7 +634,7 @@ export function OptionalGiftDetailsPanel({
               onClick={() =>
                 updateValues({
                   ...values,
-                  options: [...values.options, { file: null, title: "" }],
+                  options: [...values.options, { file: null, id: createEventWebsiteDraftItemId("gift-option"), title: "" }],
                 })
               }
             >
@@ -825,7 +830,7 @@ export function OptionalExtraInfoPanel({
   }
 
   function addItem() {
-    updateItems([...items, { details: "", title: "" }]);
+    updateItems([...items, { details: "", id: createEventWebsiteDraftItemId("extra-info"), title: "" }]);
   }
 
   function removeItem(index: number) {
@@ -864,7 +869,7 @@ export function OptionalExtraInfoPanel({
         <ListBuilder addLabel="Add info item" onAdd={addItem}>
           {items.map((item, index) => (
             <ListBuilderRow
-              key={`${index}-${item.title}`}
+              key={item.id}
               canMoveDown={index < items.length - 1}
               canMoveUp={index > 0}
               hideGripIcon

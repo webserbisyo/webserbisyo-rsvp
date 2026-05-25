@@ -52,6 +52,16 @@ export const previewSupportedSectionKeys =
   eventWebsiteRenderModelSectionKeys as readonly EventWebsiteSectionKey[];
 
 const defaultWeddingFlow: EventWebsiteSectionKey[] = [...eventWebsiteContentSectionKeys];
+let eventWebsiteDraftIdCounter = 0;
+
+export function createEventWebsiteDraftItemId(prefix: string) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  eventWebsiteDraftIdCounter += 1;
+  return `${prefix}-${eventWebsiteDraftIdCounter}`;
+}
 
 export const previewDefaultDraft: EventWebsitePreviewDraft = {
   attireDressCode: {
@@ -89,17 +99,17 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
   },
   entourage: {
     groups: [
-      { groupTitle: "Maid of Honor", names: "Maria Santos" },
-      { groupTitle: "Best Man", names: "Juan Dela Cruz" },
-      { groupTitle: "Bridesmaids", names: "Ana Cruz, Bella Reyes, Carla Lim" },
-      { groupTitle: "Groomsmen", names: "Marco Reyes, Paolo Santos, Luis Garcia" },
+      { groupTitle: "Maid of Honor", id: "entourage-maid-of-honor", names: "Maria Santos" },
+      { groupTitle: "Best Man", id: "entourage-best-man", names: "Juan Dela Cruz" },
+      { groupTitle: "Bridesmaids", id: "entourage-bridesmaids", names: "Ana Cruz, Bella Reyes, Carla Lim" },
+      { groupTitle: "Groomsmen", id: "entourage-groomsmen", names: "Marco Reyes, Paolo Santos, Luis Garcia" },
     ],
     introLine: "Meet the family and friends standing with us on our wedding day.",
   },
   extraInfo: {
     items: [
-      { details: "Parking is available near the venue entrance.", title: "Parking" },
-      { details: "Please arrive at least 30 minutes before the ceremony.", title: "Reminder" },
+      { details: "Parking is available near the venue entrance.", id: "extra-info-parking", title: "Parking" },
+      { details: "Please arrive at least 30 minutes before the ceremony.", id: "extra-info-reminder", title: "Reminder" },
     ],
     sectionIntro: "Here are a few helpful notes for our guests.",
     sectionTitle: "Additional Details",
@@ -108,8 +118,8 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
     giftNote:
       "If you wish to give a gift, a monetary gift would be greatly appreciated as we begin this new chapter together.",
     options: [
-      { file: null, title: "GCash" },
-      { file: null, title: "Bank Transfer" },
+      { file: null, id: "gift-option-1", title: "GCash" },
+      { file: null, id: "gift-option-2", title: "Bank Transfer" },
     ],
     sectionIntro: "Your presence is the greatest gift.",
   },
@@ -157,21 +167,25 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
     items: [
       {
         description: "Guests may proceed to the entrance area.",
+        id: "timeline-guest-arrival",
         time: "15:00",
         title: "Guest Arrival",
       },
       {
         description: "The wedding ceremony begins.",
+        id: "timeline-ceremony",
         time: "16:00",
         title: "Ceremony",
       },
       {
         description: "Dinner and program will follow.",
+        id: "timeline-reception",
         time: "18:00",
         title: "Reception",
       },
       {
         description: "Celebrate with food, speeches, and special moments.",
+        id: "timeline-dinner-program",
         time: "20:00",
         title: "Dinner & Program",
       },
@@ -320,7 +334,10 @@ export function buildEventWebsiteContentFromPreviewDraft({
       extra_info: {
         items: previewDraft.extraInfo.items.map((item, index) => ({
           details: item.details,
-          id: savedContent.sections.extra_info.items[index]?.id ?? `extra-info-${index + 1}`,
+          id:
+            item.id ||
+            savedContent.sections.extra_info.items[index]?.id ||
+            createEventWebsiteDraftItemId("extra-info"),
           title: item.title,
         })),
         sectionIntro: previewDraft.extraInfo.sectionIntro,
@@ -329,8 +346,14 @@ export function buildEventWebsiteContentFromPreviewDraft({
       gift_details: {
         giftNote: previewDraft.giftDetails.giftNote,
         options: previewDraft.giftDetails.options.map((option, index) => ({
-          id: savedContent.sections.gift_details.options[index]?.id ?? `gift-option-${index + 1}`,
-          image: savedContent.sections.gift_details.options[index]?.image ?? null,
+          id:
+            option.id ||
+            savedContent.sections.gift_details.options[index]?.id ||
+            createEventWebsiteDraftItemId("gift-option"),
+          image:
+            savedContent.sections.gift_details.options.find((savedOption) => savedOption.id === option.id)?.image ??
+            savedContent.sections.gift_details.options[index]?.image ??
+            null,
           title: option.title,
         })),
         sectionIntro: previewDraft.giftDetails.sectionIntro,
@@ -373,7 +396,10 @@ export function buildEventWebsiteContentFromPreviewDraft({
         companionNameEnabled: previewDraft.rsvpForm.companionNameEnabled,
         customQuestions: previewDraft.rsvpForm.customQuestions.map((question, index) => ({
           fieldType: question.fieldType as EventWebsiteCustomQuestionFieldType,
-          id: savedContent.sections.rsvp_form.customQuestions[index]?.id ?? `custom-question-${index + 1}`,
+          id:
+            question.id ||
+            savedContent.sections.rsvp_form.customQuestions[index]?.id ||
+            createEventWebsiteDraftItemId("custom-question"),
           label: question.label,
           options: [...question.options],
           required: question.required,
@@ -399,7 +425,7 @@ export function buildEventWebsiteContentFromPreviewDraft({
       timeline_program: {
         items: previewDraft.timelineProgram.items.map((item, index) => ({
           description: item.description,
-          id: savedContent.sections.timeline_program.items[index]?.id ?? `timeline-item-${index + 1}`,
+          id: item.id || savedContent.sections.timeline_program.items[index]?.id || createEventWebsiteDraftItemId("timeline-item"),
           time: item.time,
           title: item.title,
         })),
@@ -407,7 +433,7 @@ export function buildEventWebsiteContentFromPreviewDraft({
       entourage: {
         groups: previewDraft.entourage.groups.map((group, index) => ({
           groupTitle: group.groupTitle,
-          id: savedContent.sections.entourage.groups[index]?.id ?? `entourage-group-${index + 1}`,
+          id: group.id || savedContent.sections.entourage.groups[index]?.id || createEventWebsiteDraftItemId("entourage-group"),
           names: group.names,
         })),
         introLine: previewDraft.entourage.introLine,

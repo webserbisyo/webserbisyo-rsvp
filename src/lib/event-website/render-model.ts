@@ -10,6 +10,7 @@ import {
 
 export type EventWebsiteCustomQuestionRenderModel = {
   fieldType: EventWebsiteCustomQuestionFieldType;
+  id: string;
   label: string;
   options: string[];
   required: boolean;
@@ -17,22 +18,26 @@ export type EventWebsiteCustomQuestionRenderModel = {
 
 export type EventWebsiteTimelineItemRenderModel = {
   description: string;
+  id: string;
   time: string;
   title: string;
 };
 
 export type EventWebsiteEntourageGroupRenderModel = {
   groupTitle: string;
+  id: string;
   names: string;
 };
 
 export type EventWebsiteExtraInfoItemRenderModel = {
   details: string;
+  id: string;
   title: string;
 };
 
 export type EventWebsiteGiftOptionRenderModel = {
   file: File | null;
+  id: string;
   title: string;
 };
 
@@ -171,6 +176,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
     entourage: {
       groups: content.sections.entourage.groups.map((group) => ({
         groupTitle: group.groupTitle,
+        id: group.id,
         names: group.names,
       })),
       introLine: content.sections.entourage.introLine,
@@ -178,6 +184,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
     extraInfo: {
       items: content.sections.extra_info.items.map((item) => ({
         details: item.details,
+        id: item.id,
         title: item.title,
       })),
       sectionIntro: content.sections.extra_info.sectionIntro,
@@ -187,6 +194,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
       giftNote: content.sections.gift_details.giftNote,
       options: content.sections.gift_details.options.map((option) => ({
         file: null,
+        id: option.id,
         title: option.title,
       })),
       sectionIntro: content.sections.gift_details.sectionIntro,
@@ -225,6 +233,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
       companionNameEnabled: content.sections.rsvp_form.companionNameEnabled,
       customQuestions: content.sections.rsvp_form.customQuestions.map((question) => ({
         fieldType: question.fieldType,
+        id: question.id,
         label: question.label,
         options: [...question.options],
         required: question.required,
@@ -236,6 +245,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
     timelineProgram: {
       items: content.sections.timeline_program.items.map((item) => ({
         description: item.description,
+        id: item.id,
         time: item.time,
         title: item.title,
       })),

@@ -21,7 +21,6 @@ import {
   buildInitialEnabledSections,
   buildInitialPreviewDraft,
   buildInitialWebsiteFlow,
-  buildPreviewDraftFromContent,
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsitePreviewPanel } from "@/components/dashboard/event/event-website-preview-panel";
@@ -152,6 +151,7 @@ function EnabledEventWebsiteWorkspace({
     [eventWebsiteData.eventType],
   );
   const [savedContent, setSavedContent] = useState(eventWebsiteData.eventWebsiteContent);
+  const [draftRevision, setDraftRevision] = useState(0);
   const [draftSaveState, setDraftSaveState] = useState<DraftSaveState>("idle");
   const [draftSaveErrorMessage, setDraftSaveErrorMessage] = useState<string | null>(null);
   const initialSectionKey = useMemo(
@@ -230,12 +230,27 @@ function EnabledEventWebsiteWorkspace({
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queuedAutosaveRef = useRef(false);
   const saveInFlightRef = useRef(false);
+  const activeSaveRevisionRef = useRef<number | null>(null);
+  const lastSavedRevisionRef = useRef(0);
+  const draftRevisionRef = useRef(0);
   const latestContentRef = useRef(currentContent);
   const nextAutosaveDelayRef = useRef(DEFAULT_AUTOSAVE_DELAY_MS);
+  const savedContentRef = useRef(savedContent);
 
   useEffect(() => {
     latestContentRef.current = currentContent;
   }, [currentContent]);
+
+  useEffect(() => {
+    savedContentRef.current = savedContent;
+  }, [savedContent]);
+
+  const markDraftChanged = useCallback(() => {
+    const nextRevision = draftRevisionRef.current + 1;
+    draftRevisionRef.current = nextRevision;
+    setDraftRevision(nextRevision);
+    return nextRevision;
+  }, []);
 
   function clearAutosaveTimer() {
     if (autosaveTimerRef.current) {
@@ -248,6 +263,7 @@ function EnabledEventWebsiteWorkspace({
 
   function resetWebsiteFlowOrder() {
     nextAutosaveDelayRef.current = FAST_AUTOSAVE_DELAY_MS;
+    markDraftChanged();
     setWebsiteFlowSections(defaultWebsiteFlowSections);
   }
 
@@ -259,16 +275,19 @@ function EnabledEventWebsiteWorkspace({
     }
 
     nextAutosaveDelayRef.current = FAST_AUTOSAVE_DELAY_MS;
+    markDraftChanged();
     setEnabledSections((current) => ({ ...current, [key]: enabled }));
   }
 
   function updatePreviewDraft(nextDraft: EventWebsitePreviewDraft) {
     nextAutosaveDelayRef.current = DEFAULT_AUTOSAVE_DELAY_MS;
+    markDraftChanged();
     setPreviewDraft(nextDraft);
   }
 
   function updateWebsiteFlowSections(nextSections: typeof websiteFlowSections) {
     nextAutosaveDelayRef.current = FAST_AUTOSAVE_DELAY_MS;
+    markDraftChanged();
     setWebsiteFlowSections(nextSections);
   }
 
@@ -298,7 +317,8 @@ function EnabledEventWebsiteWorkspace({
     }
 
     if (saveInFlightRef.current) {
-      queuedAutosaveRef.current = true;
+      queuedAutosaveRef.current =
+        draftRevisionRef.current > (activeSaveRevisionRef.current ?? draftRevisionRef.current);
       return;
     }
 
@@ -312,6 +332,8 @@ function EnabledEventWebsiteWorkspace({
     try {
       while (true) {
         queuedAutosaveRef.current = false;
+        const submittedRevision = draftRevisionRef.current;
+        activeSaveRevisionRef.current = submittedRevision;
 
         const result = await saveEventWebsiteAction({
           content: latestContentRef.current,
@@ -332,12 +354,20 @@ function EnabledEventWebsiteWorkspace({
           return;
         }
 
-        setSavedContent(result.data.content);
-        setDraftSaveState("saved");
+        if (submittedRevision > lastSavedRevisionRef.current) {
+          lastSavedRevisionRef.current = submittedRevision;
+          setSavedContent(result.data.content);
+        }
+
+        const hasNewerLocalEdits = draftRevisionRef.current > submittedRevision;
+        if (hasNewerLocalEdits) {
+          queuedAutosaveRef.current = true;
+        }
+
+        setDraftSaveState(hasNewerLocalEdits ? "saving" : "saved");
         setDraftSaveErrorMessage(null);
 
         if (currentTrigger === "manual") {
-          setPreviewDraft(buildPreviewDraftFromContent(result.data.content));
           toast.success("Event Website draft saved.");
         }
 
@@ -350,6 +380,7 @@ function EnabledEventWebsiteWorkspace({
       }
     } finally {
       saveInFlightRef.current = false;
+      activeSaveRevisionRef.current = null;
       markEventWebsiteDraftSavePending(eventWebsiteData.eventId, false);
     }
   }, [eventWebsiteData.eventId]);
@@ -366,18 +397,19 @@ function EnabledEventWebsiteWorkspace({
       return;
     }
 
-    if (!isDirty) {
+    if (areContentsEqual(latestContentRef.current, savedContentRef.current)) {
       clearAutosaveTimer();
       queuedAutosaveRef.current = false;
 
-      if (!saveInFlightRef.current && draftSaveState !== "error") {
-        setDraftSaveState("saved");
+      if (!saveInFlightRef.current) {
+        setDraftSaveState((current) => (current === "error" ? current : "saved"));
       }
       return;
     }
 
     if (saveInFlightRef.current) {
-      queuedAutosaveRef.current = true;
+      queuedAutosaveRef.current =
+        draftRevisionRef.current > (activeSaveRevisionRef.current ?? draftRevisionRef.current);
       return;
     }
 
@@ -389,7 +421,7 @@ function EnabledEventWebsiteWorkspace({
     }, delay);
 
     return clearAutosaveTimer;
-  }, [autoSaveEnabled, currentContent, draftSaveState, eventWebsiteData.eventId, isDirty, persistDraft]);
+  }, [autoSaveEnabled, draftRevision, eventWebsiteData.eventId, persistDraft]);
 
   const statusPill = useMemo<EventWebsiteStatusPill>(() => {
     if (draftSaveState === "saving") {
