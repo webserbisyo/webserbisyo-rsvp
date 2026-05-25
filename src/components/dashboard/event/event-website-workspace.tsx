@@ -30,7 +30,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -39,7 +38,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -56,14 +54,13 @@ import {
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
 import {
-  type EventWebsiteOperationalStatus,
   getEventWebsiteSavedAt,
   getEventWebsiteWorkspaceStatus,
   summarizeEventWebsiteSections,
 } from "@/lib/event-website/readiness";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
-import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
+import { ArrowUpRight, Eye, Layers3, LockKeyhole } from "lucide-react";
 
 const DEFAULT_AUTOSAVE_DELAY_MS = 900;
 const FAST_AUTOSAVE_DELAY_MS = 300;
@@ -556,7 +553,6 @@ function EnabledEventWebsiteWorkspace({
       </Tabs>
 
       <ResponsiveSectionEditorSurface
-        autoSaveEnabled={autoSaveEnabled}
         eventData={eventWebsiteData}
         isOpen={responsiveEditorIsOpen}
         isTabletLayout={isTabletLayout}
@@ -567,14 +563,12 @@ function EnabledEventWebsiteWorkspace({
         saveButtonProps={saveButtonProps}
         selectedSection={selectedSectionDefinition}
         selectedSectionId={selectedSection}
-        workflowStatus={workflowStatus}
       />
     </div>
   );
 }
 
 function ResponsiveSectionEditorSurface({
-  autoSaveEnabled,
   eventData,
   isOpen,
   isTabletLayout,
@@ -585,9 +579,7 @@ function ResponsiveSectionEditorSurface({
   saveButtonProps,
   selectedSection,
   selectedSectionId,
-  workflowStatus,
 }: {
-  autoSaveEnabled: boolean;
   eventData: DashboardEventWebsiteData;
   isOpen: boolean;
   isTabletLayout: boolean;
@@ -603,53 +595,15 @@ function ResponsiveSectionEditorSurface({
   };
   selectedSection: EventWebsiteSectionDefinition | undefined;
   selectedSectionId: EventWebsiteSectionKey;
-  workflowStatus: EventWebsiteOperationalStatus;
 }) {
-  const Icon = selectedSection?.icon;
-  const description =
-    selectedSection?.helper ??
-    (workflowStatus.state === "draft_newer_than_published"
-      ? "Draft changes are ready to review before publishing."
-      : autoSaveEnabled
-        ? "Changes save automatically while you edit this section."
-        : "Use Save changes at the bottom when you're ready.");
-
   const content = (
     <>
       <div className="event-website-mobile-editor-shell">
-        {!isTabletLayout ? (
-          <div className="event-website-mobile-editor-shell__handle" aria-hidden="true" />
-        ) : null}
-        <div className="event-website-mobile-editor-shell__header-row">
-          <div className="event-website-mobile-editor-shell__title-row">
-            {Icon ? (
-              <span className="event-website-mobile-editor-shell__icon" aria-hidden="true">
-                <Icon className="size-4" />
-              </span>
-            ) : null}
-            <div className="min-w-0">
-              <h2 className="event-website-mobile-editor-shell__title">
-                {selectedSection?.label ?? "Edit section"}
-              </h2>
-            </div>
-          </div>
-          {isTabletLayout ? (
-            <SheetClose asChild>
-              <Button type="button" variant="ghost" size="icon-sm" className="event-website-mobile-editor-shell__close">
-                <X className="size-4" aria-hidden="true" />
-                <span className="sr-only">Close editor</span>
-              </Button>
-            </SheetClose>
-          ) : (
-            <DrawerClose asChild>
-              <Button type="button" variant="ghost" size="icon-sm" className="event-website-mobile-editor-shell__close">
-                <X className="size-4" aria-hidden="true" />
-                <span className="sr-only">Close editor</span>
-              </Button>
-            </DrawerClose>
-          )}
+        <div className="event-website-mobile-editor-shell__title-row">
+          <h2 className="event-website-mobile-editor-shell__title">
+            {selectedSection?.label ?? "Edit section"}
+          </h2>
         </div>
-        <p className="event-website-mobile-editor-shell__description">{description}</p>
       </div>
       <ScrollArea className="event-website-mobile-editor-scroll">
         <div className="event-website-mobile-editor-body">
@@ -678,7 +632,7 @@ function ResponsiveSectionEditorSurface({
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{selectedSection?.label ?? "Edit section"}</SheetTitle>
-            <SheetDescription>{description}</SheetDescription>
+            <SheetDescription>Edit the selected Event Website section.</SheetDescription>
           </SheetHeader>
           {content}
         </SheetContent>
@@ -691,7 +645,7 @@ function ResponsiveSectionEditorSurface({
       <DrawerContent data-dashboard className="event-website-mobile-editor-drawer">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{selectedSection?.label ?? "Edit section"}</DrawerTitle>
-          <DrawerDescription>{description}</DrawerDescription>
+          <DrawerDescription>Edit the selected Event Website section.</DrawerDescription>
         </DrawerHeader>
         {content}
       </DrawerContent>
