@@ -124,9 +124,11 @@ const eventTypeAvailabilityMap: Record<EventType, EventTypeAvailability> = {
   },
 };
 
-const unsupportedBuilderMessage = "This event website type is still in development.";
-const unsupportedApplicationMessage =
+export const unsupportedBuilderMessage = "This event website type is still in development.";
+export const unsupportedApplicationMessage =
   "This event type is coming soon. Wedding applications are available right now.";
+export const unsupportedPublicRenderingMessage =
+  "This event website is not available for this event type yet.";
 
 export function isKnownEventType(value: string | null | undefined): value is EventType {
   return EVENT_TYPE_VALUES.includes(value as EventType);

@@ -5,6 +5,12 @@ import {
   type EventWebsiteRenderModel,
 } from "@/lib/event-website/render-model";
 import {
+  formatEventWebsiteDate,
+  formatEventWebsiteDateTime,
+  formatEventWebsiteDateTimeLocalInput,
+  formatEventWebsiteTime,
+} from "@/lib/event-website/formatting";
+import {
   eventWebsiteContentSectionKeys,
   type EventWebsiteContent,
   type EventWebsiteContentSectionKey,
@@ -443,55 +449,15 @@ function pickSavedSectionEnabledState(
 }
 
 export function formatPreviewDate(value: string, fallback: string) {
-  if (!value) {
-    return fallback;
-  }
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    return fallback;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "full",
-  }).format(date);
+  return formatEventWebsiteDate(value, fallback);
 }
 
 export function formatPreviewTime(value: string, fallback: string) {
-  if (!value) {
-    return fallback;
-  }
-
-  const [hours, minutes] = value.split(":");
-  const date = new Date();
-  date.setHours(Number(hours), Number(minutes), 0, 0);
-
-  if (Number.isNaN(date.getTime())) {
-    return fallback;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  return formatEventWebsiteTime(value, fallback);
 }
 
 export function formatPreviewDateTime(value: string, fallback: string) {
-  if (!value) {
-    return fallback;
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return fallback;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "long",
-    timeStyle: "short",
-  }).format(date);
+  return formatEventWebsiteDateTime(value, fallback);
 }
 
 function formatInputTime(value: string | null) {
@@ -503,16 +469,5 @@ function formatInputTime(value: string | null) {
 }
 
 function formatDateTimeLocal(value: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return offsetDate.toISOString().slice(0, 16);
+  return formatEventWebsiteDateTimeLocalInput(value);
 }

@@ -2,7 +2,10 @@ import "server-only";
 
 import type { PostgrestError } from "@supabase/supabase-js";
 import { ZodError } from "zod";
-import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
+import {
+  isDashboardBuilderEventTypeEnabled,
+  unsupportedBuilderMessage,
+} from "@/config/event-type-availability";
 import { mergeEventWebsiteContent, normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesUpdate } from "@/lib/supabase/types";
@@ -268,7 +271,9 @@ export async function publishEventWebsite(
 ): Promise<PublishEventWebsiteResult> {
   const supabase = createAdminClient();
   const eventRecord = await getOwnedEventRecord(supabase, input.eventId, input.clientId, true);
-  assertDashboardBuilderEventTypeEnabled(eventRecord.event_type);
+  if (!isDashboardBuilderEventTypeEnabled(eventRecord.event_type)) {
+    throw new ServiceError(unsupportedBuilderMessage);
+  }
 
   assertWebsiteAccessDraftSchema(eventRecord);
 
@@ -342,6 +347,18 @@ export async function publishEventWebsite(
         }
       : eventRow;
 
+  const { data: contentUpdate, error: contentError } = await supabase
+    .from("event_content")
+    .update(contentRow)
+    .eq("event_id", input.eventId)
+    .select("id")
+    .single();
+
+  if (contentError) {
+    throw new ServiceError("Failed to update the published Event Website snapshot.", contentError);
+  }
+
+  assertServiceData(contentUpdate, "Published Event Website snapshot update returned no row.");
   const eventUpdateQuery = supabase
     .from("rsvp_events")
     .update(draftLiveEventRow)
@@ -366,19 +383,6 @@ export async function publishEventWebsite(
     subdomain_slug?: string | null;
     visibility: string;
   };
-
-  const { data: contentUpdate, error: contentError } = await supabase
-    .from("event_content")
-    .update(contentRow)
-    .eq("event_id", input.eventId)
-    .select("id")
-    .single();
-
-  if (contentError) {
-    throw new ServiceError("Failed to update the published Event Website snapshot.", contentError);
-  }
-
-  assertServiceData(contentUpdate, "Published Event Website snapshot update returned no row.");
   const publishedSubdomainValue =
     eventRecord.websiteAccessSchemaMode === "draft_live"
       ? (typeof normalizedPublishedEvent.subdomain_slug === "string"

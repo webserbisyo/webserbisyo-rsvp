@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import {
@@ -19,6 +20,7 @@ type PublishedEventRow = Pick<
   | "rsvp_close_at"
   | "rsvp_open_at"
   | "status"
+  | "event_type"
   | "visibility"
 >;
 
@@ -35,6 +37,10 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
   const content = parseEventWebsiteContentJson(eventContent.published_content_json);
 
   if (!content) {
+    throw new ServiceError("RSVP form is not available for this event.");
+  }
+
+  if (!isPublicRenderingEventTypeEnabled(event.event_type)) {
     throw new ServiceError("RSVP form is not available for this event.");
   }
 
@@ -104,7 +110,7 @@ async function getPublishedEvent(eventSlug: string): Promise<PublishedEventRow> 
   const { data: event, error } = await supabase
     .from("rsvp_events")
     .select(
-      "id, client_id, event_slug, fallback_page_enabled, status, visibility, published_at, rsvp_open_at, rsvp_close_at",
+      "id, client_id, event_slug, event_type, fallback_page_enabled, status, visibility, published_at, rsvp_open_at, rsvp_close_at",
     )
     .eq("event_slug", eventSlug)
     .eq("status", "published")

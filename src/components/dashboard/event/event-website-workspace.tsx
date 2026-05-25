@@ -38,6 +38,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -58,9 +59,10 @@ import {
   getEventWebsiteWorkspaceStatus,
   summarizeEventWebsiteSections,
 } from "@/lib/event-website/readiness";
+import { markEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
-import { ArrowUpRight, Eye, Layers3, LockKeyhole } from "lucide-react";
+import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
 
 const DEFAULT_AUTOSAVE_DELAY_MS = 900;
 const FAST_AUTOSAVE_DELAY_MS = 300;
@@ -303,39 +305,52 @@ function EnabledEventWebsiteWorkspace({
     saveInFlightRef.current = true;
     setDraftSaveState("saving");
     setDraftSaveErrorMessage(null);
+    markEventWebsiteDraftSavePending(eventWebsiteData.eventId, true);
 
-    const result = await saveEventWebsiteAction({
-      content: latestContentRef.current,
-      eventId: eventWebsiteData.eventId,
-    });
+    let currentTrigger = trigger;
 
-    saveInFlightRef.current = false;
+    try {
+      while (true) {
+        queuedAutosaveRef.current = false;
 
-    if (!result.ok) {
-      const message =
-        result.error === "The request could not be completed."
-          ? "Event Website draft could not be saved."
-          : result.error;
-      setDraftSaveState("error");
-      setDraftSaveErrorMessage(message);
+        const result = await saveEventWebsiteAction({
+          content: latestContentRef.current,
+          eventId: eventWebsiteData.eventId,
+        });
 
-      if (trigger === "manual") {
-        toast.error(message);
+        if (!result.ok) {
+          const message =
+            result.error === "The request could not be completed."
+              ? "Event Website draft could not be saved."
+              : result.error;
+          setDraftSaveState("error");
+          setDraftSaveErrorMessage(message);
+
+          if (currentTrigger === "manual") {
+            toast.error(message);
+          }
+          return;
+        }
+
+        setSavedContent(result.data.content);
+        setDraftSaveState("saved");
+        setDraftSaveErrorMessage(null);
+
+        if (currentTrigger === "manual") {
+          setPreviewDraft(buildPreviewDraftFromContent(result.data.content));
+          toast.success("Event Website draft saved.");
+        }
+
+        if (!queuedAutosaveRef.current) {
+          return;
+        }
+
+        currentTrigger = "auto";
+        setDraftSaveState("saving");
       }
-      return;
-    }
-
-    setSavedContent(result.data.content);
-    setDraftSaveState("saved");
-    setDraftSaveErrorMessage(null);
-
-    if (trigger === "manual") {
-      setPreviewDraft(buildPreviewDraftFromContent(result.data.content));
-      toast.success("Event Website draft saved.");
-    }
-
-    if (queuedAutosaveRef.current) {
-      queuedAutosaveRef.current = false;
+    } finally {
+      saveInFlightRef.current = false;
+      markEventWebsiteDraftSavePending(eventWebsiteData.eventId, false);
     }
   }, [eventWebsiteData.eventId]);
 
@@ -599,6 +614,19 @@ function ResponsiveSectionEditorSurface({
   const content = (
     <>
       <div className="event-website-mobile-editor-shell">
+        {isTabletLayout ? (
+          <SheetClose asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="event-website-mobile-editor-shell__close"
+            >
+              <X className="size-4" aria-hidden="true" />
+              <span className="sr-only">Close editor</span>
+            </Button>
+          </SheetClose>
+        ) : null}
         <div className="event-website-mobile-editor-shell__title-row">
           <h2 className="event-website-mobile-editor-shell__title">
             {selectedSection?.label ?? "Edit section"}

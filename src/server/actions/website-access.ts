@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
-  mapAppVisibilityToDb,
-  mapDbVisibilityToApp,
+  mapAppVisibilityToDb, mapDbVisibilityToApp,
 } from "@/components/dashboard/website-access/website-access-utils";
-import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
+import {
+  isDashboardBuilderEventTypeEnabled,
+  unsupportedBuilderMessage,
+} from "@/config/event-type-availability";
 import { sanitizePublicRsvpSlug, validatePublicRsvpSlug } from "@/lib/public-rsvp-slugs";
 import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -49,6 +51,9 @@ export async function updateWebsiteAccessDraftVisibilityAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(UpdateWebsiteAccessDraftVisibilityActionSchema, input);
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
+      throw new ServiceError(unsupportedBuilderMessage);
+    }
     const mappedVisibility = mapAppVisibilityToDb(payload.visibility);
 
     if (!mappedVisibility) {
@@ -80,6 +85,9 @@ export async function updateWebsiteAccessDraftSlugAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(UpdateWebsiteAccessDraftSlugActionSchema, input);
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
+      throw new ServiceError(unsupportedBuilderMessage);
+    }
     const draftSlug = sanitizePublicRsvpSlug(payload.slug);
     const slugError = validatePublicRsvpSlug(draftSlug);
 
@@ -108,6 +116,9 @@ export async function updateWebsiteAccessDraftSubdomainAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(UpdateWebsiteAccessDraftSubdomainActionSchema, input);
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
+      throw new ServiceError(unsupportedBuilderMessage);
+    }
     const draftSubdomain = sanitizePublicRsvpSlug(payload.subdomain);
     const subdomainError = validatePublicRsvpSlug(draftSubdomain);
 
@@ -136,7 +147,9 @@ export async function publishEventWebsiteAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(PublishEventWebsiteActionSchema, input);
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
-    assertDashboardBuilderEventTypeEnabled(event.event_type);
+    if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
+      throw new ServiceError(unsupportedBuilderMessage);
+    }
     const result = await publishEventWebsite({
       actorUserId: profile.id,
       clientId: profile.client_id ?? "",
@@ -204,7 +217,7 @@ async function requireOwnedEvent(eventId: string, clientId: string) {
   const supabase = await createServerSupabaseClient();
   const { data: event, error } = await supabase
     .from("rsvp_events")
-    .select("id, client_id, event_slug, event_type")
+    .select("id, client_id, draft_event_slug, event_slug, event_type")
     .eq("id", eventId)
     .eq("client_id", clientId)
     .maybeSingle();

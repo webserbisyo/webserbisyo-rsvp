@@ -24,9 +24,9 @@ export const PublicEventSlugSchema = z
 
 export type PublicEventVisibility = "private" | "public" | "unlisted";
 export const PUBLIC_EVENT_RENDER_VISIBILITIES: PublicEventVisibility[] = [
+  "private",
   "public",
   "unlisted",
-  "private",
 ];
 
 export type PublicEventRsvpState = {
@@ -114,14 +114,9 @@ export function buildPublicRenderableSections(
       (section) => section.key,
     ),
   );
-  const visibleSections = content.layout.sectionOrder.filter(
-    (sectionKey) => sectionKey === "contact_socials" || content.layout.enabledSections[sectionKey],
+  const orderedSections = content.layout.sectionOrder.filter(
+    (sectionKey) => content.layout.enabledSections[sectionKey],
   );
-  const contactSections = visibleSections.filter((sectionKey) => sectionKey === "contact_socials");
-  const orderedSections = [
-    ...visibleSections.filter((sectionKey) => sectionKey !== "contact_socials"),
-    ...contactSections,
-  ];
 
   return orderedSections.filter(
     (sectionKey) =>

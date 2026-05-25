@@ -7,6 +7,7 @@ import {
   PublicEventSlugSchema,
   type PublicEventDto,
 } from "@/lib/event-website/public-event";
+import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type PublicEventRecord = {
@@ -153,7 +154,7 @@ async function loadPublishedPublicEvent(input: {
 }
 
 async function toPublicEventDto(event: PublicEventRecord | null) {
-  if (!event || !event.published_at) {
+  if (!event || !event.published_at || !isPublicRenderingEventTypeEnabled(event.event_type)) {
     return null;
   }
 

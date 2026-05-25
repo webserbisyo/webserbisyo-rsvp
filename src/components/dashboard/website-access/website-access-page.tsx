@@ -21,7 +21,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
       <h1 className="sr-only">Website Access</h1>
 
       <LiveWebsiteBar
-        disabled={state.isInteractionPending}
+        disabled={state.isPublishBlocked}
         isPublished={state.isPublished}
         onPublish={state.publishWebsite}
         websiteUrl={state.websiteUrlPublished}
@@ -38,7 +38,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         />
         <PublishStatusCard
           changesSummary={state.changesSummary}
-          disabled={state.isInteractionPending}
+          disabled={state.isPublishBlocked}
           hasPendingChanges={state.hasPendingChanges}
           isPublished={state.isPublished}
           lastEditedLabel={state.lastEditedLabel}

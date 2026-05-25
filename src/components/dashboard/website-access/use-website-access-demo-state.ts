@@ -20,6 +20,7 @@ import {
   buildWildcardRsvpPreviewUrl,
   getPublicAppUrl,
 } from "@/lib/public-rsvp-url";
+import { useEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import {
   publishEventWebsiteAction,
   unpublishEventWebsiteAction,
@@ -31,6 +32,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [serverState, setServerState] = useState(initialData);
+  const isDraftSavePending = useEventWebsiteDraftSavePending(serverState.eventId);
   const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(initialData.draftVisibility);
   const [draftSubdomain, setDraftSubdomain] = useState(initialData.draftSubdomain ?? "");
   const [slugModalOpen, setSlugModalOpen] = useState(false);
@@ -89,6 +91,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   });
   const visibilityLabel = getVisibilityLabel(draftVisibility);
   const canShareLiveUrl = Boolean(websiteUrlPublished && rsvpUrlPublished);
+  const isPublishBlocked = isPending || isDraftSavePending;
 
   useEffect(() => {
     if (isSubdomainLocked || !serverState.eventId) {
@@ -222,6 +225,11 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       return;
     }
 
+    if (isDraftSavePending) {
+      toast.error("Please wait for the Event Website draft save to finish before publishing.");
+      return;
+    }
+
     startTransition(async () => {
       const result = await publishEventWebsiteAction({
         eventId: serverState.eventId,
@@ -314,9 +322,11 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     handleVisibilitySelect,
     hasEverPublished,
     hasPendingChanges,
-    hasSlugChange: hasSubdomainChange,
+    hasSlugChange,
     hasVisibilityDraft,
+    isDraftSavePending,
     isInteractionPending: isPending,
+    isPublishBlocked,
     isPublished,
     isSlugLocked: isSubdomainLocked,
     lastEditedAt: parseIsoDate(serverState.lastEditedAt ?? serverState.websiteAccessUpdatedAt),

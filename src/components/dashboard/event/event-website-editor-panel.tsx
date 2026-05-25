@@ -1,8 +1,6 @@
 "use client";
 
-import { Dialog as DialogPrimitive } from "radix-ui";
 import { useMemo, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
 import {
   EditorSaveButton,
   type EventWebsiteSaveButtonProps,
@@ -23,20 +21,8 @@ import {
 } from "@/components/dashboard/event/event-website-optional-panels";
 import type { EventWebsitePreviewDraft } from "@/components/dashboard/event/event-website-preview-data";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogFooter,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils/index";
 import {
   Select,
   SelectContent,
@@ -120,22 +106,6 @@ type TextFieldProps = {
   onChange: (value: string) => void;
   value: string;
 };
-
-const defaultCustomQuestionFieldType: EventWebsitePreviewDraft["rsvpForm"]["customQuestions"][number]["fieldType"] =
-  "Short text";
-
-const customQuestionFieldTypes: EventWebsitePreviewDraft["rsvpForm"]["customQuestions"][number]["fieldType"][] = [
-  "Short text",
-  "Long text",
-  "Number",
-  "Yes / No",
-  "Single choice",
-  "Multiple choice",
-];
-
-const defaultCustomQuestionOptions = ["Option 1", "Option 2"];
-const maxCustomQuestions = 10;
-const maxCustomQuestionOptions = 12;
 
 const requiredSectionKeys = new Set<EventWebsiteSectionKey>([
   "host_info",
@@ -727,90 +697,8 @@ function RsvpFormConfigPanel({
   saveButtonProps: EventWebsiteSaveButtonProps;
   section: EventWebsiteSectionDefinition;
 }) {
-  const [isCustomQuestionDialogOpen, setIsCustomQuestionDialogOpen] = useState(false);
   const rsvpValues = previewDraft.rsvpForm;
-  const [customQuestionLabel, setCustomQuestionLabel] = useState("");
-  const [customQuestionType, setCustomQuestionType] = useState(defaultCustomQuestionFieldType);
-  const [customQuestionRequired, setCustomQuestionRequired] = useState(false);
-  const [customQuestionOptions, setCustomQuestionOptions] = useState(defaultCustomQuestionOptions);
-  const customQuestionCount = rsvpValues.customQuestions.length;
-  const hasReachedCustomQuestionLimit = customQuestionCount >= maxCustomQuestions;
-  const isChoiceQuestion =
-    customQuestionType === "Single choice" || customQuestionType === "Multiple choice";
-  const trimmedCustomQuestionLabel = customQuestionLabel.trim();
-  const previewQuestionLabel = trimmedCustomQuestionLabel || "Untitled question";
-  const previewChoiceOptions = customQuestionOptions.map((option) => option.trim()).filter(Boolean);
-  const previewValue =
-    customQuestionType === "Short text"
-      ? "Short answer"
-      : customQuestionType === "Long text"
-        ? "Long answer"
-        : customQuestionType === "Number"
-          ? "Number input"
-          : customQuestionType === "Yes / No"
-            ? "Yes / No"
-            : previewChoiceOptions.length > 0
-              ? previewChoiceOptions.join(" • ")
-              : "Add choices";
-
-  function resetCustomQuestionDraft() {
-    setCustomQuestionLabel("");
-    setCustomQuestionType(defaultCustomQuestionFieldType);
-    setCustomQuestionRequired(false);
-    setCustomQuestionOptions(defaultCustomQuestionOptions);
-  }
-
-  function handleCustomQuestionDialogChange(open: boolean) {
-    setIsCustomQuestionDialogOpen(open);
-
-    if (!open) {
-      resetCustomQuestionDraft();
-    }
-  }
-
-  function updateCustomQuestionOption(index: number, value: string) {
-    setCustomQuestionOptions((current) =>
-      current.map((option, optionIndex) => (optionIndex === index ? value : option)),
-    );
-  }
-
-  function addCustomQuestionOption() {
-    setCustomQuestionOptions((current) =>
-      current.length < maxCustomQuestionOptions ? [...current, `Option ${current.length + 1}`] : current,
-    );
-  }
-
-  function removeCustomQuestionOption(index: number) {
-    setCustomQuestionOptions((current) =>
-      current.length > 2 ? current.filter((_, optionIndex) => optionIndex !== index) : current,
-    );
-  }
-
-  function addCustomQuestion() {
-    const label = trimmedCustomQuestionLabel;
-
-    if (!label || hasReachedCustomQuestionLimit) {
-      return;
-    }
-
-    onPreviewDraftChange({
-      ...previewDraft,
-      rsvpForm: {
-        ...rsvpValues,
-        customQuestions: [
-          ...rsvpValues.customQuestions,
-          {
-            fieldType: customQuestionType,
-            label,
-            options: isChoiceQuestion ? customQuestionOptions.map((option) => option.trim()).filter(Boolean) : [],
-            required: customQuestionRequired,
-          },
-        ],
-      },
-    });
-    setIsCustomQuestionDialogOpen(false);
-    resetCustomQuestionDraft();
-  }
+  const savedCustomQuestionCount = rsvpValues.customQuestions.length;
 
   function updateRsvpValue(
     fieldId: keyof EventWebsitePreviewDraft["rsvpForm"],
@@ -827,7 +715,6 @@ function RsvpFormConfigPanel({
   const companionAgeEnabled = rsvpValues.companionAgeEnabled;
   const foodAllergiesEnabled = rsvpValues.foodAllergiesEnabled;
   const messageToHostEnabled = rsvpValues.messageToHostEnabled;
-  const customQuestions = rsvpValues.customQuestions;
 
   return (
     <EditorShell
@@ -887,210 +774,20 @@ function RsvpFormConfigPanel({
           checked={messageToHostEnabled}
           onCheckedChange={(checked) => updateRsvpValue("messageToHostEnabled", checked)}
         />
-        <Dialog open={isCustomQuestionDialogOpen} onOpenChange={handleCustomQuestionDialogChange}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="event-editor-add-question-button"
-              disabled={hasReachedCustomQuestionLimit}
-            >
-              Add custom question
-            </Button>
-          </DialogTrigger>
-          <DialogPortal>
-            <DialogOverlay className="event-custom-question-overlay" />
-            <DialogPrimitive.Content
-              data-slot="dialog-content"
-              data-dashboard-dialog="event-custom-question"
-              className="event-custom-question-dialog"
-            >
-              <DialogHeader className="event-custom-question-header">
-                <DialogTitle>Add custom question</DialogTitle>
-                <DialogClose asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="event-custom-question-close"
-                    aria-label="Close add custom question modal"
-                  >
-                    <X />
-                  </Button>
-                </DialogClose>
-              </DialogHeader>
-              <div className="event-custom-question-scroll">
-                <div className="event-custom-question-section">
-                  <FieldShell
-                    field={{
-                      id: "customQuestionLabel",
-                      label: "Question label",
-                      maxLength: 100,
-                      placeholder: "e.g. Do you need parking assistance?",
-                    }}
-                    value={customQuestionLabel}
-                  >
-                    <Input
-                      id="event-editor-customQuestionLabel"
-                      className="event-editor-input"
-                      maxLength={100}
-                      placeholder="e.g. Do you need parking assistance?"
-                      value={customQuestionLabel}
-                      onChange={(event) => setCustomQuestionLabel(event.target.value)}
-                    />
-                  </FieldShell>
-                </div>
-
-                <div className="event-custom-question-section">
-                  <div className="event-custom-question-block-header">
-                    <div>
-                      <Label>Field type</Label>
-                      <p>Choose how guests will answer this question.</p>
-                    </div>
-                  </div>
-                  <div className="event-custom-type-grid" role="radiogroup" aria-label="Field type">
-                    {customQuestionFieldTypes.map((type) => {
-                      const isSelected = customQuestionType === type;
-
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          role="radio"
-                          aria-checked={isSelected}
-                          className={cn(
-                            "event-custom-type-choice",
-                            isSelected && "event-custom-type-choice--active",
-                          )}
-                          onClick={() => {
-                            setCustomQuestionType(type);
-                            if (type === "Single choice" || type === "Multiple choice") {
-                              setCustomQuestionOptions((current) =>
-                                current.length >= 2 ? current : defaultCustomQuestionOptions,
-                              );
-                            }
-                          }}
-                        >
-                          <span>{type}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="event-editor-rsvp-row event-custom-question-required-row">
-                  <span>
-                    <strong>Required</strong>
-                    <small>Guests must answer this question.</small>
-                  </span>
-                  <Switch
-                    className="dashboard-toggle event-editor-switch"
-                    checked={customQuestionRequired}
-                    onCheckedChange={setCustomQuestionRequired}
-                    aria-label="Toggle required question"
-                  />
-                </div>
-
-                {isChoiceQuestion ? (
-                  <div className="event-custom-options-card">
-                    <div className="event-custom-question-block-header">
-                      <div>
-                        <h3>Choices</h3>
-                        <p>Shown only for single or multiple choice questions.</p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="event-custom-option-add-button"
-                        disabled={customQuestionOptions.length >= maxCustomQuestionOptions}
-                        onClick={addCustomQuestionOption}
-                      >
-                        <Plus />
-                        Add option
-                      </Button>
-                    </div>
-                    <div className="event-custom-option-list">
-                      {customQuestionOptions.map((option, index) => (
-                        <div key={index} className="event-custom-option-row">
-                          <div className="event-custom-option-field">
-                            <div className="event-editor-label-row">
-                              <Label htmlFor={`event-editor-customQuestionOption${index}`}>
-                                {`Option ${index + 1}`}
-                              </Label>
-                            </div>
-                            <Input
-                              id={`event-editor-customQuestionOption${index}`}
-                              className="event-editor-input"
-                              maxLength={60}
-                              value={option}
-                              onChange={(event) => updateCustomQuestionOption(index, event.target.value)}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            className="event-custom-option-remove-button"
-                            aria-label={`Remove option ${index + 1}`}
-                            disabled={customQuestionOptions.length <= 2}
-                            onClick={() => removeCustomQuestionOption(index)}
-                          >
-                            <Trash2 />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="event-custom-preview-card">
-                  <div className="event-custom-preview-kicker">Preview</div>
-                  <div className="event-custom-preview-question-row">
-                    <strong>{previewQuestionLabel}</strong>
-                    <Badge variant="outline" className="event-custom-preview-badge">
-                      {customQuestionRequired ? "Required" : "Optional"}
-                    </Badge>
-                  </div>
-                  <p>{previewValue}</p>
-                </div>
-              </div>
-              <DialogFooter className="event-custom-question-footer">
-                <span className="event-custom-question-counter">
-                  {customQuestionCount}/{maxCustomQuestions} custom questions
-                </span>
-                <div className="event-custom-question-actions">
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline" className="event-custom-question-cancel">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    type="button"
-                    className="event-editor-save-button event-custom-question-submit"
-                    disabled={!trimmedCustomQuestionLabel || hasReachedCustomQuestionLimit}
-                    onClick={addCustomQuestion}
-                  >
-                    Add question
-                  </Button>
-                </div>
-              </DialogFooter>
-            </DialogPrimitive.Content>
-          </DialogPortal>
-        </Dialog>
-        {customQuestions.map((question, index) => (
-          <div key={`${question.label}-${index}`} className="event-custom-question-list-row">
-            <div className="event-custom-question-list-copy">
-              <strong>{question.label}</strong>
-              <small>
-                {question.fieldType} · {question.required ? "Required" : "Optional"}
-              </small>
-            </div>
-            <Badge variant="outline" className="event-custom-question-prototype-badge">
-              Prototype only
-            </Badge>
-          </div>
-        ))}
+        <div className="rounded-2xl border border-dashed border-[#e3d4c9] bg-[#fffaf7] px-4 py-4 text-sm text-[#7c5f54]">
+          <p className="font-medium text-[#4e342b]">Custom questions are coming soon.</p>
+          <p className="mt-1">
+            Public RSVP submission does not support custom question answers for launch, so this
+            section is hidden for guests.
+          </p>
+          {savedCustomQuestionCount > 0 ? (
+            <p className="mt-2 text-xs text-[#946d5e]">
+              {savedCustomQuestionCount} saved custom{" "}
+              {savedCustomQuestionCount === 1 ? "question remains" : "questions remain"} hidden
+              from guests until full submission support is added.
+            </p>
+          ) : null}
+        </div>
       </EditorGroup>
       <EditorSaveButton {...saveButtonProps} />
     </EditorShell>

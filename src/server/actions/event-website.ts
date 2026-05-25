@@ -2,11 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
+import {
+  isDashboardBuilderEventTypeEnabled,
+  unsupportedBuilderMessage,
+} from "@/config/event-type-availability";
 import { normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
 import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { saveEventWebsiteDraft } from "@/server/services/save-event-website-draft";
+import { ServiceError } from "@/server/services/service-error";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 const SaveEventWebsiteActionSchema = z.object({
@@ -34,7 +38,9 @@ export async function saveEventWebsiteAction(input: unknown) {
       throw new PermissionError("The requested event does not belong to the current tenant.");
     }
 
-    assertDashboardBuilderEventTypeEnabled(event.event_type);
+    if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
+      throw new ServiceError(unsupportedBuilderMessage);
+    }
 
     const normalizedContent = normalizeEventWebsiteContentForSave(payload.content);
     const contentToSave = {

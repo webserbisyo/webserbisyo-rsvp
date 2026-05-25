@@ -1,6 +1,9 @@
 import "server-only";
 
-import { assertDashboardBuilderEventTypeEnabled } from "@/config/event-type-availability";
+import {
+  isDashboardBuilderEventTypeEnabled,
+  unsupportedBuilderMessage,
+} from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildEventWebsiteCanonicalEventPatchInput } from "@/lib/event-website/canonical";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
@@ -30,7 +33,9 @@ export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
   }
 
   assertServiceData(eventRecord, "The Event Website record could not be resolved.");
-  assertDashboardBuilderEventTypeEnabled(eventRecord.event_type);
+  if (!isDashboardBuilderEventTypeEnabled(eventRecord.event_type)) {
+    throw new ServiceError(unsupportedBuilderMessage);
+  }
 
   const canonicalPatchResult = EventWebsiteCanonicalEventPatchSchema.safeParse(
     buildEventWebsiteCanonicalEventPatchInput(input.content),
@@ -52,6 +57,21 @@ export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
     content_json: input.content as unknown as Json,
     event_id: input.eventId,
   };
+  const { data: content, error } = await supabase
+    .from("event_content")
+    .upsert(row, { onConflict: "event_id" })
+    .select("id, event_id")
+    .single();
+
+  if (error) {
+    throw new ServiceError(
+      formatSupabaseWriteError("Failed to save event content.", error),
+      error,
+    );
+  }
+
+  assertServiceData(content, "Event Website draft save returned no row.");
+
   const { data: event, error: eventError } = await supabase
     .from("rsvp_events")
     .update(eventRow)
@@ -68,21 +88,6 @@ export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
   }
 
   assertServiceData(event, "Canonical RSVP event update returned no row.");
-
-  const { data: content, error } = await supabase
-    .from("event_content")
-    .upsert(row, { onConflict: "event_id" })
-    .select("id, event_id")
-    .single();
-
-  if (error) {
-    throw new ServiceError(
-      formatSupabaseWriteError("Failed to save event content.", error),
-      error,
-    );
-  }
-
-  assertServiceData(content, "Event Website draft save returned no row.");
 
   await writeAuditLog({
     action: "event_website_draft_saved",

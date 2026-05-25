@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { EventWebsiteRenderer } from "@/components/event-website/event-website-renderer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import {
+  formatEventWebsiteDate,
+  formatEventWebsiteTime,
+} from "@/lib/event-website/formatting";
 import type { PublicEventDto } from "@/lib/event-website/public-event";
 import { getBestPublicRsvpUrl } from "@/lib/public-rsvp-url";
 import type { PublicMetaPixelConfig } from "@/server/queries/public-meta-pixels";
@@ -69,37 +73,9 @@ export function PublicEventPageContent({
 }
 
 function formatPublicDate(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(`${value}T00:00:00+08:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "full",
-    timeZone: "Asia/Manila",
-  }).format(date);
+  return value ? formatEventWebsiteDate(value, "") || null : null;
 }
 
 function formatPublicTime(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const normalizedTime = value.length === 5 ? `${value}:00` : value;
-  const date = new Date(`2026-01-01T${normalizedTime}+08:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-PH", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "Asia/Manila",
-  }).format(date);
+  return value ? formatEventWebsiteTime(value, "") || null : null;
 }
