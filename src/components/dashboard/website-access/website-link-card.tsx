@@ -20,6 +20,7 @@ type WebsiteLinkCardProps = {
   websiteUrlFallback: string;
   websiteUrlDraft: string;
   websiteUrlPublished: string;
+  websiteUrlProduction?: string;
 };
 
 export function WebsiteLinkCard({
@@ -37,6 +38,7 @@ export function WebsiteLinkCard({
   websiteUrlFallback,
   websiteUrlDraft,
   websiteUrlPublished,
+  websiteUrlProduction = "",
 }: WebsiteLinkCardProps) {
   const displayUrl = websiteUrlPublished || websiteUrlDraft || websiteUrlFallback;
   const helperText = hasSlugChange
@@ -133,6 +135,11 @@ export function WebsiteLinkCard({
           {websiteUrlFallback ? (
             <p className="font-mono text-xs text-[#A38376]">
               Fallback: {websiteUrlFallback}
+            </p>
+          ) : null}
+          {websiteUrlProduction && websiteUrlProduction !== displayUrl ? (
+            <p className="font-mono text-xs text-[#A38376]">
+              Production: {websiteUrlProduction}
             </p>
           ) : null}
         </div>

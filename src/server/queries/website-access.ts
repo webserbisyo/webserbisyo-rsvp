@@ -10,14 +10,11 @@ import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/ev
 import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
 import {
-  buildPublicRsvpFormUrl,
-  buildPublicRsvpUrl,
-  getBestPublicRsvpFormUrl,
-  getBestPublicRsvpUrl,
   getPublicAppUrl,
   getRsvpBaseDomain,
   getRsvpPreviewBaseDomain,
   isPublishedPublicRsvpReady,
+  resolvePublicRsvpLinkSet,
 } from "@/lib/public-rsvp-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -92,6 +89,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       hasSlugPendingChanges: false,
       hasSubdomainPendingChanges: false,
       lastEditedAt: null,
+      openPublicUrl: null,
       publicBaseUrl,
       publicUrl: null,
       publishState: "unpublished",
@@ -99,6 +97,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       publishedSlug: null,
       publishedSubdomain: null,
       publishedVisibility: "private",
+      productionPublicUrl: null,
       rsvpUrl: null,
       snapshotPublishedAt: null,
       subdomainFieldsInstalled: false,
@@ -161,38 +160,25 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     slug: publishedSlug,
     status: event.status,
   });
-  const fallbackPublicUrl =
+  const linkSet =
     isShareable && publishedSlug
-      ? buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: publishedSlug })
+      ? resolvePublicRsvpLinkSet({
+          baseUrl: publicBaseUrl,
+          slug: publishedSlug,
+          subdomain: eventRecord.subdomainFieldsInstalled ? publishedSubdomain : null,
+          wildcardBaseDomain,
+        })
       : null;
-  const fallbackRsvpUrl =
-    isShareable && publishedSlug
-      ? buildPublicRsvpFormUrl({ baseUrl: publicBaseUrl, slug: publishedSlug })
-      : null;
-  const publicUrl =
-    isShareable && publishedSlug
-      ? eventRecord.subdomainFieldsInstalled
-        ? getBestPublicRsvpUrl({
-            baseUrl: publicBaseUrl,
-            slug: publishedSlug,
-            subdomain: publishedSubdomain,
-          })
-        : fallbackPublicUrl
-      : null;
-  const rsvpUrl =
-    isShareable && publishedSlug
-      ? eventRecord.subdomainFieldsInstalled
-        ? getBestPublicRsvpFormUrl({
-            baseUrl: publicBaseUrl,
-            slug: publishedSlug,
-            subdomain: publishedSubdomain,
-          })
-        : fallbackRsvpUrl
-      : null;
+  const fallbackPublicUrl = linkSet?.fallbackPathUrl ?? null;
+  const fallbackRsvpUrl = linkSet?.fallbackFormUrl ?? null;
+  const publicUrl = linkSet?.displayUrl ?? null;
+  const openPublicUrl = linkSet?.openUrl ?? null;
+  const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
+  const rsvpUrl = linkSet?.openFormUrl ?? null;
 
   return {
     canDownloadQr: Boolean(rsvpUrl),
-    canOpenWebsite: Boolean(publicUrl),
+    canOpenWebsite: Boolean(openPublicUrl),
     changesSummary: buildChangeSummary({
       hasAccessPendingChanges,
       hasContentPendingChanges,
@@ -214,6 +200,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     hasSlugPendingChanges,
     hasSubdomainPendingChanges,
     lastEditedAt: event.website_access_updated_at ?? contentDraftSavedAt,
+    openPublicUrl,
     publicBaseUrl,
     publicUrl,
     publishState,
@@ -221,6 +208,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     publishedSlug,
     publishedSubdomain,
     publishedVisibility,
+    productionPublicUrl,
     rsvpUrl,
     snapshotPublishedAt: eventContent?.published_at ?? null,
     subdomainFieldsInstalled: eventRecord.subdomainFieldsInstalled,

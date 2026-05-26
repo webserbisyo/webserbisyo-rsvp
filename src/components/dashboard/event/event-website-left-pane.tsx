@@ -28,7 +28,7 @@ type EventWebsiteLeftPaneProps = {
   className?: string;
   defaultWebsiteFlowSections: EventWebsiteSectionDefinition[];
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
-  eventSlug: string | null;
+  publicPageUrl: string | null;
   futureDevelopmentSections: EventWebsiteSectionDefinition[];
   onEnabledSectionChange: (section: EventWebsiteSectionKey, enabled: boolean) => void;
   onResetWebsiteFlowOrder: () => void;
@@ -49,7 +49,7 @@ export function EventWebsiteLeftPane({
   className,
   defaultWebsiteFlowSections,
   enabledSections,
-  eventSlug,
+  publicPageUrl,
   futureDevelopmentSections,
   onEnabledSectionChange,
   onResetWebsiteFlowOrder,
@@ -120,8 +120,8 @@ export function EventWebsiteLeftPane({
       {showStatusCard ? (
         <EventWebsiteStatusCard
           autoSaveEnabled={autoSaveEnabled}
-          eventSlug={eventSlug}
           onToggleAutoSave={onToggleAutoSave}
+          publicPageUrl={publicPageUrl}
           sectionSummary={sectionSummary}
           statusPill={statusPill}
           sticky={statusCardSticky}

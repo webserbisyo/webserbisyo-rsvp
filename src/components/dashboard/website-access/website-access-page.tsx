@@ -24,7 +24,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         disabled={state.isPublishBlocked}
         isPublished={state.isPublished}
         onPublish={state.publishWebsite}
-        websiteUrl={state.websiteUrlPublished}
+        websiteUrl={state.websiteUrlOpen}
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -68,6 +68,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         websiteUrlFallback={state.websiteUrlFallback}
         websiteUrlDraft={state.websiteUrlDraft}
         websiteUrlPublished={state.websiteUrlPublished}
+        websiteUrlProduction={state.websiteUrlProduction}
       />
 
       <QrCodesCard

@@ -29,6 +29,7 @@ export type WebsiteAccessInitialData = {
   hasSlugPendingChanges: boolean;
   hasSubdomainPendingChanges: boolean;
   lastEditedAt: string | null;
+  openPublicUrl: string | null;
   publicBaseUrl: string | null;
   publicUrl: string | null;
   publishState: PublishState;
@@ -36,6 +37,7 @@ export type WebsiteAccessInitialData = {
   publishedSlug: string | null;
   publishedSubdomain: string | null;
   publishedVisibility: VisibilityMode;
+  productionPublicUrl: string | null;
   rsvpUrl: string | null;
   snapshotPublishedAt: string | null;
   subdomainFieldsInstalled: boolean;

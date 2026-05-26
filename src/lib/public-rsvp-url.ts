@@ -95,6 +95,10 @@ export function getPublicAppUrl(options?: {
   );
 }
 
+export function getLocalDevelopmentAppUrl() {
+  return process.env.NODE_ENV === "development" ? "http://localhost:3000" : null;
+}
+
 export function buildPublicRsvpPath(slug: string) {
   return `/r/${slug}`;
 }
@@ -209,6 +213,117 @@ export function getBestPublicRsvpFormUrl(input: {
     getBestPublicRsvpUrl(input),
     "#rsvp-form",
   );
+}
+
+function isLocalWildcardSimulationEnabled() {
+  return ["1", "true", "yes", "on"].includes(
+    (
+      process.env.NEXT_PUBLIC_ENABLE_LOCAL_WILDCARD_SIMULATION ??
+      process.env.ENABLE_LOCAL_WILDCARD_SIMULATION ??
+      ""
+    )
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+export type PublicRsvpLinkSet = {
+  copyUrl: string | null;
+  displayUrl: string | null;
+  fallbackFormUrl: string | null;
+  fallbackPathUrl: string | null;
+  openFormUrl: string | null;
+  openUrl: string | null;
+  preferredProductionFormUrl: string | null;
+  preferredProductionUrl: string | null;
+  qrUrl: string | null;
+  wildcardProductionFormUrl: string | null;
+  wildcardProductionUrl: string | null;
+};
+
+export function resolvePublicRsvpLinkSet(input: {
+  baseUrl?: string | null;
+  customDomain?: string | null;
+  slug?: string | null;
+  subdomain?: string | null;
+  wildcardBaseDomain?: string | null;
+}): PublicRsvpLinkSet {
+  const slug = input.slug?.trim() || null;
+  const wildcardProductionUrl = input.subdomain
+    ? buildWildcardRsvpUrl({
+        baseDomain: input.wildcardBaseDomain,
+        subdomain: input.subdomain,
+      })
+    : null;
+  const wildcardProductionFormUrl = appendHashToUrl(wildcardProductionUrl, "#rsvp-form");
+  const fallbackPathUrl = slug
+    ? buildPublicRsvpUrl({
+        baseUrl: input.baseUrl,
+        slug,
+      })
+    : null;
+  const fallbackFormUrl = slug
+    ? buildPublicRsvpFormUrl({
+        baseUrl: input.baseUrl,
+        slug,
+      })
+    : null;
+  const preferredProductionUrl = slug
+    ? getBestPublicRsvpUrl({
+        baseUrl: input.baseUrl,
+        customDomain: input.customDomain,
+        slug,
+        subdomain: input.subdomain,
+        wildcardBaseDomain: input.wildcardBaseDomain,
+      })
+    : null;
+  const preferredProductionFormUrl = slug
+    ? getBestPublicRsvpFormUrl({
+        baseUrl: input.baseUrl,
+        customDomain: input.customDomain,
+        slug,
+        subdomain: input.subdomain,
+        wildcardBaseDomain: input.wildcardBaseDomain,
+      })
+    : null;
+  const localDevelopmentAppUrl = getLocalDevelopmentAppUrl();
+  const localDevelopmentUrl =
+    slug && localDevelopmentAppUrl
+      ? buildPublicRsvpUrl({
+          baseUrl: localDevelopmentAppUrl,
+          slug,
+        })
+      : null;
+  const localDevelopmentFormUrl =
+    slug && localDevelopmentAppUrl
+      ? buildPublicRsvpFormUrl({
+          baseUrl: localDevelopmentAppUrl,
+          slug,
+        })
+      : null;
+  const useLocalSafeUrls =
+    process.env.NODE_ENV === "development" && !isLocalWildcardSimulationEnabled();
+  const displayUrl = useLocalSafeUrls
+    ? (localDevelopmentUrl ?? fallbackPathUrl ?? preferredProductionUrl)
+    : preferredProductionUrl;
+  const openUrl = displayUrl;
+  const openFormUrl = useLocalSafeUrls
+    ? (localDevelopmentFormUrl ?? fallbackFormUrl ?? preferredProductionFormUrl)
+    : preferredProductionFormUrl;
+
+  return {
+    copyUrl: displayUrl,
+    displayUrl,
+    fallbackFormUrl,
+    fallbackPathUrl,
+    openFormUrl,
+    openUrl,
+    preferredProductionFormUrl,
+    preferredProductionUrl,
+    qrUrl: displayUrl,
+    wildcardProductionFormUrl,
+    wildcardProductionUrl,
+  };
 }
 
 export function isPublishedPublicRsvpReady(input: {

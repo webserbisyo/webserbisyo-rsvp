@@ -1,6 +1,7 @@
 import "server-only";
 
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import { getPublicAppUrl, getRsvpPreviewBaseDomain, resolvePublicRsvpLinkSet } from "@/lib/public-rsvp-url";
 import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/event-website/types";
 import { requireTenantMember } from "@/lib/permissions";
 import type { Json } from "@/lib/supabase/types";
@@ -24,6 +25,7 @@ export type DashboardEventWebsiteData = {
   } | null;
   eventDate: string | null;
   publishState: "draft" | "published";
+  publicPageUrl: string | null;
   publishedAt: string | null;
   eventTime: string | null;
   eventType: string | null;
@@ -57,6 +59,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
         `
           id,
           event_slug,
+          subdomain_slug,
           status,
           published_at,
           title,
@@ -145,6 +148,15 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     parsedContentJson ?? rawContentJson,
     defaultsContext,
   );
+  const publicPageUrl =
+    event?.status === "published" && event?.published_at && event?.event_slug
+      ? (resolvePublicRsvpLinkSet({
+          baseUrl: getPublicAppUrl(),
+          slug: event.event_slug,
+          subdomain: event.subdomain_slug ?? null,
+          wildcardBaseDomain: getRsvpPreviewBaseDomain(),
+        }).openUrl ?? null)
+      : null;
 
   return {
     eventId: event?.id ?? null,
@@ -152,6 +164,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     eventContent: eventContentData,
     eventDate: event?.event_date ?? null,
     publishState: event?.status === "published" && event?.published_at ? "published" : "draft",
+    publicPageUrl,
     publishedAt: event?.published_at ?? null,
     eventTime: event?.event_time ?? null,
     eventType: event?.event_type ?? null,

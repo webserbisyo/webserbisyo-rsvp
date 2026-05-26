@@ -71,7 +71,9 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     hasSubdomainChange ||
     hasContentPendingChanges;
   const publishStatusState = getPublishStatusState(isPublished, hasPendingChanges);
+  const websiteUrlOpen = serverState.openPublicUrl ?? serverState.publicUrl ?? "";
   const websiteUrlPublished = serverState.publicUrl ?? "";
+  const websiteUrlProduction = serverState.productionPublicUrl ?? "";
   const websiteUrlFallback = serverState.fallbackPublicUrl ?? "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({
@@ -356,9 +358,11 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     unpublishWebsite,
     visibility: draftVisibility,
     visibilityLabel,
+    websiteUrlOpen,
     websiteUrlDraft,
     websiteUrlFallback,
     websiteUrlPublished,
+    websiteUrlProduction,
   };
 }
 

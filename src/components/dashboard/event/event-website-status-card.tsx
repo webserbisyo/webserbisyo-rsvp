@@ -12,8 +12,8 @@ import type { EventWebsiteStatusPill } from "@/components/dashboard/event/event-
 
 type EventWebsiteStatusCardProps = {
   autoSaveEnabled: boolean;
-  eventSlug: string | null;
   onToggleAutoSave: () => void;
+  publicPageUrl: string | null;
   sectionSummary: EventWebsiteSectionSummary;
   statusPill: EventWebsiteStatusPill;
   sticky?: boolean;
@@ -23,8 +23,8 @@ type EventWebsiteStatusCardProps = {
 
 export function EventWebsiteStatusCard({
   autoSaveEnabled,
-  eventSlug,
   onToggleAutoSave,
+  publicPageUrl,
   sectionSummary,
   statusPill,
   sticky = true,
@@ -32,7 +32,7 @@ export function EventWebsiteStatusCard({
   workflowStatus,
 }: EventWebsiteStatusCardProps) {
   const canPreviewPublicPage =
-    Boolean(eventSlug) &&
+    Boolean(publicPageUrl) &&
     (workflowStatus.state === "published_up_to_date" ||
       workflowStatus.state === "draft_newer_than_published");
 
@@ -114,7 +114,7 @@ export function EventWebsiteStatusCard({
           className="event-status-publish-btn h-7 gap-1 px-2.5 text-xs"
         >
           <Link
-            href={canPreviewPublicPage ? `/r/${eventSlug}` : websiteAccessHref}
+            href={canPreviewPublicPage ? (publicPageUrl ?? websiteAccessHref) : websiteAccessHref}
             target={canPreviewPublicPage ? "_blank" : undefined}
             rel={canPreviewPublicPage ? "noreferrer" : undefined}
           >

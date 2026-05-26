@@ -489,7 +489,7 @@ function EnabledEventWebsiteWorkspace({
           autoSaveEnabled={autoSaveEnabled}
           enabledSections={enabledSections}
           defaultWebsiteFlowSections={defaultWebsiteFlowSections}
-          eventSlug={eventWebsiteData.eventSlug}
+          publicPageUrl={eventWebsiteData.publicPageUrl}
           futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
           onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
           selectedSection={selectedSection}
@@ -527,8 +527,8 @@ function EnabledEventWebsiteWorkspace({
     <div className="event-website-responsive-shell">
       <EventWebsiteStatusCard
         autoSaveEnabled={autoSaveEnabled}
-        eventSlug={eventWebsiteData.eventSlug}
         onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
+        publicPageUrl={eventWebsiteData.publicPageUrl}
         sectionSummary={sectionSummary}
         statusPill={statusPill}
         sticky={false}
@@ -565,7 +565,7 @@ function EnabledEventWebsiteWorkspace({
             className="event-website-pane--responsive-flow"
             defaultWebsiteFlowSections={defaultWebsiteFlowSections}
             enabledSections={enabledSections}
-            eventSlug={eventWebsiteData.eventSlug}
+            publicPageUrl={eventWebsiteData.publicPageUrl}
             futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
             onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
             selectedSection={selectedSection}
