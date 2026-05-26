@@ -685,27 +685,25 @@ function GuestbookSection({
     previewDefaultDraft.guestbook.emptyStateMessage;
 
   return (
-    <section className="event-preview-section">
+    <section className="event-preview-section event-preview-section--guestbook">
       <Badge variant="outline" className="event-preview-section-label">
         Guestbook
       </Badge>
       <h3>{title}</h3>
       {intro ? <p className="event-preview-copy">{intro}</p> : null}
       {guestbookMessages.length > 0 ? (
-        <div className="grid gap-3">
+        <div className="event-preview-guestbook-stack">
           {guestbookMessages.map((message) => (
             <article key={message.id} className="event-preview-message-card">
-              <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fff0e8] text-[#c96f4c]">
+              <div className="event-preview-message-card-inner">
+                <span className="event-preview-message-icon" aria-hidden="true">
                   <MessageCircleHeart className="size-4" aria-hidden="true" />
                 </span>
-                <div className="min-w-0 flex-1">
-                  <strong className="block text-sm text-[#2b2521]">{message.guestName}</strong>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#65584f]">
-                    {message.message}
-                  </p>
+                <div className="event-preview-message-body">
+                  <strong>{message.guestName}</strong>
+                  <p>{message.message}</p>
                   {message.approvedAt || message.submittedAt ? (
-                    <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[#a88d7f]">
+                    <p className="event-preview-message-date">
                       {formatGuestbookDate(message.approvedAt ?? message.submittedAt)}
                     </p>
                   ) : null}
@@ -715,7 +713,7 @@ function GuestbookSection({
           ))}
         </div>
       ) : (
-        <div className="event-preview-message-card">
+        <div className="event-preview-message-card event-preview-message-card--empty">
           <p>{emptyState}</p>
         </div>
       )}

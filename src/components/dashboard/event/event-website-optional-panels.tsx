@@ -1,5 +1,6 @@
 "use client";
 
+import { MessageCircleHeart } from "lucide-react";
 import Link from "next/link";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
 import type {
@@ -498,7 +499,7 @@ export function OptionalGuestbookPanel({
   return (
     <EditorShell
       title="Guestbook"
-      description="Guestbook messages are managed from RSVP Responses. Approve guest messages there to display them on the event website."
+      description="Managed from RSVP Responses."
     >
       <EditorGroup title="Guestbook Copy">
         <TextField
@@ -519,16 +520,22 @@ export function OptionalGuestbookPanel({
       </EditorGroup>
 
       <EditorGroup title="Approved Messages">
-        <div className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-[#eadbd0] bg-white/80 px-4 py-3">
-          <div>
+        <div className="flex flex-col gap-3 rounded-[1.2rem] border border-[#eadbd0] bg-white/80 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-[#2b2521]">
-              {guestbookMessages.length} approved message{guestbookMessages.length === 1 ? "" : "s"}
+              {guestbookMessages.length} approved
             </p>
             <p className="mt-1 text-xs leading-5 text-[#8a7c72]">
-              Guestbook messages come from RSVP Responses. Approve messages there to show them publicly.
+              Managed from RSVP Responses
             </p>
           </div>
-          <Button asChild type="button" variant="outline" size="sm" className="rounded-xl">
+          <Button
+            asChild
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-auto self-start rounded-xl px-3 py-2 text-xs sm:self-auto"
+          >
             <Link href="/dashboard/responses?tab=needs-review">Manage messages</Link>
           </Button>
         </div>
@@ -538,27 +545,33 @@ export function OptionalGuestbookPanel({
             {guestbookMessages.map((message) => (
               <article
                 key={message.id}
-                className="rounded-[1.2rem] border border-[#eadbd0] bg-[#fffaf6] px-4 py-3"
+                className="rounded-[1.2rem] border border-[#eadbd0] bg-[#fffaf6] px-4 py-4"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-[#2b2521]">{message.guestName}</p>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#fff1e8] text-[#c96f4c]">
+                    <MessageCircleHeart className="size-4" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[#2b2521]">{message.guestName}</p>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#65584f]">
                       {message.message}
                     </p>
+                    {message.approvedAt || message.submittedAt ? (
+                      <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[#a88d7f]">
+                        {formatGuestbookMessageDate(message.approvedAt ?? message.submittedAt)}
+                      </p>
+                    ) : null}
                   </div>
-                  {message.approvedAt || message.submittedAt ? (
-                    <p className="shrink-0 text-[11px] font-medium uppercase tracking-[0.14em] text-[#a88d7f]">
-                      {formatGuestbookMessageDate(message.approvedAt ?? message.submittedAt)}
-                    </p>
-                  ) : null}
                 </div>
               </article>
             ))}
           </div>
         ) : (
-          <div className="rounded-[1.2rem] border border-dashed border-[#e5d6ca] bg-[#fffdfb] px-4 py-4 text-sm text-[#8a7c72]">
-            No approved guestbook messages yet.
+          <div className="rounded-[1.2rem] border border-dashed border-[#e5d6ca] bg-[#fffdfb] px-4 py-4">
+            <p className="text-sm font-medium text-[#65584f]">No approved messages yet.</p>
+            <p className="mt-1 text-sm leading-6 text-[#8a7c72]">
+              Approve guest messages from RSVP Responses.
+            </p>
           </div>
         )}
       </EditorGroup>

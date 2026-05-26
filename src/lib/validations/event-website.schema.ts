@@ -58,6 +58,29 @@ function normalizeNullableTextInput(value: unknown) {
   return normalized;
 }
 
+const LEGACY_EVENT_WEBSITE_GUESTBOOK_TITLE = "Guestbook";
+const LEGACY_EVENT_WEBSITE_GUESTBOOK_INTRO = "Read warm wishes and messages from our guests.";
+
+function normalizeGuestbookTitle(value: unknown) {
+  if (typeof value !== "string") {
+    return DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE;
+  }
+
+  return value === LEGACY_EVENT_WEBSITE_GUESTBOOK_TITLE
+    ? DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE
+    : value;
+}
+
+function normalizeGuestbookIntro(value: unknown) {
+  if (typeof value !== "string") {
+    return DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO;
+  }
+
+  return value === LEGACY_EVENT_WEBSITE_GUESTBOOK_INTRO
+    ? DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO
+    : value;
+}
+
 function normalizeGuestbookSectionInput(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return value;
@@ -77,13 +100,13 @@ function normalizeGuestbookSectionInput(value: unknown) {
         : DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
     sectionIntro:
       typeof raw.sectionIntro === "string"
-        ? raw.sectionIntro
+        ? normalizeGuestbookIntro(raw.sectionIntro)
         : typeof raw.messageBody === "string"
-          ? raw.messageBody
+          ? normalizeGuestbookIntro(raw.messageBody)
           : DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
     sectionTitle:
       typeof raw.sectionTitle === "string"
-        ? raw.sectionTitle
+        ? normalizeGuestbookTitle(raw.sectionTitle)
         : DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
   };
 }
@@ -106,13 +129,13 @@ function normalizeGuestbookSectionPatchInput(value: unknown) {
   }
 
   if (typeof raw.sectionIntro === "string") {
-    normalized.sectionIntro = raw.sectionIntro;
+    normalized.sectionIntro = normalizeGuestbookIntro(raw.sectionIntro);
   } else if (typeof raw.messageBody === "string") {
-    normalized.sectionIntro = raw.messageBody;
+    normalized.sectionIntro = normalizeGuestbookIntro(raw.messageBody);
   }
 
   if (typeof raw.sectionTitle === "string") {
-    normalized.sectionTitle = raw.sectionTitle;
+    normalized.sectionTitle = normalizeGuestbookTitle(raw.sectionTitle);
   }
 
   return normalized;

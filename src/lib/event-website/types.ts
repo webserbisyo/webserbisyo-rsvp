@@ -3,9 +3,9 @@ import type { EventWebsiteSectionKey } from "@/config/event-website-sections";
 export const DEFAULT_WEDDING_EVENT_TYPE = "wedding";
 export const DEFAULT_RSVP_DEADLINE_OFFSET_DAYS = 30;
 export const DEFAULT_RSVP_DEADLINE_TIME = "18:00";
-export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE = "Guestbook";
+export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE = "A Note from Our Guests";
 export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO =
-  "Read warm wishes and messages from our guests.";
+  "Messages shared by family and friends.";
 export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE =
   "Approved guest messages will appear here soon.";
 
