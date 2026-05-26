@@ -5325,8 +5325,8 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding: 18px 0;
-  gap: 10px;
+  padding: 12px 0;
+  gap: 12px;
 }
 
 .event-website-public-page .event-preview-major-divider::before,
@@ -5337,11 +5337,13 @@
 .event-website-public-page .event-preview-major-divider > .event-preview-major-divider-line,
 [data-dashboard] .event-website-page .event-preview-major-divider > .event-preview-major-divider-line {
   display: block;
-  flex: 1 1 0;
+  flex: 1 1 120px;
   position: static;
   width: auto;
-  max-width: 64px;
+  min-width: 96px;
+  max-width: 180px;
   height: 1px;
+  margin: 0;
   border: 0;
   border-radius: 0;
   background: #dedbd6;
