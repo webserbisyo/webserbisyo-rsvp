@@ -73,7 +73,9 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const publishStatusState = getPublishStatusState(isPublished, hasPendingChanges);
   const websiteUrlOpen = serverState.openPublicUrl ?? serverState.publicUrl ?? "";
   const websiteUrlPublished = serverState.publicUrl ?? "";
+  const websiteUrlCopy = serverState.copyPublicUrl ?? websiteUrlPublished;
   const websiteUrlProduction = serverState.productionPublicUrl ?? "";
+  const websiteUrlQr = serverState.qrPublicUrl ?? websiteUrlPublished;
   const websiteUrlFallback = serverState.fallbackPublicUrl ?? "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({
@@ -84,6 +86,8 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: serverState.draftSlug }) ?? "")
         : "");
   const rsvpUrlPublished = serverState.rsvpUrl ?? "";
+  const rsvpUrlCopy = serverState.copyRsvpUrl ?? rsvpUrlPublished;
+  const rsvpUrlQr = serverState.qrRsvpUrl ?? rsvpUrlPublished;
   const changesSummary = buildChangeSummary({
     hasAccessPendingChanges: hasVisibilityDraft,
     hasContentPendingChanges,
@@ -92,7 +96,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     isPublished,
   });
   const visibilityLabel = getVisibilityLabel(draftVisibility);
-  const canShareLiveUrl = Boolean(websiteUrlPublished && rsvpUrlPublished);
+  const canShareLiveUrl = Boolean(websiteUrlCopy && rsvpUrlCopy);
   const isPublishBlocked = isPending || isDraftSavePending;
 
   useEffect(() => {
@@ -300,25 +304,25 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     closeSlugModal,
     confirmSlugChange,
     copyRsvpLink: () => {
-      if (!requireLiveUrl(rsvpUrlPublished)) {
+      if (!requireLiveUrl(rsvpUrlCopy)) {
         return;
       }
 
-      void copyText(rsvpUrlPublished, "RSVP form link copied");
+      void copyText(rsvpUrlCopy, "RSVP form link copied");
     },
     copyWebsiteLink: () => {
-      if (!requireLiveUrl(websiteUrlPublished)) {
+      if (!requireLiveUrl(websiteUrlCopy)) {
         return;
       }
 
-      void copyText(websiteUrlPublished, "Website link copied");
+      void copyText(websiteUrlCopy, "Website link copied");
     },
     copyWebsiteQrLink: () => {
-      if (!requireLiveUrl(websiteUrlPublished)) {
+      if (!requireLiveUrl(websiteUrlCopy)) {
         return;
       }
 
-      void copyText(websiteUrlPublished, "Website QR link copied");
+      void copyText(websiteUrlCopy, "Website QR link copied");
     },
     handleDraftSlugInput,
     handleVisibilitySelect,
@@ -344,7 +348,9 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     publishedSubdomain,
     publishedVisibility,
     qrActionsEnabled: canShareLiveUrl,
+    rsvpUrlCopy,
     rsvpUrlPublished,
+    rsvpUrlQr,
     setSlugModalValue,
     slugDraft: draftSubdomain,
     slugDraftError: subdomainDraftError,
@@ -361,8 +367,10 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     websiteUrlOpen,
     websiteUrlDraft,
     websiteUrlFallback,
+    websiteUrlCopy,
     websiteUrlPublished,
     websiteUrlProduction,
+    websiteUrlQr,
   };
 }
 

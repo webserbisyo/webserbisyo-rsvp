@@ -25,6 +25,7 @@ export type DashboardEventWebsiteData = {
   } | null;
   eventDate: string | null;
   publishState: "draft" | "published";
+  previewChromeUrl: string | null;
   publicPageUrl: string | null;
   publishedAt: string | null;
   eventTime: string | null;
@@ -148,14 +149,17 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     parsedContentJson ?? rawContentJson,
     defaultsContext,
   );
+  const publicLinkSet = event?.event_slug
+    ? resolvePublicRsvpLinkSet({
+        baseUrl: getPublicAppUrl(),
+        slug: event.event_slug,
+        subdomain: event.subdomain_slug ?? null,
+        wildcardBaseDomain: getRsvpPreviewBaseDomain(),
+      })
+    : null;
   const publicPageUrl =
-    event?.status === "published" && event?.published_at && event?.event_slug
-      ? (resolvePublicRsvpLinkSet({
-          baseUrl: getPublicAppUrl(),
-          slug: event.event_slug,
-          subdomain: event.subdomain_slug ?? null,
-          wildcardBaseDomain: getRsvpPreviewBaseDomain(),
-        }).openUrl ?? null)
+    event?.status === "published" && event?.published_at
+      ? (publicLinkSet?.openUrl ?? null)
       : null;
 
   return {
@@ -164,6 +168,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     eventContent: eventContentData,
     eventDate: event?.event_date ?? null,
     publishState: event?.status === "published" && event?.published_at ? "published" : "draft",
+    previewChromeUrl: publicLinkSet?.previewChromeUrl ?? null,
     publicPageUrl,
     publishedAt: event?.published_at ?? null,
     eventTime: event?.event_time ?? null,

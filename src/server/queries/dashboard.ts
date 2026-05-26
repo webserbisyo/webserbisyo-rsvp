@@ -8,9 +8,9 @@ import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
 import { PermissionError, requireTenantMember, type AuthenticatedProfile } from "@/lib/permissions";
 import {
-  getBestPublicRsvpUrl,
   getPublicAppUrl,
   isPublishedPublicRsvpReady,
+  resolvePublicRsvpLinkSet,
 } from "@/lib/public-rsvp-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -272,16 +272,11 @@ async function loadDashboardSummary(
   });
   const publicUrl =
     shareable && event?.event_slug && DEFAULT_PUBLIC_APP_URL
-      ? eventResult.subdomainFieldsInstalled
-        ? getBestPublicRsvpUrl({
-            baseUrl: DEFAULT_PUBLIC_APP_URL,
-            slug: event.event_slug,
-            subdomain: event.subdomain_slug,
-          })
-        : getBestPublicRsvpUrl({
-            baseUrl: DEFAULT_PUBLIC_APP_URL,
-            slug: event.event_slug,
-          })
+      ? (resolvePublicRsvpLinkSet({
+          baseUrl: DEFAULT_PUBLIC_APP_URL,
+          slug: event.event_slug,
+          subdomain: eventResult.subdomainFieldsInstalled ? event.subdomain_slug : null,
+        }).openUrl ?? null)
       : null;
   const roleLabel = profile.role === "client_staff" ? "Client Staff" : "Client Admin";
   const rawContentJson = eventContent?.content_json ?? null;

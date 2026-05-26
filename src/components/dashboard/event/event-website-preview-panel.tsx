@@ -8,7 +8,6 @@ import type {
   EventWebsiteSectionDefinition,
   EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
-import { buildPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
 import {
   previewSupportedSectionKeys,
   type EventWebsitePreviewDevice,
@@ -21,6 +20,7 @@ type EventWebsitePreviewPanelProps = {
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   compactChrome?: boolean;
   mode?: "desktop" | "responsive";
+  previewChromeUrl: string | null;
   previewScrollRequest: number;
   previewDraft: EventWebsitePreviewDraft;
   selectedSection: EventWebsiteSectionDefinition | undefined;
@@ -29,17 +29,13 @@ type EventWebsitePreviewPanelProps = {
 };
 
 const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(previewSupportedSectionKeys);
-const previewAddress =
-  buildPublicRsvpUrl({
-    baseUrl: getPublicAppUrl(),
-    slug: "juan-and-maria",
-  })?.replace(/^https?:\/\//, "") ?? "your-rsvp-link.example/r/juan-and-maria";
 
 export function EventWebsitePreviewPanel({
   defaultDevice = "desktop",
   enabledSections,
   compactChrome = false,
   mode = "desktop",
+  previewChromeUrl,
   previewScrollRequest,
   previewDraft,
   selectedSection,
@@ -61,6 +57,7 @@ export function EventWebsitePreviewPanel({
   );
   const selectedSectionKey = selectedSection?.key;
   const activeDevice = showDeviceTabs ? device : defaultDevice;
+  const previewAddress = previewChromeUrl ?? "Website URL pending";
 
   useEffect(() => {
     if (!selectedSectionKey || !supportedSectionKeySet.has(selectedSectionKey) || selectedSectionIsOff) {

@@ -514,6 +514,7 @@ function EnabledEventWebsiteWorkspace({
         </div>
         <EventWebsitePreviewPanel
           enabledSections={enabledSections}
+          previewChromeUrl={eventWebsiteData.previewChromeUrl}
           previewScrollRequest={previewScrollRequest}
           previewDraft={previewDraft}
           selectedSection={selectedSectionDefinition}
@@ -589,6 +590,7 @@ function EnabledEventWebsiteWorkspace({
               defaultDevice={isTabletLayout ? "desktop" : "mobile"}
               enabledSections={enabledSections}
               mode="responsive"
+              previewChromeUrl={eventWebsiteData.previewChromeUrl}
               previewScrollRequest={previewScrollRequest}
               previewDraft={previewDraft}
               selectedSection={selectedSectionDefinition}

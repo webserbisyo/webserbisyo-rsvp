@@ -54,7 +54,7 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
       </div>
 
       <WebsiteLinkCard
-        canCopy={Boolean(state.websiteUrlPublished)}
+        canCopy={Boolean(state.websiteUrlCopy)}
         hasSlugChange={state.hasSlugChange}
         isSlugLocked={state.isSlugLocked}
         isUpdating={state.isInteractionPending}
@@ -75,9 +75,9 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         disabled={!state.qrActionsEnabled}
         onCopyRsvpLink={state.copyRsvpLink}
         onCopyWebsiteLink={state.copyWebsiteQrLink}
-        rsvpUrl={state.rsvpUrlPublished}
+        rsvpUrl={state.rsvpUrlQr}
         slugPublished={state.slugPublished}
-        websiteUrl={state.websiteUrlPublished}
+        websiteUrl={state.websiteUrlQr}
       />
 
       <SlugChangeDialog

@@ -75,6 +75,8 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       canDownloadQr: false,
       canOpenWebsite: false,
       changesSummary: "Draft ready to publish",
+      copyPublicUrl: null,
+      copyRsvpUrl: null,
       contentDraftSavedAt: null,
       draftSlug: null,
       draftSubdomain: null,
@@ -98,6 +100,8 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       publishedSubdomain: null,
       publishedVisibility: "private",
       productionPublicUrl: null,
+      qrPublicUrl: null,
+      qrRsvpUrl: null,
       rsvpUrl: null,
       snapshotPublishedAt: null,
       subdomainFieldsInstalled: false,
@@ -173,8 +177,12 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const fallbackRsvpUrl = linkSet?.fallbackFormUrl ?? null;
   const publicUrl = linkSet?.displayUrl ?? null;
   const openPublicUrl = linkSet?.openUrl ?? null;
+  const copyPublicUrl = linkSet?.copyUrl ?? null;
   const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
+  const qrPublicUrl = linkSet?.qrUrl ?? null;
   const rsvpUrl = linkSet?.openFormUrl ?? null;
+  const copyRsvpUrl = linkSet?.openFormUrl ?? null;
+  const qrRsvpUrl = linkSet?.openFormUrl ?? null;
 
   return {
     canDownloadQr: Boolean(rsvpUrl),
@@ -186,6 +194,8 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       hasSubdomainPendingChanges,
       isPublished: publishState === "published",
     }),
+    copyPublicUrl,
+    copyRsvpUrl,
     contentDraftSavedAt,
     draftSlug,
     draftSubdomain,
@@ -209,6 +219,8 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     publishedSubdomain,
     publishedVisibility,
     productionPublicUrl,
+    qrPublicUrl,
+    qrRsvpUrl,
     rsvpUrl,
     snapshotPublishedAt: eventContent?.published_at ?? null,
     subdomainFieldsInstalled: eventRecord.subdomainFieldsInstalled,

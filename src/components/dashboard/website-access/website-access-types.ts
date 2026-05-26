@@ -15,6 +15,8 @@ export type WebsiteAccessInitialData = {
   canDownloadQr: boolean;
   canOpenWebsite: boolean;
   changesSummary: string;
+  copyPublicUrl: string | null;
+  copyRsvpUrl: string | null;
   contentDraftSavedAt: string | null;
   draftSlug: string | null;
   draftSubdomain: string | null;
@@ -38,6 +40,8 @@ export type WebsiteAccessInitialData = {
   publishedSubdomain: string | null;
   publishedVisibility: VisibilityMode;
   productionPublicUrl: string | null;
+  qrPublicUrl: string | null;
+  qrRsvpUrl: string | null;
   rsvpUrl: string | null;
   snapshotPublishedAt: string | null;
   subdomainFieldsInstalled: boolean;

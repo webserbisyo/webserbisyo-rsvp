@@ -12,6 +12,8 @@ function appendHashToUrl(url: string | null, hash: string) {
 
 export const DEFAULT_RSVP_WILDCARD_PREVIEW_DOMAIN = "rsvp.webserbisyo.com";
 
+export type PublicRsvpEnvironment = "development" | "preview" | "production";
+
 function normalizeUrlLikeValue(value?: string | null) {
   if (!value) {
     return null;
@@ -78,20 +80,74 @@ export function resolveConfiguredPublicAppUrl(...values: Array<string | null | u
   return null;
 }
 
-export function getPublicAppUrl(options?: {
-  baseUrl?: string | null;
-  preferredOrigin?: string | null;
-}) {
+function getConfiguredProductionAppUrl() {
   return resolveConfiguredPublicAppUrl(
-    options?.baseUrl,
     process.env.NEXT_PUBLIC_APP_URL,
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.SITE_URL,
     process.env.APP_BASE_URL,
     process.env.VERCEL_PROJECT_PRODUCTION_URL,
-    process.env.VERCEL_URL,
+  );
+}
+
+function getPreviewDeploymentAppUrl(options?: {
+  baseUrl?: string | null;
+  preferredOrigin?: string | null;
+}) {
+  return resolveConfiguredPublicAppUrl(
     options?.preferredOrigin,
-    process.env.NODE_ENV === "development" ? "http://localhost:3000" : null,
+    process.env.VERCEL_URL,
+    options?.baseUrl,
+  );
+}
+
+export function getPublicRsvpEnvironment(): PublicRsvpEnvironment {
+  if (process.env.NODE_ENV === "development") {
+    return "development";
+  }
+
+  const vercelEnvironment = (process.env.VERCEL_ENV ?? "").trim().toLowerCase();
+
+  if (vercelEnvironment === "preview") {
+    return "preview";
+  }
+
+  return "production";
+}
+
+export function getPublicAppUrl(options?: {
+  baseUrl?: string | null;
+  preferredOrigin?: string | null;
+}) {
+  const environment = getPublicRsvpEnvironment();
+
+  if (environment === "development") {
+    return (
+      getLocalDevelopmentAppUrl() ??
+      resolveConfiguredPublicAppUrl(
+        options?.preferredOrigin,
+        options?.baseUrl,
+        getConfiguredProductionAppUrl(),
+        getPreviewDeploymentAppUrl(options),
+      )
+    );
+  }
+
+  if (environment === "preview") {
+    return (
+      getPreviewDeploymentAppUrl(options) ??
+      resolveConfiguredPublicAppUrl(
+        options?.baseUrl,
+        getConfiguredProductionAppUrl(),
+      )
+    );
+  }
+
+  return resolveConfiguredPublicAppUrl(
+    options?.baseUrl,
+    getConfiguredProductionAppUrl(),
+    getPreviewDeploymentAppUrl(options),
+    options?.preferredOrigin,
   );
 }
 
@@ -232,8 +288,10 @@ export type PublicRsvpLinkSet = {
   displayUrl: string | null;
   fallbackFormUrl: string | null;
   fallbackPathUrl: string | null;
+  localPreviewUrl: string | null;
   openFormUrl: string | null;
   openUrl: string | null;
+  previewChromeUrl: string | null;
   preferredProductionFormUrl: string | null;
   preferredProductionUrl: string | null;
   qrUrl: string | null;
@@ -244,11 +302,18 @@ export type PublicRsvpLinkSet = {
 export function resolvePublicRsvpLinkSet(input: {
   baseUrl?: string | null;
   customDomain?: string | null;
+  preferredOrigin?: string | null;
   slug?: string | null;
   subdomain?: string | null;
   wildcardBaseDomain?: string | null;
 }): PublicRsvpLinkSet {
   const slug = input.slug?.trim() || null;
+  const environment = getPublicRsvpEnvironment();
+  const runtimeBaseUrl = getPublicAppUrl({
+    baseUrl: input.baseUrl,
+    preferredOrigin: input.preferredOrigin,
+  });
+  const productionBaseUrl = getConfiguredProductionAppUrl() ?? runtimeBaseUrl;
   const wildcardProductionUrl = input.subdomain
     ? buildWildcardRsvpUrl({
         baseDomain: input.wildcardBaseDomain,
@@ -258,19 +323,19 @@ export function resolvePublicRsvpLinkSet(input: {
   const wildcardProductionFormUrl = appendHashToUrl(wildcardProductionUrl, "#rsvp-form");
   const fallbackPathUrl = slug
     ? buildPublicRsvpUrl({
-        baseUrl: input.baseUrl,
+        baseUrl: runtimeBaseUrl,
         slug,
       })
     : null;
   const fallbackFormUrl = slug
     ? buildPublicRsvpFormUrl({
-        baseUrl: input.baseUrl,
+        baseUrl: runtimeBaseUrl,
         slug,
       })
     : null;
   const preferredProductionUrl = slug
     ? getBestPublicRsvpUrl({
-        baseUrl: input.baseUrl,
+        baseUrl: productionBaseUrl,
         customDomain: input.customDomain,
         slug,
         subdomain: input.subdomain,
@@ -279,7 +344,7 @@ export function resolvePublicRsvpLinkSet(input: {
     : null;
   const preferredProductionFormUrl = slug
     ? getBestPublicRsvpFormUrl({
-        baseUrl: input.baseUrl,
+        baseUrl: productionBaseUrl,
         customDomain: input.customDomain,
         slug,
         subdomain: input.subdomain,
@@ -302,25 +367,34 @@ export function resolvePublicRsvpLinkSet(input: {
         })
       : null;
   const useLocalSafeUrls =
-    process.env.NODE_ENV === "development" && !isLocalWildcardSimulationEnabled();
+    environment === "development" && !isLocalWildcardSimulationEnabled();
   const displayUrl = useLocalSafeUrls
     ? (localDevelopmentUrl ?? fallbackPathUrl ?? preferredProductionUrl)
-    : preferredProductionUrl;
+    : environment === "preview"
+      ? (fallbackPathUrl ?? preferredProductionUrl)
+      : (preferredProductionUrl ?? fallbackPathUrl);
   const openUrl = displayUrl;
+  const copyUrl = displayUrl;
+  const qrUrl = displayUrl;
+  const previewChromeUrl = displayUrl;
   const openFormUrl = useLocalSafeUrls
     ? (localDevelopmentFormUrl ?? fallbackFormUrl ?? preferredProductionFormUrl)
-    : preferredProductionFormUrl;
+    : environment === "preview"
+      ? (fallbackFormUrl ?? preferredProductionFormUrl)
+      : (preferredProductionFormUrl ?? fallbackFormUrl);
 
   return {
-    copyUrl: displayUrl,
+    copyUrl,
     displayUrl,
     fallbackFormUrl,
     fallbackPathUrl,
+    localPreviewUrl: localDevelopmentUrl,
     openFormUrl,
     openUrl,
+    previewChromeUrl,
     preferredProductionFormUrl,
     preferredProductionUrl,
-    qrUrl: displayUrl,
+    qrUrl,
     wildcardProductionFormUrl,
     wildcardProductionUrl,
   };
