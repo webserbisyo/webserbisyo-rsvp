@@ -360,7 +360,7 @@ function AttendanceOption({
         checked={checked}
         onChange={onChange}
         disabled={disabled}
-        className="sr-only"
+        className="event-preview-choice-input"
       />
       {label}
     </label>

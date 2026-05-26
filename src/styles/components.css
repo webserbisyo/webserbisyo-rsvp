@@ -5332,18 +5332,24 @@
 .event-website-public-page .event-preview-major-divider::before,
 [data-dashboard] .event-website-page .event-preview-major-divider::before {
   content: "";
-  width: 100%;
-  max-width: 144px;
-  border-top: 1px solid #dedbd6;
-  transform: translateY(50%);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(100%, 144px);
+  height: 1px;
+  background: #dedbd6;
+  transform: translate(-50%, -50%);
 }
 
 .event-website-public-page .event-preview-major-divider span,
 [data-dashboard] .event-website-page .event-preview-major-divider span {
-  width: 8px;
-  height: 8px;
-  margin-left: -8px;
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 10px;
+  height: 10px;
   border: 1px solid #d2cec8;
+  border-radius: 0;
   background: #ffffff;
   transform: rotate(45deg);
 }
@@ -5352,8 +5358,9 @@
 [data-dashboard] .event-website-page .event-preview-internal-divider {
   width: 100%;
   max-width: 120px;
-  border-top: 1px solid #e3dfda;
-  background: none;
+  height: 1px;
+  border-top: 0;
+  background: #e3dfda;
 }
 
 .event-website-public-page .event-preview-timeline-list,
@@ -5441,10 +5448,11 @@
     .event-preview-sponsor-list
   ) {
   display: grid;
-  width: 100%;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  justify-items: center;
+  width: min(100%, 24rem);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  justify-items: stretch;
+  margin-inline: auto;
 }
 
 .event-website-public-page :is(
@@ -5464,7 +5472,7 @@
   min-width: 0;
   gap: 8px;
   border: 1px solid #ece9e5;
-  border-radius: 14px;
+  border-radius: 18px;
   background: #fbfbfa;
   padding: 14px;
   text-align: left;
@@ -5473,24 +5481,23 @@
 .event-website-public-page .event-preview-sponsor-list span,
 [data-dashboard] .event-website-page .event-preview-sponsor-list span {
   display: grid;
-  place-items: center;
+  align-items: center;
   width: 100%;
-  max-width: 18rem;
   min-width: 0;
-  min-height: 52px;
+  min-height: 0;
   border: 1px solid #ece9e5;
-  border-radius: 999px;
+  border-radius: 18px;
   background: #fbfbfa;
   color: #4d4945;
   font-size: 12.5px;
   line-height: 1.4;
-  padding: 10px 14px;
-  text-align: center;
+  padding: 14px 16px;
+  text-align: left;
 }
 
 .event-website-public-page .event-preview-gift-card,
 [data-dashboard] .event-website-page .event-preview-gift-card {
-  max-width: 18rem;
+  max-width: none;
   align-content: start;
   justify-items: center;
   text-align: center;
@@ -5510,28 +5517,7 @@
     .event-preview-gift-grid,
     .event-preview-sponsor-list
   ) > :only-child {
-  grid-column: 1 / -1;
-  justify-self: center;
-}
-
-.event-website-public-page :is(
-    .event-preview-party-card,
-    .event-preview-guidance-card,
-    .event-preview-note-card
-  ):only-child,
-[data-dashboard] .event-website-page :is(
-    .event-preview-party-card,
-    .event-preview-guidance-card,
-    .event-preview-note-card
-  ):only-child {
-  max-width: 20rem;
-}
-
-.event-website-public-page .event-preview-gift-card:only-child,
-[data-dashboard] .event-website-page .event-preview-gift-card:only-child,
-.event-website-public-page .event-preview-sponsor-list span:only-child,
-[data-dashboard] .event-website-page .event-preview-sponsor-list span:only-child {
-  max-width: 18rem;
+  justify-self: stretch;
 }
 
 .event-website-public-page :is(.event-preview-gift-placeholder, .event-preview-gift-image),
@@ -5589,6 +5575,39 @@
   width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.event-website-public-page .event-preview-choice-option,
+[data-dashboard] .event-website-page .event-preview-choice-option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.event-website-public-page .event-preview-choice-input,
+[data-dashboard] .event-website-page .event-preview-choice-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.event-website-public-page .event-preview-address-copy,
+[data-dashboard] .event-website-page .event-preview-address-copy {
+  display: inline-grid;
+  width: auto;
+  max-width: min(100%, 30rem);
+  justify-self: center;
+  align-items: flex-start;
+  justify-items: start;
+  text-align: left;
 }
 
 .event-website-public-page :is(
