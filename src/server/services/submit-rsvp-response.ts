@@ -55,6 +55,7 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
   // until a storage model and dashboard read flow are defined for them.
   const companionRows = buildCompanionRows(payload, rsvpSettings);
   const partySize = payload.attendanceStatus === "attending" ? 1 + payload.companionCount : 1;
+  const trimmedMessage = rsvpSettings.messageToHostEnabled ? payload.message?.trim() ?? "" : "";
   const responsePayload: TablesInsert<"rsvp_responses"> = {
     attendance_status: payload.attendanceStatus,
     client_id: event.client_id,
@@ -62,7 +63,8 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
     email: rsvpSettings.emailEnabled ? (payload.email ?? null) : null,
     event_id: event.id,
     guest_name: payload.guestName,
-    message: rsvpSettings.messageToHostEnabled ? (payload.message ?? null) : null,
+    message: trimmedMessage || null,
+    ...(trimmedMessage ? { message_public_status: "pending_review" } : {}),
     party_size: partySize,
     phone: rsvpSettings.phoneEnabled ? (payload.phone ?? null) : null,
     source: "public_fallback_page",

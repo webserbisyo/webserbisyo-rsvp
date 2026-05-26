@@ -1,4 +1,7 @@
 import {
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
   DEFAULT_RSVP_DEADLINE_OFFSET_DAYS,
   DEFAULT_RSVP_DEADLINE_TIME,
   DEFAULT_WEDDING_EVENT_TYPE,
@@ -114,9 +117,9 @@ export function buildDefaultWeddingEventWebsiteContent(
         sectionIntro: "Your presence is the greatest gift.",
       },
       guestbook: {
-        messageBody:
-          "Your presence means the world to us. Thank you for celebrating this special day with us.",
-        sectionTitle: "A Note from Us",
+        emptyStateMessage: DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+        sectionIntro: DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
+        sectionTitle: DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
       },
       host_info: {
         brideName: coupleNames.brideName,

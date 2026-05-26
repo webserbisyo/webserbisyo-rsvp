@@ -24,6 +24,7 @@ type RsvpResponsesPageProps = {
   eventSlug?: string | null;
   eventTitle?: string | null;
   hasCurrentEvent: boolean;
+  initialActiveTab?: RsvpResponsesTab;
   initialResponses: RsvpResponseRecord[];
 };
 
@@ -32,10 +33,11 @@ export function RsvpResponsesPage({
   eventSlug = null,
   eventTitle = null,
   hasCurrentEvent,
+  initialActiveTab = "all",
   initialResponses,
 }: RsvpResponsesPageProps) {
   const [responses, setResponses] = useState(initialResponses);
-  const [activeTab, setActiveTab] = useState<RsvpResponsesTab>("all");
+  const [activeTab, setActiveTab] = useState<RsvpResponsesTab>(initialActiveTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResponse, setSelectedResponse] = useState<RsvpResponseRecord | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);

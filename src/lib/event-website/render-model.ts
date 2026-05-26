@@ -2,6 +2,7 @@ import type { EventWebsiteSectionKey } from "@/config/event-website-sections";
 import {
   eventWebsiteContentSectionKeys,
   type EventWebsiteContent,
+  type EventWebsiteGuestbookMessage,
   type EventWebsiteCustomQuestionFieldType,
 } from "@/lib/event-website/types";
 
@@ -93,8 +94,9 @@ export type EventWebsiteRenderModel = {
     storyBody: string;
     storyTitle: string;
   };
-  messages: {
-    messageBody: string;
+  guestbook: {
+    emptyStateMessage: string;
+    sectionIntro: string;
     sectionTitle: string;
   };
   musicEffects: {
@@ -208,8 +210,9 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
       storyBody: content.sections.story_message.storyBody,
       storyTitle: content.sections.story_message.storyTitle,
     },
-    messages: {
-      messageBody: content.sections.guestbook.messageBody,
+    guestbook: {
+      emptyStateMessage: content.sections.guestbook.emptyStateMessage,
+      sectionIntro: content.sections.guestbook.sectionIntro,
       sectionTitle: content.sections.guestbook.sectionTitle,
     },
     musicEffects: {
@@ -266,3 +269,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
     },
   };
 }
+
+export type EventWebsiteRendererGuestbookProps = {
+  guestbookMessages: EventWebsiteGuestbookMessage[];
+};

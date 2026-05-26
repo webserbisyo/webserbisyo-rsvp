@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Gift,
   Mail,
+  MessageCircleHeart,
   MapPin,
   Music,
   Phone,
@@ -24,6 +25,7 @@ import {
   eventWebsiteRenderModelSectionKeys,
   type EventWebsiteRenderModel,
 } from "@/lib/event-website/render-model";
+import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 import {
   RSVP_ATTENDANCE_LABEL,
   RSVP_EMAIL_LABEL,
@@ -42,6 +44,8 @@ import { cn } from "@/lib/utils";
 
 type EventWebsiteRendererProps = {
   draft: EventWebsiteRenderModel;
+  guestbookMessages?: EventWebsiteGuestbookMessage[];
+  hideEmptyGuestbook?: boolean;
   highlightActiveSection?: boolean;
   publicRsvp?: {
     availabilityMessage: string | null;
@@ -57,12 +61,18 @@ const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(eventWebsiteRende
 
 export function EventWebsiteRenderer({
   draft,
+  guestbookMessages = [],
+  hideEmptyGuestbook = false,
   highlightActiveSection = false,
   publicRsvp = null,
   sections,
   selectedSectionKey,
 }: EventWebsiteRendererProps) {
-  const visibleSections = sections.filter((sectionKey) => supportedSectionKeySet.has(sectionKey));
+  const visibleSections = sections.filter(
+    (sectionKey) =>
+      supportedSectionKeySet.has(sectionKey) &&
+      !(sectionKey === "guestbook" && hideEmptyGuestbook && guestbookMessages.length === 0),
+  );
 
   return (
     <>
@@ -70,6 +80,7 @@ export function EventWebsiteRenderer({
         <SectionRouter
           key={sectionKey}
           draft={draft}
+          guestbookMessages={guestbookMessages}
           isActive={highlightActiveSection && sectionKey === selectedSectionKey}
           publicRsvp={sectionKey === "rsvp_form" ? publicRsvp : null}
           sectionKey={sectionKey}
@@ -82,12 +93,14 @@ export function EventWebsiteRenderer({
 
 function SectionRouter({
   draft,
+  guestbookMessages,
   isActive,
   publicRsvp,
   sectionKey,
   showDivider,
 }: {
   draft: EventWebsiteRenderModel;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   isActive: boolean;
   publicRsvp: EventWebsiteRendererProps["publicRsvp"];
   sectionKey: EventWebsiteSectionKey;
@@ -115,7 +128,9 @@ function SectionRouter({
           <RsvpFormSection draft={draft} publicRsvp={publicRsvp} />
         ) : null}
         {sectionKey === "gift_details" ? <GiftDetailsSection draft={draft} /> : null}
-        {sectionKey === "guestbook" ? <MessagesSection draft={draft} /> : null}
+        {sectionKey === "guestbook" ? (
+          <GuestbookSection draft={draft} guestbookMessages={guestbookMessages} />
+        ) : null}
         {sectionKey === "story_message" ? <LoveStorySection draft={draft} /> : null}
         {sectionKey === "contact_socials" ? <ContactSocialsSection draft={draft} /> : null}
       </div>
@@ -652,9 +667,22 @@ function GiftDetailsSection({ draft }: { draft: EventWebsiteRenderModel }) {
   );
 }
 
-function MessagesSection({ draft }: { draft: EventWebsiteRenderModel }) {
-  const title = withFallback(draft.messages.sectionTitle, previewDefaultDraft.messages.sectionTitle);
-  const body = draft.messages.messageBody.trim() || previewDefaultDraft.messages.messageBody;
+function GuestbookSection({
+  draft,
+  guestbookMessages,
+}: {
+  draft: EventWebsiteRenderModel;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
+}) {
+  const title = withFallback(
+    draft.guestbook.sectionTitle,
+    previewDefaultDraft.guestbook.sectionTitle,
+  );
+  const intro =
+    draft.guestbook.sectionIntro.trim() || previewDefaultDraft.guestbook.sectionIntro;
+  const emptyState =
+    draft.guestbook.emptyStateMessage.trim() ||
+    previewDefaultDraft.guestbook.emptyStateMessage;
 
   return (
     <section className="event-preview-section">
@@ -662,9 +690,35 @@ function MessagesSection({ draft }: { draft: EventWebsiteRenderModel }) {
         Guestbook
       </Badge>
       <h3>{title}</h3>
-      <div className="event-preview-message-card">
-        <p>{body}</p>
-      </div>
+      {intro ? <p className="event-preview-copy">{intro}</p> : null}
+      {guestbookMessages.length > 0 ? (
+        <div className="grid gap-3">
+          {guestbookMessages.map((message) => (
+            <article key={message.id} className="event-preview-message-card">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fff0e8] text-[#c96f4c]">
+                  <MessageCircleHeart className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <strong className="block text-sm text-[#2b2521]">{message.guestName}</strong>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#65584f]">
+                    {message.message}
+                  </p>
+                  {message.approvedAt || message.submittedAt ? (
+                    <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[#a88d7f]">
+                      {formatGuestbookDate(message.approvedAt ?? message.submittedAt)}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="event-preview-message-card">
+          <p>{emptyState}</p>
+        </div>
+      )}
     </section>
   );
 }
@@ -920,6 +974,23 @@ function parseCountdownTarget(eventDate: string, eventTime: string) {
 
 function formatCountdownValue(value: number) {
   return value.toString().padStart(2, "0");
+}
+
+function formatGuestbookDate(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    dateStyle: "medium",
+    timeZone: "Asia/Manila",
+  }).format(date);
 }
 
 function withFallback(value: string, fallback: string) {

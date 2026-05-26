@@ -3,6 +3,11 @@ import type { EventWebsiteSectionKey } from "@/config/event-website-sections";
 export const DEFAULT_WEDDING_EVENT_TYPE = "wedding";
 export const DEFAULT_RSVP_DEADLINE_OFFSET_DAYS = 30;
 export const DEFAULT_RSVP_DEADLINE_TIME = "18:00";
+export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE = "Guestbook";
+export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO =
+  "Read warm wishes and messages from our guests.";
+export const DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE =
+  "Approved guest messages will appear here soon.";
 
 export const eventWebsiteContentSectionKeys = [
   "host_info",
@@ -178,8 +183,17 @@ export type EventWebsiteGiftDetailsSection = {
 };
 
 export type EventWebsiteGuestbookSection = {
-  messageBody: string;
+  emptyStateMessage: string;
+  sectionIntro: string;
   sectionTitle: string;
+};
+
+export type EventWebsiteGuestbookMessage = {
+  approvedAt: string | null;
+  guestName: string;
+  id: string;
+  message: string;
+  submittedAt: string | null;
 };
 
 export type EventWebsiteStoryMessageSection = {

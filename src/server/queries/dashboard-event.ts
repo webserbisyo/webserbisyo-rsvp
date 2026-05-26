@@ -1,11 +1,13 @@
 import "server-only";
 
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 import { getPublicAppUrl, getRsvpPreviewBaseDomain, resolvePublicRsvpLinkSet } from "@/lib/public-rsvp-url";
 import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/event-website/types";
 import { requireTenantMember } from "@/lib/permissions";
 import type { Json } from "@/lib/supabase/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { listApprovedGuestbookMessages } from "@/server/services/event-website-guestbook";
 
 export type DashboardEventWebsiteData = {
   eventId: string | null;
@@ -30,6 +32,7 @@ export type DashboardEventWebsiteData = {
   publishedAt: string | null;
   eventTime: string | null;
   eventType: string | null;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   maxGuestCount: number | null;
   rsvpCloseAt: string | null;
   snapshotPublishedAt: string | null;
@@ -161,6 +164,13 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     event?.status === "published" && event?.published_at
       ? (publicLinkSet?.openUrl ?? null)
       : null;
+  const guestbookMessages =
+    event?.id && clientId
+      ? await listApprovedGuestbookMessages({
+          clientId,
+          eventId: event.id,
+        })
+      : [];
 
   return {
     eventId: event?.id ?? null,
@@ -174,6 +184,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     eventTime: event?.event_time ?? null,
     eventType: event?.event_type ?? null,
     eventWebsiteContent,
+    guestbookMessages,
     maxGuestCount: event?.max_guest_count ?? null,
     rsvpCloseAt: event?.rsvp_close_at ?? null,
     snapshotPublishedAt: eventContent?.published_at ?? null,

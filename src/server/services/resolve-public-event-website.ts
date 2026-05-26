@@ -9,6 +9,7 @@ import {
 } from "@/lib/event-website/public-event";
 import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { listApprovedGuestbookMessages } from "./event-website-guestbook";
 
 type PublicEventRecord = {
   archived_at: string | null;
@@ -27,6 +28,7 @@ type PublicEventRecord = {
   event_time: string | null;
   event_type: string;
   fallback_page_enabled: boolean;
+  id: string;
   published_at: string | null;
   rsvp_close_at: string | null;
   rsvp_open_at: string | null;
@@ -105,6 +107,7 @@ async function loadPublishedPublicEvent(input: {
     .select(
       `
         event_slug,
+        id,
         subdomain_slug,
         ${baseSelect}
       `,
@@ -126,6 +129,7 @@ async function loadPublishedPublicEvent(input: {
       .select(
         `
           event_slug,
+          id,
           ${baseSelect}
         `,
       )
@@ -186,6 +190,9 @@ async function toPublicEventDto(event: PublicEventRecord | null) {
       venueName: event.venue_name,
     },
   });
+  const guestbookMessages = await listApprovedGuestbookMessages({
+    eventId: event.id,
+  });
 
   return buildPublicEventDto({
     content,
@@ -194,6 +201,7 @@ async function toPublicEventDto(event: PublicEventRecord | null) {
     eventTime: event.event_time,
     eventTitle: event.title,
     eventType: event.event_type,
+    guestbookMessages,
     publishedAt: event.published_at,
     rsvpCloseAt: event.rsvp_close_at,
     rsvpOpenAt: event.rsvp_open_at,

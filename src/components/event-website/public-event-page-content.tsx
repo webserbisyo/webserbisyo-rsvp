@@ -58,6 +58,8 @@ export function PublicEventPageContent({
           {/* Public event pages render from the published snapshot only, never from mutable draft content. */}
           <EventWebsiteRenderer
             draft={event.renderModel}
+            guestbookMessages={event.guestbookMessages}
+            hideEmptyGuestbook
             publicRsvp={{
               availabilityMessage: event.rsvp.availabilityMessage,
               eventSlug: event.eventSlug,

@@ -13,7 +13,11 @@ import {
   PUBLIC_RSVP_SLUG_MIN_LENGTH,
   PUBLIC_RSVP_SLUG_PATTERN,
 } from "@/lib/public-rsvp-slugs";
-import type { EventWebsiteContent, EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
+import type {
+  EventWebsiteContent,
+  EventWebsiteGuestbookMessage,
+  EventWebsiteRsvpFormSection,
+} from "@/lib/event-website/types";
 
 export const PublicEventSlugSchema = z
   .string()
@@ -44,6 +48,7 @@ export type PublicEventDto = {
   eventTime: string | null;
   eventTitle: string;
   eventType: string;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   publishedAt: string;
   renderModel: EventWebsiteRenderModel;
   rsvp: PublicEventRsvpState;
@@ -68,6 +73,7 @@ export function buildPublicEventDto({
   venueAddress,
   venueName,
   visibility,
+  guestbookMessages,
 }: {
   content: EventWebsiteContent;
   eventDate: string | null;
@@ -75,6 +81,7 @@ export function buildPublicEventDto({
   eventTime: string | null;
   eventTitle: string;
   eventType: string;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   publishedAt: string;
   rsvpCloseAt: string | null;
   rsvpOpenAt: string | null;
@@ -92,10 +99,11 @@ export function buildPublicEventDto({
     eventTime,
     eventTitle,
     eventType,
+    guestbookMessages,
     publishedAt,
     renderModel: buildEventWebsiteRenderModel(publicContent),
     rsvp: getPublicEventRsvpState(publicContent.sections.rsvp_form, rsvpOpenAt, rsvpCloseAt),
-    sections: buildPublicRenderableSections(publicContent, eventType),
+    sections: buildPublicRenderableSections(publicContent, eventType, guestbookMessages.length),
     subdomainSlug,
     venueAddress,
     venueName,
@@ -106,6 +114,7 @@ export function buildPublicEventDto({
 export function buildPublicRenderableSections(
   content: EventWebsiteContent,
   eventType: string | null | undefined,
+  guestbookMessageCount = 0,
 ): EventWebsiteSectionKey[] {
   const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(eventWebsiteRenderModelSectionKeys);
   const resolvedSections = resolveEventWebsiteSections(eventType);
@@ -120,6 +129,7 @@ export function buildPublicRenderableSections(
 
   return orderedSections.filter(
     (sectionKey) =>
+      (sectionKey !== "guestbook" || guestbookMessageCount > 0) &&
       supportedSectionKeySet.has(sectionKey as EventWebsiteSectionKey) &&
       allowedSections.has(sectionKey as EventWebsiteSectionKey),
   ) as EventWebsiteSectionKey[];

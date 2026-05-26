@@ -514,6 +514,7 @@ function EnabledEventWebsiteWorkspace({
         </div>
         <EventWebsitePreviewPanel
           enabledSections={enabledSections}
+          guestbookMessages={eventWebsiteData.guestbookMessages}
           previewChromeUrl={eventWebsiteData.previewChromeUrl}
           previewScrollRequest={previewScrollRequest}
           previewDraft={previewDraft}
@@ -589,6 +590,7 @@ function EnabledEventWebsiteWorkspace({
               compactChrome
               defaultDevice={isTabletLayout ? "desktop" : "mobile"}
               enabledSections={enabledSections}
+              guestbookMessages={eventWebsiteData.guestbookMessages}
               mode="responsive"
               previewChromeUrl={eventWebsiteData.previewChromeUrl}
               previewScrollRequest={previewScrollRequest}

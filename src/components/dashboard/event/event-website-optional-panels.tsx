@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
 import type {
   EventWebsiteEntourageGroupDraft,
@@ -21,8 +22,11 @@ import {
   TextField,
   TimeField,
 } from "@/components/dashboard/event/event-website-optional-fields";
+import { Button } from "@/components/ui/button";
+import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 
 type SharedOptionalPanelProps = {
+  guestbookMessages?: EventWebsiteGuestbookMessage[];
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
   saveButtonProps: EventWebsiteSaveButtonProps;
@@ -476,17 +480,18 @@ export function OptionalAttirePanel({
   );
 }
 
-export function OptionalMessagesPanel({
+export function OptionalGuestbookPanel({
+  guestbookMessages = [],
   onPreviewDraftChange,
   previewDraft,
   saveButtonProps,
 }: SharedOptionalPanelProps) {
-  const values = previewDraft.messages;
+  const values = previewDraft.guestbook;
 
-  function updateValues(fieldId: keyof EventWebsitePreviewDraft["messages"], value: string) {
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["guestbook"], value: string) {
     onPreviewDraftChange({
       ...previewDraft,
-      messages: { ...values, [fieldId]: value },
+      guestbook: { ...values, [fieldId]: value },
     });
   }
 
@@ -497,15 +502,65 @@ export function OptionalMessagesPanel({
     >
       <EditorGroup title="Guestbook Copy">
         <TextField
-          field={{ id: "messagesSectionTitle", label: "Section Title", maxLength: 80 }}
+          field={{ id: "guestbookSectionTitle", label: "Section Title", maxLength: 80 }}
           value={values.sectionTitle}
           onChange={(value) => updateValues("sectionTitle", value)}
         />
         <TextAreaField
-          field={{ id: "messagesBody", label: "Short Intro / Instructions", maxLength: 320 }}
-          value={values.messageBody}
-          onChange={(value) => updateValues("messageBody", value)}
+          field={{ id: "guestbookSectionIntro", label: "Section Intro", maxLength: 320 }}
+          value={values.sectionIntro}
+          onChange={(value) => updateValues("sectionIntro", value)}
         />
+        <TextAreaField
+          field={{ id: "guestbookEmptyState", label: "Empty State Message", maxLength: 320 }}
+          value={values.emptyStateMessage}
+          onChange={(value) => updateValues("emptyStateMessage", value)}
+        />
+      </EditorGroup>
+
+      <EditorGroup title="Approved Messages">
+        <div className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-[#eadbd0] bg-white/80 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-[#2b2521]">
+              {guestbookMessages.length} approved message{guestbookMessages.length === 1 ? "" : "s"}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#8a7c72]">
+              Guestbook messages come from RSVP Responses. Approve messages there to show them publicly.
+            </p>
+          </div>
+          <Button asChild type="button" variant="outline" size="sm" className="rounded-xl">
+            <Link href="/dashboard/responses?tab=needs-review">Manage messages</Link>
+          </Button>
+        </div>
+
+        {guestbookMessages.length > 0 ? (
+          <div className="space-y-3">
+            {guestbookMessages.map((message) => (
+              <article
+                key={message.id}
+                className="rounded-[1.2rem] border border-[#eadbd0] bg-[#fffaf6] px-4 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#2b2521]">{message.guestName}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#65584f]">
+                      {message.message}
+                    </p>
+                  </div>
+                  {message.approvedAt || message.submittedAt ? (
+                    <p className="shrink-0 text-[11px] font-medium uppercase tracking-[0.14em] text-[#a88d7f]">
+                      {formatGuestbookMessageDate(message.approvedAt ?? message.submittedAt)}
+                    </p>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[1.2rem] border border-dashed border-[#e5d6ca] bg-[#fffdfb] px-4 py-4 text-sm text-[#8a7c72]">
+            No approved guestbook messages yet.
+          </div>
+        )}
       </EditorGroup>
       <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
@@ -646,6 +701,23 @@ export function OptionalGiftDetailsPanel({
       <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
+}
+
+function formatGuestbookMessageDate(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    dateStyle: "medium",
+    timeZone: "Asia/Manila",
+  }).format(date);
 }
 
 export function OptionalContactSocialsPanel({

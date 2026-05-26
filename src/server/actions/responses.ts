@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireTenantMember } from "@/lib/permissions";
 import { PublicRsvpResponseSchema } from "@/lib/validations/rsvp-response.schema";
@@ -36,6 +37,11 @@ export async function showResponseMessagesInGuestbookAction(input: unknown) {
       responseIds: payload.responseIds,
     });
 
+    revalidatePath("/dashboard/responses");
+    revalidatePath("/dashboard/event");
+    revalidatePath(`/r/${result.currentEventSlug}`);
+    revalidatePath("/");
+
     return actionSuccess(result);
   } catch (error) {
     return actionFailure(error);
@@ -52,6 +58,11 @@ export async function removeResponseMessagesFromGuestbookAction(input: unknown) 
       mode: "remove",
       responseIds: payload.responseIds,
     });
+
+    revalidatePath("/dashboard/responses");
+    revalidatePath("/dashboard/event");
+    revalidatePath(`/r/${result.currentEventSlug}`);
+    revalidatePath("/");
 
     return actionSuccess(result);
   } catch (error) {

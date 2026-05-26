@@ -12,8 +12,8 @@ import {
   OptionalEntouragePanel,
   OptionalExtraInfoPanel,
   OptionalGiftDetailsPanel,
+  OptionalGuestbookPanel,
   OptionalLoveStoryPanel,
-  OptionalMessagesPanel,
   OptionalMusicEffectsPanel,
   OptionalPrincipalSponsorsPanel,
   OptionalReceptionPanel,
@@ -47,6 +47,7 @@ import {
   RSVP_MESSAGE_PRIVACY_COPY,
   RSVP_PHONE_LABEL,
 } from "@/lib/event-website/rsvp-form-copy";
+import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 
 export type EventWebsiteEditorData = {
   eventContent: {
@@ -61,6 +62,7 @@ export type EventWebsiteEditorData = {
   eventDate: string | null;
   eventTime: string | null;
   eventType: string | null;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   maxGuestCount: number | null;
   rsvpCloseAt: string | null;
   title: string | null;
@@ -184,6 +186,7 @@ export function EventWebsiteEditorPanel({
       return (
         <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
           <WeddingOptionalSectionForm
+            guestbookMessages={eventData.guestbookMessages}
             previewDraft={previewDraft}
             sectionId={selectedSectionId}
             onPreviewDraftChange={onPreviewDraftChange}
@@ -283,11 +286,13 @@ function RequiredSectionForm({
 }
 
 function WeddingOptionalSectionForm({
+  guestbookMessages,
   onPreviewDraftChange,
   previewDraft,
   saveButtonProps,
   sectionId,
 }: {
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
   saveButtonProps: EventWebsiteSaveButtonProps;
@@ -365,7 +370,8 @@ function WeddingOptionalSectionForm({
 
   if (sectionId === "guestbook") {
     return (
-      <OptionalMessagesPanel
+      <OptionalGuestbookPanel
+        guestbookMessages={guestbookMessages}
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
         saveButtonProps={saveButtonProps}

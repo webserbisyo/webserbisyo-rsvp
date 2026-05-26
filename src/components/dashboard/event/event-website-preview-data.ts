@@ -11,6 +11,9 @@ import {
   formatEventWebsiteTime,
 } from "@/lib/event-website/formatting";
 import {
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
   eventWebsiteContentSectionKeys,
   type EventWebsiteContent,
   type EventWebsiteContentSectionKey,
@@ -129,10 +132,10 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
       "From the first hello to this special day, our journey has been filled with simple moments, answered prayers, and love that continued to grow. We are grateful to celebrate this chapter with the people who matter most to us.",
     storyTitle: "Our Story",
   },
-  messages: {
-    messageBody:
-      "Your presence means the world to us. Thank you for celebrating this special day with us.",
-    sectionTitle: "A Note from Us",
+  guestbook: {
+    emptyStateMessage: DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+    sectionIntro: DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
+    sectionTitle: DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
   },
   musicEffects: {
     musicLink: "",
@@ -242,7 +245,7 @@ export function buildInitialPreviewDraft(
       options: previewDefaultDraft.giftDetails.options.map((option) => ({ ...option })),
     },
     loveStory: { ...previewDefaultDraft.loveStory },
-    messages: { ...previewDefaultDraft.messages },
+    guestbook: { ...previewDefaultDraft.guestbook },
     musicEffects: { ...previewDefaultDraft.musicEffects },
     principalSponsors: { ...previewDefaultDraft.principalSponsors },
     reception: {
@@ -363,8 +366,9 @@ export function buildEventWebsiteContentFromPreviewDraft({
         sectionIntro: previewDraft.giftDetails.sectionIntro,
       },
       guestbook: {
-        messageBody: previewDraft.messages.messageBody,
-        sectionTitle: previewDraft.messages.sectionTitle,
+        emptyStateMessage: previewDraft.guestbook.emptyStateMessage,
+        sectionIntro: previewDraft.guestbook.sectionIntro,
+        sectionTitle: previewDraft.guestbook.sectionTitle,
       },
       host_info: {
         brideName: previewDraft.coupleInfo.brideName,

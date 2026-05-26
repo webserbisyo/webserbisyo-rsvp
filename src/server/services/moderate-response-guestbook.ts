@@ -8,7 +8,7 @@ import { writeAuditLog } from "./write-audit-log";
 type GuestbookModerationMode = "approve" | "remove";
 type GuestbookStatus = "approved" | "hidden" | "pending_review" | "private";
 
-type CurrentEventRecord = Pick<Tables<"rsvp_events">, "client_id" | "id">;
+type CurrentEventRecord = Pick<Tables<"rsvp_events">, "client_id" | "event_slug" | "id">;
 type ResponseModerationRecord = Pick<
   Tables<"rsvp_responses">,
   | "archived_at"
@@ -42,6 +42,7 @@ export type ModerateResponseGuestbookInput = {
 
 export type ModerateResponseGuestbookResult = {
   currentEventId: string;
+  currentEventSlug: string;
   skippedAlreadySetCount: number;
   skippedNoMessageCount: number;
   skippedUnauthorizedCount: number;
@@ -70,6 +71,7 @@ export async function moderateResponseGuestbookMessages(
   if (requestedIds.length === 0) {
     return {
       currentEventId: currentEvent.id,
+      currentEventSlug: currentEvent.event_slug,
       skippedAlreadySetCount: 0,
       skippedNoMessageCount: 0,
       skippedUnauthorizedCount: 0,
@@ -105,6 +107,7 @@ export async function moderateResponseGuestbookMessages(
   if (rowsToUpdate.length === 0) {
     return {
       currentEventId: currentEvent.id,
+      currentEventSlug: currentEvent.event_slug,
       skippedAlreadySetCount,
       skippedNoMessageCount,
       skippedUnauthorizedCount,
@@ -153,6 +156,7 @@ export async function moderateResponseGuestbookMessages(
 
   return {
     currentEventId: currentEvent.id,
+    currentEventSlug: currentEvent.event_slug,
     skippedAlreadySetCount,
     skippedNoMessageCount,
     skippedUnauthorizedCount,
@@ -174,7 +178,7 @@ async function getCurrentTenantEvent(
 ): Promise<CurrentEventRecord> {
   const { data: event, error } = await supabase
     .from("rsvp_events")
-    .select("id, client_id")
+    .select("id, client_id, event_slug")
     .eq("client_id", clientId)
     .is("archived_at", null)
     .order("created_at", { ascending: false })

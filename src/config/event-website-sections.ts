@@ -246,7 +246,7 @@ const optionalBaseSections: Record<
     helper: "Guest messages and well-wishes.",
     icon: MessageCircleHeart,
     key: "guestbook",
-    label: "Messages",
+    label: "Guestbook",
     required: false,
   },
   music_effects: {

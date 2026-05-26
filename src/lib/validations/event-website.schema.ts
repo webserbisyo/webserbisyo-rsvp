@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { buildManilaOffsetDateTime } from "@/lib/event-website/canonical";
 import {
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
+  DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
   DEFAULT_WEDDING_EVENT_TYPE,
   eventWebsiteContentSectionKeys,
   eventWebsiteCustomQuestionFieldTypes,
@@ -50,6 +53,66 @@ function normalizeNullableTextInput(value: unknown) {
 
   if (normalized === "") {
     return null;
+  }
+
+  return normalized;
+}
+
+function normalizeGuestbookSectionInput(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const raw = value as {
+    emptyStateMessage?: unknown;
+    messageBody?: unknown;
+    sectionIntro?: unknown;
+    sectionTitle?: unknown;
+  };
+
+  return {
+    emptyStateMessage:
+      typeof raw.emptyStateMessage === "string"
+        ? raw.emptyStateMessage
+        : DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+    sectionIntro:
+      typeof raw.sectionIntro === "string"
+        ? raw.sectionIntro
+        : typeof raw.messageBody === "string"
+          ? raw.messageBody
+          : DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
+    sectionTitle:
+      typeof raw.sectionTitle === "string"
+        ? raw.sectionTitle
+        : DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
+  };
+}
+
+function normalizeGuestbookSectionPatchInput(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const raw = value as {
+    emptyStateMessage?: unknown;
+    messageBody?: unknown;
+    sectionIntro?: unknown;
+    sectionTitle?: unknown;
+  };
+  const normalized: Record<string, unknown> = {};
+
+  if (typeof raw.emptyStateMessage === "string") {
+    normalized.emptyStateMessage = raw.emptyStateMessage;
+  }
+
+  if (typeof raw.sectionIntro === "string") {
+    normalized.sectionIntro = raw.sectionIntro;
+  } else if (typeof raw.messageBody === "string") {
+    normalized.sectionIntro = raw.messageBody;
+  }
+
+  if (typeof raw.sectionTitle === "string") {
+    normalized.sectionTitle = raw.sectionTitle;
   }
 
   return normalized;
@@ -286,12 +349,16 @@ export const EventWebsiteGiftDetailsSectionSchema = z
   })
   .strict();
 
-export const EventWebsiteGuestbookSectionSchema = z
-  .object({
-    messageBody: draftText(320),
-    sectionTitle: draftText(80),
-  })
-  .strict();
+export const EventWebsiteGuestbookSectionSchema = z.preprocess(
+  normalizeGuestbookSectionInput,
+  z
+    .object({
+      emptyStateMessage: draftText(320),
+      sectionIntro: draftText(320),
+      sectionTitle: draftText(80),
+    })
+    .strict(),
+);
 
 export const EventWebsiteStoryMessageSectionSchema = z
   .object({
@@ -512,8 +579,16 @@ export const EventWebsiteGiftDetailsSectionPatchSchema = z
     sectionIntro: draftText(200).optional(),
   })
   .strict();
-export const EventWebsiteGuestbookSectionPatchSchema =
-  EventWebsiteGuestbookSectionSchema.partial().strict();
+export const EventWebsiteGuestbookSectionPatchSchema = z.preprocess(
+  normalizeGuestbookSectionPatchInput,
+  z
+    .object({
+      emptyStateMessage: draftText(320).optional(),
+      sectionIntro: draftText(320).optional(),
+      sectionTitle: draftText(80).optional(),
+    })
+    .strict(),
+);
 export const EventWebsiteStoryMessageSectionPatchSchema =
   EventWebsiteStoryMessageSectionSchema.partial().strict();
 export const EventWebsiteContactSocialsSectionPatchSchema =

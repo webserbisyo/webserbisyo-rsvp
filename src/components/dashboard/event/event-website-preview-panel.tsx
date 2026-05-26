@@ -13,11 +13,13 @@ import {
   type EventWebsitePreviewDevice,
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
+import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 import { cn } from "@/lib/utils";
 
 type EventWebsitePreviewPanelProps = {
   defaultDevice?: EventWebsitePreviewDevice;
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
+  guestbookMessages: EventWebsiteGuestbookMessage[];
   compactChrome?: boolean;
   mode?: "desktop" | "responsive";
   previewChromeUrl: string | null;
@@ -33,6 +35,7 @@ const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(previewSupportedS
 export function EventWebsitePreviewPanel({
   defaultDevice = "desktop",
   enabledSections,
+  guestbookMessages,
   compactChrome = false,
   mode = "desktop",
   previewChromeUrl,
@@ -121,6 +124,7 @@ export function EventWebsitePreviewPanel({
           <div ref={previewScrollRef} className="event-preview-frame">
             <EventWebsiteRenderer
               draft={previewDraft}
+              guestbookMessages={guestbookMessages}
               highlightActiveSection
               sections={visiblePreviewSections.map((section) => section.key)}
               selectedSectionKey={selectedSectionKey}
