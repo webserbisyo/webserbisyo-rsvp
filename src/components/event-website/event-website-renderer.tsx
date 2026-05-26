@@ -785,7 +785,9 @@ function GiftPreviewMedia({ file, title }: { file: File | null; title: string })
 function MajorDivider() {
   return (
     <div className="event-preview-major-divider" aria-hidden="true">
-      <span />
+      <span className="event-preview-major-divider-line" />
+      <span className="event-preview-major-divider-marker" />
+      <span className="event-preview-major-divider-line" />
     </div>
   );
 }
