@@ -40,6 +40,7 @@ import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-res
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
+import { PUBLIC_RSVP_MESSAGE_MAX_LENGTH } from "@/lib/validations/rsvp-response.schema";
 import { cn } from "@/lib/utils";
 
 type EventWebsiteRendererProps = {
@@ -628,7 +629,10 @@ function RsvpFormSection({
           <label className="event-preview-field">
             <span>{RSVP_MESSAGE_LABEL}</span>
             <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_HELPER}</p>
-            <textarea placeholder="Leave a short message." />
+            <textarea
+              placeholder="Leave a short message."
+              maxLength={PUBLIC_RSVP_MESSAGE_MAX_LENGTH}
+            />
             <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_PRIVACY_COPY}</p>
           </label>
 
@@ -694,22 +698,7 @@ function GuestbookSection({
       {guestbookMessages.length > 0 ? (
         <div className="event-preview-guestbook-stack">
           {guestbookMessages.map((message) => (
-            <article key={message.id} className="event-preview-message-card">
-              <div className="event-preview-message-card-inner">
-                <span className="event-preview-message-icon" aria-hidden="true">
-                  <MessageCircleHeart className="size-4" aria-hidden="true" />
-                </span>
-                <div className="event-preview-message-body">
-                  <strong>{message.guestName}</strong>
-                  <p>{message.message}</p>
-                  {message.approvedAt || message.submittedAt ? (
-                    <p className="event-preview-message-date">
-                      {formatGuestbookDate(message.approvedAt ?? message.submittedAt)}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </article>
+            <GuestbookMessageCard key={message.id} message={message} />
           ))}
         </div>
       ) : (
@@ -718,6 +707,50 @@ function GuestbookSection({
         </div>
       )}
     </section>
+  );
+}
+
+function GuestbookMessageCard({
+  message,
+}: {
+  message: EventWebsiteGuestbookMessage;
+}) {
+  const isExpandable = message.message.length > 180 || /\n.{0,}\n/.test(message.message);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const displayedDate = message.submittedAt ?? message.approvedAt;
+
+  return (
+    <article className="event-preview-message-card">
+      <div className="event-preview-message-card-inner">
+        <span className="event-preview-message-icon" aria-hidden="true">
+          <MessageCircleHeart className="size-4" aria-hidden="true" />
+        </span>
+        <div className="event-preview-message-body">
+          <strong>{message.guestName}</strong>
+          <p
+            className={cn(
+              "event-preview-message-text",
+              isExpandable && "is-expandable",
+              isExpanded && "is-expanded",
+            )}
+          >
+            {message.message}
+          </p>
+          {isExpandable ? (
+            <button
+              type="button"
+              className="event-preview-message-toggle"
+              onClick={() => setIsExpanded((current) => !current)}
+            >
+              {isExpanded ? "Show less" : "View more"}
+            </button>
+          ) : null}
+          {displayedDate ? (
+            <p className="event-preview-message-date">{formatGuestbookDate(displayedDate)}</p>
+          ) : null}
+        </div>
+      </div>
+    </article>
   );
 }
 

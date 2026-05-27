@@ -14,6 +14,11 @@ import {
 } from "@/lib/event-website/rsvp-form-copy";
 import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
 import {
+  PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH,
+  PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH,
+  PUBLIC_RSVP_EMAIL_MAX_LENGTH,
+  PUBLIC_RSVP_GUEST_NAME_MAX_LENGTH,
+  PUBLIC_RSVP_MESSAGE_MAX_LENGTH,
   PublicRsvpResponseFieldsInput,
   RSVP_RESPONSE_STATUS_VALUES,
 } from "@/lib/validations/rsvp-response.schema";
@@ -175,6 +180,7 @@ export function PublicRsvpResponseForm({
             name="guestName"
             autoComplete="name"
             disabled={isPending}
+            maxLength={PUBLIC_RSVP_GUEST_NAME_MAX_LENGTH}
             placeholder="Your full name"
             required
           />
@@ -190,6 +196,7 @@ export function PublicRsvpResponseForm({
             type="email"
             autoComplete="email"
             disabled={isPending}
+            maxLength={PUBLIC_RSVP_EMAIL_MAX_LENGTH}
             placeholder="you@example.com"
             required={settings.emailRequired}
           />
@@ -272,6 +279,7 @@ export function PublicRsvpResponseForm({
                     value={companion.fullName}
                     onChange={(event) => updateCompanion(index, "fullName", event.target.value)}
                     disabled={isPending}
+                    maxLength={PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH}
                     placeholder="Full Name"
                     required
                   />
@@ -282,6 +290,7 @@ export function PublicRsvpResponseForm({
                       value={companion.ageLabel}
                       onChange={(event) => updateCompanion(index, "ageLabel", event.target.value)}
                       disabled={isPending}
+                      maxLength={PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH}
                       placeholder="Adult, child, or age"
                     />
                   ) : null}
@@ -317,6 +326,7 @@ export function PublicRsvpResponseForm({
               name="message"
               rows={4}
               disabled={isPending}
+              maxLength={PUBLIC_RSVP_MESSAGE_MAX_LENGTH}
               placeholder="Leave a short message."
             />
             <p className="text-[11.5px] leading-snug text-[#7a746f]">{RSVP_MESSAGE_PRIVACY_COPY}</p>

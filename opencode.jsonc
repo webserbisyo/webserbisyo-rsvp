@@ -8,8 +8,8 @@
       "timeout": 10000
     },
     "playwright": {
-      "type": "local",
-      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "type": "remote",
+      "url": "http://localhost:8931/mcp",
       "enabled": true,
       "timeout": 60000
     },
@@ -30,6 +30,12 @@
       "url": "https://api.githubcopilot.com/mcp/",
       "enabled": false,
       "timeout": 10000
+    },
+    "context7": {
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp"],
+      "enabled": true,
+      "timeout": 60000
     }
   }
 }

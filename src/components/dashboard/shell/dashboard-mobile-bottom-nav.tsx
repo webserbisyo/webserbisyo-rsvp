@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
 import { DashboardMoreDrawer } from "./dashboard-more-drawer";
 import { CalendarSearch, LayoutDashboard, LayoutGrid, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type DashboardMobileBottomNavProps = {
   email: string;
@@ -19,6 +19,10 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
     { href: "/dashboard/event", label: "Event Website", icon: CalendarSearch },
     { href: "/dashboard/responses", label: "RSVP Responses", icon: Users },
   ];
+  const moreActive =
+    moreOpen ||
+    (pathname.startsWith("/dashboard") &&
+      !items.some((item) => isMobileNavItemActive(pathname, item.href)));
 
   return (
     <>
@@ -32,21 +36,32 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
       >
         <div className="flex h-16 items-center justify-around">
           {items.map((item) => {
-            const active = isDashboardNavItemActive(pathname, item.href);
+            const active = isMobileNavItemActive(pathname, item.href);
             const Icon = item.icon;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 transition-colors duration-150",
                   active
-                    ? "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
-                    : "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150 hover:text-[--dash-foreground]"
-                }
+                    ? "text-[--dash-brand]"
+                    : "text-[--dash-muted] hover:text-[--dash-foreground]",
+                )}
               >
+                <span
+                  className={cn(
+                    "absolute top-0 h-1.5 w-8 rounded-full bg-[--dash-brand] transition-opacity duration-150",
+                    active ? "opacity-100" : "opacity-0",
+                  )}
+                  aria-hidden="true"
+                />
                 <Icon className="h-5 w-5" />
-                <span className="max-w-full truncate text-[10px] leading-none">{item.label}</span>
+                <span className={cn("max-w-full truncate text-[10px] leading-none", active && "font-semibold")}>
+                  {item.label}
+                </span>
               </Link>
             );
           })}
@@ -54,14 +69,23 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={
-              moreOpen
-                ? "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-brand] transition-colors duration-150"
-                : "flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 text-[--dash-muted] transition-colors duration-150 hover:text-[--dash-foreground]"
-            }
+            aria-current={moreActive ? "page" : undefined}
+            className={cn(
+              "relative flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 transition-colors duration-150",
+              moreActive
+                ? "text-[--dash-brand]"
+                : "text-[--dash-muted] hover:text-[--dash-foreground]",
+            )}
           >
+            <span
+              className={cn(
+                "absolute top-0 h-1.5 w-8 rounded-full bg-[--dash-brand] transition-opacity duration-150",
+                moreActive ? "opacity-100" : "opacity-0",
+              )}
+              aria-hidden="true"
+            />
             <LayoutGrid className="h-5 w-5" />
-            <span className="text-[10px] leading-none">More</span>
+            <span className={cn("text-[10px] leading-none", moreActive && "font-semibold")}>More</span>
           </button>
         </div>
       </nav>
@@ -73,4 +97,12 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
       />
     </>
   );
+}
+
+function isMobileNavItemActive(pathname: string, href: string) {
+  if (href === "/dashboard") {
+    return pathname === "/dashboard";
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

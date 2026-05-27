@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircleHeart } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
 import type {
@@ -23,7 +23,6 @@ import {
   TextField,
   TimeField,
 } from "@/components/dashboard/event/event-website-optional-fields";
-import { Button } from "@/components/ui/button";
 import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 
 type SharedOptionalPanelProps = {
@@ -520,57 +519,50 @@ export function OptionalGuestbookPanel({
       </EditorGroup>
 
       <EditorGroup title="Approved Messages">
-        <div className="flex flex-col gap-3 rounded-[1.2rem] border border-[#eadbd0] bg-white/80 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="rounded-[1.2rem] border border-[#eadbd0] bg-white/80 px-4 py-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[#2b2521]">
               {guestbookMessages.length} approved
             </p>
             <p className="mt-1 text-xs leading-5 text-[#8a7c72]">
-              Managed from RSVP Responses
+              Managed from{" "}
+              <Link
+                href="/dashboard/responses?tab=needs-review"
+                className="inline-flex items-center gap-1 font-medium text-[#8d5f48] underline-offset-4 transition hover:text-[#b85a39] hover:underline"
+              >
+                RSVP Responses
+                <ArrowUpRight className="size-3.5" aria-hidden="true" />
+              </Link>
             </p>
           </div>
-          <Button
-            asChild
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-auto self-start rounded-xl px-3 py-2 text-xs sm:self-auto"
-          >
-            <Link href="/dashboard/responses?tab=needs-review">Manage messages</Link>
-          </Button>
         </div>
 
         {guestbookMessages.length > 0 ? (
-          <div className="space-y-3">
+          <ul className="space-y-2">
             {guestbookMessages.map((message) => (
-              <article
+              <li
                 key={message.id}
-                className="rounded-[1.2rem] border border-[#eadbd0] bg-[#fffaf6] px-4 py-4"
+                className="rounded-[1.2rem] border border-[#eadbd0] bg-[#fffaf6] px-4 py-3"
               >
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#fff1e8] text-[#c96f4c]">
-                    <MessageCircleHeart className="size-4" aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#2b2521]">{message.guestName}</p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#65584f]">
-                      {message.message}
-                    </p>
-                    {message.approvedAt || message.submittedAt ? (
-                      <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[#a88d7f]">
-                        {formatGuestbookMessageDate(message.approvedAt ?? message.submittedAt)}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </article>
+                <p className="text-sm font-semibold leading-6 text-[#2b2521] [overflow-wrap:anywhere]">
+                  {message.guestName}
+                </p>
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
           <div className="rounded-[1.2rem] border border-dashed border-[#e5d6ca] bg-[#fffdfb] px-4 py-4">
             <p className="text-sm font-medium text-[#65584f]">No approved messages yet.</p>
             <p className="mt-1 text-sm leading-6 text-[#8a7c72]">
-              Approve guest messages from RSVP Responses.
+              Approve guest messages from{" "}
+              <Link
+                href="/dashboard/responses?tab=needs-review"
+                className="inline-flex items-center gap-1 font-medium text-[#8d5f48] underline-offset-4 transition hover:text-[#b85a39] hover:underline"
+              >
+                RSVP Responses
+                <ArrowUpRight className="size-3.5" aria-hidden="true" />
+              </Link>
+              .
             </p>
           </div>
         )}
@@ -714,23 +706,6 @@ export function OptionalGiftDetailsPanel({
       <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );
-}
-
-function formatGuestbookMessageDate(value: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat("en-PH", {
-    dateStyle: "medium",
-    timeZone: "Asia/Manila",
-  }).format(date);
 }
 
 export function OptionalContactSocialsPanel({

@@ -22,8 +22,8 @@ export async function listApprovedGuestbookMessages(input: {
     .eq("message_public_status", "approved")
     .is("archived_at", null)
     .not("message", "is", null)
-    .order("message_approved_at", { ascending: true, nullsFirst: false })
     .order("submitted_at", { ascending: true, nullsFirst: false })
+    .order("message_approved_at", { ascending: true, nullsFirst: false })
     .order("id", { ascending: true });
 
   if (input.clientId) {

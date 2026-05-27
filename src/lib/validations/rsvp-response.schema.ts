@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 export const RSVP_RESPONSE_STATUS_VALUES = ["attending", "not_attending"] as const;
+export const PUBLIC_RSVP_GUEST_NAME_MAX_LENGTH = 80;
+export const PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH = 80;
+export const PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH = 40;
+export const PUBLIC_RSVP_EMAIL_MAX_LENGTH = 254;
+export const PUBLIC_RSVP_MESSAGE_MAX_LENGTH = 500;
 
 export const EventSlugSchema = z
   .string()
@@ -13,7 +18,7 @@ const GuestNameSchema = z
   .string()
   .trim()
   .min(1, "Guest name is required.")
-  .max(120, "Guest name is too long.");
+  .max(PUBLIC_RSVP_GUEST_NAME_MAX_LENGTH, "Guest name is too long.");
 
 function normalizeOptionalInput(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -26,6 +31,7 @@ const RequiredEmailSchema = z
       .string()
       .trim()
       .min(1, "Email address is required.")
+      .max(PUBLIC_RSVP_EMAIL_MAX_LENGTH, `Email address must be ${PUBLIC_RSVP_EMAIL_MAX_LENGTH} characters or fewer.`)
       .transform((value) => value.toLowerCase())
       .refine((value) => z.email().safeParse(value).success, {
         message: "Enter a valid email address.",
@@ -94,8 +100,8 @@ const CompanionCountSchema = z
   });
 
 const CompanionSchema = z.object({
-  ageLabel: OptionalTextSchema(40, "Companion age label is too long."),
-  fullName: z.string().trim().max(120, "Companion name is too long."),
+  ageLabel: OptionalTextSchema(PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH, "Companion age label is too long."),
+  fullName: z.string().trim().max(PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH, "Companion name is too long."),
 });
 
 export const PublicRsvpResponseFieldsSchema = z.object({
@@ -107,7 +113,10 @@ export const PublicRsvpResponseFieldsSchema = z.object({
   dietaryNotes: OptionalTextSchema(1000, "Dietary notes are too long."),
   email: RequiredEmailSchema,
   guestName: GuestNameSchema,
-  message: OptionalTextSchema(1200, "Message is too long."),
+  message: OptionalTextSchema(
+    PUBLIC_RSVP_MESSAGE_MAX_LENGTH,
+    `Message must be ${PUBLIC_RSVP_MESSAGE_MAX_LENGTH} characters or fewer.`,
+  ),
   phone: OptionalPhoneSchema,
 });
 
