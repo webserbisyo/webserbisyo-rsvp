@@ -27,14 +27,15 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
   return (
     <>
       <nav
-        className="fixed right-0 bottom-0 left-0 z-50 border-t md:hidden"
+        data-dashboard
+        className="dashboard-mobile-bottom-nav"
         style={{
           background: "var(--dash-surface)",
           borderColor: "var(--dash-border)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        <div className="flex h-16 items-center justify-around">
+        <div className="dashboard-mobile-bottom-nav__inner">
           {items.map((item) => {
             const active = isMobileNavItemActive(pathname, item.href);
             const Icon = item.icon;
@@ -44,27 +45,11 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "relative flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 transition-colors duration-150",
-                  active
-                    ? "text-[--dash-brand]"
-                    : "text-[--dash-muted] hover:text-[--dash-foreground]",
-                )}
+                data-active={active}
+                className="dashboard-mobile-bottom-nav__item"
               >
-                <span
-                  className={cn(
-                    "absolute top-0 h-1.5 w-8 rounded-full bg-[--dash-brand] transition-opacity duration-150",
-                    active ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden="true"
-                />
-                <Icon className="h-5 w-5" />
-                <span
-                  className={cn(
-                    "max-w-full truncate text-[10px] leading-none",
-                    active && "font-semibold",
-                  )}
-                >
+                <Icon className="dashboard-mobile-bottom-nav__icon" />
+                <span className="dashboard-mobile-bottom-nav__label">
                   {item.label}
                 </span>
               </Link>
@@ -76,24 +61,15 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
             onClick={() => setMoreOpen(true)}
             aria-current={moreRouteActive ? "page" : undefined}
             aria-expanded={moreOpen}
+            data-active={moreRouteActive}
+            data-open={moreOpen}
             className={cn(
-              "relative flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 transition-colors duration-150",
-              morePressed
-                ? "text-[--dash-brand]"
-                : "text-[--dash-muted] hover:text-[--dash-foreground]",
+              "dashboard-mobile-bottom-nav__item",
+              morePressed && "dashboard-mobile-bottom-nav__item--pressed",
             )}
           >
-            <span
-              className={cn(
-                "absolute top-0 h-1.5 w-8 rounded-full bg-[--dash-brand] transition-opacity duration-150",
-                morePressed ? "opacity-100" : "opacity-0",
-              )}
-              aria-hidden="true"
-            />
-            <LayoutGrid className="h-5 w-5" />
-            <span className={cn("text-[10px] leading-none", morePressed && "font-semibold")}>
-              More
-            </span>
+            <LayoutGrid className="dashboard-mobile-bottom-nav__icon" />
+            <span className="dashboard-mobile-bottom-nav__label">More</span>
           </button>
         </div>
       </nav>
