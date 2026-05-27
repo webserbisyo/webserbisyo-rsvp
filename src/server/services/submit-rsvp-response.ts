@@ -4,8 +4,8 @@ import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availabil
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import {
-  PublicRsvpResponseSchema,
-  type PublicRsvpResponseInput,
+  EventSlugSchema,
+  createPublicRsvpResponseSchema,
 } from "@/lib/validations/rsvp-response.schema";
 import { assertServiceData, assertServiceSuccess, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
@@ -26,12 +26,23 @@ type PublishedEventRow = Pick<
 
 type PublishedContentRow = Pick<Tables<"event_content">, "published_at" | "published_content_json">;
 
-export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
-  const payload = PublicRsvpResponseSchema.parse(input);
+type RsvpCompanionPayload = {
+  ageLabel?: string | undefined;
+  fullName: string;
+};
+
+type RsvpCompanionSubmissionPayload = {
+  attendanceStatus: "attending" | "not_attending";
+  companionCount: number;
+  companions?: RsvpCompanionPayload[] | undefined;
+};
+
+export async function submitRsvpResponse(input: unknown) {
+  const eventSlug = parseEventSlug(input);
   const supabase = createAdminClient();
   // Public RSVP writes intentionally use a server-only admin client after validation.
   // Dashboard reads stay on SSR + RLS so browser-facing code never receives service-role access.
-  const event = await getPublishedEvent(payload.eventSlug);
+  const event = await getPublishedEvent(eventSlug);
   const eventContent = await getPublishedEventContent(event.id);
   const { parseEventWebsiteContentJson } = await import("@/lib/event-website/hydration");
   const content = parseEventWebsiteContentJson(eventContent.published_content_json);
@@ -51,6 +62,7 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
   assertRsvpWindowIsOpen(event);
 
   const rsvpSettings = content.sections.rsvp_form;
+  const payload = createPublicRsvpResponseSchema(rsvpSettings).parse(input);
   // TODO: Custom question answers are intentionally excluded from the public submit contract
   // until a storage model and dashboard read flow are defined for them.
   const companionRows = buildCompanionRows(payload, rsvpSettings);
@@ -107,6 +119,14 @@ export async function submitRsvpResponse(input: PublicRsvpResponseInput) {
   return response;
 }
 
+function parseEventSlug(input: unknown) {
+  if (!input || typeof input !== "object") {
+    return EventSlugSchema.parse(undefined);
+  }
+
+  return EventSlugSchema.parse((input as { eventSlug?: unknown }).eventSlug);
+}
+
 async function getPublishedEvent(eventSlug: string): Promise<PublishedEventRow> {
   const supabase = createAdminClient();
   const { data: event, error } = await supabase
@@ -160,7 +180,7 @@ function assertRsvpWindowIsOpen(event: PublishedEventRow) {
 }
 
 function buildCompanionRows(
-  payload: PublicRsvpResponseInput,
+  payload: RsvpCompanionSubmissionPayload,
   settings: {
     companionAgeEnabled: boolean;
     companionLimit: number;

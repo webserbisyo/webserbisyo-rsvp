@@ -57,6 +57,7 @@ import {
   getEventWebsiteWorkspaceStatus,
   summarizeEventWebsiteSections,
 } from "@/lib/event-website/readiness";
+import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
 import { markEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
@@ -356,6 +357,10 @@ function EnabledEventWebsiteWorkspace({
         if (submittedRevision > lastSavedRevisionRef.current) {
           lastSavedRevisionRef.current = submittedRevision;
           setSavedContent(result.data.content);
+          emitDashboardSyncEvent({
+            eventId: eventWebsiteData.eventId,
+            name: "event-website:draft-updated",
+          });
         }
 
         const hasNewerLocalEdits = draftRevisionRef.current > submittedRevision;

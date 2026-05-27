@@ -60,6 +60,7 @@ export async function saveEventWebsiteAction(input: unknown) {
 
     revalidatePath("/dashboard/event");
     revalidatePath("/dashboard/website-access");
+    revalidatePath("/dashboard");
 
     return actionSuccess({
       content: contentToSave,

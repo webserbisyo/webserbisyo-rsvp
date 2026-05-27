@@ -3,10 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireTenantMember } from "@/lib/permissions";
-import { PublicRsvpResponseSchema } from "@/lib/validations/rsvp-response.schema";
 import { moderateResponseGuestbookMessages } from "@/server/services/moderate-response-guestbook";
 import { submitRsvpResponse } from "@/server/services/submit-rsvp-response";
-import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
+import { actionFailure, actionSuccess, parseActionInput, toPlainInput } from "./action-utils";
 
 const ResponseGuestbookModerationSchema = z.object({
   responseIds: z.array(z.string().uuid()).min(1).max(100),
@@ -14,8 +13,7 @@ const ResponseGuestbookModerationSchema = z.object({
 
 export async function submitRsvpResponseAction(input: unknown) {
   try {
-    const payload = parseActionInput(PublicRsvpResponseSchema, input);
-    const response = await submitRsvpResponse(payload);
+    const response = await submitRsvpResponse(toPlainInput(input));
 
     return actionSuccess({
       responseId: response.id,
@@ -39,6 +37,7 @@ export async function showResponseMessagesInGuestbookAction(input: unknown) {
 
     revalidatePath("/dashboard/responses");
     revalidatePath("/dashboard/event");
+    revalidatePath("/dashboard");
     revalidatePath(`/r/${result.currentEventSlug}`);
     revalidatePath("/");
 
@@ -61,6 +60,7 @@ export async function removeResponseMessagesFromGuestbookAction(input: unknown) 
 
     revalidatePath("/dashboard/responses");
     revalidatePath("/dashboard/event");
+    revalidatePath("/dashboard");
     revalidatePath(`/r/${result.currentEventSlug}`);
     revalidatePath("/");
 

@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/feedback/error-state";
 import {
+  emitDashboardSyncEvent,
+  useDashboardRefresh,
+} from "@/lib/dashboard/dashboard-sync";
+import {
   removeResponseMessagesFromGuestbookAction,
   showResponseMessagesInGuestbookAction,
 } from "@/server/actions/responses";
@@ -43,6 +47,12 @@ export function RsvpResponsesPage({
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [pendingResponseIds, setPendingResponseIds] = useState<string[]>([]);
   const [isModerating, startModerationTransition] = useTransition();
+
+  useDashboardRefresh({
+    events: ["rsvp-responses:guestbook-updated"],
+    refreshOnFocus: true,
+    refreshOnVisibility: true,
+  });
 
   const allResponses = responses;
   const scopedResponses = allResponses.filter((response) => matchesResponseTab(response, activeTab));
@@ -128,6 +138,10 @@ export function RsvpResponsesPage({
       return;
     }
 
+    if (isModerating || pendingResponseIds.some((id) => uniqueIds.includes(id))) {
+      return;
+    }
+
     setPendingResponseIds(uniqueIds);
     startModerationTransition(async () => {
       try {
@@ -147,6 +161,9 @@ export function RsvpResponsesPage({
         const skippedAlreadySetCount = result.data.skippedAlreadySetCount;
 
         if (updatedCount > 0) {
+          emitDashboardSyncEvent({
+            name: "rsvp-responses:guestbook-updated",
+          });
           setResponses((current) =>
             current.map((response) => {
               const next = result.data.updated.find((item) => item.id === response.id);

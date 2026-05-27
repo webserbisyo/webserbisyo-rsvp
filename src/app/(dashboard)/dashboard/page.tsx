@@ -1,4 +1,5 @@
 import { Globe, Star, User, Wallet } from "lucide-react";
+import { DashboardRouteRefresh } from "@/components/dashboard/dashboard-route-refresh";
 import { EventCountdownCard } from "@/components/dashboard/home/event-countdown-card";
 import { HomeSummaryCard } from "@/components/dashboard/home/home-summary-card";
 import { QuickStatsCard } from "@/components/dashboard/home/quick-stats-card";
@@ -11,6 +12,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="ws-home-page pb-24 md:pb-8">
+      <DashboardRouteRefresh
+        eventId={summary.stats.eventId}
+        events={[
+          "event-website:draft-updated",
+          "event-website:published",
+          "event-website:unpublished",
+          "rsvp-responses:guestbook-updated",
+        ]}
+        refreshOnFocus
+        refreshOnVisibility
+      />
       <section className="ws-intro">
         <div className="ws-intro-line">
           <h2>

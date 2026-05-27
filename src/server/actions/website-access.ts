@@ -159,6 +159,7 @@ export async function publishEventWebsiteAction(input: unknown) {
 
     revalidatePath("/dashboard/website-access");
     revalidatePath("/dashboard/event");
+    revalidatePath("/dashboard");
 
     const publicPaths = new Set<string>();
     if (event.event_slug) {
@@ -194,6 +195,7 @@ export async function unpublishEventWebsiteAction(input: unknown) {
 
     revalidatePath("/dashboard/website-access");
     revalidatePath("/dashboard/event");
+    revalidatePath("/dashboard");
 
     const publicPaths = new Set<string>();
     if (event.event_slug) {

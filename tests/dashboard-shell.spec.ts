@@ -96,7 +96,7 @@ test("Test 2 — Active nav indicator", async ({ page }) => {
     expect(homeBg).not.toBe("rgba(0, 0, 0, 0)");
     expect(homeBg).not.toBe("transparent");
 
-    // Navigate to /dashboard/event — Event Details should be active, Home should not
+    // Navigate to /dashboard/event — Event Website should be active, Home should not
     await page.goto("/dashboard/event");
     await page.waitForLoadState("networkidle");
 
@@ -163,7 +163,9 @@ test("Test 4 — More drawer opens and is not transparent", async ({ page }) => 
     await page.waitForLoadState("networkidle");
 
     // Find the More button in the mobile bottom nav
-    const moreButton = page.locator("nav.fixed button").filter({ hasText: /more/i });
+    const moreButton = page
+      .locator("nav.dashboard-mobile-bottom-nav button")
+      .filter({ hasText: /more/i });
     await expect(moreButton).toBeVisible();
     await moreButton.click();
 
@@ -178,9 +180,9 @@ test("Test 4 — More drawer opens and is not transparent", async ({ page }) => 
     expect(drawerBg).not.toBe("rgba(0, 0, 0, 0)");
     expect(drawerBg).not.toBe("transparent");
 
-    // Website Content link visible inside drawer
-    const websiteContent = drawer.locator("text=Website Content");
-    await expect(websiteContent).toBeVisible();
+    // Website Access link visible inside drawer
+    const websiteAccess = drawer.locator("text=Website Access");
+    await expect(websiteAccess).toBeVisible();
 
     // Sign out visible inside drawer
     const signOut = drawer.locator("text=Sign out");
@@ -240,22 +242,22 @@ test("Test 6 — Bottom nav has exactly 4 tabs", async ({ page }) => {
     await page.waitForLoadState("networkidle");
 
     // The fixed bottom nav
-    const bottomNav = page.locator("nav.fixed");
+    const bottomNav = page.locator("nav.dashboard-mobile-bottom-nav");
     await expect(bottomNav).toBeVisible();
 
     // Count direct children of the inner flex container (links + button)
-    const innerFlex = bottomNav.locator(".flex.items-center.justify-around").first();
+    const innerFlex = bottomNav.locator(".dashboard-mobile-bottom-nav__inner").first();
     const tabs = innerFlex.locator(":scope > *");
     await expect(tabs).toHaveCount(4);
 
     // Assert the 4 labels
     await expect(innerFlex.locator("text=Home")).toBeVisible();
-    await expect(innerFlex.locator("text=Event Details")).toBeVisible();
-    await expect(innerFlex.locator("text=RSVP Responses")).toBeVisible();
+    await expect(innerFlex.locator("text=Event Website")).toBeVisible();
+    await expect(innerFlex.locator("text=RSVP")).toBeVisible();
     await expect(innerFlex.locator("text=More")).toBeVisible();
 
-    // Website Content must NOT be in the bottom nav
-    const websiteContent = bottomNav.locator("text=Website Content");
-    await expect(websiteContent).toHaveCount(0);
+    // Website Access must stay in the More drawer, not the bottom nav.
+    const websiteAccess = bottomNav.locator("text=Website Access");
+    await expect(websiteAccess).toHaveCount(0);
   });
 });

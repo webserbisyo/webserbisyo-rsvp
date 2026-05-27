@@ -139,12 +139,13 @@ function mergeEventWebsiteContentPatch(
 }
 
 function normalizeRsvpFormSection(settings: EventWebsiteRsvpFormSection): EventWebsiteRsvpFormSection {
+  const emailEnabled = settings.emailEnabled;
   const phoneEnabled = settings.phoneEnabled;
 
   return {
     ...settings,
-    emailEnabled: true,
-    emailRequired: true,
+    emailEnabled,
+    emailRequired: emailEnabled ? settings.emailRequired : false,
     messageToHostEnabled: true,
     phoneEnabled,
     phoneRequired: phoneEnabled ? settings.phoneRequired : false,

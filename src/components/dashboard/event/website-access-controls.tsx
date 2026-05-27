@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
 import type { WebsiteAccessData } from "@/server/queries/website-access";
 import {
   publishEventWebsiteAction,
@@ -40,6 +41,10 @@ export function WebsiteAccessControls({
           ? "Published snapshot updated."
           : "Event Website published.",
       );
+      emitDashboardSyncEvent({
+        eventId,
+        name: "event-website:published",
+      });
       router.refresh();
     });
   }
@@ -54,6 +59,10 @@ export function WebsiteAccessControls({
       }
 
       toast.success("Event Website unpublished.");
+      emitDashboardSyncEvent({
+        eventId,
+        name: "event-website:unpublished",
+      });
       router.refresh();
     });
   }

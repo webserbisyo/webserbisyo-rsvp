@@ -4,8 +4,10 @@ export const RSVP_RESPONSE_STATUS_VALUES = ["attending", "not_attending"] as con
 export const PUBLIC_RSVP_GUEST_NAME_MAX_LENGTH = 80;
 export const PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH = 80;
 export const PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH = 40;
+export const PUBLIC_RSVP_DIETARY_NOTES_MAX_LENGTH = 1000;
 export const PUBLIC_RSVP_EMAIL_MAX_LENGTH = 254;
 export const PUBLIC_RSVP_MESSAGE_MAX_LENGTH = 500;
+export const PUBLIC_RSVP_PHONE_MAX_LENGTH = 40;
 
 export const EventSlugSchema = z
   .string()
@@ -38,6 +40,45 @@ const RequiredEmailSchema = z
       }),
   );
 
+const OptionalEmailSchema = z
+  .preprocess(
+    normalizeOptionalInput,
+    z
+      .string()
+      .trim()
+      .transform((value) => (value ? value.toLowerCase() : undefined))
+      .refine(
+        (value) =>
+          value === undefined ||
+          value.length <= PUBLIC_RSVP_EMAIL_MAX_LENGTH,
+        `Email address must be ${PUBLIC_RSVP_EMAIL_MAX_LENGTH} characters or fewer.`,
+      )
+      .refine((value) => value === undefined || z.email().safeParse(value).success, {
+        message: "Enter a valid email address.",
+      }),
+  );
+
+const DisabledInputSchema = z.preprocess(
+  normalizeOptionalInput,
+  z
+    .string()
+    .trim()
+    .transform(() => undefined),
+);
+
+const RequiredPhoneSchema = z
+  .preprocess(
+    normalizeOptionalInput,
+    z
+      .string()
+      .trim()
+      .min(1, "Phone number is required.")
+      .transform((value) => value.replace(/[\s-]+/g, ""))
+      .refine((value) => value.length <= PUBLIC_RSVP_PHONE_MAX_LENGTH, {
+        message: "Phone number is too long.",
+      }),
+  );
+
 const OptionalPhoneSchema = z
   .preprocess(
     normalizeOptionalInput,
@@ -45,7 +86,7 @@ const OptionalPhoneSchema = z
       .string()
       .trim()
       .transform((value) => (value ? value.replace(/[\s-]+/g, "") : undefined))
-      .refine((value) => value === undefined || value.length <= 40, {
+      .refine((value) => value === undefined || value.length <= PUBLIC_RSVP_PHONE_MAX_LENGTH, {
         message: "Phone number is too long.",
       }),
   );
@@ -110,7 +151,7 @@ export const PublicRsvpResponseFieldsSchema = z.object({
   }),
   companionCount: CompanionCountSchema,
   companions: z.array(CompanionSchema).max(20, "Too many companions.").optional(),
-  dietaryNotes: OptionalTextSchema(1000, "Dietary notes are too long."),
+  dietaryNotes: OptionalTextSchema(PUBLIC_RSVP_DIETARY_NOTES_MAX_LENGTH, "Dietary notes are too long."),
   email: RequiredEmailSchema,
   guestName: GuestNameSchema,
   message: OptionalTextSchema(
@@ -123,6 +164,42 @@ export const PublicRsvpResponseFieldsSchema = z.object({
 export const PublicRsvpResponseSchema = PublicRsvpResponseFieldsSchema.extend({
   eventSlug: EventSlugSchema,
 });
+
+export type PublicRsvpFieldSettings = {
+  emailEnabled: boolean;
+  emailRequired: boolean;
+  phoneEnabled: boolean;
+  phoneRequired: boolean;
+};
+
+function getEmailSchema(settings: PublicRsvpFieldSettings) {
+  if (!settings.emailEnabled) {
+    return DisabledInputSchema;
+  }
+
+  return settings.emailRequired ? RequiredEmailSchema : OptionalEmailSchema;
+}
+
+function getPhoneSchema(settings: PublicRsvpFieldSettings) {
+  if (!settings.phoneEnabled) {
+    return DisabledInputSchema;
+  }
+
+  return settings.phoneRequired ? RequiredPhoneSchema : OptionalPhoneSchema;
+}
+
+export function createPublicRsvpResponseFieldsSchema(settings: PublicRsvpFieldSettings) {
+  return PublicRsvpResponseFieldsSchema.extend({
+    email: getEmailSchema(settings),
+    phone: getPhoneSchema(settings),
+  });
+}
+
+export function createPublicRsvpResponseSchema(settings: PublicRsvpFieldSettings) {
+  return createPublicRsvpResponseFieldsSchema(settings).extend({
+    eventSlug: EventSlugSchema,
+  });
+}
 
 export type PublicRsvpResponseInput = z.output<typeof PublicRsvpResponseSchema>;
 export type PublicRsvpResponseFormInput = z.input<typeof PublicRsvpResponseSchema>;

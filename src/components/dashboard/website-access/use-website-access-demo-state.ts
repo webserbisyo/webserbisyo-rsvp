@@ -20,6 +20,10 @@ import {
   buildWildcardRsvpPreviewUrl,
   getPublicAppUrl,
 } from "@/lib/public-rsvp-url";
+import {
+  emitDashboardSyncEvent,
+  useDashboardRefresh,
+} from "@/lib/dashboard/dashboard-sync";
 import { useEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import {
   publishEventWebsiteAction,
@@ -98,6 +102,17 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const visibilityLabel = getVisibilityLabel(draftVisibility);
   const canShareLiveUrl = Boolean(websiteUrlCopy && rsvpUrlCopy);
   const isPublishBlocked = isPending || isDraftSavePending;
+
+  useDashboardRefresh({
+    eventId: serverState.eventId,
+    events: [
+      "event-website:draft-updated",
+      "event-website:published",
+      "event-website:unpublished",
+    ],
+    refreshOnFocus: true,
+    refreshOnVisibility: true,
+  });
 
   useEffect(() => {
     if (isSubdomainLocked || !serverState.eventId) {
@@ -247,6 +262,10 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       }
 
       toast.success(isPublished ? "Latest website changes published." : "Website published.");
+      emitDashboardSyncEvent({
+        eventId: serverState.eventId,
+        name: "event-website:published",
+      });
       router.refresh();
     });
   }
@@ -272,6 +291,10 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       }
 
       toast.success("Website hidden from guests.");
+      emitDashboardSyncEvent({
+        eventId: serverState.eventId,
+        name: "event-website:unpublished",
+      });
       router.refresh();
     });
   }

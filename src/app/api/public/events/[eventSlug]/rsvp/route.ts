@@ -5,10 +5,7 @@ import {
   publicApiSuccessJson,
 } from "@/lib/public-api";
 import { PublicEventSlugSchema } from "@/lib/event-website/public-event";
-import {
-  PublicRsvpResponseFieldsSchema,
-  type PublicRsvpSubmitSuccess,
-} from "@/lib/validations/rsvp-response.schema";
+import { type PublicRsvpSubmitSuccess } from "@/lib/validations/rsvp-response.schema";
 import { ServiceError } from "@/server/services/service-error";
 import { submitRsvpResponse } from "@/server/services/submit-rsvp-response";
 
@@ -41,21 +38,9 @@ export async function POST(
     });
   }
 
-  const parsedBody = PublicRsvpResponseFieldsSchema.safeParse(rawBody);
-
-  if (!parsedBody.success) {
-    return publicApiErrorJson({
-      code: "bad_request",
-      fieldErrors: parsedBody.error.flatten().fieldErrors,
-      message: "Please check the submitted fields.",
-      scope: "public-rsvp-submit",
-      status: 400,
-    });
-  }
-
   try {
     const response = await submitRsvpResponse({
-      ...parsedBody.data,
+      ...(rawBody && typeof rawBody === "object" ? rawBody : {}),
       eventSlug: parsedSlug.data,
     });
     const data: PublicRsvpSubmitSuccess = {

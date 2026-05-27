@@ -16,9 +16,11 @@ import type { EventWebsiteRsvpFormSection } from "@/lib/event-website/types";
 import {
   PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH,
   PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH,
+  PUBLIC_RSVP_DIETARY_NOTES_MAX_LENGTH,
   PUBLIC_RSVP_EMAIL_MAX_LENGTH,
   PUBLIC_RSVP_GUEST_NAME_MAX_LENGTH,
   PUBLIC_RSVP_MESSAGE_MAX_LENGTH,
+  PUBLIC_RSVP_PHONE_MAX_LENGTH,
   PublicRsvpResponseFieldsInput,
   RSVP_RESPONSE_STATUS_VALUES,
 } from "@/lib/validations/rsvp-response.schema";
@@ -60,6 +62,7 @@ export function PublicRsvpResponseForm({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const shouldShowCompanions =
     attendanceStatus === "attending" && settings.plusOneEnabled && settings.companionLimit > 0;
+  const shouldShowEmail = settings.emailEnabled;
   const shouldShowPhone = settings.phoneEnabled;
 
   function updateCompanionCount(value: number) {
@@ -187,21 +190,23 @@ export function PublicRsvpResponseForm({
         </label>
       </FieldError>
 
-      <FieldError name="email" errors={fieldErrors} className="event-preview-field">
-        <label htmlFor="email">
-          <span>{RSVP_EMAIL_LABEL}</span>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            disabled={isPending}
-            maxLength={PUBLIC_RSVP_EMAIL_MAX_LENGTH}
-            placeholder="you@example.com"
-            required={settings.emailRequired}
-          />
-        </label>
-      </FieldError>
+      {shouldShowEmail ? (
+        <FieldError name="email" errors={fieldErrors} className="event-preview-field">
+          <label htmlFor="email">
+            <span>{RSVP_EMAIL_LABEL}</span>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              disabled={isPending}
+              maxLength={PUBLIC_RSVP_EMAIL_MAX_LENGTH}
+              placeholder="you@example.com"
+              required={settings.emailRequired}
+            />
+          </label>
+        </FieldError>
+      ) : null}
 
       {shouldShowPhone ? (
         <FieldError name="phone" errors={fieldErrors} className="event-preview-field">
@@ -213,6 +218,7 @@ export function PublicRsvpResponseForm({
               type="tel"
               autoComplete="tel"
               disabled={isPending}
+              maxLength={PUBLIC_RSVP_PHONE_MAX_LENGTH}
               placeholder="09XXXXXXXXX"
               required={settings.phoneRequired}
             />
@@ -310,6 +316,7 @@ export function PublicRsvpResponseForm({
               name="dietaryNotes"
               rows={4}
               disabled={isPending}
+              maxLength={PUBLIC_RSVP_DIETARY_NOTES_MAX_LENGTH}
               placeholder="List any allergies or dietary restrictions for your party."
             />
           </label>

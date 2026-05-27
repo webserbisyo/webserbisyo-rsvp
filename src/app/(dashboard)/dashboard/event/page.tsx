@@ -1,3 +1,4 @@
+import { DashboardRouteRefresh } from "@/components/dashboard/dashboard-route-refresh";
 import { EventWebsiteWorkspace } from "@/components/dashboard/event/event-website-workspace";
 import { getDashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 
@@ -16,6 +17,10 @@ export default async function DashboardEventPage({ searchParams }: DashboardEven
 
   return (
     <div className="event-website-page pb-24 md:pb-8">
+      <DashboardRouteRefresh
+        eventId={eventWebsiteData.eventId}
+        events={["event-website:published", "event-website:unpublished"]}
+      />
       <EventWebsiteWorkspace
         eventWebsiteData={eventWebsiteData}
         initialSelectedSection={requestedSection ?? null}
