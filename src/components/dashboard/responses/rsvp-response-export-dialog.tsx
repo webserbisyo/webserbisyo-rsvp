@@ -105,7 +105,7 @@ export function RsvpResponseExportDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[88vh] rounded-t-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] shadow-2xl">
+        <DrawerContent className="max-h-[88vh] overflow-hidden rounded-t-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] shadow-2xl">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Download guest list</DrawerTitle>
             <DrawerDescription>Choose an export format and fields.</DrawerDescription>
@@ -190,7 +190,7 @@ function RsvpResponseExportContent({
         </Button>
       </div>
 
-      <div className="space-y-5 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden p-5">
         <section>
           <p className="mb-2 text-sm font-bold text-[#2b2521]">Format</p>
           <div className="grid gap-2 sm:grid-cols-2">

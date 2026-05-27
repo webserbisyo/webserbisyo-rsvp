@@ -34,7 +34,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetClose,
@@ -669,7 +668,7 @@ function ResponsiveSectionEditorSurface({
           </h2>
         </div>
       </div>
-      <ScrollArea className="event-website-mobile-editor-scroll">
+      <div className="event-website-mobile-editor-scroll">
         <div className="event-website-mobile-editor-body">
           <EventWebsiteEditorPanel
             eventData={eventData}
@@ -680,14 +679,14 @@ function ResponsiveSectionEditorSurface({
             selectedSectionId={selectedSectionId}
           />
         </div>
-      </ScrollArea>
+      </div>
     </>
   );
 
   if (isTabletLayout) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent
+        <SheetContent
           data-dashboard
           side="right"
           showCloseButton={false}
