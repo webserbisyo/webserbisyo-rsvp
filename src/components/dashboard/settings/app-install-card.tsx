@@ -20,6 +20,7 @@ export function AppInstallCard() {
               src="/images/brand/webserbisyo-logo.jpeg"
               alt=""
               fill
+              sizes="72px"
               className="object-cover object-center"
             />
           </div>

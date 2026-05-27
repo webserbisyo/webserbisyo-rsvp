@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
-import { ChevronRight, CreditCard, Globe, LogOut, Settings2 } from "lucide-react";
+import { ChevronRight, CreditCard, FileText, Globe, LogOut, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ export function DashboardMoreDrawer({
 }: DashboardMoreDrawerProps) {
   const router = useRouter();
   const remainingItems = [
+    { href: "/dashboard/website-content", label: "Website Content", icon: FileText },
     { href: "/dashboard/website-access", label: "Website Access", icon: Globe },
     { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
     { href: "/dashboard/settings", label: "Settings", icon: Settings2 },
