@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Download, FileSpreadsheet, FileText, X } from "lucide-react";
+import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,16 +85,21 @@ export function RsvpResponseExportDialog({
       includes={includes}
       metadata={metadata}
       onClose={() => onOpenChange(false)}
-      onExport={() => {
-        exportRsvpResponses({
-          allResponses,
-          currentViewResponses,
-          format,
-          includes,
-          metadata,
-          rows,
-        });
-        onOpenChange(false);
+      onExport={async () => {
+        try {
+          await exportRsvpResponses({
+            allResponses,
+            currentViewResponses,
+            format,
+            includes,
+            metadata,
+            rows,
+          });
+          toast.success(`Exported ${exportCount} response${exportCount === 1 ? "" : "s"}.`);
+          onOpenChange(false);
+        } catch {
+          toast.error("Could not export responses.");
+        }
       }}
       onFormatChange={setFormat}
       onIncludeToggle={(key, checked) => setIncludes((current) => ({ ...current, [key]: checked }))}
@@ -120,7 +126,7 @@ export function RsvpResponseExportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-[calc(100%-1rem)] overflow-hidden rounded-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] p-0 shadow-2xl shadow-[#2b2521]/20 ring-0 sm:max-w-xl"
+        className="max-w-[calc(100%-1rem)] overflow-hidden rounded-[1.75rem] border border-[#eadbd0] bg-[#fffaf6] p-0 shadow-2xl ring-0 shadow-[#2b2521]/20 sm:max-w-xl"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Download guest list</DialogTitle>
@@ -153,7 +159,7 @@ function RsvpResponseExportContent({
   includes: Record<RsvpResponsesExportInclude, boolean>;
   metadata: RsvpResponsesExportMetadata;
   onClose: () => void;
-  onExport: () => void;
+  onExport: () => void | Promise<void>;
   onFormatChange: (value: RsvpResponsesExportFormat) => void;
   onIncludeToggle: (key: RsvpResponsesExportInclude, checked: boolean) => void;
   onRowsChange: (value: RsvpResponsesExportRows) => void;
@@ -175,8 +181,12 @@ function RsvpResponseExportContent({
     <div className="flex max-h-[88vh] flex-col bg-[#fffaf6] text-[#2b2521]">
       <div className="flex items-start justify-between gap-4 border-b border-[#eadbd0] bg-white/80 p-5">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a88d7f]">Export responses</p>
-          <h2 className="mt-1 text-xl font-bold tracking-tight text-[#2b2521]">Download guest list</h2>
+          <p className="text-[11px] font-bold tracking-[0.18em] text-[#a88d7f] uppercase">
+            Export responses
+          </p>
+          <h2 className="mt-1 text-xl font-bold tracking-tight text-[#2b2521]">
+            Download guest list
+          </h2>
         </div>
         <Button
           type="button"
@@ -190,7 +200,7 @@ function RsvpResponseExportContent({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden p-5">
+      <div className="min-h-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto p-5">
         <section>
           <p className="mb-2 text-sm font-bold text-[#2b2521]">Format</p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -204,7 +214,9 @@ function RsvpResponseExportContent({
                   onClick={() => onFormatChange(item.id as RsvpResponsesExportFormat)}
                   className={cn(
                     "flex items-center gap-3 rounded-2xl border p-3 text-left transition",
-                    active ? "border-[#d9896c] bg-[#fff0e8]" : "border-[#eadbd0] bg-white hover:bg-[#fff8f3]"
+                    active
+                      ? "border-[#d9896c] bg-[#fff0e8]"
+                      : "border-[#eadbd0] bg-white hover:bg-[#fff8f3]",
                   )}
                 >
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-white text-[#c96f4c] shadow-sm">
@@ -233,7 +245,9 @@ function RsvpResponseExportContent({
                   onClick={() => onRowsChange(item.id as RsvpResponsesExportRows)}
                   className={cn(
                     "rounded-2xl border p-3 text-left transition",
-                    active ? "border-[#d9896c] bg-[#fff0e8]" : "border-[#eadbd0] bg-white hover:bg-[#fff8f3]"
+                    active
+                      ? "border-[#d9896c] bg-[#fff0e8]"
+                      : "border-[#eadbd0] bg-white hover:bg-[#fff8f3]",
                   )}
                 >
                   <span className="flex items-center justify-between gap-3">
@@ -253,7 +267,10 @@ function RsvpResponseExportContent({
           <p className="mb-2 text-sm font-bold text-[#2b2521]">Include</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {EXPORT_INCLUDES.map((item) => (
-              <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#eadbd0] bg-white px-3 py-2.5 hover:bg-[#fff8f3]">
+              <label
+                key={item.id}
+                className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#eadbd0] bg-white px-3 py-2.5 hover:bg-[#fff8f3]"
+              >
                 <input
                   type="checkbox"
                   checked={includes[item.id]}
@@ -283,7 +300,7 @@ function RsvpResponseExportContent({
         <Button
           type="button"
           className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#c96f4c] px-4 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143]"
-          onClick={onExport}
+          onClick={() => void onExport()}
         >
           <Download className="h-4 w-4" aria-hidden="true" />
           Export {exportCount} response{exportCount === 1 ? "" : "s"}

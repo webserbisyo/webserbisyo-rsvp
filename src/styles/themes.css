@@ -12,10 +12,20 @@
   --ws-toast-bg: oklch(0.2 0 0 / 94%);
   --ws-toast-fg: oklch(0.98 0 0);
   --ws-toast-muted: oklch(0.86 0 0 / 82%);
-  --ws-toast-border: oklch(1 0 0 / 12%);
-  --ws-toast-shadow: 0 18px 44px rgb(15 23 42 / 0.28);
+  --ws-toast-border: oklch(0.66 0.12 38 / 38%);
+  --ws-toast-shadow:
+    0 20px 44px rgb(48 27 18 / 0.28), 0 2px 8px rgb(48 27 18 / 0.16),
+    inset 0 1px 0 rgb(255 246 235 / 0.08);
+  --ws-toast-info-border: oklch(0.7 0.13 38 / 45%);
+  --ws-toast-info-icon: oklch(0.74 0.13 42);
+  --ws-toast-success-border: oklch(0.72 0.14 150 / 42%);
+  --ws-toast-success-icon: oklch(0.78 0.15 150);
+  --ws-toast-warning-border: oklch(0.81 0.15 72 / 45%);
+  --ws-toast-warning-icon: oklch(0.82 0.16 72);
   --ws-toast-error-border: oklch(0.72 0.18 24 / 42%);
   --ws-toast-error-icon: oklch(0.72 0.18 24);
+  --ws-toast-loading-border: oklch(0.74 0.13 42 / 36%);
+  --ws-toast-loading-icon: oklch(0.78 0.12 50);
 }
 
 .dark {

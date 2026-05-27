@@ -62,13 +62,7 @@ type AutoTableFn = typeof import("jspdf-autotable").default;
 
 type LandscapeColumn = {
   header: string;
-  key:
-    | "guest"
-    | "contact"
-    | "status"
-    | "party"
-    | "companions"
-    | "submitted";
+  key: "guest" | "contact" | "status" | "party" | "companions" | "submitted";
   width: number;
   render: (row: RsvpResponseRecord) => string;
 };
@@ -84,7 +78,7 @@ export function getExportRows({ allResponses, currentViewResponses, rows }: Expo
   return rows === "current_view" ? currentViewResponses : allResponses;
 }
 
-export function exportRsvpResponses(options: ExportOptions) {
+export async function exportRsvpResponses(options: ExportOptions) {
   const exportRows = getExportRows(options);
 
   if (options.format === "csv") {
@@ -93,7 +87,7 @@ export function exportRsvpResponses(options: ExportOptions) {
     return;
   }
 
-  void downloadLandscapePdf(exportRows, options.includes, options.metadata);
+  await downloadLandscapePdf(exportRows, options.includes, options.metadata);
 }
 
 export function buildRsvpResponsesExportFilename(
@@ -631,10 +625,7 @@ function buildNotesColumns(contentWidth: number, includes: ExportIncludeState): 
     {
       header: "Guest",
       key: "guest",
-      width:
-        includes.dietary_notes && includes.messages
-          ? contentWidth * 0.2
-          : contentWidth * 0.3,
+      width: includes.dietary_notes && includes.messages ? contentWidth * 0.2 : contentWidth * 0.3,
       render: (row) => row.guestName,
     },
   ];

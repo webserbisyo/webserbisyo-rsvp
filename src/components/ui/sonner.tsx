@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 import {
   CircleCheckIcon,
@@ -11,13 +10,15 @@ import {
 } from "lucide-react";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="dark"
       className="toaster group"
       position="top-center"
+      duration={4200}
+      gap={10}
+      mobileOffset={{ top: "1rem" }}
+      offset={{ top: "1rem" }}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -30,16 +31,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--border-radius": "1rem",
         } as React.CSSProperties
       }
       toastOptions={{
+        duration: 4200,
         classNames: {
+          actionButton: "cn-toast-action",
+          cancelButton: "cn-toast-cancel",
           content: "cn-toast-content",
           description: "cn-toast-description",
+          icon: "cn-toast-icon",
+          info: "cn-toast-info",
+          loading: "cn-toast-loading",
+          success: "cn-toast-success",
           error: "cn-toast-error",
           toast: "cn-toast",
           title: "cn-toast-title",
+          warning: "cn-toast-warning",
         },
       }}
       {...props}

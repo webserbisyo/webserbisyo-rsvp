@@ -17,12 +17,12 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
   const items = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/dashboard/event", label: "Event Website", icon: CalendarSearch },
-    { href: "/dashboard/responses", label: "RSVP Responses", icon: Users },
+    { href: "/dashboard/responses", label: "RSVP", icon: Users },
   ];
-  const moreActive =
-    moreOpen ||
-    (pathname.startsWith("/dashboard") &&
-      !items.some((item) => isMobileNavItemActive(pathname, item.href)));
+  const moreRouteActive =
+    pathname.startsWith("/dashboard") &&
+    !items.some((item) => isMobileNavItemActive(pathname, item.href));
+  const morePressed = moreOpen || moreRouteActive;
 
   return (
     <>
@@ -59,7 +59,12 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
                   aria-hidden="true"
                 />
                 <Icon className="h-5 w-5" />
-                <span className={cn("max-w-full truncate text-[10px] leading-none", active && "font-semibold")}>
+                <span
+                  className={cn(
+                    "max-w-full truncate text-[10px] leading-none",
+                    active && "font-semibold",
+                  )}
+                >
                   {item.label}
                 </span>
               </Link>
@@ -69,10 +74,11 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            aria-current={moreActive ? "page" : undefined}
+            aria-current={moreRouteActive ? "page" : undefined}
+            aria-expanded={moreOpen}
             className={cn(
               "relative flex flex-1 cursor-pointer flex-col items-center gap-0.5 px-2 py-2 transition-colors duration-150",
-              moreActive
+              morePressed
                 ? "text-[--dash-brand]"
                 : "text-[--dash-muted] hover:text-[--dash-foreground]",
             )}
@@ -80,12 +86,14 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
             <span
               className={cn(
                 "absolute top-0 h-1.5 w-8 rounded-full bg-[--dash-brand] transition-opacity duration-150",
-                moreActive ? "opacity-100" : "opacity-0",
+                morePressed ? "opacity-100" : "opacity-0",
               )}
               aria-hidden="true"
             />
             <LayoutGrid className="h-5 w-5" />
-            <span className={cn("text-[10px] leading-none", moreActive && "font-semibold")}>More</span>
+            <span className={cn("text-[10px] leading-none", morePressed && "font-semibold")}>
+              More
+            </span>
           </button>
         </div>
       </nav>
