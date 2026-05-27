@@ -114,7 +114,12 @@ export function PublishStatusCard({
                   <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {row.label}
                 </span>
-                <span className={cn("text-sm font-medium whitespace-nowrap truncate", row.valueColor)}>
+                <span
+                  className={cn(
+                    "min-w-0 max-w-[58%] text-right text-sm font-medium break-words",
+                    row.valueColor,
+                  )}
+                >
                   {row.value}
                 </span>
               </div>

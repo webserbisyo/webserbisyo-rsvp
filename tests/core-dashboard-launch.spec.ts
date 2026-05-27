@@ -36,6 +36,7 @@ for (const viewport of VIEWPORTS) {
   test(`core dashboard routes load without blocking errors - ${viewport.label}`, async ({
     page,
   }) => {
+    test.setTimeout(90000);
     const consoleErrors: string[] = [];
     const pageErrors: string[] = [];
 

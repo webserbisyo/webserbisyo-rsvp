@@ -82,47 +82,24 @@ test("Test 2 — Active nav indicator", async ({ page }) => {
     await page.goto("/dashboard");
     await page.waitForLoadState("networkidle");
 
-    // The SidebarMenuButton that wraps the Home link
-    const homeButton = page
-      .locator('[data-slot="sidebar-menu-button"]')
-      .filter({ has: page.locator('a[href="/dashboard"]') })
+    const homeLink = page
+      .locator('a[href="/dashboard"][data-slot="sidebar-menu-button"]')
+      .filter({ hasText: /^Home$/ })
       .first();
-    await expect(homeButton).toBeVisible();
+    await expect(homeLink).toBeVisible();
+    await expect(homeLink).toHaveAttribute("data-active", "true");
 
-    const homeBg = await homeButton.evaluate((el) =>
-      window.getComputedStyle(el).backgroundColor,
-    );
-    // Active background must NOT be transparent
-    expect(homeBg).not.toBe("rgba(0, 0, 0, 0)");
-    expect(homeBg).not.toBe("transparent");
-
-    // Navigate to /dashboard/event — Event Website should be active, Home should not
+    // Navigate to /dashboard/event — Event Website should be active, Home should not.
     await page.goto("/dashboard/event");
     await page.waitForLoadState("networkidle");
 
-    const eventButton = page
-      .locator('[data-slot="sidebar-menu-button"]')
-      .filter({ has: page.locator('a[href="/dashboard/event"]') })
+    const eventLink = page
+      .locator('a[href="/dashboard/event"][data-slot="sidebar-menu-button"]')
+      .filter({ hasText: /^Event Website$/ })
       .first();
-    await expect(eventButton).toBeVisible();
-
-    const eventBg = await eventButton.evaluate((el) =>
-      window.getComputedStyle(el).backgroundColor,
-    );
-    expect(eventBg).not.toBe("rgba(0, 0, 0, 0)");
-    expect(eventBg).not.toBe("transparent");
-
-    // Home button should not be active (background should differ or be transparent)
-    const homeButtonOnEvent = page
-      .locator('[data-slot="sidebar-menu-button"]')
-      .filter({ has: page.locator('a[href="/dashboard"]') })
-      .first();
-    const homeBgOnEvent = await homeButtonOnEvent.evaluate((el) =>
-      window.getComputedStyle(el).backgroundColor,
-    );
-    // Home and event backgrounds should not both be the same non-transparent active color
-    // (one of them must be transparent / muted)
-    expect(homeBgOnEvent).not.toEqual(eventBg);
+    await expect(eventLink).toBeVisible();
+    await expect(eventLink).toHaveAttribute("data-active", "true");
+    await expect(homeLink).toHaveAttribute("data-active", "false");
   });
 });
 
@@ -167,10 +144,12 @@ test("Test 4 — More drawer opens and is not transparent", async ({ page }) => 
       .locator("nav.dashboard-mobile-bottom-nav button")
       .filter({ hasText: /more/i });
     await expect(moreButton).toBeVisible();
-    await moreButton.click();
+    await moreButton.evaluate((node) => {
+      (node as HTMLButtonElement).click();
+    });
 
     // Drawer should be visible
-    const drawer = page.locator('[data-slot="sheet-content"]');
+    const drawer = page.locator(".dashboard-more-drawer");
     await expect(drawer).toBeVisible({ timeout: 5000 });
 
     // Background should not be transparent

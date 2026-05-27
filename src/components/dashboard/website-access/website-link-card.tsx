@@ -55,9 +55,9 @@ export function WebsiteLinkCard({
           <p className="text-sm font-medium text-[#A38376]">Copy the live link or prepare your RSVP subdomain</p>
         </div>
 
-        <div className="mb-5 grid items-center gap-3 sm:grid-cols-[1fr_auto]">
-          <div className="flex h-12 items-center overflow-hidden rounded-xl border border-[#eacdbf] bg-[#FBF4EF] px-4 font-mono text-sm font-medium text-[#2D1F1A]">
-            <span className="truncate">{displayUrl}</span>
+        <div className="mb-5 grid min-w-0 items-center gap-3 sm:grid-cols-[1fr_auto]">
+          <div className="flex min-w-0 h-12 items-center overflow-hidden rounded-xl border border-[#eacdbf] bg-[#FBF4EF] px-4 font-mono text-sm font-medium text-[#2D1F1A]">
+            <span className="block min-w-0 truncate">{displayUrl}</span>
           </div>
           <Button
             type="button"
@@ -71,12 +71,12 @@ export function WebsiteLinkCard({
           </Button>
         </div>
 
-        <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-2 flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between">
           <label htmlFor="website-slug-preview" className="text-sm font-semibold text-[#A38376]">RSVP subdomain</label>
-          <p className="text-xs font-medium text-[#A38376] sm:text-sm">{helperText}</p>
+          <p className="text-xs font-medium text-[#A38376] lg:text-sm">{helperText}</p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className={cn(
             "flex h-12 flex-1 items-center gap-2 rounded-xl border px-4 font-mono text-sm font-medium",
             hasSlugChange ? "border-[#F0D2A6] bg-amber-50 text-amber-800" : "border-[#e9dcd2] bg-[#FBF4EF] text-[#6B4B40]",
@@ -118,7 +118,7 @@ export function WebsiteLinkCard({
         </div>
 
         <div className="mt-3 space-y-2 text-sm">
-          <p className="font-mono text-[#6B4B40]">
+          <p className="break-all font-mono text-[#6B4B40]">
             Preview: <span className="text-[#2D1F1A]">{websiteUrlDraft || `https://${subdomainBaseDomain}`}</span>
           </p>
           {slugDraftError ? (
@@ -133,12 +133,12 @@ export function WebsiteLinkCard({
             </p>
           )}
           {websiteUrlFallback ? (
-            <p className="font-mono text-xs text-[#A38376]">
+            <p className="break-all font-mono text-xs text-[#A38376]">
               Fallback: {websiteUrlFallback}
             </p>
           ) : null}
           {websiteUrlProduction && websiteUrlProduction !== displayUrl ? (
-            <p className="font-mono text-xs text-[#A38376]">
+            <p className="break-all font-mono text-xs text-[#A38376]">
               Production: {websiteUrlProduction}
             </p>
           ) : null}

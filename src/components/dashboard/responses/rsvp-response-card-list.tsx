@@ -43,7 +43,7 @@ export function RsvpResponseCardList({
             data-rsvp-response-card
             className="overflow-hidden rounded-[1.45rem] border border-[#eadbd0] bg-[#fffdfb] p-4 shadow-sm shadow-[#8a4b2e]/5"
           >
-            <div className="flex items-start gap-3">
+            <div className="flex min-w-0 items-start gap-3">
               <div className="flex h-10 shrink-0 items-center justify-center">
                 <Checkbox
                   aria-label={`Select response from ${response.guestName}`}
@@ -56,8 +56,8 @@ export function RsvpResponseCardList({
                 {getResponseInitials(response.guestName)}
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="min-w-0">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <div className="min-w-0 overflow-hidden">
                   <p
                     className="truncate text-base font-bold leading-5 text-[#2b2521]"
                     title={response.guestName}
@@ -65,7 +65,7 @@ export function RsvpResponseCardList({
                     {response.guestName}
                   </p>
                   <p
-                    className="mt-1 truncate text-sm font-medium text-[#8a7c72]"
+                    className="mt-1 max-w-full truncate text-sm font-medium text-[#8a7c72]"
                     title={response.email ?? "No email added"}
                   >
                     {response.email ?? "No email added"}
@@ -93,9 +93,9 @@ export function RsvpResponseCardList({
 
             <div className="my-3 border-t border-[#f0e3db]" />
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center justify-between gap-3">
               <p
-                className="whitespace-nowrap text-xs font-medium text-[#8a7c72]"
+                className="min-w-0 shrink text-xs font-medium text-[#8a7c72]"
                 title={submitted.fullLabel}
                 aria-label={`Submitted ${submitted.fullLabel}`}
               >

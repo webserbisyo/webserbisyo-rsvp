@@ -92,7 +92,7 @@ export function RsvpResponsesFilterRail({
         </Tabs>
       </div>
 
-      <div className="relative xl:hidden px-7" data-rsvp-filter-rail>
+      <div className="relative min-w-0 px-7 xl:hidden" data-rsvp-filter-rail>
         {canScrollLeft ? (
           <button
             type="button"
@@ -107,7 +107,7 @@ export function RsvpResponsesFilterRail({
         <Tabs value={activeTab} onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}>
           <div
             ref={viewportRef}
-            className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="w-full max-w-full overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             <TabsList className="inline-flex h-auto min-w-max justify-start rounded-2xl bg-[#fbf7f3] p-1">
               {RSVP_RESPONSE_FILTERS.map((filter) => (
