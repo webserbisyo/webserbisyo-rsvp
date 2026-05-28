@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/components/layout/app-providers";
 import "./globals.css";
@@ -14,9 +14,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WebSerbisyo RSVP",
-  description: "Foundation scaffold for the WebSerbisyo RSVP application.",
+  title: {
+    default: "WebSerbisyo RSVP",
+    template: "%s | WebSerbisyo RSVP",
+  },
+  description: "Manage your WebSerbisyo RSVP dashboard.",
+  icons: {
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
   manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#c96b48",
 };
 
 export default function RootLayout({
