@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   NOTIFICATION_EVENT_TYPES,
   type NotificationEventType,
+  type PushSubscriptionStatus,
   type SettingsNotificationPreference,
 } from "@/types/notifications";
 
@@ -27,6 +28,9 @@ export type SettingsPageData = {
     preferences: Record<NotificationEventType, SettingsNotificationPreference>;
     pushAvailable: boolean;
     pushNotifications: boolean;
+    pushSubscriptionEndpoint: string | null;
+    pushStatus: PushSubscriptionStatus;
+    vapidPublicKey: string | null;
   };
   support: {
     isEnabled: boolean;
@@ -45,7 +49,12 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   const supabase = await createServerSupabaseClient();
   const adminSupabase = createAdminClient();
 
-  const [{ data: client, error: clientError }, messengerUrl, preferences] = await Promise.all([
+  const [
+    { data: client, error: clientError },
+    messengerUrl,
+    preferences,
+    activePushSubscription,
+  ] = await Promise.all([
     supabase
       .from("clients")
       .select("contact_email, contact_name, name, plan_type, status")
@@ -53,6 +62,10 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
       .single(),
     safeLoadMessengerUrl(adminSupabase),
     loadNotificationPreferences(supabase, {
+      clientId,
+      profileId: profile.id,
+    }),
+    loadActivePushSubscription(supabase, {
       clientId,
       profileId: profile.id,
     }),
@@ -65,6 +78,8 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   const name = profile.full_name?.trim() || client.contact_name?.trim() || client.name?.trim() || null;
   const email = profile.email?.trim() || client.contact_email?.trim() || null;
   const planType = getPlanType(client.plan_type);
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null;
+  const pushAvailable = Boolean(vapidPublicKey);
 
   return {
     account: {
@@ -81,8 +96,14 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
       guestMessage: preferences.guest_message.inAppEnabled,
       newRsvpResponse: preferences.new_rsvp_response.inAppEnabled,
       preferences,
-      pushAvailable: false,
-      pushNotifications: false,
+      pushAvailable,
+      pushNotifications: Boolean(activePushSubscription),
+      pushStatus: getPushStatus({
+        activeEndpoint: activePushSubscription?.endpoint ?? null,
+        pushAvailable,
+      }),
+      pushSubscriptionEndpoint: activePushSubscription?.endpoint ?? null,
+      vapidPublicKey,
     },
     support: {
       isEnabled: Boolean(messengerUrl),
@@ -155,6 +176,46 @@ async function loadNotificationPreferences(
     },
     {} as Record<NotificationEventType, SettingsNotificationPreference>,
   );
+}
+
+async function loadActivePushSubscription(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  input: {
+    clientId: string;
+    profileId: string;
+  },
+) {
+  const { data, error } = await supabase
+    .from("push_subscriptions")
+    .select("endpoint")
+    .eq("profile_id", input.profileId)
+    .eq("client_id", input.clientId)
+    .eq("enabled", true)
+    .is("revoked_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+function getPushStatus(input: {
+  activeEndpoint: string | null;
+  pushAvailable: boolean;
+}): PushSubscriptionStatus {
+  if (!input.pushAvailable) {
+    return "not_configured";
+  }
+
+  if (input.activeEndpoint) {
+    return "on";
+  }
+
+  return "off";
 }
 
 async function safeLoadMessengerUrl(adminSupabase: ReturnType<typeof createAdminClient>) {

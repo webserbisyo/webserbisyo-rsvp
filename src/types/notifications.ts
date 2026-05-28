@@ -15,10 +15,27 @@ export type SettingsNotificationPreference = {
   pushEnabled: boolean;
 };
 
+export type PushPermissionState = "blocked" | "default" | "granted" | "unsupported";
+
+export type PushSubscriptionStatus =
+  | "blocked"
+  | "not_configured"
+  | "off"
+  | "on"
+  | "unsupported";
+
 export type PushSubscriptionRecord = {
   auth: string;
   endpoint: string;
   p256dh: string;
+};
+
+export type PushSubscriptionActionInput = {
+  auth: string;
+  endpoint: string;
+  p256dh: string;
+  platform?: string | null;
+  userAgent?: string | null;
 };
 
 export type DashboardNotificationPayload = {

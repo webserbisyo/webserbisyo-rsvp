@@ -26,3 +26,48 @@ self.addEventListener("fetch", (event) => {
     fetch(event.request).catch(() => caches.match(OFFLINE_URL)),
   );
 });
+
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  const title = typeof data.title === "string" ? data.title : "WebSerbisyo RSVP";
+  const url = typeof data.url === "string" && data.url.startsWith("/dashboard")
+    ? data.url
+    : "/dashboard";
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      badge: "/icons/icon-192.png",
+      body: typeof data.body === "string" ? data.body : undefined,
+      data: {
+        url,
+      },
+      icon: "/icons/icon-192.png",
+      tag: typeof data.tag === "string" ? data.tag : undefined,
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url ?? "/dashboard";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({
+        includeUncontrolled: true,
+        type: "window",
+      })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client && client.url.includes(targetUrl)) {
+            return client.focus();
+          }
+        }
+
+        return self.clients.openWindow(targetUrl);
+      }),
+  );
+});

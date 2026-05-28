@@ -785,6 +785,69 @@ export type Database = {
           },
         ];
       };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          client_id: string;
+          created_at: string;
+          enabled: boolean;
+          endpoint: string;
+          id: string;
+          last_seen_at: string | null;
+          p256dh: string;
+          platform: string | null;
+          profile_id: string;
+          revoked_at: string | null;
+          updated_at: string;
+          user_agent: string | null;
+        };
+        Insert: {
+          auth: string;
+          client_id: string;
+          created_at?: string;
+          enabled?: boolean;
+          endpoint: string;
+          id?: string;
+          last_seen_at?: string | null;
+          p256dh: string;
+          platform?: string | null;
+          profile_id: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          auth?: string;
+          client_id?: string;
+          created_at?: string;
+          enabled?: boolean;
+          endpoint?: string;
+          id?: string;
+          last_seen_at?: string | null;
+          p256dh?: string;
+          platform?: string | null;
+          profile_id?: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "push_subscriptions_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       rsvp_applications: {
         Row: {
           approved_at: string | null;
