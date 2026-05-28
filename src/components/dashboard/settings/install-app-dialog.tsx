@@ -41,7 +41,7 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Tap the <InlineInstructionIcon icon={<Share className="size-3.5" />} label="Share" /> Share icon near the address bar.
+            Tap the <InlineInstructionIcon icon={<Share className="size-4" />} label="Share" /> Share icon near the address bar.
           </>
         ),
         hint: "It may be at the bottom on some devices.",
@@ -49,7 +49,7 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Tap <InlineInstructionIcon icon={<SquarePlus className="size-3.5" />} label="Add to Home Screen" /> Add to Home Screen.
+            Tap <InlineInstructionIcon icon={<SquarePlus className="size-4" />} label="Add to Home Screen" /> Add to Home Screen.
           </>
         ),
         hint: "Scroll down or tap More if you can’t find it.",
@@ -66,7 +66,7 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Tap the <InlineInstructionIcon icon={<EllipsisVertical className="size-3.5" />} label="menu" /> menu near the address bar.
+            Tap the <InlineInstructionIcon icon={<EllipsisVertical className="size-4" />} label="menu" /> menu near the address bar.
           </>
         ),
       },
@@ -85,7 +85,7 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Click the <InlineInstructionIcon icon={<DesktopInstallGlyph className="size-3.5" />} label="install" /> install icon in the address bar.
+            Click the <InlineInstructionIcon icon={<DesktopInstallGlyph className="size-4" />} label="install" /> install icon in the address bar.
           </>
         ),
       },
@@ -135,41 +135,41 @@ export function InstallAppDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-[min(88dvh,42rem)] max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-[1.9rem] border border-[#ead8c4] bg-[#fffaf4] p-0 text-[color:var(--dash-foreground)] shadow-[0_24px_60px_rgba(83,54,33,0.16)] ring-[#f1e2d0]/80 sm:max-w-[540px]"
+        className="max-h-[min(88dvh,42rem)] max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-[2.1rem] border border-[#ead8ca] bg-[#fffaf4] p-0 text-[color:var(--dash-foreground)] shadow-[0_30px_90px_rgba(47,31,22,0.26)] ring-[#f1e2d0]/80 sm:max-w-[548px]"
       >
-        <div className="overflow-y-auto px-5 pt-5 pb-5 sm:px-6 sm:pt-6 sm:pb-6">
+        <div className="overflow-y-auto px-5 pt-5 pb-5 sm:px-7 sm:pt-7 sm:pb-6">
           <DialogClose asChild>
             <Button
               variant="ghost"
-              size="icon-sm"
-              className="absolute top-3 right-3 rounded-full text-[#8d7667] hover:bg-[#f7eee5] hover:text-[color:var(--dash-foreground)]"
+              size="icon"
+              className="absolute top-4 right-4 h-10 w-10 rounded-full border border-[#ead8ca] bg-white/80 text-[#7e675d] shadow-none transition hover:bg-[#fff1e8] hover:text-[#c45f3f]"
               aria-label="Close install app dialog"
             >
               <XIcon className="size-4" />
             </Button>
           </DialogClose>
 
-          <DialogHeader className="gap-0 pr-10">
+          <DialogHeader className="gap-0 pr-12">
             <div className="flex items-center gap-4">
               <div
-                className="relative h-[72px] w-[72px] shrink-0 rounded-[1.35rem] border border-[#ead8c4] bg-[#fff7ef] p-[5px] shadow-[0_14px_30px_rgba(112,78,51,0.1),inset_0_1px_0_rgba(255,255,255,0.78)]"
+                className="relative h-12 w-12 shrink-0 rounded-2xl border border-[#ead9cc] bg-[#fffaf5] p-[4px] shadow-[0_12px_30px_rgba(122,72,43,0.12)]"
                 aria-hidden="true"
               >
-                <div className="relative h-full w-full overflow-hidden rounded-[1rem] bg-[#fbf3eb] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+                <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#fff0e6] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
                   <Image
                     src="/images/brand/webserbisyo-logo.jpeg"
                     alt=""
                     fill
-                    sizes="72px"
+                    sizes="48px"
                     className="object-cover object-center"
                   />
                 </div>
               </div>
               <div className="min-w-0">
-                <DialogTitle className="text-[1.35rem] font-black leading-tight tracking-[-0.02em] text-[color:var(--dash-foreground)]">
+                <DialogTitle className="text-2xl font-black leading-tight tracking-[-0.04em] text-[#171313] sm:text-[1.95rem]">
                   Install WebSerbisyo RSVP
                 </DialogTitle>
-                <DialogDescription className="mt-2 text-sm font-medium leading-relaxed text-[#8d7667]">
+                <DialogDescription className="mt-1 text-[14px] font-bold leading-6 text-[#705f57]">
                   Open your dashboard faster from your home screen.
                 </DialogDescription>
               </div>
@@ -183,15 +183,15 @@ export function InstallAppDialog({
           >
             <TabsList
               aria-label="Choose your device"
-              className="grid h-auto w-full grid-cols-3 rounded-full border border-[#ead8c4] bg-[#f7eee5] p-1"
+              className="grid h-auto w-full grid-cols-3 rounded-full border-0 bg-transparent p-0"
             >
               {PLATFORM_OPTIONS.map((option) => (
                 <TabsTrigger
                   key={option.value}
                   value={option.value}
                   className={cn(
-                    "h-10 rounded-full border-0 px-3 text-sm font-semibold text-[#8d7667] shadow-none after:hidden",
-                    "data-active:bg-white data-active:text-[color:var(--dash-brand)] data-active:shadow-[0_8px_18px_rgba(112,78,51,0.08)]",
+                    "h-10 rounded-full border border-[#ead9ce] bg-white px-4 text-sm font-black text-[#725f56] shadow-none transition hover:bg-[#fff6ef] after:hidden",
+                    "data-active:border-[#d9a891] data-active:bg-[#fff0e7] data-active:text-[#c45f3f] data-active:shadow-[0_8px_20px_rgba(196,95,63,0.12)]",
                   )}
                 >
                   {option.icon}
@@ -201,25 +201,19 @@ export function InstallAppDialog({
             </TabsList>
           </Tabs>
 
-          <section className="mt-4 rounded-[1.55rem] border border-[#eadfd4] bg-[linear-gradient(180deg,#fffdf8_0%,#fffaf4_100%)] px-4 py-4 shadow-[0_16px_42px_rgba(112,78,51,0.05),0_2px_0_rgba(255,255,255,0.78)_inset] sm:px-5">
-            <p className="text-[0.72rem] font-black uppercase tracking-[0.18em] text-[color:var(--dash-brand)]">
-              {guide.label}
-            </p>
-
-            <ol className="mt-4 space-y-4">
+          <section className="mt-5 rounded-[24px] border border-[#ead8ca] bg-white/72 p-5">
+            <ol className="space-y-5">
               {guide.steps.map((step, index) => (
-                <li key={index} className="grid grid-cols-[1.9rem_minmax(0,1fr)] gap-3">
-                  <span className="mt-0.5 flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-full bg-[#fff1e8] text-sm font-black text-[color:var(--dash-brand)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                <li key={index} className="grid grid-cols-[38px_minmax(0,1fr)] items-start gap-4">
+                  <span className="mt-0.5 grid h-9 w-9 place-items-center rounded-full bg-[#221c18] text-base font-black leading-none text-white shadow-[0_8px_18px_rgba(34,28,24,0.20)]">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-6 text-[color:var(--dash-foreground)]">
+                    <p className="text-[17px] font-black leading-7 text-[#1f1a17]">
                       {step.body}
                     </p>
                     {step.hint ? (
-                      <p className="mt-1 text-sm leading-6 text-[#9a8476]">
-                        <span className="font-semibold text-[#8d7667]">Hint:</span> {step.hint}
-                      </p>
+                      <p className="mt-1 text-[14px] font-bold leading-6 text-[#79675f]">{step.hint}</p>
                     ) : null}
                   </div>
                 </li>
@@ -227,11 +221,11 @@ export function InstallAppDialog({
             </ol>
           </section>
 
-          <div className="mt-5 flex justify-end">
+          <div className="mt-5 flex justify-end border-t border-[#ead8ca] pt-5">
             <DialogClose asChild>
               <Button
                 type="button"
-                className="h-11 rounded-full bg-[color:var(--dash-brand)] px-6 text-sm font-black text-white shadow-[0_12px_26px_rgba(201,107,72,0.28)] hover:bg-[color:var(--dash-brand-hover)]"
+                className="h-11 rounded-2xl bg-[#d36b46] px-6 text-sm font-black text-white shadow-[0_14px_30px_rgba(196,90,55,0.22)] transition hover:bg-[#c4603f]"
               >
                 Got it
               </Button>
@@ -251,7 +245,7 @@ function InlineInstructionIcon({
   label: string;
 }) {
   return (
-    <span className="mx-0.5 inline-flex h-5 min-w-5 translate-y-[1px] items-center justify-center rounded-md border border-[#ecd8c7] bg-[#fff7ef] px-1 text-[color:var(--dash-brand)] align-middle shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
+    <span className="mx-1 inline-flex h-7 w-7 translate-y-[1px] items-center justify-center rounded-lg border border-[#ead6c9] bg-white text-[#171313] align-middle shadow-[0_5px_12px_rgba(70,45,31,0.09)]">
       <span className="sr-only">{label}</span>
       <span aria-hidden="true">{icon}</span>
     </span>
@@ -266,14 +260,14 @@ function DesktopInstallGlyph({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.9"
+      strokeWidth="2.1"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
-      <path d="M8 8.5h7.5" />
-      <path d="M12 10.5v4.5" />
-      <path d="m10.25 13.5 1.75 1.75 1.75-1.75" />
+      <rect x="4" y="5" width="16" height="12" rx="2" />
+      <path d="M12 8v5" />
+      <path d="m9.5 10.5 2.5 2.5 2.5-2.5" />
+      <path d="M8 20h8" />
     </svg>
   );
 }
