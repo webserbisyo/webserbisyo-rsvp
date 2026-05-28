@@ -4,6 +4,11 @@ import { formatUserRoleLabel } from "@/lib/auth/role-labels";
 import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  NOTIFICATION_EVENT_TYPES,
+  type NotificationEventType,
+  type SettingsNotificationPreference,
+} from "@/types/notifications";
 
 export type SettingsPageData = {
   account: {
@@ -19,6 +24,7 @@ export type SettingsPageData = {
     billingUpdates: boolean;
     guestMessage: boolean;
     newRsvpResponse: boolean;
+    preferences: Record<NotificationEventType, SettingsNotificationPreference>;
     pushAvailable: boolean;
     pushNotifications: boolean;
   };
@@ -39,13 +45,17 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   const supabase = await createServerSupabaseClient();
   const adminSupabase = createAdminClient();
 
-  const [{ data: client, error: clientError }, messengerUrl] = await Promise.all([
+  const [{ data: client, error: clientError }, messengerUrl, preferences] = await Promise.all([
     supabase
       .from("clients")
       .select("contact_email, contact_name, name, plan_type, status")
       .eq("id", clientId)
       .single(),
     safeLoadMessengerUrl(adminSupabase),
+    loadNotificationPreferences(supabase, {
+      clientId,
+      profileId: profile.id,
+    }),
   ]);
 
   if (clientError) {
@@ -67,9 +77,10 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
       statusLabel: formatStatusLabel(client.status),
     },
     notifications: {
-      billingUpdates: true,
-      guestMessage: true,
-      newRsvpResponse: true,
+      billingUpdates: preferences.billing_update.inAppEnabled,
+      guestMessage: preferences.guest_message.inAppEnabled,
+      newRsvpResponse: preferences.new_rsvp_response.inAppEnabled,
+      preferences,
       pushAvailable: false,
       pushNotifications: false,
     },
@@ -78,6 +89,72 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
       messengerUrl,
     },
   };
+}
+
+async function loadNotificationPreferences(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  input: {
+    clientId: string;
+    profileId: string;
+  },
+): Promise<Record<NotificationEventType, SettingsNotificationPreference>> {
+  const { data, error } = await supabase
+    .from("notification_preferences")
+    .select("email_enabled, event_type, in_app_enabled, push_enabled")
+    .eq("profile_id", input.profileId)
+    .eq("client_id", input.clientId);
+
+  if (error) {
+    throw error;
+  }
+
+  const rowsByType = new Map(
+    (data ?? []).map((row) => [row.event_type as NotificationEventType, row]),
+  );
+  const missingEventTypes = NOTIFICATION_EVENT_TYPES.filter((eventType) => !rowsByType.has(eventType));
+
+  if (missingEventTypes.length > 0) {
+    const { data: insertedRows, error: insertError } = await supabase
+      .from("notification_preferences")
+      .upsert(
+        missingEventTypes.map((eventType) => ({
+          client_id: input.clientId,
+          email_enabled: false,
+          event_type: eventType,
+          in_app_enabled: true,
+          profile_id: input.profileId,
+          push_enabled: false,
+        })),
+        {
+          onConflict: "profile_id,client_id,event_type",
+        },
+      )
+      .select("email_enabled, event_type, in_app_enabled, push_enabled");
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    for (const row of insertedRows ?? []) {
+      rowsByType.set(row.event_type as NotificationEventType, row);
+    }
+  }
+
+  return NOTIFICATION_EVENT_TYPES.reduce(
+    (preferences, eventType) => {
+      const row = rowsByType.get(eventType);
+
+      preferences[eventType] = {
+        emailEnabled: row?.email_enabled ?? false,
+        eventType,
+        inAppEnabled: row?.in_app_enabled ?? true,
+        pushEnabled: row?.push_enabled ?? false,
+      };
+
+      return preferences;
+    },
+    {} as Record<NotificationEventType, SettingsNotificationPreference>,
+  );
 }
 
 async function safeLoadMessengerUrl(adminSupabase: ReturnType<typeof createAdminClient>) {

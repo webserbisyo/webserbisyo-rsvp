@@ -411,6 +411,57 @@ export type Database = {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          email_enabled: boolean;
+          event_type: string;
+          id: string;
+          in_app_enabled: boolean;
+          profile_id: string;
+          push_enabled: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          email_enabled?: boolean;
+          event_type: string;
+          id?: string;
+          in_app_enabled?: boolean;
+          profile_id: string;
+          push_enabled?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          email_enabled?: boolean;
+          event_type?: string;
+          id?: string;
+          in_app_enabled?: boolean;
+          profile_id?: string;
+          push_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notification_preferences_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       payment_refunds: {
         Row: {
           amount: number;

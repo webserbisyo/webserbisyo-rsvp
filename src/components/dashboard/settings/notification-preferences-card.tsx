@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, Dispatch, ReactNode, SetStateAction } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -8,46 +8,103 @@ import { Switch } from "@/components/ui/switch";
 import { Bell, MessageCircle, UserRound, WalletCards } from "lucide-react";
 import type { SettingsPageData } from "@/server/queries/settings";
 import { SettingsCard } from "@/components/dashboard/settings/settings-card";
+import { updateInAppNotificationPreferenceAction } from "@/server/actions/settings-notifications";
+import type { NotificationEventType } from "@/types/notifications";
+import { toast } from "sonner";
 
 type NotificationPreferencesCardProps = {
   notifications: SettingsPageData["notifications"];
 };
 
-type NotificationKey = "billingUpdates" | "guestMessage" | "newRsvpResponse";
+const NOTIFICATION_ROWS: Array<{
+  eventType: NotificationEventType;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+}> = [
+  {
+    eventType: "new_rsvp_response",
+    icon: UserRound,
+    label: "New RSVP response",
+  },
+  {
+    eventType: "guest_message",
+    icon: MessageCircle,
+    label: "Guest message",
+  },
+  {
+    eventType: "billing_update",
+    icon: WalletCards,
+    label: "Billing updates",
+  },
+];
 
 export function NotificationPreferencesCard({
   notifications,
 }: NotificationPreferencesCardProps) {
-  const [localState, setLocalState] = useState({
-    billingUpdates: notifications.billingUpdates,
-    guestMessage: notifications.guestMessage,
-    newRsvpResponse: notifications.newRsvpResponse,
+  const [inAppState, setInAppState] = useState(() => ({
+    billing_update: notifications.preferences.billing_update.inAppEnabled,
+    guest_message: notifications.preferences.guest_message.inAppEnabled,
+    new_rsvp_response: notifications.preferences.new_rsvp_response.inAppEnabled,
+  }));
+  const [savingState, setSavingState] = useState<Record<NotificationEventType, boolean>>({
+    billing_update: false,
+    guest_message: false,
+    new_rsvp_response: false,
   });
+
+  async function updatePreference(eventType: NotificationEventType, checked: boolean) {
+    const previous = inAppState[eventType];
+
+    setInAppState((current) => ({
+      ...current,
+      [eventType]: checked,
+    }));
+    setSavingState((current) => ({
+      ...current,
+      [eventType]: true,
+    }));
+
+    const result = await updateInAppNotificationPreferenceAction({
+      enabled: checked,
+      eventType,
+    });
+
+    if (!result.ok) {
+      setInAppState((current) => ({
+        ...current,
+        [eventType]: previous,
+      }));
+      toast.error(result.error);
+    } else {
+      setInAppState((current) => ({
+        ...current,
+        [eventType]: result.data.inAppEnabled,
+      }));
+    }
+
+    setSavingState((current) => ({
+      ...current,
+      [eventType]: false,
+    }));
+  }
 
   return (
     <SettingsCard>
       <SectionLabel>Notification Preferences</SectionLabel>
       <div className="mt-5">
-        <NotificationRow
-          checked={localState.newRsvpResponse}
-          icon={UserRound}
-          label="New RSVP response"
-          onCheckedChange={(checked) => updateLocalState("newRsvpResponse", checked, setLocalState)}
-        />
-        <Separator className="bg-[#eee5db]" />
-        <NotificationRow
-          checked={localState.guestMessage}
-          icon={MessageCircle}
-          label="Guest message"
-          onCheckedChange={(checked) => updateLocalState("guestMessage", checked, setLocalState)}
-        />
-        <Separator className="bg-[#eee5db]" />
-        <NotificationRow
-          checked={localState.billingUpdates}
-          icon={WalletCards}
-          label="Billing updates"
-          onCheckedChange={(checked) => updateLocalState("billingUpdates", checked, setLocalState)}
-        />
+        {NOTIFICATION_ROWS.map((row, index) => (
+          <NotificationRowGroup key={row.eventType} showSeparator={index > 0}>
+            <NotificationRow
+              checked={inAppState[row.eventType]}
+              disabled={savingState[row.eventType]}
+              icon={row.icon}
+              label={row.label}
+              onCheckedChange={(checked) => {
+                void updatePreference(row.eventType, checked);
+              }}
+            />
+          </NotificationRowGroup>
+        ))}
         <Separator className="bg-[#eee5db]" />
         <NotificationRow
           badge={<SoonBadge />}
@@ -59,22 +116,25 @@ export function NotificationPreferencesCard({
         />
       </div>
       <p className="mt-4 text-sm font-semibold leading-relaxed text-[#b09887]">
-        Preference syncing is coming soon. These switches currently stay on this device only.
+        Preferences sync with your WebSerbisyo account.
       </p>
-      {/* TODO: Replace local-only switch state when a tenant-scoped notification preference model exists. */}
     </SettingsCard>
   );
 }
 
-function updateLocalState(
-  key: NotificationKey,
-  checked: boolean,
-  setLocalState: Dispatch<SetStateAction<Record<NotificationKey, boolean>>>,
-) {
-  setLocalState((current) => ({
-    ...current,
-    [key]: checked,
-  }));
+function NotificationRowGroup({
+  children,
+  showSeparator,
+}: {
+  children: ReactNode;
+  showSeparator: boolean;
+}) {
+  return (
+    <>
+      {showSeparator ? <Separator className="bg-[#eee5db]" /> : null}
+      {children}
+    </>
+  );
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
