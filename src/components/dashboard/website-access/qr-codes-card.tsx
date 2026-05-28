@@ -36,7 +36,7 @@ export function QrCodesCard({
       link.href = url;
       link.download = filename;
       link.click();
-      toast.success("QR code downloaded.");
+      toast.success("QR download started.");
     } catch {
       toast.error("Could not download the QR code.");
     }
