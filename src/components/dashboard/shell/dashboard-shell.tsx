@@ -1,24 +1,33 @@
 "use client";
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { DashboardRealtimeNotifications } from "@/components/dashboard/notifications/dashboard-realtime-notifications";
 import { DashboardMobileBottomNav } from "./dashboard-mobile-bottom-nav";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopHeader } from "./dashboard-top-header";
 
 type DashboardShellProps = {
   children: React.ReactNode;
+  clientId: string;
   email: string;
   displayName?: string;
   planType?: string | null;
 };
 
-export function DashboardShell({ children, email, displayName, planType }: DashboardShellProps) {
+export function DashboardShell({
+  children,
+  clientId,
+  email,
+  displayName,
+  planType,
+}: DashboardShellProps) {
   return (
     <div
       data-dashboard
       className="min-h-screen"
       style={{ background: "var(--dash-surface)" }}
     >
+      <DashboardRealtimeNotifications clientId={clientId} />
       <SidebarProvider
         style={
           {

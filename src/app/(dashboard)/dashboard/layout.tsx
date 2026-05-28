@@ -25,19 +25,24 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     throw error;
   }
 
-  if (profile.client_id) {
-    const supabase = await createServerSupabaseClient();
-    const { data: clientData } = await supabase
-      .from("clients")
-      .select("plan_type")
-      .eq("id", profile.client_id)
-      .single();
+  const clientId = profile.client_id;
 
-    planType = clientData?.plan_type ?? null;
+  if (!clientId) {
+    throw new Error("Client tenant profile is missing client_id.");
   }
+
+  const supabase = await createServerSupabaseClient();
+  const { data: clientData } = await supabase
+    .from("clients")
+    .select("plan_type")
+    .eq("id", clientId)
+    .single();
+
+  planType = clientData?.plan_type ?? null;
 
   return (
     <DashboardShell
+      clientId={clientId}
       email={profile.email}
       displayName={profile.full_name ?? undefined}
       planType={planType}
