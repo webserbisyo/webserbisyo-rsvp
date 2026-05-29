@@ -35,37 +35,78 @@ export default function OfflinePage() {
             height: "88px",
             margin: "0 auto",
             placeItems: "center",
+            position: "relative",
             width: "88px",
           }}
         >
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="4" width="48" height="48" rx="16" fill="#FFF4EA" />
-            <path
-              d="M15 18.5L21.1 37L28 24.2L34.9 37L41 18.5"
-              stroke="#C96B48"
-              strokeWidth="4.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <div
+            style={{
+              display: "grid",
+              height: "56px",
+              placeItems: "center",
+              width: "56px",
+            }}
+          >
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="48" height="48" rx="16" fill="#FFF4EA" />
+              <path
+                d="M15 18.5L21.1 37L28 24.2L34.9 37L41 18.5"
+                stroke="#C96B48"
+                strokeWidth="4.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div
+            style={{
+              backgroundImage: "url('/icon.png')",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "cover",
+              borderRadius: "18px",
+              boxShadow: "0 10px 22px rgba(87,59,39,0.14)",
+              inset: "16px",
+              position: "absolute",
+            }}
+          />
+          <object
+            aria-label="WebSerbisyo RSVP"
+            data="/icon.png"
+            height="56"
+            type="image/png"
+            width="56"
+            style={{
+              border: 0,
+              clip: "rect(0 0 0 0)",
+              height: "1px",
+              margin: "-1px",
+              overflow: "hidden",
+              padding: 0,
+              position: "absolute",
+              whiteSpace: "nowrap",
+              width: "1px",
+            }}
+          />
         </div>
         <div
           aria-hidden="true"
           style={{
-            background: "#fde8df",
+            background: "linear-gradient(180deg, #fce8de 0%, #f9ddcf 100%)",
             borderRadius: "999px",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7)",
             display: "grid",
-            height: "52px",
+            height: "58px",
             margin: "18px auto 0",
             placeItems: "center",
-            width: "52px",
+            width: "58px",
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
-              d="M2 8.82C4.88 6.41 8.31 5 12 5C14.33 5 16.56 5.56 18.54 6.56M22 12C22 13.88 21.64 15.68 20.97 17.32M17.08 20.74C15.54 21.54 13.79 22 12 22C8.62 22 5.46 20.37 3.45 17.61M2 2L22 22"
+              d="M3.5 9.4C6.47 6.71 10.13 5.25 14 5.25C17.87 5.25 21.53 6.71 24.5 9.4M6.55 13.05C8.77 11.1 11.3 10.12 14 10.12C16.7 10.12 19.23 11.1 21.45 13.05M10.15 16.85C11.23 16.01 12.57 15.56 14 15.56C15.43 15.56 16.77 16.01 17.85 16.85M13.96 21.08H14.04M4.2 4.2L23.8 23.8"
               stroke="#C96B48"
-              strokeWidth="2.2"
+              strokeWidth="2.4"
               strokeLinecap="round"
               strokeLinejoin="round"
             />

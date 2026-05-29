@@ -60,6 +60,7 @@
       }
 
       .logo-tile {
+        position: relative;
         width: 88px;
         height: 88px;
         margin: 0 auto;
@@ -71,14 +72,45 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
       }
 
-      .status-ring {
-        width: 52px;
-        height: 52px;
-        margin: 18px auto 0;
-        border-radius: 999px;
-        background: #fde8df;
+      .logo-fallback {
+        width: 56px;
+        height: 56px;
         display: grid;
         place-items: center;
+      }
+
+      .logo-image {
+        position: absolute;
+        inset: 16px;
+        border-radius: 18px;
+        background-image: url("/icon.png");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        box-shadow: 0 10px 22px rgba(87, 59, 39, 0.14);
+      }
+
+      .logo-alt {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .status-ring {
+        width: 58px;
+        height: 58px;
+        margin: 18px auto 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #fce8de 0%, #f9ddcf 100%);
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
       }
 
       h1 {
@@ -151,23 +183,33 @@
     <main class="shell">
       <section class="card" aria-labelledby="offline-title">
         <div class="logo-tile" aria-hidden="true">
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="4" width="48" height="48" rx="16" fill="#FFF4EA" />
-            <path
-              d="M15 18.5L21.1 37L28 24.2L34.9 37L41 18.5"
-              stroke="#C96B48"
-              stroke-width="4.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <div class="logo-fallback">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="48" height="48" rx="16" fill="#FFF4EA" />
+              <path
+                d="M15 18.5L21.1 37L28 24.2L34.9 37L41 18.5"
+                stroke="#C96B48"
+                stroke-width="4.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <div class="logo-image"></div>
+          <img
+            class="logo-alt"
+            src="/icon.png"
+            alt="WebSerbisyo RSVP"
+            width="56"
+            height="56"
+          />
         </div>
         <div class="status-ring" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
-              d="M2 8.82C4.88 6.41 8.31 5 12 5C14.33 5 16.56 5.56 18.54 6.56M22 12C22 13.88 21.64 15.68 20.97 17.32M17.08 20.74C15.54 21.54 13.79 22 12 22C8.62 22 5.46 20.37 3.45 17.61M2 2L22 22"
+              d="M3.5 9.4C6.47 6.71 10.13 5.25 14 5.25C17.87 5.25 21.53 6.71 24.5 9.4M6.55 13.05C8.77 11.1 11.3 10.12 14 10.12C16.7 10.12 19.23 11.1 21.45 13.05M10.15 16.85C11.23 16.01 12.57 15.56 14 15.56C15.43 15.56 16.77 16.01 17.85 16.85M13.96 21.08H14.04M4.2 4.2L23.8 23.8"
               stroke="#C96B48"
-              stroke-width="2.2"
+              stroke-width="2.4"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
