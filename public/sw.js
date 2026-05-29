@@ -1,6 +1,13 @@
-const CACHE_NAME = "rsvp-offline-v3";
-const OFFLINE_URL = "/offline";
-const STATIC_ASSETS = [OFFLINE_URL, "/images/brand/webserbisyo-logo.jpeg"];
+const CACHE_NAME = "rsvp-offline-v4";
+const OFFLINE_URL = "/offline.html";
+const STATIC_ASSETS = [
+  OFFLINE_URL,
+  "/favicon.ico",
+  "/icon.png",
+  "/apple-icon.png",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));

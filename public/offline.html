@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#c96b48" />
+    <title>Offline | WebSerbisyo RSVP</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #fffaf4;
+        --card: rgba(255, 255, 255, 0.92);
+        --border: rgba(213, 187, 164, 0.42);
+        --brand: #c96b48;
+        --brand-deep: #9f4d31;
+        --ink: #1f1a17;
+        --muted: #78675d;
+        --shadow: 0 24px 60px rgba(120, 84, 58, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family:
+          "SF Pro Display",
+          "Segoe UI",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(255, 229, 208, 0.78), transparent 48%),
+          linear-gradient(180deg, #fffdf9 0%, var(--bg) 42%, #fff4ea 100%);
+        color: var(--ink);
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 28px 18px;
+      }
+
+      .card {
+        width: min(100%, 430px);
+        border-radius: 30px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        box-shadow: var(--shadow);
+        padding: 28px 24px 24px;
+        text-align: center;
+        backdrop-filter: blur(14px);
+      }
+
+      .logo-tile {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto;
+        border-radius: 28px;
+        border: 1px solid rgba(225, 198, 174, 0.8);
+        background: linear-gradient(145deg, #fff7ef 0%, #ffe6d7 100%);
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+      }
+
+      .status-ring {
+        width: 52px;
+        height: 52px;
+        margin: 18px auto 0;
+        border-radius: 999px;
+        background: #fde8df;
+        display: grid;
+        place-items: center;
+      }
+
+      h1 {
+        margin: 18px 0 0;
+        font-size: clamp(2rem, 5vw, 2.35rem);
+        line-height: 1;
+        letter-spacing: -0.045em;
+        font-weight: 900;
+      }
+
+      .message {
+        margin: 14px auto 0;
+        max-width: 31ch;
+        color: var(--muted);
+        font-size: 0.98rem;
+        line-height: 1.7;
+        font-weight: 600;
+      }
+
+      .actions {
+        margin-top: 24px;
+      }
+
+      .button {
+        width: 100%;
+        border: 0;
+        border-radius: 20px;
+        padding: 14px 18px;
+        background: linear-gradient(180deg, #d97a57 0%, var(--brand) 100%);
+        color: #fff;
+        font: inherit;
+        font-size: 0.96rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        box-shadow: 0 18px 30px rgba(201, 107, 72, 0.24);
+        cursor: pointer;
+      }
+
+      .button:active {
+        transform: translateY(1px);
+      }
+
+      .note {
+        margin: 14px auto 0;
+        max-width: 34ch;
+        color: #9a8578;
+        font-size: 0.86rem;
+        line-height: 1.65;
+        font-weight: 600;
+      }
+
+      .brand {
+        margin-top: 18px;
+        color: #b49a89;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 480px) {
+        .card {
+          padding: 24px 20px 20px;
+          border-radius: 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card" aria-labelledby="offline-title">
+        <div class="logo-tile" aria-hidden="true">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="48" height="48" rx="16" fill="#FFF4EA" />
+            <path
+              d="M15 18.5L21.1 37L28 24.2L34.9 37L41 18.5"
+              stroke="#C96B48"
+              stroke-width="4.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        <div class="status-ring" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M2 8.82C4.88 6.41 8.31 5 12 5C14.33 5 16.56 5.56 18.54 6.56M22 12C22 13.88 21.64 15.68 20.97 17.32M17.08 20.74C15.54 21.54 13.79 22 12 22C8.62 22 5.46 20.37 3.45 17.61M2 2L22 22"
+              stroke="#C96B48"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        <h1 id="offline-title">You&rsquo;re offline</h1>
+        <p class="message">WebSerbisyo RSVP needs internet to sync your dashboard.</p>
+        <div class="actions">
+          <button class="button" type="button" id="retry-button">Try again</button>
+        </div>
+        <p class="note">Your dashboard will reconnect when your internet is back.</p>
+        <p class="brand">WebSerbisyo RSVP</p>
+      </section>
+    </main>
+    <script>
+      const retryButton = document.getElementById("retry-button");
+
+      if (retryButton) {
+        retryButton.addEventListener("click", () => {
+          window.location.reload();
+        });
+      }
+
+      window.addEventListener("online", () => {
+        window.location.assign("/dashboard");
+      });
+    </script>
+  </body>
+</html>
