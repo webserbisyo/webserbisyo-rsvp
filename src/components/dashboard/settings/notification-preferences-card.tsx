@@ -18,7 +18,12 @@ import {
   subscribeBrowserToPush,
   unsubscribeBrowserFromPush,
 } from "@/lib/push";
-import type { NotificationEventType, PushSubscriptionStatus } from "@/types/notifications";
+import {
+  DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
+  type DashboardNotificationPreferenceEventDetail,
+  type NotificationEventType,
+  type PushSubscriptionStatus,
+} from "@/types/notifications";
 import { toast } from "sonner";
 
 type NotificationPreferencesCardProps = {
@@ -109,6 +114,17 @@ export function NotificationPreferencesCard({
         ...current,
         [eventType]: result.data.inAppEnabled,
       }));
+      window.dispatchEvent(
+        new CustomEvent<DashboardNotificationPreferenceEventDetail>(
+          DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
+          {
+            detail: {
+              eventType,
+              inAppEnabled: result.data.inAppEnabled,
+            },
+          },
+        ),
+      );
     }
 
     setSavingState((current) => ({

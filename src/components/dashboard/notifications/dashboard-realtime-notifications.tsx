@@ -6,7 +6,9 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import {
+  DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
   NOTIFICATION_EVENT_TYPES,
+  type DashboardNotificationPreferenceEventDetail,
   type NotificationEventType,
 } from "@/types/notifications";
 
@@ -48,6 +50,26 @@ export function DashboardRealtimeNotifications({
     let isActive = true;
     const supabase = createClient();
 
+    function handlePreferenceChange(event: Event) {
+      const detail = (event as CustomEvent<Partial<DashboardNotificationPreferenceEventDetail>>)
+        .detail;
+
+      if (
+        !detail ||
+        !isNotificationEventType(detail.eventType) ||
+        typeof detail.inAppEnabled !== "boolean"
+      ) {
+        return;
+      }
+
+      preferencesRef.current = {
+        ...preferencesRef.current,
+        [detail.eventType]: detail.inAppEnabled,
+      };
+    }
+
+    window.addEventListener(DASHBOARD_NOTIFICATION_PREFERENCE_EVENT, handlePreferenceChange);
+
     async function startRealtime() {
       const { data: preferences, error } = await supabase
         .from("notification_preferences")
@@ -57,20 +79,25 @@ export function DashboardRealtimeNotifications({
       if (!isActive) return;
 
       if (error) {
-        console.error("[dashboard-realtime] Failed to load notification preferences", error);
-        return;
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[dashboard-realtime] Falling back to default notification preferences",
+            {
+              code: error.code,
+              message: error.message,
+            },
+          );
+        }
+      } else {
+        preferencesRef.current = {
+          ...DEFAULT_IN_APP_PREFERENCES,
+          ...Object.fromEntries(
+            (preferences ?? [])
+              .filter((row) => isNotificationEventType(row.event_type))
+              .map((row) => [row.event_type, row.in_app_enabled]),
+          ),
+        } as InAppPreferenceState;
       }
-
-      preferencesRef.current = {
-        ...DEFAULT_IN_APP_PREFERENCES,
-        ...Object.fromEntries(
-          (preferences ?? [])
-            .filter((row) =>
-              NOTIFICATION_EVENT_TYPES.includes(row.event_type as NotificationEventType),
-            )
-            .map((row) => [row.event_type, row.in_app_enabled]),
-        ),
-      } as InAppPreferenceState;
 
       const responsesChannel = supabase
         .channel(`dashboard-rsvp-responses:${clientId}`)
@@ -200,11 +227,19 @@ export function DashboardRealtimeNotifications({
 
     return () => {
       isActive = false;
+      window.removeEventListener(DASHBOARD_NOTIFICATION_PREFERENCE_EVENT, handlePreferenceChange);
       cleanupRealtime?.();
     };
   }, [clientId, router]);
 
   return null;
+}
+
+function isNotificationEventType(value: unknown): value is NotificationEventType {
+  return (
+    typeof value === "string" &&
+    NOTIFICATION_EVENT_TYPES.includes(value as NotificationEventType)
+  );
 }
 
 function formatPaymentStatus(value: string) {

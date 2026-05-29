@@ -1,4 +1,4 @@
-const CACHE_NAME = "rsvp-offline-v2";
+const CACHE_NAME = "rsvp-offline-v3";
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [OFFLINE_URL, "/images/brand/webserbisyo-logo.jpeg"];
 
@@ -30,7 +30,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
-  const data = event.data.json();
+  const data = readPushPayload(event.data);
   const title = typeof data.title === "string" ? data.title : "WebSerbisyo RSVP";
   const url = typeof data.url === "string" && data.url.startsWith("/dashboard")
     ? data.url
@@ -48,6 +48,14 @@ self.addEventListener("push", (event) => {
     }),
   );
 });
+
+function readPushPayload(data) {
+  try {
+    return data.json();
+  } catch {
+    return {};
+  }
+}
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
