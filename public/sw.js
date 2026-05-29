@@ -1,4 +1,4 @@
-const CACHE_NAME = "rsvp-offline-v5";
+const CACHE_NAME = "rsvp-offline-v6";
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,

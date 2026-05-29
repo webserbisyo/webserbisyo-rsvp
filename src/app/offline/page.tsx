@@ -60,7 +60,7 @@ export default function OfflinePage() {
           </div>
           <div
             style={{
-              backgroundImage: "url('/icon.png')",
+              backgroundImage: "url('/icons/icon-192.png')",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
               backgroundSize: "cover",
@@ -72,7 +72,7 @@ export default function OfflinePage() {
           />
           <object
             aria-label="WebSerbisyo RSVP"
-            data="/icon.png"
+            data="/icons/icon-192.png"
             height="56"
             type="image/png"
             width="56"
