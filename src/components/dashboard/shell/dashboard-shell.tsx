@@ -12,6 +12,7 @@ type DashboardShellProps = {
   email: string;
   displayName?: string;
   planType?: string | null;
+  profileId: string;
 };
 
 export function DashboardShell({
@@ -20,6 +21,7 @@ export function DashboardShell({
   email,
   displayName,
   planType,
+  profileId,
 }: DashboardShellProps) {
   return (
     <div
@@ -27,7 +29,7 @@ export function DashboardShell({
       className="min-h-screen"
       style={{ background: "var(--dash-surface)" }}
     >
-      <DashboardRealtimeNotifications clientId={clientId} />
+      <DashboardRealtimeNotifications clientId={clientId} profileId={profileId} />
       <SidebarProvider
         style={
           {

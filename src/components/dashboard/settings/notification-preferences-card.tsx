@@ -277,7 +277,7 @@ function getPushDescription(status: PushSubscriptionStatus) {
     case "blocked":
       return "Allow notifications in your browser settings";
     case "not_configured":
-      return "Browser and device alerts are coming soon";
+      return "Browser and device alerts will stay off until delivery is configured";
     case "on":
       return "Browser and device alerts are enabled";
     case "unsupported":
@@ -320,7 +320,7 @@ function NotificationRow({
           {badge}
         </div>
         {description ? (
-          <p className="mt-1 text-sm font-semibold text-[#c3b3a6]">{description}</p>
+          <p className="mt-1 text-sm font-semibold text-[#9d887a]">{description}</p>
         ) : null}
       </div>
       <Switch

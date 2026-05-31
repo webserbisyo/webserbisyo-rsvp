@@ -46,6 +46,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
       email={profile.email}
       displayName={profile.full_name ?? undefined}
       planType={planType}
+      profileId={profile.id}
     >
       {children}
     </DashboardShell>
