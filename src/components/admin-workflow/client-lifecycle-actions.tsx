@@ -228,6 +228,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
             <Button
               type="button"
               variant="outline"
+              disabled={!canDelete || deleteMutation.isPending}
               title={!canDelete ? deleteReason : undefined}
               onClick={() => setDeleteOpen(true)}
             >

@@ -184,16 +184,43 @@ export const ResendOnboardingSchema = z.object({
   recipientEmail: z.email().optional(),
 });
 
-const PackagePlanSettingsSchema = z.object({
-  defaultAmount: PositiveMoneySchema,
-  defaultHostingDays: z.coerce.number().int().positive("Enter a valid access duration."),
-  isActive: z.boolean().default(true),
-  renewalNoticeDays: z.coerce.number().int().nonnegative("Enter a valid access ending notice."),
-});
+const PackagePlanSettingsSchema = z
+  .object({
+    defaultAmount: PositiveMoneySchema,
+    defaultHostingDays: z.coerce.number().int().positive("Enter a valid access duration."),
+    isActive: z.boolean().default(true),
+    renewalNoticeDays: z.coerce.number().int().nonnegative("Enter a valid access ending notice."),
+  })
+  .superRefine((value, ctx) => {
+    if (value.renewalNoticeDays >= value.defaultHostingDays) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Access ending notice must be less than the access duration.",
+        path: ["renewalNoticeDays"],
+      });
+    }
+  });
 
 export const SavePackageSettingsSchema = z.object({
   max: PackagePlanSettingsSchema,
   pro: PackagePlanSettingsSchema,
+});
+
+export const SaveCustomFrontendOriginSchema = z.object({
+  clientId: z.uuid(),
+  eventId: z.uuid(),
+  originUrl: requiredText(500, "A custom frontend origin URL is required."),
+  templateId: optionalText(120),
+});
+
+export const EnableCustomWebsiteSchema = z.object({
+  clientId: z.uuid(),
+  eventId: z.uuid(),
+});
+
+export const DisableCustomWebsiteSchema = z.object({
+  clientId: z.uuid(),
+  eventId: z.uuid(),
 });
 
 export const PackagePlanSchema = PlanTypeSchema;
@@ -222,4 +249,7 @@ export type RefundClientPaymentInput = z.infer<typeof RefundClientPaymentSchema>
 export type ResendOnboardingInput = z.infer<typeof ResendOnboardingSchema>;
 export type RestoreClientInput = z.infer<typeof RestoreClientSchema>;
 export type SavePackageSettingsInput = z.infer<typeof SavePackageSettingsSchema>;
+export type DisableCustomWebsiteInput = z.infer<typeof DisableCustomWebsiteSchema>;
+export type EnableCustomWebsiteInput = z.infer<typeof EnableCustomWebsiteSchema>;
+export type SaveCustomFrontendOriginInput = z.infer<typeof SaveCustomFrontendOriginSchema>;
 export type TransitionPaymentStatusInput = z.infer<typeof TransitionPaymentStatusSchema>;

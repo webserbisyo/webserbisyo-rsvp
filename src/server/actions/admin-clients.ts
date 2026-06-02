@@ -11,10 +11,13 @@ import {
   BulkRefundClientsSchema,
   CancelClientSchema,
   DeleteClientSchema,
+  DisableCustomWebsiteSchema,
+  EnableCustomWebsiteSchema,
   MarkClientPaidSchema,
   RefundClientPaymentSchema,
   ResendOnboardingSchema,
   RestoreClientSchema,
+  SaveCustomFrontendOriginSchema,
 } from "@/lib/validations/admin-workflow.schema";
 import {
   archiveClient,
@@ -30,6 +33,11 @@ import {
   resendClientOnboarding,
   restoreClient,
 } from "@/server/services/admin-workflow/clients";
+import {
+  disableCustomWebsite,
+  enableCustomWebsite,
+  saveCustomFrontendOrigin,
+} from "@/server/services/admin-workflow/custom-websites";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 export async function archiveClientAction(input: unknown) {
@@ -223,6 +231,66 @@ export async function bulkRefundClientPaymentsAction(input: unknown) {
     revalidateBulkClientRoutes(payload.clientIds);
 
     return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function saveCustomFrontendOriginAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(SaveCustomFrontendOriginSchema, input);
+    const result = await saveCustomFrontendOrigin(payload, admin.id);
+
+    revalidateClientRoutes(payload.clientId);
+
+    return actionSuccess({
+      clientId: result.client_id,
+      customFrontendEnabled: result.custom_frontend_enabled,
+      eventId: result.event_id,
+      id: result.id,
+      status: result.status,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function enableCustomWebsiteAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(EnableCustomWebsiteSchema, input);
+    const result = await enableCustomWebsite(payload, admin.id);
+
+    revalidateClientRoutes(payload.clientId);
+
+    return actionSuccess({
+      clientId: result.client_id,
+      customFrontendEnabled: result.custom_frontend_enabled,
+      eventId: result.event_id,
+      id: result.id,
+      status: result.status,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function disableCustomWebsiteAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(DisableCustomWebsiteSchema, input);
+    const result = await disableCustomWebsite(payload, admin.id);
+
+    revalidateClientRoutes(payload.clientId);
+
+    return actionSuccess({
+      clientId: result.client_id,
+      customFrontendEnabled: result.custom_frontend_enabled,
+      eventId: result.event_id,
+      id: result.id,
+      status: result.status,
+    });
   } catch (error) {
     return actionFailure(error);
   }

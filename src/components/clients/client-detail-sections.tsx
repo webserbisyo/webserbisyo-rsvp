@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { ClientDetailResult, ClientDetailView } from "@/server/queries/admin-clients";
+import { ClientCustomWebsiteSection } from "@/components/clients/client-custom-website-section";
 import {
   ClientEventLifecycleBadge,
   ClientEventSetupStatusBadge,
@@ -221,6 +222,13 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
         )}
       </SectionCard>
 
+      <ClientCustomWebsiteSection
+        clientId={client.id}
+        clientName={client.client.name}
+        customWebsite={client.customWebsite}
+        loadError={errors?.customWebsite}
+      />
+
       <SectionCard className="h-fit" title="Owner / Onboarding">
         {errors?.onboarding ? (
           <ErrorState
@@ -272,8 +280,8 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
             ["Access expired", client.cleanup.hostingExpired ? "Yes" : "No"],
             ["Archive eligible", client.cleanup.archiveEligible ? "Yes" : "No"],
             ["Delete eligible", client.cleanup.deleteEligible ? "Yes" : "Not yet"],
-            ["Delete rule", formatWords(client.cleanup.deleteEligibilityReasonCode)],
-            ["Delete reason", client.cleanup.deleteEligibilityReason],
+            ["Delete status", formatWords(client.cleanup.deleteEligibilityReasonCode)],
+            ["Delete guidance", client.cleanup.deleteEligibilityReason],
           ]}
         />
       </SectionCard>

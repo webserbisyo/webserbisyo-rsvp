@@ -34,6 +34,7 @@ export function PackageSettingsForm({ initialData }: PackageSettingsFormProps) {
   const router = useRouter();
   const {
     control,
+    getValues,
     handleSubmit,
     register,
     setError,
@@ -104,6 +105,7 @@ export function PackageSettingsForm({ initialData }: PackageSettingsFormProps) {
               | undefined
           }
           planKey="pro"
+          getValues={getValues}
           register={register}
           title="Pro defaults"
         />
@@ -115,6 +117,7 @@ export function PackageSettingsForm({ initialData }: PackageSettingsFormProps) {
               | undefined
           }
           planKey="max"
+          getValues={getValues}
           register={register}
           title="Max defaults"
         />
@@ -150,12 +153,14 @@ export function PackageSettingsForm({ initialData }: PackageSettingsFormProps) {
 function PlanSettingsCard({
   control,
   errors,
+  getValues,
   planKey,
   register,
   title,
 }: {
   control: ReturnType<typeof useForm<PackageSettingsFormValues>>["control"];
   errors: Partial<Record<keyof PlanSettingsFormValues, { message?: string }>> | undefined;
+  getValues: ReturnType<typeof useForm<PackageSettingsFormValues>>["getValues"];
   planKey: "pro" | "max";
   register: ReturnType<typeof useForm<PackageSettingsFormValues>>["register"];
   title: string;
@@ -217,8 +222,24 @@ function PlanSettingsCard({
           <Input
             id={`${planKey}-renewalNoticeDays`}
             inputMode="numeric"
-            placeholder="14"
-            {...register(`${planKey}.renewalNoticeDays`, { required: true })}
+            placeholder="30"
+            {...register(`${planKey}.renewalNoticeDays`, {
+              required: true,
+              validate: (value) => {
+                const noticeDays = Number(value);
+                const hostingDays = Number(getValues(`${planKey}.defaultHostingDays`));
+
+                if (
+                  Number.isFinite(noticeDays) &&
+                  Number.isFinite(hostingDays) &&
+                  noticeDays >= hostingDays
+                ) {
+                  return "Access ending notice must be less than the access duration.";
+                }
+
+                return true;
+              },
+            })}
           />
           {errors?.renewalNoticeDays?.message ? (
             <p className="text-destructive text-sm">{errors.renewalNoticeDays.message}</p>

@@ -72,6 +72,69 @@ export type Database = {
           },
         ];
       };
+      client_custom_websites: {
+        Row: {
+          client_id: string;
+          connected_at: string | null;
+          created_at: string;
+          custom_frontend_enabled: boolean;
+          custom_frontend_origin_url: string | null;
+          disabled_at: string | null;
+          event_id: string;
+          id: string;
+          notes: string | null;
+          platform_event_slug: string | null;
+          status: string;
+          template_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id: string;
+          connected_at?: string | null;
+          created_at?: string;
+          custom_frontend_enabled?: boolean;
+          custom_frontend_origin_url?: string | null;
+          disabled_at?: string | null;
+          event_id: string;
+          id?: string;
+          notes?: string | null;
+          platform_event_slug?: string | null;
+          status?: string;
+          template_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          client_id?: string;
+          connected_at?: string | null;
+          created_at?: string;
+          custom_frontend_enabled?: boolean;
+          custom_frontend_origin_url?: string | null;
+          disabled_at?: string | null;
+          event_id?: string;
+          id?: string;
+          notes?: string | null;
+          platform_event_slug?: string | null;
+          status?: string;
+          template_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_custom_websites_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "client_custom_websites_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: true;
+            referencedRelation: "rsvp_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       client_deletion_tombstones: {
         Row: {
           client_email: string;

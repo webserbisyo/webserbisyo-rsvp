@@ -1,8 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getBestPublicRsvpUrl } from "@/lib/public-rsvp-url";
+import { getBestPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/lib/supabase/types";
+import { CUSTOM_WEBSITE_TEMPLATE_ID } from "@/server/services/admin-workflow/custom-websites";
 import {
   type ClientPaymentDisplayStatus,
   type DeleteEligibilityReasonCode,
@@ -177,6 +179,7 @@ export type ClientDetailView = {
     eventPassed: boolean;
     hostingExpired: boolean;
   };
+  customWebsite: AdminClientCustomWebsiteDto;
   client: {
     archivedAt: string | null;
     cancelledAt: string | null;
@@ -253,9 +256,29 @@ export type ClientDetailView = {
   };
 };
 
+export type AdminClientCustomWebsiteDto = {
+  connectedAt: string | null;
+  customFrontendEnabled: boolean;
+  customFrontendOriginUrl: string | null;
+  disabledAt: string | null;
+  eventId: string | null;
+  id: string | null;
+  platformApiUrl: string;
+  platformEventSlug: string | null;
+  publicWebsiteUrl: string | null;
+  status: "disabled" | "enabled" | "not_started" | "origin_saved" | "paused";
+  templateId: string;
+  websiteRouteLabel: "Custom website" | "Default website";
+};
+
 export type ClientDetailResult = {
   client: ClientDetailView | null;
-  errors?: Partial<Record<"activity" | "application" | "event" | "onboarding" | "payment", string>>;
+  errors?: Partial<
+    Record<
+      "activity" | "application" | "customWebsite" | "event" | "onboarding" | "payment",
+      string
+    >
+  >;
   generatedAt: string;
   notFound?: boolean;
 };
@@ -365,6 +388,18 @@ type AuditRow = Pick<
   Tables<"audit_logs">,
   "action" | "client_id" | "created_at" | "entity_id" | "entity_type" | "event_id" | "id"
 >;
+type CustomWebsiteRow = Pick<
+  Tables<"client_custom_websites">,
+  | "connected_at"
+  | "custom_frontend_enabled"
+  | "custom_frontend_origin_url"
+  | "disabled_at"
+  | "event_id"
+  | "id"
+  | "platform_event_slug"
+  | "status"
+  | "template_id"
+>;
 
 type ClientSnapshot = {
   application: ApplicationRow | null;
@@ -424,6 +459,8 @@ const PROFILE_COLUMNS = "id, client_id, email, full_name, role, created_at, upda
 const EMAIL_LOG_COLUMNS =
   "id, client_id, application_id, event_id, recipient_email, email_type, status, error_message, sent_at, created_at, updated_at";
 const AUDIT_COLUMNS = "id, client_id, event_id, entity_type, entity_id, action, created_at";
+const CUSTOM_WEBSITE_COLUMNS =
+  "id, event_id, custom_frontend_origin_url, custom_frontend_enabled, template_id, platform_event_slug, status, connected_at, disabled_at";
 
 export async function getAdminClients(
   params: AdminClientsSearchParams,
@@ -480,7 +517,10 @@ export async function getAdminClientDetail(
 ): Promise<ClientDetailResult> {
   const generatedAt = new Date().toISOString();
   const errors: Partial<
-    Record<"activity" | "application" | "event" | "onboarding" | "payment", string>
+    Record<
+      "activity" | "application" | "customWebsite" | "event" | "onboarding" | "payment",
+      string
+    >
   > = {};
 
   try {
@@ -559,9 +599,24 @@ export async function getAdminClientDetail(
     const ownerProfile = selectOwnerProfile(profiles);
     const onboardingEmail = selectLatestOnboardingEmail(emailLogs);
     const activity = selectActivityItems(auditLogs, emailLogs);
+    let customWebsiteRow: CustomWebsiteRow | null = null;
+
+    if (snapshot.event?.id) {
+      try {
+        customWebsiteRow = await getCustomWebsiteForEvent(snapshot.event.id);
+      } catch {
+        errors.customWebsite = "Custom website settings could not be loaded.";
+      }
+    }
 
     return {
-      client: toClientDetailView(snapshot, ownerProfile, onboardingEmail, activity),
+      client: toClientDetailView(
+        snapshot,
+        ownerProfile,
+        onboardingEmail,
+        activity,
+        buildCustomWebsiteDto(snapshot.event, customWebsiteRow),
+      ),
       errors: Object.keys(errors).length > 0 ? errors : undefined,
       generatedAt,
     };
@@ -730,6 +785,21 @@ async function getAuditLogsForClients(supabase: SupabaseClient<Database>, client
   }
 
   return data ?? [];
+}
+
+async function getCustomWebsiteForEvent(eventId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("client_custom_websites")
+    .select(CUSTOM_WEBSITE_COLUMNS)
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 function buildEnrichedClientRecords(
@@ -1076,6 +1146,7 @@ function toClientDetailView(
   ownerProfile: ProfileRow | null,
   onboardingEmail: EmailLogRow | null,
   activity: ClientActivityItem[],
+  customWebsite: AdminClientCustomWebsiteDto,
 ): ClientDetailView {
   const paymentStatus = snapshot.paymentStatus;
   const applicationStatus = snapshot.application?.status ?? null;
@@ -1134,6 +1205,7 @@ function toClientDetailView(
       eventPassed: snapshot.eventLifecycle === "event_passed",
       hostingExpired: snapshot.hostingLifecycle === "expired",
     },
+    customWebsite,
     client: {
       archivedAt: snapshot.client.archived_at,
       cancelledAt: snapshot.client.cancelled_at,
@@ -1211,6 +1283,54 @@ function toClientDetailView(
       value: snapshot.status,
     },
   };
+}
+
+function buildCustomWebsiteDto(
+  event: EventRow | null,
+  row: CustomWebsiteRow | null,
+): AdminClientCustomWebsiteDto {
+  const originUrl = row?.custom_frontend_origin_url ?? null;
+  const enabled = Boolean(row?.custom_frontend_enabled && originUrl);
+  const status = normalizeCustomWebsiteStatus(row?.status ?? null, originUrl, enabled);
+
+  return {
+    connectedAt: row?.connected_at ?? null,
+    customFrontendEnabled: enabled,
+    customFrontendOriginUrl: originUrl,
+    disabledAt: row?.disabled_at ?? null,
+    eventId: event?.id ?? row?.event_id ?? null,
+    id: row?.id ?? null,
+    platformApiUrl: getPublicAppUrl() ?? "https://webserbisyo.com",
+    platformEventSlug: row?.platform_event_slug ?? event?.event_slug ?? null,
+    publicWebsiteUrl: getEventPublicWebsiteUrl(event),
+    status,
+    templateId: row?.template_id ?? CUSTOM_WEBSITE_TEMPLATE_ID,
+    websiteRouteLabel: enabled ? "Custom website" : "Default website",
+  };
+}
+
+function normalizeCustomWebsiteStatus(
+  status: string | null,
+  originUrl: string | null,
+  enabled: boolean,
+): AdminClientCustomWebsiteDto["status"] {
+  if (enabled) {
+    return "enabled";
+  }
+
+  if (status === "paused") {
+    return "paused";
+  }
+
+  if (status === "disabled") {
+    return "disabled";
+  }
+
+  if (originUrl) {
+    return "origin_saved";
+  }
+
+  return "not_started";
 }
 
 function selectApprovedApplication(applications: ApplicationRow[]) {
@@ -1571,11 +1691,18 @@ function deriveEventSetupStatus(event: EventRow | null): ClientEventSetupStatus 
 }
 
 function getPublishedEventPublicUrl(event: EventRow | null) {
-  if (
-    !event?.event_slug ||
-    event.status !== "published" ||
-    !event.published_at
-  ) {
+  if (!event?.event_slug || event.status !== "published" || !event.published_at) {
+    return null;
+  }
+
+  return getBestPublicRsvpUrl({
+    slug: event.event_slug,
+    subdomain: event.subdomain_slug,
+  });
+}
+
+function getEventPublicWebsiteUrl(event: EventRow | null) {
+  if (!event?.event_slug) {
     return null;
   }
 
