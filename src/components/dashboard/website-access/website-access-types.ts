@@ -18,6 +18,7 @@ export type WebsiteAccessInitialData = {
   copyPublicUrl: string | null;
   copyRsvpUrl: string | null;
   contentDraftSavedAt: string | null;
+  customWebsiteConnected: boolean;
   draftSlug: string | null;
   draftSubdomain: string | null;
   draftVisibility: VisibilityMode;

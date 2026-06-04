@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, Smartphone } from "lucide-react";
+import { ExternalLink, Monitor, Smartphone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { EventWebsiteRenderer } from "@/components/event-website/event-website-renderer";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import {
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
+import type { DashboardCustomWebsitePreviewDto } from "@/server/services/custom-websites/types";
 import { cn } from "@/lib/utils";
 
 type EventWebsitePreviewPanelProps = {
@@ -21,6 +22,7 @@ type EventWebsitePreviewPanelProps = {
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   guestbookMessages: EventWebsiteGuestbookMessage[];
   compactChrome?: boolean;
+  customWebsitePreview: DashboardCustomWebsitePreviewDto;
   mode?: "desktop" | "responsive";
   previewChromeUrl: string | null;
   previewScrollRequest: number;
@@ -37,6 +39,7 @@ export function EventWebsitePreviewPanel({
   enabledSections,
   guestbookMessages,
   compactChrome = false,
+  customWebsitePreview,
   mode = "desktop",
   previewChromeUrl,
   previewScrollRequest,
@@ -61,6 +64,12 @@ export function EventWebsitePreviewPanel({
   const selectedSectionKey = selectedSection?.key;
   const activeDevice = showDeviceTabs ? device : defaultDevice;
   const previewAddress = previewChromeUrl ?? "Website URL pending";
+  const [requestedPreviewMode, setRequestedPreviewMode] = useState<"custom" | "platform">(
+    "platform",
+  );
+  const customPreviewAvailable = customWebsitePreview.customPreviewAvailable;
+  const previewMode = customPreviewAvailable ? requestedPreviewMode : "platform";
+  const showCustomPreview = previewMode === "custom" && customPreviewAvailable;
 
   useEffect(() => {
     if (!selectedSectionKey || !supportedSectionKeySet.has(selectedSectionKey) || selectedSectionIsOff) {
@@ -100,6 +109,45 @@ export function EventWebsitePreviewPanel({
           </div>
         ) : null}
 
+        <div className="event-preview-mode-row">
+          <div className="event-preview-mode-copy">
+            <strong>{showCustomPreview ? "Custom preview" : "Platform preview"}</strong>
+            <span>
+              {showCustomPreview
+                ? "Deployed custom site. Publish or redeploy custom code to update it."
+                : "Editable draft state from this dashboard."}
+            </span>
+          </div>
+          <div className="event-preview-mode-actions">
+            {customPreviewAvailable ? (
+              <Tabs
+                value={previewMode}
+                onValueChange={(value) => setRequestedPreviewMode(value as "custom" | "platform")}
+              >
+                <TabsList className="event-preview-mode-tabs" aria-label="Preview mode">
+                  <TabsTrigger value="platform" className="event-preview-mode-trigger">
+                    Platform
+                  </TabsTrigger>
+                  <TabsTrigger value="custom" className="event-preview-mode-trigger">
+                    Custom
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            ) : null}
+            {customPreviewAvailable && customWebsitePreview.customPreviewUrl ? (
+              <a
+                aria-label="Open custom preview"
+                className="event-preview-open-custom"
+                href={customWebsitePreview.customPreviewUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+              </a>
+            ) : null}
+          </div>
+        </div>
+
         <div
           className={cn(
             "event-preview-frame-shell",
@@ -121,14 +169,27 @@ export function EventWebsitePreviewPanel({
             </div>
           ) : null}
 
-          <div ref={previewScrollRef} className="event-preview-frame">
-            <EventWebsiteRenderer
-              draft={previewDraft}
-              guestbookMessages={guestbookMessages}
-              highlightActiveSection
-              sections={visiblePreviewSections.map((section) => section.key)}
-              selectedSectionKey={selectedSectionKey}
-            />
+          <div
+            ref={previewScrollRef}
+            className={cn("event-preview-frame", showCustomPreview && "is-custom-preview")}
+          >
+            {showCustomPreview && customWebsitePreview.customPreviewUrl ? (
+              <iframe
+                className="event-preview-custom-frame"
+                referrerPolicy="no-referrer"
+                sandbox="allow-scripts allow-same-origin allow-popups"
+                src={customWebsitePreview.customPreviewUrl}
+                title="Custom website preview"
+              />
+            ) : (
+              <EventWebsiteRenderer
+                draft={previewDraft}
+                guestbookMessages={guestbookMessages}
+                highlightActiveSection
+                sections={visiblePreviewSections.map((section) => section.key)}
+                selectedSectionKey={selectedSectionKey}
+              />
+            )}
           </div>
         </div>
       </div>

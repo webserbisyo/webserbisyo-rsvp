@@ -27,6 +27,12 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         websiteUrl={state.websiteUrlOpen}
       />
 
+      {state.customWebsiteConnected ? (
+        <p className="rounded-2xl border border-[#eadbd0] bg-white/80 px-5 py-3 text-sm font-medium text-[#5f4b43] shadow-sm shadow-[#8a4b2e]/5">
+          Custom website connected. Public links and QR codes still use your WebSerbisyo website URL.
+        </p>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-2">
         <GuestAccessCard
           hasVisibilityDraft={state.hasVisibilityDraft}

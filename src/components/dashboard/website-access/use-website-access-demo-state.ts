@@ -347,6 +347,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
 
       void copyText(websiteUrlCopy, "Website QR link copied");
     },
+    customWebsiteConnected: serverState.customWebsiteConnected,
     handleDraftSlugInput,
     handleVisibilitySelect,
     hasEverPublished,

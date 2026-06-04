@@ -1,10 +1,21 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getBestPublicRsvpUrl, getPublicAppUrl } from "@/lib/public-rsvp-url";
+import {
+  buildPublicRsvpFormPath,
+  buildPublicRsvpPath,
+  getBestPublicRsvpUrl,
+  getPublicAppUrl,
+  getRsvpPreviewBaseDomain,
+  resolvePublicRsvpLinkSet,
+} from "@/lib/public-rsvp-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/lib/supabase/types";
 import { CUSTOM_WEBSITE_TEMPLATE_ID } from "@/server/services/admin-workflow/custom-websites";
+import type {
+  CustomWebsiteHealthStatus,
+  CustomWebsiteRouteMode,
+} from "@/server/services/custom-websites/types";
 import {
   type ClientPaymentDisplayStatus,
   type DeleteEligibilityReasonCode,
@@ -262,10 +273,19 @@ export type AdminClientCustomWebsiteDto = {
   customFrontendOriginUrl: string | null;
   disabledAt: string | null;
   eventId: string | null;
+  fallbackUrl: string | null;
+  healthStatus: CustomWebsiteHealthStatus;
   id: string | null;
+  lastHealthCheckedAt: string | null;
+  lastHealthError: string | null;
+  lastOriginResponseMs: number | null;
+  lastOriginStatusCode: number | null;
   platformApiUrl: string;
   platformEventSlug: string | null;
+  previewEnabled: boolean;
   publicWebsiteUrl: string | null;
+  routeMode: CustomWebsiteRouteMode;
+  rsvpUrl: string | null;
   status: "disabled" | "enabled" | "not_started" | "origin_saved" | "paused";
   templateId: string;
   websiteRouteLabel: "Custom website" | "Default website";
@@ -396,7 +416,13 @@ type CustomWebsiteRow = Pick<
   | "disabled_at"
   | "event_id"
   | "id"
+  | "last_health_checked_at"
+  | "last_health_error"
+  | "last_health_status"
+  | "last_origin_response_ms"
+  | "last_origin_status_code"
   | "platform_event_slug"
+  | "preview_enabled"
   | "status"
   | "template_id"
 >;
@@ -460,7 +486,7 @@ const EMAIL_LOG_COLUMNS =
   "id, client_id, application_id, event_id, recipient_email, email_type, status, error_message, sent_at, created_at, updated_at";
 const AUDIT_COLUMNS = "id, client_id, event_id, entity_type, entity_id, action, created_at";
 const CUSTOM_WEBSITE_COLUMNS =
-  "id, event_id, custom_frontend_origin_url, custom_frontend_enabled, template_id, platform_event_slug, status, connected_at, disabled_at";
+  "id, event_id, custom_frontend_origin_url, custom_frontend_enabled, template_id, platform_event_slug, status, connected_at, disabled_at, preview_enabled, last_health_status, last_health_checked_at, last_health_error, last_origin_response_ms, last_origin_status_code";
 
 export async function getAdminClients(
   params: AdminClientsSearchParams,
@@ -1292,6 +1318,19 @@ function buildCustomWebsiteDto(
   const originUrl = row?.custom_frontend_origin_url ?? null;
   const enabled = Boolean(row?.custom_frontend_enabled && originUrl);
   const status = normalizeCustomWebsiteStatus(row?.status ?? null, originUrl, enabled);
+  const linkSet = event?.event_slug
+    ? resolvePublicRsvpLinkSet({
+        baseUrl: getPublicAppUrl(),
+        slug: event.event_slug,
+        subdomain: event.subdomain_slug,
+        wildcardBaseDomain: getRsvpPreviewBaseDomain(),
+      })
+    : null;
+  const fallbackUrl =
+    linkSet?.fallbackPathUrl ?? (event?.event_slug ? buildPublicRsvpPath(event.event_slug) : null);
+  const rsvpUrl =
+    linkSet?.fallbackFormUrl ??
+    (event?.event_slug ? buildPublicRsvpFormPath(event.event_slug) : null);
 
   return {
     connectedAt: row?.connected_at ?? null,
@@ -1299,10 +1338,19 @@ function buildCustomWebsiteDto(
     customFrontendOriginUrl: originUrl,
     disabledAt: row?.disabled_at ?? null,
     eventId: event?.id ?? row?.event_id ?? null,
+    fallbackUrl,
+    healthStatus: normalizeCustomWebsiteHealthStatus(row?.last_health_status ?? null),
     id: row?.id ?? null,
+    lastHealthCheckedAt: row?.last_health_checked_at ?? null,
+    lastHealthError: row?.last_health_error ?? null,
+    lastOriginResponseMs: row?.last_origin_response_ms ?? null,
+    lastOriginStatusCode: row?.last_origin_status_code ?? null,
     platformApiUrl: getPublicAppUrl() ?? "https://webserbisyo.com",
     platformEventSlug: row?.platform_event_slug ?? event?.event_slug ?? null,
-    publicWebsiteUrl: getEventPublicWebsiteUrl(event),
+    previewEnabled: row?.preview_enabled ?? true,
+    publicWebsiteUrl: linkSet?.displayUrl ?? getEventPublicWebsiteUrl(event),
+    routeMode: enabled ? "custom" : "default",
+    rsvpUrl,
     status,
     templateId: row?.template_id ?? CUSTOM_WEBSITE_TEMPLATE_ID,
     websiteRouteLabel: enabled ? "Custom website" : "Default website",
@@ -1331,6 +1379,14 @@ function normalizeCustomWebsiteStatus(
   }
 
   return "not_started";
+}
+
+function normalizeCustomWebsiteHealthStatus(value: string | null): CustomWebsiteHealthStatus {
+  if (value === "healthy" || value === "unhealthy") {
+    return value;
+  }
+
+  return "unknown";
 }
 
 function selectApprovedApplication(applications: ApplicationRow[]) {

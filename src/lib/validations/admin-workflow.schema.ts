@@ -223,6 +223,11 @@ export const DisableCustomWebsiteSchema = z.object({
   eventId: z.uuid(),
 });
 
+export const CheckCustomWebsiteOriginHealthSchema = z.object({
+  clientId: z.uuid(),
+  eventId: z.uuid(),
+});
+
 export const PackagePlanSchema = PlanTypeSchema;
 
 export type ApproveApplicationForPaymentInput = z.infer<typeof ApproveApplicationForPaymentSchema>;
@@ -251,5 +256,8 @@ export type RestoreClientInput = z.infer<typeof RestoreClientSchema>;
 export type SavePackageSettingsInput = z.infer<typeof SavePackageSettingsSchema>;
 export type DisableCustomWebsiteInput = z.infer<typeof DisableCustomWebsiteSchema>;
 export type EnableCustomWebsiteInput = z.infer<typeof EnableCustomWebsiteSchema>;
+export type CheckCustomWebsiteOriginHealthInput = z.infer<
+  typeof CheckCustomWebsiteOriginHealthSchema
+>;
 export type SaveCustomFrontendOriginInput = z.infer<typeof SaveCustomFrontendOriginSchema>;
 export type TransitionPaymentStatusInput = z.infer<typeof TransitionPaymentStatusSchema>;

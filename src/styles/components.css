@@ -2259,6 +2259,67 @@
   padding: 10px 12px;
 }
 
+[data-dashboard] .event-website-page .event-preview-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  max-width: 420px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--dash-border) 82%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--dash-surface-muted) 62%, #ffffff);
+  padding: 10px;
+}
+
+[data-dashboard] .event-website-page .event-preview-mode-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+[data-dashboard] .event-website-page .event-preview-mode-copy strong {
+  color: var(--dash-text);
+  font-size: 12.5px;
+  line-height: 1.2;
+}
+
+[data-dashboard] .event-website-page .event-preview-mode-copy span {
+  color: var(--dash-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+[data-dashboard] .event-website-page .event-preview-mode-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+[data-dashboard] .event-website-page .event-preview-mode-tabs {
+  height: 30px;
+  border: 1px solid color-mix(in srgb, var(--dash-border) 82%, transparent);
+  background: #ffffff;
+}
+
+[data-dashboard] .event-website-page .event-preview-mode-trigger {
+  min-width: 68px;
+  color: var(--dash-muted);
+  font-size: 11.5px;
+}
+
+[data-dashboard] .event-website-page .event-preview-open-custom {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--dash-border) 82%, transparent);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--dash-text);
+}
+
 [data-dashboard] .event-website-page .event-preview-frame-shell {
   width: 100%;
   max-width: 420px;
@@ -2381,6 +2442,19 @@
   transition:
     padding 0.22s ease,
     gap 0.22s ease;
+}
+
+[data-dashboard] .event-website-page .event-preview-frame.is-custom-preview {
+  padding: 0;
+}
+
+[data-dashboard] .event-website-page .event-preview-custom-frame {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  border: 0;
+  background: #ffffff;
 }
 
 [data-dashboard] .event-website-page .event-preview-frame::-webkit-scrollbar {

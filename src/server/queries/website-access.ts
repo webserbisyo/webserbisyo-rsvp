@@ -9,6 +9,7 @@ import type { WebsiteAccessInitialData } from "@/components/dashboard/website-ac
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
 import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getPublicAppUrl,
   getRsvpBaseDomain,
@@ -78,6 +79,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       copyPublicUrl: null,
       copyRsvpUrl: null,
       contentDraftSavedAt: null,
+      customWebsiteConnected: false,
       draftSlug: null,
       draftSubdomain: null,
       draftVisibility: "private",
@@ -183,6 +185,10 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const rsvpUrl = linkSet?.openFormUrl ?? null;
   const copyRsvpUrl = linkSet?.openFormUrl ?? null;
   const qrRsvpUrl = linkSet?.openFormUrl ?? null;
+  const customWebsiteConnected = await isCustomWebsiteConnected({
+    clientId: profile.client_id ?? "",
+    eventId: event.id,
+  });
 
   return {
     canDownloadQr: Boolean(rsvpUrl),
@@ -197,6 +203,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     copyPublicUrl,
     copyRsvpUrl,
     contentDraftSavedAt,
+    customWebsiteConnected,
     draftSlug,
     draftSubdomain,
     draftVisibility,
@@ -228,6 +235,24 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     wildcardBaseDomain,
     wildcardDomainConfigured,
   };
+}
+
+async function isCustomWebsiteConnected(input: { clientId: string; eventId: string }) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("client_custom_websites")
+    .select("id")
+    .eq("client_id", input.clientId)
+    .eq("event_id", input.eventId)
+    .eq("custom_frontend_enabled", true)
+    .not("custom_frontend_origin_url", "is", null)
+    .maybeSingle();
+
+  if (error) {
+    return false;
+  }
+
+  return Boolean(data);
 }
 
 async function getWebsiteAccessEventRow(

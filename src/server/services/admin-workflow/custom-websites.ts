@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
+import { normalizeCustomFrontendOrigin } from "@/server/services/custom-websites/custom-website-origin";
 import type {
   DisableCustomWebsiteInput,
   EnableCustomWebsiteInput,
@@ -17,7 +18,7 @@ import { writeAuditLog } from "@/server/services/write-audit-log";
 export const CUSTOM_WEBSITE_TEMPLATE_ID = "wedding-custom-starter-v1";
 
 const CUSTOM_WEBSITE_COLUMNS =
-  "id, client_id, event_id, custom_frontend_origin_url, custom_frontend_enabled, template_id, platform_event_slug, status, connected_at, disabled_at, notes, created_at, updated_at";
+  "id, client_id, event_id, custom_frontend_origin_url, custom_frontend_enabled, template_id, platform_event_slug, status, connected_at, disabled_at, preview_enabled, last_health_status, last_health_checked_at, last_health_error, last_origin_response_ms, last_origin_status_code, last_previewed_at, notes, created_at, updated_at";
 
 type CustomWebsiteRow = Tables<"client_custom_websites">;
 
@@ -30,13 +31,20 @@ export async function saveCustomFrontendOrigin(
   const existing = await loadCustomWebsiteByEventId(input.eventId);
   const templateId = input.templateId ?? existing?.template_id ?? CUSTOM_WEBSITE_TEMPLATE_ID;
   const nextEnabled = existing?.custom_frontend_enabled ?? false;
+  const originChanged = existing?.custom_frontend_origin_url !== originUrl;
   const row: TablesInsert<"client_custom_websites"> = {
     client_id: input.clientId,
     custom_frontend_enabled: nextEnabled,
     custom_frontend_origin_url: originUrl,
     disabled_at: nextEnabled ? null : (existing?.disabled_at ?? null),
     event_id: input.eventId,
+    last_health_checked_at: originChanged ? null : (existing?.last_health_checked_at ?? null),
+    last_health_error: originChanged ? null : (existing?.last_health_error ?? null),
+    last_health_status: originChanged ? "unknown" : (existing?.last_health_status ?? "unknown"),
+    last_origin_response_ms: originChanged ? null : (existing?.last_origin_response_ms ?? null),
+    last_origin_status_code: originChanged ? null : (existing?.last_origin_status_code ?? null),
     platform_event_slug: event.event_slug,
+    preview_enabled: existing?.preview_enabled ?? true,
     status: nextEnabled ? "enabled" : "origin_saved",
     template_id: templateId,
   };
@@ -160,38 +168,6 @@ async function loadCustomWebsiteByEventId(eventId: string) {
   assertServiceSuccess(error, "Failed to load custom website settings.");
 
   return data;
-}
-
-function normalizeCustomFrontendOrigin(value: string) {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    throw new ServiceError("A custom frontend origin URL is required.");
-  }
-
-  let url: URL;
-
-  try {
-    url = new URL(trimmed);
-  } catch {
-    throw new ServiceError("Enter a valid custom frontend origin URL.");
-  }
-
-  const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-
-  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
-    throw new ServiceError("Production custom frontend origins must use HTTPS.");
-  }
-
-  if (process.env.NODE_ENV !== "production" && url.protocol !== "https:" && !isLocalhost) {
-    throw new ServiceError("Custom frontend origins must use HTTPS unless using localhost.");
-  }
-
-  if (url.username || url.password) {
-    throw new ServiceError("Custom frontend origins cannot include credentials.");
-  }
-
-  return url.origin;
 }
 
 async function writeCustomWebsiteAuditLog(input: {

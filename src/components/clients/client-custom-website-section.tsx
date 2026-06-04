@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Clipboard, ExternalLink, Loader2, Power, PowerOff, Save } from "lucide-react";
+import { Clipboard, ExternalLink, Loader2, Power, PowerOff, Save, Stethoscope } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
+  checkCustomWebsiteOriginHealthAction,
   disableCustomWebsiteAction,
   enableCustomWebsiteAction,
   saveCustomFrontendOriginAction,
@@ -105,11 +106,31 @@ function ClientCustomWebsiteEditor({
       toast.error("Custom website could not be disabled.");
     },
   });
+  const healthMutation = useMutation({
+    mutationFn: checkCustomWebsiteOriginHealthAction,
+    onSuccess: (result) => {
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(
+        result.data.healthStatus === "healthy"
+          ? "Custom frontend origin is healthy."
+          : "Custom frontend origin health check failed.",
+      );
+      router.refresh();
+    },
+    onError: () => {
+      toast.error("Custom frontend origin health could not be checked.");
+    },
+  });
 
   const isSaving = saveMutation.isPending;
   const isEnabling = enableMutation.isPending;
   const isDisabling = disableMutation.isPending;
-  const isBusy = isSaving || isEnabling || isDisabling;
+  const isCheckingHealth = healthMutation.isPending;
+  const isBusy = isSaving || isEnabling || isDisabling || isCheckingHealth;
 
   function handleSaveOrigin() {
     if (!eventId || !hasValidInputOrigin) {
@@ -150,6 +171,15 @@ function ClientCustomWebsiteEditor({
     window.open(savedOriginUrl, "_blank", "noopener,noreferrer");
   }
 
+  function handleCheckHealth() {
+    if (!eventId || !hasValidSavedOrigin) {
+      toast.error("Save a valid custom frontend origin before checking health.");
+      return;
+    }
+
+    healthMutation.mutate({ clientId, eventId });
+  }
+
   return (
     <SectionCard
       actions={
@@ -170,6 +200,8 @@ function ClientCustomWebsiteEditor({
             value={customWebsite.publicWebsiteUrl ?? "Not configured"}
           />
           <SummaryPanel label="Website route" value={customWebsite.websiteRouteLabel} />
+          <SummaryPanel label="Fallback URL" value={customWebsite.fallbackUrl ?? "Not configured"} />
+          <SummaryPanel label="RSVP URL" value={customWebsite.rsvpUrl ?? "Not configured"} />
         </div>
 
         <Separator />
@@ -238,6 +270,20 @@ function ClientCustomWebsiteEditor({
               type="button"
               size="sm"
               variant="outline"
+              onClick={handleCheckHealth}
+              disabled={!canSubmitForEvent || !hasValidSavedOrigin || isBusy}
+            >
+              {isCheckingHealth ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Stethoscope className="size-4" />
+              )}
+              Check health
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
               onClick={handleDisable}
               disabled={!canSubmitForEvent || !customWebsite.customFrontendEnabled || isBusy}
             >
@@ -249,6 +295,52 @@ function ClientCustomWebsiteEditor({
               Disable
             </Button>
           </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge tone={getHealthBadgeTone(customWebsite.healthStatus)}>
+              {getHealthBadgeLabel(customWebsite.healthStatus)}
+            </StatusBadge>
+            <p className="text-muted-foreground text-xs">
+              {customWebsite.lastHealthCheckedAt
+                ? `Last checked ${formatDateTime(customWebsite.lastHealthCheckedAt)}`
+                : "Health has not been checked yet."}
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <SummaryPanel
+              label="Preview availability"
+              value={customWebsite.previewEnabled ? "Enabled" : "Disabled"}
+            />
+            <SummaryPanel
+              label="Origin response"
+              value={
+                customWebsite.lastOriginStatusCode
+                  ? `HTTP ${customWebsite.lastOriginStatusCode}`
+                  : "Not checked"
+              }
+            />
+            <SummaryPanel
+              label="Response time"
+              value={
+                customWebsite.lastOriginResponseMs !== null
+                  ? `${customWebsite.lastOriginResponseMs} ms`
+                  : "Not checked"
+              }
+            />
+          </div>
+          {customWebsite.lastHealthError ? (
+            <p className="text-muted-foreground rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs">
+              {customWebsite.lastHealthError}
+            </p>
+          ) : null}
+          <p className="text-muted-foreground text-xs">
+            Client dashboards can open the custom preview only when the custom website is enabled,
+            preview is enabled, and health is healthy or not checked yet.
+          </p>
         </div>
 
         <Separator />
@@ -369,6 +461,41 @@ function getBadgeTone(customWebsite: AdminClientCustomWebsiteDto) {
   return "muted";
 }
 
+function getHealthBadgeLabel(status: AdminClientCustomWebsiteDto["healthStatus"]) {
+  if (status === "healthy") {
+    return "Healthy";
+  }
+
+  if (status === "unhealthy") {
+    return "Unhealthy";
+  }
+
+  return "Unknown";
+}
+
+function getHealthBadgeTone(status: AdminClientCustomWebsiteDto["healthStatus"]) {
+  if (status === "healthy") {
+    return "success";
+  }
+
+  if (status === "unhealthy") {
+    return "danger";
+  }
+
+  return "muted";
+}
+
+function formatDateTime(value: string) {
+  try {
+    return new Intl.DateTimeFormat("en", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
 function isValidCustomOrigin(value: string) {
   if (!value.trim()) {
     return false;
@@ -378,7 +505,7 @@ function isValidCustomOrigin(value: string) {
     const url = new URL(value.trim());
     const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
 
-    return url.protocol === "https:" || isLocalhost;
+    return url.protocol === "https:" || (url.protocol === "http:" && isLocalhost);
   } catch {
     return false;
   }

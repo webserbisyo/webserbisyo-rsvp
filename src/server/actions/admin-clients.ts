@@ -10,6 +10,7 @@ import {
   BulkMarkClientsPaidSchema,
   BulkRefundClientsSchema,
   CancelClientSchema,
+  CheckCustomWebsiteOriginHealthSchema,
   DeleteClientSchema,
   DisableCustomWebsiteSchema,
   EnableCustomWebsiteSchema,
@@ -38,6 +39,7 @@ import {
   enableCustomWebsite,
   saveCustomFrontendOrigin,
 } from "@/server/services/admin-workflow/custom-websites";
+import { checkCustomWebsiteOriginHealth } from "@/server/services/custom-websites/custom-website-health";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 export async function archiveClientAction(input: unknown) {
@@ -290,6 +292,30 @@ export async function disableCustomWebsiteAction(input: unknown) {
       eventId: result.event_id,
       id: result.id,
       status: result.status,
+    });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function checkCustomWebsiteOriginHealthAction(input: unknown) {
+  try {
+    await requireAdmin();
+    const payload = parseActionInput(CheckCustomWebsiteOriginHealthSchema, input);
+    const result = await checkCustomWebsiteOriginHealth(payload);
+
+    revalidateClientRoutes(payload.clientId);
+
+    return actionSuccess({
+      clientId: result.client_id,
+      eventId: result.event_id,
+      id: result.id,
+      lastHealthCheckedAt: result.last_health_checked_at,
+      lastHealthError: result.last_health_error,
+      lastOriginResponseMs: result.last_origin_response_ms,
+      lastOriginStatusCode: result.last_origin_status_code,
+      status: result.status,
+      healthStatus: result.last_health_status,
     });
   } catch (error) {
     return actionFailure(error);

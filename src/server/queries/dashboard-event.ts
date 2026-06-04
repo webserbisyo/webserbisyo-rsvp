@@ -7,6 +7,8 @@ import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/eve
 import { requireTenantMember } from "@/lib/permissions";
 import type { Json } from "@/lib/supabase/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { resolveDashboardCustomWebsitePreview } from "@/server/services/custom-websites/resolve-custom-website";
+import type { DashboardCustomWebsitePreviewDto } from "@/server/services/custom-websites/types";
 import { listApprovedGuestbookMessages } from "@/server/services/event-website-guestbook";
 
 export type DashboardEventWebsiteData = {
@@ -33,6 +35,7 @@ export type DashboardEventWebsiteData = {
   eventTime: string | null;
   eventType: string | null;
   guestbookMessages: EventWebsiteGuestbookMessage[];
+  customWebsitePreview: DashboardCustomWebsitePreviewDto;
   maxGuestCount: number | null;
   rsvpCloseAt: string | null;
   snapshotPublishedAt: string | null;
@@ -171,6 +174,16 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
           eventId: event.id,
         })
       : [];
+  const customWebsitePreview = await resolveDashboardCustomWebsitePreview({
+    clientId,
+    event: event?.id
+      ? {
+          eventSlug: event.event_slug,
+          id: event.id,
+          subdomainSlug: event.subdomain_slug ?? null,
+        }
+      : null,
+  });
 
   return {
     eventId: event?.id ?? null,
@@ -185,6 +198,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     eventType: event?.event_type ?? null,
     eventWebsiteContent,
     guestbookMessages,
+    customWebsitePreview,
     maxGuestCount: event?.max_guest_count ?? null,
     rsvpCloseAt: event?.rsvp_close_at ?? null,
     snapshotPublishedAt: eventContent?.published_at ?? null,
