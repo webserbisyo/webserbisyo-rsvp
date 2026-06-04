@@ -97,3 +97,34 @@ export function formatEventWebsiteDateTimeLocalInput(value: string | null) {
 
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
+
+export function formatPublicDate(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const label = formatEventWebsiteDate(value, "");
+  return label || null;
+}
+
+export function formatPublicTime(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const label = formatEventWebsiteTime(value, "");
+  return label || null;
+}
+
+export function formatPublicDateTime(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const label = formatEventWebsiteDateTime(value, "");
+  return label || null;
+}
+
+export function formatPublicRsvpDeadline(value: string | null | undefined) {
+  return formatPublicDateTime(value);
+}

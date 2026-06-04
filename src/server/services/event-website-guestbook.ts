@@ -37,12 +37,22 @@ export async function listApprovedGuestbookMessages(input: {
   }
 
   return ((data ?? []) as ApprovedGuestbookRow[])
-    .map((row) => ({
+    .map((row, index) => ({
       approvedAt: row.message_approved_at,
       guestName: row.guest_name.trim(),
-      id: row.id,
+      id: buildPublicGuestbookMessageId(row.id, index),
       message: row.message?.trim() ?? "",
       submittedAt: row.submitted_at,
     }))
     .filter((row) => row.guestName.length > 0 && row.message.length > 0);
+}
+
+function buildPublicGuestbookMessageId(rowId: string, index: number) {
+  let hash = 0;
+
+  for (let charIndex = 0; charIndex < rowId.length; charIndex += 1) {
+    hash = (hash * 31 + rowId.charCodeAt(charIndex)) >>> 0;
+  }
+
+  return `guestbook-${index + 1}-${hash.toString(36)}`;
 }

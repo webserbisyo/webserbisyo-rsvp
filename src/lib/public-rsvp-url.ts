@@ -159,8 +159,12 @@ export function buildPublicRsvpPath(slug: string) {
   return `/r/${slug}`;
 }
 
-export function buildPublicRsvpFormPath(slug: string) {
+export function buildPublicRsvpFormAnchorPath(slug: string) {
   return `${buildPublicRsvpPath(slug)}#rsvp-form`;
+}
+
+export function buildPublicRsvpFormPath(slug: string) {
+  return `${buildPublicRsvpPath(slug)}/rsvp`;
 }
 
 export function buildPublicRsvpUrl(input: {
@@ -187,6 +191,19 @@ export function buildPublicRsvpFormUrl(input: {
   }
 
   return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpFormPath(input.slug)}`;
+}
+
+export function buildPublicRsvpFormAnchorUrl(input: {
+  baseUrl?: string | null;
+  slug: string;
+}) {
+  const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
+
+  if (!baseUrl) {
+    return null;
+  }
+
+  return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpFormAnchorPath(input.slug)}`;
 }
 
 export function getRsvpBaseDomain(baseDomain?: string | null) {
@@ -265,10 +282,10 @@ export function getBestPublicRsvpFormUrl(input: {
   subdomain?: string | null;
   wildcardBaseDomain?: string | null;
 }) {
-  return appendHashToUrl(
-    getBestPublicRsvpUrl(input),
-    "#rsvp-form",
-  );
+  return buildPublicRsvpFormUrl({
+    baseUrl: input.baseUrl,
+    slug: input.slug,
+  });
 }
 
 function isLocalWildcardSimulationEnabled() {
@@ -343,12 +360,9 @@ export function resolvePublicRsvpLinkSet(input: {
       })
     : null;
   const preferredProductionFormUrl = slug
-    ? getBestPublicRsvpFormUrl({
+    ? buildPublicRsvpFormUrl({
         baseUrl: productionBaseUrl,
-        customDomain: input.customDomain,
         slug,
-        subdomain: input.subdomain,
-        wildcardBaseDomain: input.wildcardBaseDomain,
       })
     : null;
   const localDevelopmentAppUrl = getLocalDevelopmentAppUrl();
