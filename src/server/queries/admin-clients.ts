@@ -2,7 +2,6 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  buildPublicRsvpFormPath,
   buildPublicRsvpPath,
   getBestPublicRsvpUrl,
   getPublicAppUrl,
@@ -285,7 +284,6 @@ export type AdminClientCustomWebsiteDto = {
   previewEnabled: boolean;
   publicWebsiteUrl: string | null;
   routeMode: CustomWebsiteRouteMode;
-  rsvpUrl: string | null;
   status: "disabled" | "enabled" | "not_started" | "origin_saved" | "paused";
   templateId: string;
   websiteRouteLabel: "Custom website" | "Default website";
@@ -1328,9 +1326,6 @@ function buildCustomWebsiteDto(
     : null;
   const fallbackUrl =
     linkSet?.fallbackPathUrl ?? (event?.event_slug ? buildPublicRsvpPath(event.event_slug) : null);
-  const rsvpUrl =
-    linkSet?.fallbackFormUrl ??
-    (event?.event_slug ? buildPublicRsvpFormPath(event.event_slug) : null);
 
   return {
     connectedAt: row?.connected_at ?? null,
@@ -1350,7 +1345,6 @@ function buildCustomWebsiteDto(
     previewEnabled: row?.preview_enabled ?? true,
     publicWebsiteUrl: linkSet?.displayUrl ?? getEventPublicWebsiteUrl(event),
     routeMode: enabled ? "custom" : "default",
-    rsvpUrl,
     status,
     templateId: row?.template_id ?? CUSTOM_WEBSITE_TEMPLATE_ID,
     websiteRouteLabel: enabled ? "Custom website" : "Default website",

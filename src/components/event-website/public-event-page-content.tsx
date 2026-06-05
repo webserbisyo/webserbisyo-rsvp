@@ -9,10 +9,10 @@ import type { PublicEventDto } from "@/lib/event-website/public-event";
 import { getBestPublicRsvpUrl } from "@/lib/public-rsvp-url";
 import type { PublicMetaPixelConfig } from "@/server/queries/public-meta-pixels";
 
-export function buildPublicRsvpMetadata(event: PublicEventDto | null): Metadata {
+export function buildPublicEventMetadata(event: PublicEventDto | null): Metadata {
   if (!event) {
     return {
-      description: "Published RSVP event page.",
+      description: "Published event website.",
       title: "Event Website",
     };
   }
@@ -38,7 +38,7 @@ export function buildPublicRsvpMetadata(event: PublicEventDto | null): Metadata 
       summaryParts.length > 0
         ? `${displayName} event details. ${summaryParts.join(" • ")}`
         : `${displayName} event details and RSVP information.`,
-    title: `${displayName} RSVP`,
+    title: displayName,
   };
 }
 

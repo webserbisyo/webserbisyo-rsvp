@@ -2,7 +2,6 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  buildPublicRsvpFormPath,
   buildPublicRsvpPath,
   getPublicAppUrl,
   getRsvpPreviewBaseDomain,
@@ -98,7 +97,6 @@ function buildDashboardPreviewDto(input: {
   routeMode?: "custom" | "default";
 }): DashboardCustomWebsitePreviewDto {
   const fallbackUrl = input.linkSet?.fallbackPathUrl ?? (input.eventSlug ? buildPublicRsvpPath(input.eventSlug) : null);
-  const rsvpUrl = input.linkSet?.fallbackFormUrl ?? (input.eventSlug ? buildPublicRsvpFormPath(input.eventSlug) : null);
   const customPreviewAvailable = Boolean(input.customPreviewUrl);
 
   return {
@@ -116,7 +114,6 @@ function buildDashboardPreviewDto(input: {
     platformEventSlug: input.eventSlug,
     publicWebsiteUrl: input.linkSet?.displayUrl ?? null,
     routeMode: input.routeMode ?? "default",
-    rsvpUrl,
   };
 }
 

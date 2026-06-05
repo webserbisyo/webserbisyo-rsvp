@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PublicEventPageContent, buildPublicRsvpMetadata } from "@/components/event-website/public-event-page-content";
+import { PublicEventPageContent, buildPublicEventMetadata } from "@/components/event-website/public-event-page-content";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { resolvePublicEventWebsite } from "@/server/services/resolve-public-event-website";
 
@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: PublicRsvpPageProps): Promise
   const { slug } = await params;
   const event = await resolvePublicEventWebsite(slug);
 
-  return buildPublicRsvpMetadata(event);
+  return buildPublicEventMetadata(event);
 }
 
 export default async function PublicRsvpPage({ params }: PublicRsvpPageProps) {

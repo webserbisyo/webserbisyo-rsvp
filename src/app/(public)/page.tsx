@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { PublicEventPageContent, buildPublicRsvpMetadata } from "@/components/event-website/public-event-page-content";
+import { PublicEventPageContent, buildPublicEventMetadata } from "@/components/event-website/public-event-page-content";
 import { LandingMessageHero } from "@/components/landing/landing-message-hero";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
@@ -19,7 +19,7 @@ const landingMetadata: Metadata = {
 export async function generateMetadata(): Promise<Metadata> {
   const event = await resolveWildcardHostEvent();
 
-  return event ? buildPublicRsvpMetadata(event) : landingMetadata;
+  return event ? buildPublicEventMetadata(event) : landingMetadata;
 }
 
 export default async function PublicLandingPage() {

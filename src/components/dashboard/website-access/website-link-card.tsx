@@ -45,14 +45,14 @@ export function WebsiteLinkCard({
     ? "Subdomain change pending. Publish latest changes to apply."
     : isSlugLocked
       ? "Locked after first publish. Use change subdomain only for typos, wrong names, or testing."
-      : "You can edit the RSVP subdomain before your first publish.";
+      : "You can edit the event website subdomain before your first publish.";
 
   return (
     <section className="rounded-[1.75rem] border border-[#eadbd0] bg-white/90 shadow-sm shadow-[#8a4b2e]/5">
       <div className="p-5 sm:p-6">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold tracking-tight text-[#2D1F1A]">Your Website Link</h2>
-          <p className="text-sm font-medium text-[#A38376]">Copy the live link or prepare your RSVP subdomain</p>
+          <p className="text-sm font-medium text-[#A38376]">Copy the live link or prepare your event website subdomain</p>
         </div>
 
         <div className="mb-5 grid min-w-0 items-center gap-3 sm:grid-cols-[1fr_auto]">
@@ -72,7 +72,7 @@ export function WebsiteLinkCard({
         </div>
 
         <div className="mb-2 flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between">
-          <label htmlFor="website-slug-preview" className="text-sm font-semibold text-[#A38376]">RSVP subdomain</label>
+          <label htmlFor="website-slug-preview" className="text-sm font-semibold text-[#A38376]">Event website subdomain</label>
           <p className="text-xs font-medium text-[#A38376] lg:text-sm">{helperText}</p>
         </div>
 
@@ -129,7 +129,7 @@ export function WebsiteLinkCard({
             </p>
           ) : (
             <p className="text-[#A38376]">
-              The central fallback link stays available if guests need the standard RSVP page.
+              The central fallback link stays available if guests need the standard event page.
             </p>
           )}
           {websiteUrlFallback ? (

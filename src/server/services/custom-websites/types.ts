@@ -12,5 +12,4 @@ export type DashboardCustomWebsitePreviewDto = {
   platformEventSlug: string | null;
   publicWebsiteUrl: string | null;
   routeMode: CustomWebsiteRouteMode;
-  rsvpUrl: string | null;
 };

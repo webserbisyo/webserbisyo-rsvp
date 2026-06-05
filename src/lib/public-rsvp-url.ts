@@ -2,14 +2,6 @@ function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
 }
 
-function appendHashToUrl(url: string | null, hash: string) {
-  if (!url) {
-    return null;
-  }
-
-  return `${url.replace(/#.*$/, "")}${hash.startsWith("#") ? hash : `#${hash}`}`;
-}
-
 export const DEFAULT_RSVP_WILDCARD_PREVIEW_DOMAIN = "rsvp.webserbisyo.com";
 export const DEFAULT_PUBLIC_APP_URL = "https://rsvp.webserbisyo.com";
 
@@ -197,10 +189,6 @@ export function buildPublicRsvpFormAnchorPath(slug: string) {
   return `${buildPublicRsvpPath(slug)}#rsvp-form`;
 }
 
-export function buildPublicRsvpFormPath(slug: string) {
-  return `${buildPublicRsvpPath(slug)}/rsvp`;
-}
-
 export function buildPublicRsvpUrl(input: {
   baseUrl?: string | null;
   slug: string;
@@ -214,25 +202,8 @@ export function buildPublicRsvpUrl(input: {
   return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpPath(input.slug)}`;
 }
 
-export function buildPublicRsvpFormUrl(input: {
-  baseUrl?: string | null;
-  slug: string;
-}) {
-  const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
-
-  if (!baseUrl) {
-    return null;
-  }
-
-  return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpFormPath(input.slug)}`;
-}
-
 export function buildOfficialPublicRsvpUrl(slug: string) {
   return `${getOfficialPublicAppUrl()}${buildPublicRsvpPath(slug)}`;
-}
-
-export function buildOfficialPublicRsvpFormUrl(slug: string) {
-  return `${getOfficialPublicAppUrl()}${buildPublicRsvpFormPath(slug)}`;
 }
 
 export function buildPublicRsvpFormAnchorUrl(input: {
@@ -324,7 +295,7 @@ export function getBestPublicRsvpFormUrl(input: {
   subdomain?: string | null;
   wildcardBaseDomain?: string | null;
 }) {
-  return buildPublicRsvpFormUrl({
+  return buildPublicRsvpFormAnchorUrl({
     baseUrl: input.baseUrl,
     slug: input.slug,
   });
@@ -345,16 +316,12 @@ function isLocalWildcardSimulationEnabled() {
 export type PublicRsvpLinkSet = {
   copyUrl: string | null;
   displayUrl: string | null;
-  fallbackFormUrl: string | null;
   fallbackPathUrl: string | null;
   localPreviewUrl: string | null;
-  openFormUrl: string | null;
   openUrl: string | null;
   previewChromeUrl: string | null;
-  preferredProductionFormUrl: string | null;
   preferredProductionUrl: string | null;
   qrUrl: string | null;
-  wildcardProductionFormUrl: string | null;
   wildcardProductionUrl: string | null;
 };
 
@@ -379,15 +346,8 @@ export function resolvePublicRsvpLinkSet(input: {
         subdomain: input.subdomain,
       })
     : null;
-  const wildcardProductionFormUrl = appendHashToUrl(wildcardProductionUrl, "#rsvp-form");
   const fallbackPathUrl = slug
     ? buildPublicRsvpUrl({
-        baseUrl: runtimeBaseUrl,
-        slug,
-      })
-    : null;
-  const fallbackFormUrl = slug
-    ? buildPublicRsvpFormUrl({
         baseUrl: runtimeBaseUrl,
         slug,
       })
@@ -401,23 +361,10 @@ export function resolvePublicRsvpLinkSet(input: {
         wildcardBaseDomain: input.wildcardBaseDomain,
       })
     : null;
-  const preferredProductionFormUrl = slug
-    ? buildPublicRsvpFormUrl({
-        baseUrl: productionBaseUrl,
-        slug,
-      })
-    : null;
   const localDevelopmentAppUrl = getLocalDevelopmentAppUrl();
   const localDevelopmentUrl =
     slug && localDevelopmentAppUrl
       ? buildPublicRsvpUrl({
-          baseUrl: localDevelopmentAppUrl,
-          slug,
-        })
-      : null;
-  const localDevelopmentFormUrl =
-    slug && localDevelopmentAppUrl
-      ? buildPublicRsvpFormUrl({
           baseUrl: localDevelopmentAppUrl,
           slug,
         })
@@ -433,25 +380,16 @@ export function resolvePublicRsvpLinkSet(input: {
   const copyUrl = displayUrl;
   const qrUrl = displayUrl;
   const previewChromeUrl = displayUrl;
-  const openFormUrl = useLocalSafeUrls
-    ? (localDevelopmentFormUrl ?? fallbackFormUrl ?? preferredProductionFormUrl)
-    : environment === "preview"
-      ? (fallbackFormUrl ?? preferredProductionFormUrl)
-      : (preferredProductionFormUrl ?? fallbackFormUrl);
 
   return {
     copyUrl,
     displayUrl,
-    fallbackFormUrl,
     fallbackPathUrl,
     localPreviewUrl: localDevelopmentUrl,
-    openFormUrl,
     openUrl,
     previewChromeUrl,
-    preferredProductionFormUrl,
     preferredProductionUrl,
     qrUrl,
-    wildcardProductionFormUrl,
     wildcardProductionUrl,
   };
 }

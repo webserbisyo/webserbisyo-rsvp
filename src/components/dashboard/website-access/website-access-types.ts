@@ -16,7 +16,6 @@ export type WebsiteAccessInitialData = {
   canOpenWebsite: boolean;
   changesSummary: string;
   copyPublicUrl: string | null;
-  copyRsvpUrl: string | null;
   contentDraftSavedAt: string | null;
   customWebsiteConnected: boolean;
   draftSlug: string | null;
@@ -24,7 +23,6 @@ export type WebsiteAccessInitialData = {
   draftVisibility: VisibilityMode;
   eventId: string | null;
   fallbackPublicUrl: string | null;
-  fallbackRsvpUrl: string | null;
   hasAccessPendingChanges: boolean;
   hasContentPendingChanges: boolean;
   hasEverPublished: boolean;
@@ -42,8 +40,6 @@ export type WebsiteAccessInitialData = {
   publishedVisibility: VisibilityMode;
   productionPublicUrl: string | null;
   qrPublicUrl: string | null;
-  qrRsvpUrl: string | null;
-  rsvpUrl: string | null;
   snapshotPublishedAt: string | null;
   subdomainFieldsInstalled: boolean;
   wildcardBaseDomain: string;

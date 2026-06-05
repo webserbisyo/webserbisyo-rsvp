@@ -11,7 +11,6 @@ import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  buildOfficialPublicRsvpFormUrl,
   buildOfficialPublicRsvpUrl,
   getPublicAppUrl,
   getRsvpBaseDomain,
@@ -79,7 +78,6 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       canOpenWebsite: false,
       changesSummary: "Draft ready to publish",
       copyPublicUrl: null,
-      copyRsvpUrl: null,
       contentDraftSavedAt: null,
       customWebsiteConnected: false,
       draftSlug: null,
@@ -87,7 +85,6 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       draftVisibility: "private",
       eventId: null,
       fallbackPublicUrl: null,
-      fallbackRsvpUrl: null,
       hasAccessPendingChanges: false,
       hasContentPendingChanges: false,
       hasEverPublished: false,
@@ -105,8 +102,6 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       publishedVisibility: "private",
       productionPublicUrl: null,
       qrPublicUrl: null,
-      qrRsvpUrl: null,
-      rsvpUrl: null,
       snapshotPublishedAt: null,
       subdomainFieldsInstalled: false,
       websiteAccessUpdatedAt: null,
@@ -178,22 +173,18 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       })
       : null;
   const fallbackPublicUrl = linkSet && publishedSlug ? buildOfficialPublicRsvpUrl(publishedSlug) : null;
-  const fallbackRsvpUrl = linkSet && publishedSlug ? buildOfficialPublicRsvpFormUrl(publishedSlug) : null;
   const publicUrl = linkSet?.preferredProductionUrl ?? null;
   const openPublicUrl = publicUrl;
   const copyPublicUrl = publicUrl;
   const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
   const qrPublicUrl = publicUrl;
-  const rsvpUrl = fallbackRsvpUrl;
-  const copyRsvpUrl = fallbackRsvpUrl;
-  const qrRsvpUrl = fallbackRsvpUrl;
   const customWebsiteConnected = await isCustomWebsiteConnected({
     clientId: profile.client_id ?? "",
     eventId: event.id,
   });
 
   return {
-    canDownloadQr: Boolean(rsvpUrl),
+    canDownloadQr: Boolean(qrPublicUrl),
     canOpenWebsite: Boolean(openPublicUrl),
     changesSummary: buildChangeSummary({
       hasAccessPendingChanges,
@@ -203,7 +194,6 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       isPublished: publishState === "published",
     }),
     copyPublicUrl,
-    copyRsvpUrl,
     contentDraftSavedAt,
     customWebsiteConnected,
     draftSlug,
@@ -211,7 +201,6 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     draftVisibility,
     eventId: event.id,
     fallbackPublicUrl,
-    fallbackRsvpUrl,
     hasAccessPendingChanges,
     hasContentPendingChanges,
     hasEverPublished,
@@ -229,8 +218,6 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     publishedVisibility,
     productionPublicUrl,
     qrPublicUrl,
-    qrRsvpUrl,
-    rsvpUrl,
     snapshotPublishedAt: eventContent?.published_at ?? null,
     subdomainFieldsInstalled: eventRecord.subdomainFieldsInstalled,
     websiteAccessUpdatedAt: event.website_access_updated_at ?? null,

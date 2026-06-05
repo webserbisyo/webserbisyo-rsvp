@@ -1,24 +1,20 @@
 "use client";
 
-import { ClipboardList, Copy, Download, Globe2 } from "lucide-react";
+import { Copy, Download, Globe2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 type QrCodesCardProps = {
   disabled?: boolean;
-  onCopyRsvpLink: () => void;
   onCopyWebsiteLink: () => void;
-  rsvpUrl: string;
   slugPublished: string;
   websiteUrl: string;
 };
 
 export function QrCodesCard({
   disabled = false,
-  onCopyRsvpLink,
   onCopyWebsiteLink,
-  rsvpUrl,
   slugPublished,
   websiteUrl,
 }: QrCodesCardProps) {
@@ -51,26 +47,15 @@ export function QrCodesCard({
           <p className="text-sm font-medium text-[#A38376]">Print or share with guests</p>
         </div>
 
-        {/* QR cards — RSVP Form QR first, Website QR second */}
-        <div className="grid gap-5 xl:grid-cols-2">
-          <QrTile
-            canvasId="website-access-rsvp-qr"
-            disabled={disabled}
-            icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
-            onCopy={onCopyRsvpLink}
-            onDownload={() => downloadQr("website-access-rsvp-qr", `${slugPublished}-rsvp-qr.png`)}
-            subtitle="Links directly to the RSVP form"
-            title="RSVP Form QR"
-            url={rsvpUrl}
-          />
+        <div className="grid gap-5">
           <QrTile
             canvasId="website-access-website-qr"
             disabled={disabled}
             icon={<Globe2 className="h-5 w-5" aria-hidden="true" />}
             onCopy={onCopyWebsiteLink}
             onDownload={() => downloadQr("website-access-website-qr", `${slugPublished}-website-qr.png`)}
-            subtitle="Links to the full event website"
-            title="Website QR"
+            subtitle="Links to the full event website and RSVP section"
+            title="Event Website QR"
             url={websiteUrl}
           />
         </div>

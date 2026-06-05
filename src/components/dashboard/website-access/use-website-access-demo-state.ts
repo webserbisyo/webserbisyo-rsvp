@@ -89,9 +89,6 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     : (serverState.draftSlug && publicBaseUrl
         ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: serverState.draftSlug }) ?? "")
         : "");
-  const rsvpUrlPublished = serverState.rsvpUrl ?? "";
-  const rsvpUrlCopy = serverState.copyRsvpUrl ?? rsvpUrlPublished;
-  const rsvpUrlQr = serverState.qrRsvpUrl ?? rsvpUrlPublished;
   const changesSummary = buildChangeSummary({
     hasAccessPendingChanges: hasVisibilityDraft,
     hasContentPendingChanges,
@@ -100,7 +97,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     isPublished,
   });
   const visibilityLabel = getVisibilityLabel(draftVisibility);
-  const canShareLiveUrl = Boolean(websiteUrlCopy && rsvpUrlCopy);
+  const canShareLiveUrl = Boolean(websiteUrlCopy);
   const isPublishBlocked = isPending || isDraftSavePending;
 
   useDashboardRefresh({
@@ -326,13 +323,6 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     changesSummary,
     closeSlugModal,
     confirmSlugChange,
-    copyRsvpLink: () => {
-      if (!requireLiveUrl(rsvpUrlCopy)) {
-        return;
-      }
-
-      void copyText(rsvpUrlCopy, "RSVP form link copied");
-    },
     copyWebsiteLink: () => {
       if (!requireLiveUrl(websiteUrlCopy)) {
         return;
@@ -372,9 +362,6 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     publishedSubdomain,
     publishedVisibility,
     qrActionsEnabled: canShareLiveUrl,
-    rsvpUrlCopy,
-    rsvpUrlPublished,
-    rsvpUrlQr,
     setSlugModalValue,
     slugDraft: draftSubdomain,
     slugDraftError: subdomainDraftError,

@@ -201,7 +201,6 @@ function ClientCustomWebsiteEditor({
           />
           <SummaryPanel label="Website route" value={customWebsite.websiteRouteLabel} />
           <SummaryPanel label="Fallback URL" value={customWebsite.fallbackUrl ?? "Not configured"} />
-          <SummaryPanel label="RSVP URL" value={customWebsite.rsvpUrl ?? "Not configured"} />
         </div>
 
         <Separator />
