@@ -11,6 +11,8 @@ import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  buildOfficialPublicRsvpFormUrl,
+  buildOfficialPublicRsvpUrl,
   getPublicAppUrl,
   getRsvpBaseDomain,
   getRsvpPreviewBaseDomain,
@@ -173,18 +175,18 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
           slug: publishedSlug,
           subdomain: eventRecord.subdomainFieldsInstalled ? publishedSubdomain : null,
           wildcardBaseDomain,
-        })
+      })
       : null;
-  const fallbackPublicUrl = linkSet?.fallbackPathUrl ?? null;
-  const fallbackRsvpUrl = linkSet?.fallbackFormUrl ?? null;
-  const publicUrl = linkSet?.displayUrl ?? null;
-  const openPublicUrl = linkSet?.openUrl ?? null;
-  const copyPublicUrl = linkSet?.copyUrl ?? null;
+  const fallbackPublicUrl = linkSet && publishedSlug ? buildOfficialPublicRsvpUrl(publishedSlug) : null;
+  const fallbackRsvpUrl = linkSet && publishedSlug ? buildOfficialPublicRsvpFormUrl(publishedSlug) : null;
+  const publicUrl = linkSet?.preferredProductionUrl ?? null;
+  const openPublicUrl = publicUrl;
+  const copyPublicUrl = publicUrl;
   const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
-  const qrPublicUrl = linkSet?.qrUrl ?? null;
-  const rsvpUrl = linkSet?.openFormUrl ?? null;
-  const copyRsvpUrl = linkSet?.openFormUrl ?? null;
-  const qrRsvpUrl = linkSet?.openFormUrl ?? null;
+  const qrPublicUrl = publicUrl;
+  const rsvpUrl = fallbackRsvpUrl;
+  const copyRsvpUrl = fallbackRsvpUrl;
+  const qrRsvpUrl = fallbackRsvpUrl;
   const customWebsiteConnected = await isCustomWebsiteConnected({
     clientId: profile.client_id ?? "",
     eventId: event.id,

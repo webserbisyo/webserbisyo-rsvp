@@ -182,12 +182,7 @@ export function getPublicAppUrl(options?: {
     );
   }
 
-  return resolveConfiguredPublicAppUrl(
-    options?.baseUrl,
-    getConfiguredProductionAppUrl(),
-    getPreviewDeploymentAppUrl(options),
-    options?.preferredOrigin,
-  ) ?? getOfficialPublicAppUrl();
+  return getOfficialPublicAppUrl();
 }
 
 export function getLocalDevelopmentAppUrl() {

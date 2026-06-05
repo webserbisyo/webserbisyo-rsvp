@@ -129,12 +129,12 @@ export function WebsiteLinkCard({
             </p>
           ) : (
             <p className="text-[#A38376]">
-              The fallback link stays active until the RSVP wildcard domain is attached in Vercel.
+              The central fallback link stays available if guests need the standard RSVP page.
             </p>
           )}
           {websiteUrlFallback ? (
             <p className="break-all font-mono text-xs text-[#A38376]">
-              Fallback: {websiteUrlFallback}
+              Central fallback: {websiteUrlFallback}
             </p>
           ) : null}
           {websiteUrlProduction && websiteUrlProduction !== displayUrl ? (

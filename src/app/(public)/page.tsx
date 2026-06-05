@@ -68,7 +68,8 @@ async function isWildcardHostRequest() {
   return Boolean(
     normalizedHost &&
       wildcardBaseDomain &&
-      (normalizedHost === wildcardBaseDomain || normalizedHost.endsWith(`.${wildcardBaseDomain}`)),
+      normalizedHost !== wildcardBaseDomain &&
+      normalizedHost.endsWith(`.${wildcardBaseDomain}`),
   );
 }
 
