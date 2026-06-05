@@ -11,6 +11,7 @@ function appendHashToUrl(url: string | null, hash: string) {
 }
 
 export const DEFAULT_RSVP_WILDCARD_PREVIEW_DOMAIN = "rsvp.webserbisyo.com";
+export const DEFAULT_PUBLIC_APP_URL = "https://rsvp.webserbisyo.com";
 
 export type PublicRsvpEnvironment = "development" | "preview" | "production";
 
@@ -27,6 +28,10 @@ function normalizeUrlLikeValue(value?: string | null) {
 
   if (/^https?:\/\//i.test(trimmed)) {
     return normalizePublicAppUrl(trimmed);
+  }
+
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed) || trimmed.startsWith("/")) {
+    return null;
   }
 
   return normalizePublicAppUrl(`https://${trimmed}`);
@@ -62,7 +67,17 @@ export function normalizePublicAppUrl(value?: string | null) {
   }
 
   try {
-    return trimTrailingSlash(new URL(trimmed).toString());
+    const url = new URL(trimmed);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return null;
+    }
+
+    if (!url.hostname || url.username || url.password) {
+      return null;
+    }
+
+    return trimTrailingSlash(url.toString());
   } catch {
     return null;
   }
@@ -80,14 +95,38 @@ export function resolveConfiguredPublicAppUrl(...values: Array<string | null | u
   return null;
 }
 
+function resolveConfiguredOfficialPublicAppUrl(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const normalized = normalizeUrlLikeValue(value);
+
+    if (normalized && !isVercelDeploymentUrl(normalized)) {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
 function getConfiguredProductionAppUrl() {
-  return resolveConfiguredPublicAppUrl(
+  return resolveConfiguredOfficialPublicAppUrl(
     process.env.NEXT_PUBLIC_APP_URL,
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.SITE_URL,
     process.env.APP_BASE_URL,
-    process.env.VERCEL_PROJECT_PRODUCTION_URL,
   );
+}
+
+export function getOfficialPublicAppUrl() {
+  return getConfiguredProductionAppUrl() ?? DEFAULT_PUBLIC_APP_URL;
+}
+
+function isVercelDeploymentUrl(value: string) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "vercel.app" || hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
 }
 
 function getPreviewDeploymentAppUrl(options?: {
@@ -148,7 +187,7 @@ export function getPublicAppUrl(options?: {
     getConfiguredProductionAppUrl(),
     getPreviewDeploymentAppUrl(options),
     options?.preferredOrigin,
-  );
+  ) ?? getOfficialPublicAppUrl();
 }
 
 export function getLocalDevelopmentAppUrl() {
@@ -191,6 +230,14 @@ export function buildPublicRsvpFormUrl(input: {
   }
 
   return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpFormPath(input.slug)}`;
+}
+
+export function buildOfficialPublicRsvpUrl(slug: string) {
+  return `${getOfficialPublicAppUrl()}${buildPublicRsvpPath(slug)}`;
+}
+
+export function buildOfficialPublicRsvpFormUrl(slug: string) {
+  return `${getOfficialPublicAppUrl()}${buildPublicRsvpFormPath(slug)}`;
 }
 
 export function buildPublicRsvpFormAnchorUrl(input: {
@@ -330,7 +377,7 @@ export function resolvePublicRsvpLinkSet(input: {
     baseUrl: input.baseUrl,
     preferredOrigin: input.preferredOrigin,
   });
-  const productionBaseUrl = getConfiguredProductionAppUrl() ?? runtimeBaseUrl;
+  const productionBaseUrl = getOfficialPublicAppUrl();
   const wildcardProductionUrl = input.subdomain
     ? buildWildcardRsvpUrl({
         baseDomain: input.wildcardBaseDomain,
