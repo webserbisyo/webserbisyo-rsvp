@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { buildPublicRsvpEmbedPath } from "@/lib/public-rsvp-url";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-response-form";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { resolvePublicEventWebsite } from "@/server/services/resolve-public-even
 
 type PublicRsvpOnlyPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ embed?: string | string[] | undefined }>;
 };
 
 export async function generateMetadata({
@@ -29,8 +31,14 @@ export async function generateMetadata({
   };
 }
 
-export default async function PublicRsvpOnlyPage({ params }: PublicRsvpOnlyPageProps) {
+export default async function PublicRsvpOnlyPage({ params, searchParams }: PublicRsvpOnlyPageProps) {
   const { slug } = await params;
+  const embedParam = (await searchParams)?.embed;
+
+  if (embedParam === "1" || embedParam === "true") {
+    redirect(buildPublicRsvpEmbedPath(slug));
+  }
+
   const event = await resolvePublicEventWebsite(slug);
 
   if (!event) {

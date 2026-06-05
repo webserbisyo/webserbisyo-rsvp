@@ -6,17 +6,32 @@ const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 const nextConfig: NextConfig = {
   async headers() {
+    const sharedHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-XSS-Protection", value: "1; mode=block" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=()",
+      },
+    ];
+
     return [
       {
-        source: "/(.*)",
+        source: "/((?!r/[^/]+/rsvp/embed$).*)",
         headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
+          ...sharedHeaders,
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-XSS-Protection", value: "1; mode=block" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
+        source: "/r/:slug/rsvp/embed",
+        headers: [
+          ...sharedHeaders,
           {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            key: "Content-Security-Policy",
+            value:
+              "frame-ancestors 'self' https://rsvp.webserbisyo.com https://*.rsvp.webserbisyo.com http://localhost:3001 http://127.0.0.1:3001",
           },
         ],
       },

@@ -15,6 +15,7 @@ import {
   formatPublicTime,
 } from "@/lib/event-website/formatting";
 import {
+  buildOfficialPublicRsvpEmbedUrl,
   buildOfficialPublicRsvpFormUrl,
   buildOfficialPublicRsvpUrl,
   resolvePublicRsvpLinkSet,
@@ -56,6 +57,7 @@ export type PublicEventRsvpState = {
 export type PublicEventUrls = {
   fallbackUrl: string;
   publicWebsiteUrl: string | null;
+  rsvpEmbedUrl: string;
   rsvpUrl: string;
 };
 
@@ -285,6 +287,7 @@ function buildPublicEventUrls({
   return {
     fallbackUrl: buildOfficialPublicRsvpUrl(eventSlug),
     publicWebsiteUrl: subdomainSlug ? linkSet.wildcardProductionUrl : null,
+    rsvpEmbedUrl: buildOfficialPublicRsvpEmbedUrl(eventSlug),
     rsvpUrl: buildOfficialPublicRsvpFormUrl(eventSlug),
   };
 }

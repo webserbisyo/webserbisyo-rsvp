@@ -201,6 +201,10 @@ export function buildPublicRsvpFormPath(slug: string) {
   return `${buildPublicRsvpPath(slug)}/rsvp`;
 }
 
+export function buildPublicRsvpEmbedPath(slug: string) {
+  return `${buildPublicRsvpFormPath(slug)}/embed`;
+}
+
 export function buildPublicRsvpUrl(input: {
   baseUrl?: string | null;
   slug: string;
@@ -227,12 +231,29 @@ export function buildPublicRsvpFormUrl(input: {
   return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpFormPath(input.slug)}`;
 }
 
+export function buildPublicRsvpEmbedUrl(input: {
+  baseUrl?: string | null;
+  slug: string;
+}) {
+  const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
+
+  if (!baseUrl) {
+    return null;
+  }
+
+  return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpEmbedPath(input.slug)}`;
+}
+
 export function buildOfficialPublicRsvpUrl(slug: string) {
   return `${getOfficialPublicAppUrl()}${buildPublicRsvpPath(slug)}`;
 }
 
 export function buildOfficialPublicRsvpFormUrl(slug: string) {
   return `${getOfficialPublicAppUrl()}${buildPublicRsvpFormPath(slug)}`;
+}
+
+export function buildOfficialPublicRsvpEmbedUrl(slug: string) {
+  return `${getOfficialPublicAppUrl()}${buildPublicRsvpEmbedPath(slug)}`;
 }
 
 export function buildPublicRsvpFormAnchorUrl(input: {
