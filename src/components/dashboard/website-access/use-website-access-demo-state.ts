@@ -19,6 +19,7 @@ import {
   buildPublicRsvpUrl,
   buildWildcardRsvpPreviewUrl,
   getPublicAppUrl,
+  withRsvpAnchor,
 } from "@/lib/public-rsvp-url";
 import {
   emitDashboardSyncEvent,
@@ -80,6 +81,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const websiteUrlCopy = serverState.copyPublicUrl ?? websiteUrlPublished;
   const websiteUrlProduction = serverState.productionPublicUrl ?? "";
   const websiteUrlQr = serverState.qrPublicUrl ?? websiteUrlPublished;
+  const rsvpUrlQr = serverState.rsvpQrPublicUrl ?? withRsvpAnchor(websiteUrlQr) ?? "";
   const websiteUrlFallback = serverState.fallbackPublicUrl ?? "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({
@@ -337,6 +339,13 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
 
       void copyText(websiteUrlCopy, "Website QR link copied");
     },
+    copyRsvpQrLink: () => {
+      if (!requireLiveUrl(rsvpUrlQr)) {
+        return;
+      }
+
+      void copyText(rsvpUrlQr, "RSVP QR link copied");
+    },
     customWebsiteConnected: serverState.customWebsiteConnected,
     handleDraftSlugInput,
     handleVisibilitySelect,
@@ -382,6 +391,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     websiteUrlPublished,
     websiteUrlProduction,
     websiteUrlQr,
+    rsvpUrlQr,
   };
 }
 

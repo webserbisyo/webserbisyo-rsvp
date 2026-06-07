@@ -79,7 +79,9 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
 
       <QrCodesCard
         disabled={!state.qrActionsEnabled}
+        onCopyRsvpLink={state.copyRsvpQrLink}
         onCopyWebsiteLink={state.copyWebsiteQrLink}
+        rsvpUrl={state.rsvpUrlQr}
         slugPublished={state.slugPublished}
         websiteUrl={state.websiteUrlQr}
       />

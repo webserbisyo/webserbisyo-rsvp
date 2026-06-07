@@ -17,6 +17,7 @@ import {
   getRsvpPreviewBaseDomain,
   isPublishedPublicRsvpReady,
   resolvePublicRsvpLinkSet,
+  withRsvpAnchor,
 } from "@/lib/public-rsvp-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -102,6 +103,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       publishedVisibility: "private",
       productionPublicUrl: null,
       qrPublicUrl: null,
+      rsvpQrPublicUrl: null,
       snapshotPublishedAt: null,
       subdomainFieldsInstalled: false,
       websiteAccessUpdatedAt: null,
@@ -178,6 +180,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const copyPublicUrl = publicUrl;
   const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
   const qrPublicUrl = publicUrl;
+  const rsvpQrPublicUrl = withRsvpAnchor(publicUrl);
   const customWebsiteConnected = await isCustomWebsiteConnected({
     clientId: profile.client_id ?? "",
     eventId: event.id,
@@ -218,6 +221,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     publishedVisibility,
     productionPublicUrl,
     qrPublicUrl,
+    rsvpQrPublicUrl,
     snapshotPublishedAt: eventContent?.published_at ?? null,
     subdomainFieldsInstalled: eventRecord.subdomainFieldsInstalled,
     websiteAccessUpdatedAt: event.website_access_updated_at ?? null,

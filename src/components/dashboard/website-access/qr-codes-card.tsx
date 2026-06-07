@@ -7,14 +7,18 @@ import { Button } from "@/components/ui/button";
 
 type QrCodesCardProps = {
   disabled?: boolean;
+  onCopyRsvpLink: () => void;
   onCopyWebsiteLink: () => void;
+  rsvpUrl: string;
   slugPublished: string;
   websiteUrl: string;
 };
 
 export function QrCodesCard({
   disabled = false,
+  onCopyRsvpLink,
   onCopyWebsiteLink,
+  rsvpUrl,
   slugPublished,
   websiteUrl,
 }: QrCodesCardProps) {
@@ -54,9 +58,19 @@ export function QrCodesCard({
             icon={<Globe2 className="h-5 w-5" aria-hidden="true" />}
             onCopy={onCopyWebsiteLink}
             onDownload={() => downloadQr("website-access-website-qr", `${slugPublished}-website-qr.png`)}
-            subtitle="Links to the full event website and RSVP section"
-            title="Event Website QR"
+            subtitle="Opens the full event website."
+            title="Website QR"
             url={websiteUrl}
+          />
+          <QrTile
+            canvasId="website-access-rsvp-qr"
+            disabled={disabled}
+            icon={<Globe2 className="h-5 w-5" aria-hidden="true" />}
+            onCopy={onCopyRsvpLink}
+            onDownload={() => downloadQr("website-access-rsvp-qr", `${slugPublished}-rsvp-qr.png`)}
+            subtitle="Opens the same website directly at the RSVP section."
+            title="RSVP QR"
+            url={rsvpUrl}
           />
         </div>
       </div>

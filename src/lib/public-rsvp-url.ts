@@ -219,6 +219,14 @@ export function buildPublicRsvpFormAnchorUrl(input: {
   return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpFormAnchorPath(input.slug)}`;
 }
 
+export function withRsvpAnchor(url?: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  return `${url.replace(/#.*$/, "")}#rsvp`;
+}
+
 export function getRsvpBaseDomain(baseDomain?: string | null) {
   return normalizeHostname(
     baseDomain ?? process.env.NEXT_PUBLIC_RSVP_WILDCARD_DOMAIN ?? process.env.RSVP_WILDCARD_DOMAIN,

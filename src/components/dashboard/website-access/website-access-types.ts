@@ -40,6 +40,7 @@ export type WebsiteAccessInitialData = {
   publishedVisibility: VisibilityMode;
   productionPublicUrl: string | null;
   qrPublicUrl: string | null;
+  rsvpQrPublicUrl: string | null;
   snapshotPublishedAt: string | null;
   subdomainFieldsInstalled: boolean;
   wildcardBaseDomain: string;
