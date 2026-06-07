@@ -64,12 +64,10 @@ export function EventWebsitePreviewPanel({
   const selectedSectionKey = selectedSection?.key;
   const activeDevice = showDeviceTabs ? device : defaultDevice;
   const previewAddress = previewChromeUrl ?? "Website URL pending";
-  const [requestedPreviewMode, setRequestedPreviewMode] = useState<"custom" | "platform">(
-    "platform",
-  );
-  const customPreviewAvailable = customWebsitePreview.customPreviewAvailable;
-  const previewMode = customPreviewAvailable ? requestedPreviewMode : "platform";
-  const showCustomPreview = previewMode === "custom" && customPreviewAvailable;
+  const [previewMode, setPreviewMode] = useState<"custom" | "platform">("platform");
+  const hasCustomPreview =
+    customWebsitePreview.customPreviewAvailable && !!customWebsitePreview.customPreviewUrl;
+  const showCustomPreview = previewMode === "custom";
 
   useEffect(() => {
     if (!selectedSectionKey || !supportedSectionKeySet.has(selectedSectionKey) || selectedSectionIsOff) {
@@ -109,36 +107,35 @@ export function EventWebsitePreviewPanel({
           </div>
         ) : null}
 
-        <div className="event-preview-mode-row">
+        <div
+          className={cn(
+            "event-preview-mode-row",
+            activeDevice === "mobile" && "is-mobile",
+            compactChrome && "is-compact",
+          )}
+        >
           <div className="event-preview-mode-copy">
             <strong>{showCustomPreview ? "Custom preview" : "Platform preview"}</strong>
-            <span>
-              {showCustomPreview
-                ? "Deployed custom site. Publish or redeploy custom code to update it."
-                : "Editable draft state from this dashboard."}
-            </span>
           </div>
           <div className="event-preview-mode-actions">
-            {customPreviewAvailable ? (
-              <Tabs
-                value={previewMode}
-                onValueChange={(value) => setRequestedPreviewMode(value as "custom" | "platform")}
-              >
-                <TabsList className="event-preview-mode-tabs" aria-label="Preview mode">
-                  <TabsTrigger value="platform" className="event-preview-mode-trigger">
-                    Platform
-                  </TabsTrigger>
-                  <TabsTrigger value="custom" className="event-preview-mode-trigger">
-                    Custom
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            ) : null}
-            {customPreviewAvailable && customWebsitePreview.customPreviewUrl ? (
+            <Tabs
+              value={previewMode}
+              onValueChange={(value) => setPreviewMode(value as "custom" | "platform")}
+            >
+              <TabsList className="event-preview-mode-tabs" aria-label="Preview mode">
+                <TabsTrigger value="platform" className="event-preview-mode-trigger">
+                  Platform
+                </TabsTrigger>
+                <TabsTrigger value="custom" className="event-preview-mode-trigger">
+                  Custom
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {showCustomPreview && hasCustomPreview ? (
               <a
                 aria-label="Open custom preview"
                 className="event-preview-open-custom"
-                href={customWebsitePreview.customPreviewUrl}
+                href={customWebsitePreview.customPreviewUrl!}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -171,16 +168,28 @@ export function EventWebsitePreviewPanel({
 
           <div
             ref={previewScrollRef}
-            className={cn("event-preview-frame", showCustomPreview && "is-custom-preview")}
+            className={cn(
+              "event-preview-frame",
+              showCustomPreview && "is-custom-preview",
+              showDeviceTabs && activeDevice === "desktop" && "has-browser-chrome",
+              !showDeviceTabs && "is-frameless",
+            )}
           >
-            {showCustomPreview && customWebsitePreview.customPreviewUrl ? (
+            {showCustomPreview && hasCustomPreview ? (
               <iframe
                 className="event-preview-custom-frame"
                 referrerPolicy="no-referrer"
                 sandbox="allow-scripts allow-same-origin allow-popups"
-                src={customWebsitePreview.customPreviewUrl}
+                src={customWebsitePreview.customPreviewUrl!}
                 title="Custom website preview"
               />
+            ) : showCustomPreview ? (
+              <div className="event-preview-empty-state">
+                <h3 className="event-preview-empty-title">Custom preview is not enabled yet.</h3>
+                <p className="event-preview-empty-desc">
+                  Save and enable a custom frontend from Super Admin to preview it here.
+                </p>
+              </div>
             ) : (
               <EventWebsiteRenderer
                 draft={previewDraft}
