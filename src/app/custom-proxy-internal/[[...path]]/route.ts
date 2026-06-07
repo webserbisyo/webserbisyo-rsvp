@@ -12,7 +12,7 @@ const ORIGINAL_SEARCH_HEADER = "x-webserbisyo-original-search";
 const SKIP_CUSTOM_PROXY_HEADER = "x-webserbisyo-skip-custom-proxy";
 const PLATFORM_OWNED_PUBLIC_PATH_PREFIXES = ["/admin", "/dashboard", "/login", "/api", "/r"] as const;
 const REQUEST_HEADER_ALLOWLIST = ["accept", "accept-language", "cache-control", "if-none-match", "if-modified-since", "user-agent"] as const;
-const RESPONSE_HEADER_BLOCKLIST = ["connection", "content-length", "keep-alive", "transfer-encoding"] as const;
+const RESPONSE_HEADER_BLOCKLIST = ["connection", "content-encoding", "content-length", "keep-alive", "transfer-encoding"] as const;
 
 type ProxyRouteContext = {
   params: Promise<{ path?: string[] }>;
@@ -193,6 +193,7 @@ function buildUpstreamRequestHeaders(headers: Headers, originalHost: string) {
     }
   }
 
+  nextHeaders.set("accept-encoding", "identity");
   nextHeaders.set("x-forwarded-host", originalHost);
   nextHeaders.set("x-forwarded-proto", "https");
 
