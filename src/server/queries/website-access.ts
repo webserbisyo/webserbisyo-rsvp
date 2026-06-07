@@ -180,16 +180,18 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const publicUrl = linkSet?.preferredProductionUrl ?? null;
   const fallbackRsvpPublicUrl =
     linkSet && publishedSlug ? buildOfficialPublicRsvpStandaloneUrl(publishedSlug) : null;
-  const publicRsvpUrl = fallbackRsvpPublicUrl;
+  const customWebsiteConnected = await isCustomWebsiteConnected({
+    clientId: profile.client_id ?? "",
+    eventId: event.id,
+  });
+  const publicRsvpUrl = customWebsiteConnected
+    ? (linkSet?.wildcardProductionRsvpUrl ?? fallbackRsvpPublicUrl)
+    : fallbackRsvpPublicUrl;
   const openPublicUrl = publicUrl;
   const copyPublicUrl = publicUrl;
   const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
   const qrPublicUrl = publicUrl ?? fallbackPublicUrl;
   const rsvpQrPublicUrl = publicRsvpUrl ?? fallbackRsvpPublicUrl;
-  const customWebsiteConnected = await isCustomWebsiteConnected({
-    clientId: profile.client_id ?? "",
-    eventId: event.id,
-  });
 
   return {
     canDownloadQr: Boolean(qrPublicUrl),

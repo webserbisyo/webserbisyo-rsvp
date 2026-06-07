@@ -287,6 +287,19 @@ export function buildWildcardRsvpPreviewUrl(input: {
   return `https://${input.subdomain}.${hostname}`;
 }
 
+export function buildWildcardRsvpStandaloneUrl(input: {
+  baseDomain?: string | null;
+  subdomain: string;
+}) {
+  const wildcardUrl = buildWildcardRsvpUrl(input);
+
+  if (!wildcardUrl) {
+    return null;
+  }
+
+  return `${wildcardUrl}/rsvp`;
+}
+
 export function getBestPublicRsvpUrl(input: {
   baseUrl?: string | null;
   customDomain?: string | null;
@@ -354,11 +367,13 @@ export type PublicRsvpLinkSet = {
   preferredProductionRsvpUrl: string | null;
   qrUrl: string | null;
   wildcardProductionUrl: string | null;
+  wildcardProductionRsvpUrl: string | null;
 };
 
 export function resolvePublicRsvpLinkSet(input: {
   baseUrl?: string | null;
   customDomain?: string | null;
+  preferWildcardRsvpPath?: boolean;
   preferredOrigin?: string | null;
   slug?: string | null;
   subdomain?: string | null;
@@ -373,6 +388,12 @@ export function resolvePublicRsvpLinkSet(input: {
   const productionBaseUrl = getOfficialPublicAppUrl();
   const wildcardProductionUrl = input.subdomain
     ? buildWildcardRsvpUrl({
+        baseDomain: input.wildcardBaseDomain,
+        subdomain: input.subdomain,
+      })
+    : null;
+  const wildcardProductionRsvpUrl = input.subdomain
+    ? buildWildcardRsvpStandaloneUrl({
         baseDomain: input.wildcardBaseDomain,
         subdomain: input.subdomain,
       })
@@ -399,7 +420,9 @@ export function resolvePublicRsvpLinkSet(input: {
       })
     : null;
   const preferredProductionRsvpUrl = slug
-    ? buildOfficialPublicRsvpStandaloneUrl(slug)
+    ? input.preferWildcardRsvpPath
+      ? (wildcardProductionRsvpUrl ?? buildOfficialPublicRsvpStandaloneUrl(slug))
+      : buildOfficialPublicRsvpStandaloneUrl(slug)
     : null;
   const localDevelopmentAppUrl = getLocalDevelopmentAppUrl();
   const localDevelopmentUrl =
@@ -433,6 +456,7 @@ export function resolvePublicRsvpLinkSet(input: {
     preferredProductionRsvpUrl,
     qrUrl,
     wildcardProductionUrl,
+    wildcardProductionRsvpUrl,
   };
 }
 
