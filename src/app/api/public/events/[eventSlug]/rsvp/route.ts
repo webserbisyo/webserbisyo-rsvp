@@ -39,10 +39,13 @@ export async function POST(
   }
 
   try {
-    const response = await submitRsvpResponse({
-      ...(rawBody && typeof rawBody === "object" ? rawBody : {}),
-      eventSlug: parsedSlug.data,
-    });
+    const response = await submitRsvpResponse(
+      {
+        ...(rawBody && typeof rawBody === "object" ? rawBody : {}),
+        eventSlug: parsedSlug.data,
+      },
+      { source: "public_custom_frontend" }
+    );
     const data: PublicRsvpSubmitSuccess = {
       responseId: response.id,
       submittedAt: response.submitted_at,

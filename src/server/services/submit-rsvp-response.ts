@@ -37,7 +37,7 @@ type RsvpCompanionSubmissionPayload = {
   companions?: RsvpCompanionPayload[] | undefined;
 };
 
-export async function submitRsvpResponse(input: unknown) {
+export async function submitRsvpResponse(input: unknown, options?: { source?: string }) {
   const eventSlug = parseEventSlug(input);
   const supabase = createAdminClient();
   // Public RSVP writes intentionally use a server-only admin client after validation.
@@ -79,7 +79,7 @@ export async function submitRsvpResponse(input: unknown) {
     ...(trimmedMessage ? { message_public_status: "pending_review" } : {}),
     party_size: partySize,
     phone: rsvpSettings.phoneEnabled ? (payload.phone ?? null) : null,
-    source: "public_fallback_page",
+    source: options?.source ?? "public_fallback_page",
   };
 
   const { data: response, error: responseError } = await supabase
