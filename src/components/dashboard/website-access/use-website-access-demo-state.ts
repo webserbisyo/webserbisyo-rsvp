@@ -19,7 +19,6 @@ import {
   buildPublicRsvpUrl,
   buildWildcardRsvpPreviewUrl,
   getPublicAppUrl,
-  withRsvpAnchor,
 } from "@/lib/public-rsvp-url";
 import {
   emitDashboardSyncEvent,
@@ -80,8 +79,12 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const websiteUrlPublished = serverState.publicUrl ?? "";
   const websiteUrlCopy = serverState.copyPublicUrl ?? websiteUrlPublished;
   const websiteUrlProduction = serverState.productionPublicUrl ?? "";
-  const websiteUrlQr = serverState.qrPublicUrl ?? websiteUrlPublished;
-  const rsvpUrlQr = serverState.rsvpQrPublicUrl ?? withRsvpAnchor(websiteUrlQr) ?? "";
+  const websiteUrlQr = serverState.qrPublicUrl ?? websiteUrlPublished ?? serverState.fallbackPublicUrl ?? "";
+  const rsvpUrlQr =
+    serverState.rsvpQrPublicUrl ??
+    serverState.publicRsvpUrl ??
+    serverState.fallbackRsvpPublicUrl ??
+    "";
   const websiteUrlFallback = serverState.fallbackPublicUrl ?? "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({

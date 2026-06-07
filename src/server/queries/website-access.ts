@@ -12,12 +12,12 @@ import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildOfficialPublicRsvpUrl,
+  buildOfficialPublicRsvpStandaloneUrl,
   getPublicAppUrl,
   getRsvpBaseDomain,
   getRsvpPreviewBaseDomain,
   isPublishedPublicRsvpReady,
   resolvePublicRsvpLinkSet,
-  withRsvpAnchor,
 } from "@/lib/public-rsvp-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -86,6 +86,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       draftVisibility: "private",
       eventId: null,
       fallbackPublicUrl: null,
+      fallbackRsvpPublicUrl: null,
       hasAccessPendingChanges: false,
       hasContentPendingChanges: false,
       hasEverPublished: false,
@@ -102,6 +103,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       publishedSubdomain: null,
       publishedVisibility: "private",
       productionPublicUrl: null,
+      publicRsvpUrl: null,
       qrPublicUrl: null,
       rsvpQrPublicUrl: null,
       snapshotPublishedAt: null,
@@ -176,11 +178,14 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       : null;
   const fallbackPublicUrl = linkSet && publishedSlug ? buildOfficialPublicRsvpUrl(publishedSlug) : null;
   const publicUrl = linkSet?.preferredProductionUrl ?? null;
+  const fallbackRsvpPublicUrl =
+    linkSet && publishedSlug ? buildOfficialPublicRsvpStandaloneUrl(publishedSlug) : null;
+  const publicRsvpUrl = fallbackRsvpPublicUrl;
   const openPublicUrl = publicUrl;
   const copyPublicUrl = publicUrl;
   const productionPublicUrl = linkSet?.preferredProductionUrl ?? null;
-  const qrPublicUrl = publicUrl;
-  const rsvpQrPublicUrl = withRsvpAnchor(publicUrl);
+  const qrPublicUrl = publicUrl ?? fallbackPublicUrl;
+  const rsvpQrPublicUrl = publicRsvpUrl ?? fallbackRsvpPublicUrl;
   const customWebsiteConnected = await isCustomWebsiteConnected({
     clientId: profile.client_id ?? "",
     eventId: event.id,
@@ -204,6 +209,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     draftVisibility,
     eventId: event.id,
     fallbackPublicUrl,
+    fallbackRsvpPublicUrl,
     hasAccessPendingChanges,
     hasContentPendingChanges,
     hasEverPublished,
@@ -214,6 +220,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     openPublicUrl,
     publicBaseUrl,
     publicUrl,
+    publicRsvpUrl,
     publishState,
     publishedAt: event.published_at ?? null,
     publishedSlug,

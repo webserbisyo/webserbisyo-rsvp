@@ -16,6 +16,7 @@ import {
 } from "@/lib/event-website/formatting";
 import {
   buildOfficialPublicRsvpUrl,
+  buildOfficialPublicRsvpStandaloneUrl,
   resolvePublicRsvpLinkSet,
 } from "@/lib/public-rsvp-url";
 import {
@@ -54,6 +55,8 @@ export type PublicEventRsvpState = {
 
 export type PublicEventUrls = {
   fallbackUrl: string;
+  fallbackRsvpUrl: string;
+  publicRsvpUrl: string;
   publicWebsiteUrl: string | null;
 };
 
@@ -282,6 +285,8 @@ function buildPublicEventUrls({
 
   return {
     fallbackUrl: buildOfficialPublicRsvpUrl(eventSlug),
+    fallbackRsvpUrl: buildOfficialPublicRsvpStandaloneUrl(eventSlug),
+    publicRsvpUrl: buildOfficialPublicRsvpStandaloneUrl(eventSlug),
     publicWebsiteUrl: subdomainSlug ? linkSet.wildcardProductionUrl : null,
   };
 }

@@ -185,6 +185,10 @@ export function buildPublicRsvpPath(slug: string) {
   return `/r/${slug}`;
 }
 
+export function buildPublicRsvpStandalonePath(slug: string) {
+  return `${buildPublicRsvpPath(slug)}/rsvp`;
+}
+
 export function buildPublicRsvpFormAnchorPath(slug: string) {
   return `${buildPublicRsvpPath(slug)}#rsvp-form`;
 }
@@ -204,6 +208,23 @@ export function buildPublicRsvpUrl(input: {
 
 export function buildOfficialPublicRsvpUrl(slug: string) {
   return `${getOfficialPublicAppUrl()}${buildPublicRsvpPath(slug)}`;
+}
+
+export function buildPublicRsvpStandaloneUrl(input: {
+  baseUrl?: string | null;
+  slug: string;
+}) {
+  const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
+
+  if (!baseUrl) {
+    return null;
+  }
+
+  return `${trimTrailingSlash(baseUrl)}${buildPublicRsvpStandalonePath(input.slug)}`;
+}
+
+export function buildOfficialPublicRsvpStandaloneUrl(slug: string) {
+  return `${getOfficialPublicAppUrl()}${buildPublicRsvpStandalonePath(slug)}`;
 }
 
 export function buildPublicRsvpFormAnchorUrl(input: {
@@ -325,10 +346,12 @@ export type PublicRsvpLinkSet = {
   copyUrl: string | null;
   displayUrl: string | null;
   fallbackPathUrl: string | null;
+  fallbackRsvpPathUrl: string | null;
   localPreviewUrl: string | null;
   openUrl: string | null;
   previewChromeUrl: string | null;
   preferredProductionUrl: string | null;
+  preferredProductionRsvpUrl: string | null;
   qrUrl: string | null;
   wildcardProductionUrl: string | null;
 };
@@ -360,6 +383,12 @@ export function resolvePublicRsvpLinkSet(input: {
         slug,
       })
     : null;
+  const fallbackRsvpPathUrl = slug
+    ? buildPublicRsvpStandaloneUrl({
+        baseUrl: runtimeBaseUrl,
+        slug,
+      })
+    : null;
   const preferredProductionUrl = slug
     ? getBestPublicRsvpUrl({
         baseUrl: productionBaseUrl,
@@ -369,14 +398,17 @@ export function resolvePublicRsvpLinkSet(input: {
         wildcardBaseDomain: input.wildcardBaseDomain,
       })
     : null;
+  const preferredProductionRsvpUrl = slug
+    ? buildOfficialPublicRsvpStandaloneUrl(slug)
+    : null;
   const localDevelopmentAppUrl = getLocalDevelopmentAppUrl();
   const localDevelopmentUrl =
     slug && localDevelopmentAppUrl
-      ? buildPublicRsvpUrl({
-          baseUrl: localDevelopmentAppUrl,
-          slug,
-        })
-      : null;
+    ? buildPublicRsvpUrl({
+        baseUrl: localDevelopmentAppUrl,
+        slug,
+      })
+    : null;
   const useLocalSafeUrls =
     environment === "development" && !isLocalWildcardSimulationEnabled();
   const displayUrl = useLocalSafeUrls
@@ -393,10 +425,12 @@ export function resolvePublicRsvpLinkSet(input: {
     copyUrl,
     displayUrl,
     fallbackPathUrl,
+    fallbackRsvpPathUrl,
     localPreviewUrl: localDevelopmentUrl,
     openUrl,
     previewChromeUrl,
     preferredProductionUrl,
+    preferredProductionRsvpUrl,
     qrUrl,
     wildcardProductionUrl,
   };

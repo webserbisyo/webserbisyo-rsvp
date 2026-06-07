@@ -23,6 +23,7 @@ export type WebsiteAccessInitialData = {
   draftVisibility: VisibilityMode;
   eventId: string | null;
   fallbackPublicUrl: string | null;
+  fallbackRsvpPublicUrl: string | null;
   hasAccessPendingChanges: boolean;
   hasContentPendingChanges: boolean;
   hasEverPublished: boolean;
@@ -33,6 +34,7 @@ export type WebsiteAccessInitialData = {
   openPublicUrl: string | null;
   publicBaseUrl: string | null;
   publicUrl: string | null;
+  publicRsvpUrl: string | null;
   publishState: PublishState;
   publishedAt: string | null;
   publishedSlug: string | null;

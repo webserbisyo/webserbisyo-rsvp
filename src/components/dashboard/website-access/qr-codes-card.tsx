@@ -68,7 +68,7 @@ export function QrCodesCard({
             icon={<Globe2 className="h-5 w-5" aria-hidden="true" />}
             onCopy={onCopyRsvpLink}
             onDownload={() => downloadQr("website-access-rsvp-qr", `${slugPublished}-rsvp-qr.png`)}
-            subtitle="Opens the same website directly at the RSVP section."
+            subtitle="Opens the dedicated RSVP form."
             title="RSVP QR"
             url={rsvpUrl}
           />
