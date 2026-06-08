@@ -41,8 +41,14 @@ export function RsvpResponsesPage({
   initialResponses,
 }: RsvpResponsesPageProps) {
   const [responses, setResponses] = useState(initialResponses);
+  const [prevInitialResponses, setPrevInitialResponses] = useState(initialResponses);
   const [activeTab, setActiveTab] = useState<RsvpResponsesTab>(initialActiveTab);
   const [searchQuery, setSearchQuery] = useState("");
+
+  if (initialResponses !== prevInitialResponses) {
+    setPrevInitialResponses(initialResponses);
+    setResponses(initialResponses);
+  }
   const [selectedResponse, setSelectedResponse] = useState<RsvpResponseRecord | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [pendingResponseIds, setPendingResponseIds] = useState<string[]>([]);

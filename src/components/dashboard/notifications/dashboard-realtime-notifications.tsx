@@ -4,10 +4,7 @@ import { useEffect, useEffectEvent, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import {
-  DashboardNotificationToast,
-  type DashboardNotificationToastChip,
-} from "@/components/dashboard/notifications/dashboard-notification-toast";
+import { DashboardNotificationToast } from "@/components/dashboard/notifications/dashboard-notification-toast";
 import { createClient } from "@/lib/supabase/client";
 import {
   DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
@@ -179,7 +176,6 @@ export function DashboardRealtimeNotifications({
 
         showDashboardToast({
           body: `${guestName} left a message.`,
-          chips: [{ label: "Needs review", tone: "warning" }],
           ctaLabel: "Review",
           eventType: "guest_message",
           toastKey: `guest_message:${responseId}`,
@@ -194,8 +190,7 @@ export function DashboardRealtimeNotifications({
       if (!markEventShown(`new_rsvp_response:${responseId}`)) return;
 
       showDashboardToast({
-        body: `${guestName} submitted an RSVP.`,
-        chips: getRsvpToastChips(row),
+        body: `New RSVP from ${guestName}.`,
         ctaLabel: "View",
         eventType: "new_rsvp_response",
         toastKey: `new_rsvp_response:${responseId}`,
@@ -214,14 +209,13 @@ export function DashboardRealtimeNotifications({
       const statusChange = getBillingStatusChange(payload);
 
       if (!statusChange) return;
-      if (!markEventShown(`billing_update:${payload.eventType}:${paymentId}:${statusChange.label}`)) return;
+      if (!markEventShown(`billing_update:${payload.eventType}:${paymentId}:${statusChange}`)) return;
 
       showDashboardToast({
         body: "Your payment status was updated.",
-        chips: [{ label: statusChange.label, tone: statusChange.tone }],
         ctaLabel: "View",
         eventType: "billing_update",
-        toastKey: `billing_update:${payload.eventType}:${paymentId}:${statusChange.label}`,
+        toastKey: `billing_update:${payload.eventType}:${paymentId}:${statusChange}`,
         title: "Billing update",
         url: "/dashboard/billing",
         variant: "billing",
@@ -239,7 +233,6 @@ export function DashboardRealtimeNotifications({
 
     function showDashboardToast(input: {
       body: string;
-      chips?: DashboardNotificationToastChip[];
       ctaLabel: string;
       eventType: NotificationEventType;
       toastKey: string;
@@ -252,7 +245,6 @@ export function DashboardRealtimeNotifications({
       toast.custom(() => (
         <DashboardNotificationToast
           body={input.body}
-          chips={input.chips}
           ctaLabel={input.ctaLabel}
           onAction={() => handleToastAction(toastId, input.url)}
           title={input.title}
@@ -294,44 +286,9 @@ function formatGuestName(value: string | null | undefined) {
   return trimmed || "A guest";
 }
 
-function getRsvpToastChips(row: RsvpResponseRealtimeRow): DashboardNotificationToastChip[] {
-  const chips: DashboardNotificationToastChip[] = [];
-  const attendanceChip = getAttendanceChip(row.attendance_status);
-
-  if (attendanceChip) {
-    chips.push(attendanceChip);
-  }
-
-  if (row.party_size && row.party_size > 1) {
-    chips.push({
-      label: `Party of ${row.party_size}`,
-      tone: "neutral",
-    });
-  }
-
-  return chips;
-}
-
-function getAttendanceChip(value: string | null | undefined): DashboardNotificationToastChip | null {
-  switch (value) {
-    case "attending":
-      return {
-        label: "Attending",
-        tone: "success",
-      };
-    case "not_attending":
-      return {
-        label: "Not attending",
-        tone: "danger",
-      };
-    default:
-      return null;
-  }
-}
-
 function getBillingStatusChange(
   payload: RealtimePostgresChangesPayload<PaymentRealtimeRow>,
-): DashboardNotificationToastChip | null {
+): string | null {
   const nextRow = payload.new as PaymentRealtimeRow | null | undefined;
   const previousRow = payload.old as PaymentRealtimeRow | null | undefined;
   const nextStatus = nextRow?.payment_status ?? null;
@@ -352,40 +309,22 @@ function getBillingStatusChange(
     return null;
   }
 
-  return mapPaymentStatusChip(nextStatus);
+  return mapPaymentStatusLabel(nextStatus);
 }
 
-function mapPaymentStatusChip(value: string): DashboardNotificationToastChip {
+function mapPaymentStatusLabel(value: string): string {
   switch (value) {
     case "paid":
-      return {
-        label: "Confirmed",
-        tone: "success",
-      };
+      return "Confirmed";
     case "pending":
-      return {
-        label: "Pending",
-        tone: "warning",
-      };
+      return "Pending";
     case "refunded":
-      return {
-        label: "Refunded",
-        tone: "danger",
-      };
+      return "Refunded";
     case "failed":
-      return {
-        label: "Failed",
-        tone: "danger",
-      };
+      return "Failed";
     case "cancelled":
-      return {
-        label: "Cancelled",
-        tone: "danger",
-      };
+      return "Cancelled";
     default:
-      return {
-        label: formatPaymentStatus(value),
-        tone: "neutral",
-      };
+      return formatPaymentStatus(value);
   }
 }
