@@ -6298,3 +6298,29 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+
+.cn-toast-rsvp-realtime {
+  background: #faf7f2 !important;
+  border-color: #ead8c8 !important;
+  color: #191311 !important;
+}
+
+.cn-toast-rsvp-realtime .cn-toast-icon {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.cn-toast-rsvp-realtime .rsvp-toast-icon {
+  color: #c96b48 !important;
+  background: transparent !important;
+  stroke: currentColor !important;
+}
+
+.cn-toast-rsvp-realtime button {
+  background: #191311 !important;
+  color: #fffdf9 !important;
+  border-radius: 0.65rem !important;
+  box-shadow: none !important;
+}

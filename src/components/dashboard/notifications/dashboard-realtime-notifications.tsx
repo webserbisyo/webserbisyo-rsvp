@@ -4,7 +4,7 @@ import { useEffect, useEffectEvent, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { DashboardNotificationToast } from "@/components/dashboard/notifications/dashboard-notification-toast";
+import { BellRing, MessageCircleMore, ReceiptText, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
@@ -175,7 +175,7 @@ export function DashboardRealtimeNotifications({
         if (!markEventShown(`guest_message:${responseId}`)) return;
 
         showDashboardToast({
-          body: `${guestName} left a message.`,
+          guestName,
           ctaLabel: "Review",
           eventType: "guest_message",
           toastKey: `guest_message:${responseId}`,
@@ -190,7 +190,7 @@ export function DashboardRealtimeNotifications({
       if (!markEventShown(`new_rsvp_response:${responseId}`)) return;
 
       showDashboardToast({
-        body: `New RSVP from ${guestName}.`,
+        guestName,
         ctaLabel: "View",
         eventType: "new_rsvp_response",
         toastKey: `new_rsvp_response:${responseId}`,
@@ -232,7 +232,8 @@ export function DashboardRealtimeNotifications({
     }
 
     function showDashboardToast(input: {
-      body: string;
+      body?: string;
+      guestName?: string;
       ctaLabel: string;
       eventType: NotificationEventType;
       toastKey: string;
@@ -242,17 +243,52 @@ export function DashboardRealtimeNotifications({
     }) {
       const toastId = input.toastKey;
 
-      toast.custom(() => (
-        <DashboardNotificationToast
-          body={input.body}
-          ctaLabel={input.ctaLabel}
-          onAction={() => handleToastAction(toastId, input.url)}
-          title={input.title}
-          variant={input.variant}
-        />
-      ), {
-        duration: 5200,
+      const isMessage = input.variant === "guest_message";
+      const isRsvp = input.variant === "rsvp";
+      const isBilling = input.variant === "billing";
+
+      const iconProps = {
+        className: "rsvp-toast-icon size-5 shrink-0 text-[#c96b48]",
+        strokeWidth: 2,
+        fill: "none",
+        "aria-hidden": true,
+      };
+
+      const icon = isMessage ? (
+        <MessageCircleMore {...iconProps} />
+      ) : isRsvp ? (
+        <UserRound {...iconProps} />
+      ) : isBilling ? (
+        <ReceiptText {...iconProps} />
+      ) : (
+        <BellRing {...iconProps} />
+      );
+
+      const messageNode = input.guestName ? (
+        <div className="flex min-w-0 items-center gap-1 text-sm font-medium text-[#191311]">
+          <span className="shrink-0">
+            {isMessage ? "New message from" : "New RSVP from"}
+          </span>
+          <span className="inline-block max-w-[150px] truncate align-bottom font-semibold">
+            {input.guestName}
+          </span>
+        </div>
+      ) : (
+        <span className="text-sm font-medium text-[#191311]">{input.body}</span>
+      );
+
+      toast(messageNode, {
         id: toastId,
+        duration: 5200,
+        icon,
+        action: {
+          label: input.ctaLabel,
+          onClick: () => handleToastAction(toastId, input.url),
+        },
+        className: "cn-toast-rsvp-realtime !border-[#ead8c8] !text-[#191311] !shadow-md",
+        style: {
+          background: "#faf7f2",
+        },
       });
     }
 
