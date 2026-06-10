@@ -3,7 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UpdateDashboardGuestLimitInput } from "@/lib/validations/dashboard-home.schema";
 import { UpdateDashboardGuestLimitSchema } from "@/lib/validations/dashboard-home.schema";
-import { assertServiceData, assertServiceSuccess } from "./service-error";
+import { assertServiceData, assertServiceSuccess, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
 export async function updateDashboardGuestLimit(
@@ -14,6 +14,27 @@ export async function updateDashboardGuestLimit(
 ) {
   const payload = UpdateDashboardGuestLimitSchema.parse(input);
   const supabase = createAdminClient();
+
+  // Enforce headcount floor
+  const { data: responses, error: countError } = await supabase
+    .from("rsvp_responses")
+    .select("party_size")
+    .eq("event_id", payload.eventId)
+    .eq("client_id", input.clientId)
+    .eq("attendance_status", "attending")
+    .eq("review_status", "approved")
+    .is("archived_at", null);
+
+  assertServiceSuccess(countError, "Failed to verify current attending guest headcount.");
+
+  const currentHeadcount = (responses ?? []).reduce((sum, row) => sum + (row.party_size ?? 0), 0);
+
+  if (payload.guestLimit < currentHeadcount) {
+    throw new ServiceError(
+      `Guest limit cannot be lower than the currently active attending headcount (${currentHeadcount}). Please reject or remove responses first.`,
+    );
+  }
+
   const { data: event, error } = await supabase
     .from("rsvp_events")
     .update({

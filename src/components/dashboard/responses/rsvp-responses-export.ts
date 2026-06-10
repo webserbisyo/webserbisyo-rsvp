@@ -122,7 +122,7 @@ function buildRsvpResponsesCsv(rows: RsvpResponseRecord[], includes: ExportInclu
   const body = rows.map((row) => {
     const values = [
       row.guestName,
-      getResponseStatusLabel(row.status),
+      getResponseStatusLabel(row.status, row.reviewStatus),
       String(row.partySize),
       formatResponseSubmittedTable(row.submittedAt),
     ];
@@ -540,7 +540,7 @@ function buildLandscapeColumns(
         header: "Status",
         key: "status",
         width: contentWidth * 0.14,
-        render: (row) => getResponseStatusLabel(row.status),
+        render: (row) => getResponseStatusLabel(row.status, row.reviewStatus),
       },
       {
         header: "Party",
@@ -569,7 +569,7 @@ function buildLandscapeColumns(
         header: "Status",
         key: "status",
         width: contentWidth * 0.14,
-        render: (row) => getResponseStatusLabel(row.status),
+        render: (row) => getResponseStatusLabel(row.status, row.reviewStatus),
       },
       {
         header: "Party",
@@ -603,7 +603,7 @@ function buildLandscapeColumns(
       header: "Status",
       key: "status",
       width: contentWidth * 0.18,
-      render: (row) => getResponseStatusLabel(row.status),
+      render: (row) => getResponseStatusLabel(row.status, row.reviewStatus),
     },
     {
       header: "Party",
@@ -654,8 +654,10 @@ function buildNotesColumns(contentWidth: number, includes: ExportIncludeState): 
 function buildExportStats(rows: RsvpResponseRecord[]) {
   return {
     totalResponses: rows.length,
-    attendingCount: rows.filter((row) => row.status === "attending").length,
-    notAttendingCount: rows.filter((row) => row.status === "not_attending").length,
-    totalPartySize: rows.reduce((sum, row) => sum + row.partySize, 0),
+    attendingCount: rows.filter((row) => row.status === "attending" && row.reviewStatus === "approved").length,
+    notAttendingCount: rows.filter((row) => row.status === "not_attending" && row.reviewStatus === "approved").length,
+    totalPartySize: rows
+      .filter((row) => row.status === "attending" && row.reviewStatus === "approved")
+      .reduce((sum, row) => sum + row.partySize, 0),
   };
 }

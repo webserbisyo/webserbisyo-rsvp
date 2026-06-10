@@ -66,7 +66,7 @@ export async function createDraftEvent(input: CreateDraftEventInput) {
     event_date: input.eventDate ?? null,
     event_slug: slug,
     event_type: input.eventType,
-    max_guest_count: input.maxGuestCount ?? null,
+    max_guest_count: input.maxGuestCount ?? 1000,
     status: "draft",
     title: input.title,
     venue_address: input.eventLocation ?? null,

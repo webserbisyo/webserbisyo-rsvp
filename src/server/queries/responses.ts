@@ -33,7 +33,7 @@ export async function getDashboardResponses(): Promise<DashboardResponsesData> {
   const { data: responseRows, error: responseError } = await supabase
     .from("rsvp_responses")
     .select(
-      "id, client_id, event_id, guest_name, email, phone, attendance_status, party_size, dietary_notes, message, message_public_status, message_public_consent, message_approved_at, message_approved_by, source, submitted_at, updated_at, archived_at",
+      "id, client_id, event_id, guest_name, email, phone, attendance_status, party_size, dietary_notes, message, message_public_status, message_public_consent, message_approved_at, message_approved_by, source, submitted_at, updated_at, archived_at, review_status",
     )
     .eq("client_id", clientId)
     .eq("event_id", currentEvent.id)
@@ -83,6 +83,7 @@ export async function getDashboardResponses(): Promise<DashboardResponsesData> {
       messagePublicStatus: normalizeMessagePublicStatus(response.message_public_status),
       partySize: response.party_size,
       phone: response.phone,
+      reviewStatus: normalizeReviewStatus(response.review_status),
       source: response.source,
       status: normalizeResponseStatus(response.attendance_status),
       submittedAt: response.submitted_at,
@@ -100,6 +101,7 @@ export async function getEventResponseCount({
   eventId: string;
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
 }) {
+  console.log("[responses] Counting responses for event", eventId);
   const { count, error } = await supabase
     .from("rsvp_responses")
     .select("id", { count: "exact", head: true })
@@ -108,10 +110,37 @@ export async function getEventResponseCount({
     .is("archived_at", null);
 
   if (error) {
+    console.error("[responses] Count error", error);
     throw error;
   }
 
   return count ?? 0;
+}
+
+export async function getEventAttendingGuestCount({
+  clientId,
+  eventId,
+  supabase,
+}: {
+  clientId: string;
+  eventId: string;
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+}) {
+  const { data, error } = await supabase
+    .from("rsvp_responses")
+    .select("party_size")
+    .eq("client_id", clientId)
+    .eq("event_id", eventId)
+    .eq("attendance_status", "attending")
+    .eq("review_status", "approved")
+    .is("archived_at", null);
+
+  if (error) {
+    console.error("[responses] Guest headcount error", error);
+    throw error;
+  }
+
+  return (data ?? []).reduce((sum, row) => sum + (row.party_size ?? 0), 0);
 }
 
 async function getCurrentTenantEvent(
@@ -136,6 +165,10 @@ async function getCurrentTenantEvent(
 
 function normalizeResponseStatus(status: string): RsvpResponseRecord["status"] {
   return status === "not_attending" ? "not_attending" : "attending";
+}
+
+function normalizeReviewStatus(status: string | null): RsvpResponseRecord["reviewStatus"] {
+  return status === "rejected" ? "rejected" : "approved";
 }
 
 function normalizeMessagePublicStatus(

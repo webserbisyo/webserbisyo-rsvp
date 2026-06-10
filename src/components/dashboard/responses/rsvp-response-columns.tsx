@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import {
   getResponseSubmittedDisplay,
   getResponseInitials,
@@ -55,9 +56,10 @@ export function getRsvpResponseColumns({
       header: "Guest",
       cell: ({ row }) => {
         const response = row.original;
+        const isRejected = response.reviewStatus === "rejected";
 
         return (
-          <div className="flex items-center gap-3">
+          <div className={cn("flex items-center gap-3", isRejected && "opacity-60")}>
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fbf7f3] text-sm font-bold text-[#c96f4c]">
               {getResponseInitials(response.guestName)}
             </div>
@@ -76,29 +78,52 @@ export function getRsvpResponseColumns({
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => (
-        <RsvpResponseStatusBadge status={row.original.status as "attending" | "not_attending"} />
-      ),
+      cell: ({ row }) => {
+        const isRejected = row.original.reviewStatus === "rejected";
+        return (
+          <div className={cn(isRejected && "opacity-60")}>
+            <RsvpResponseStatusBadge
+              reviewStatus={row.original.reviewStatus}
+              status={row.original.status as "attending" | "not_attending"}
+            />
+          </div>
+        );
+      },
     },
     {
       accessorKey: "partySize",
       header: "Party",
-      cell: ({ row }) => <RsvpResponsePartySizeBadge partySize={row.original.partySize} />,
+      cell: ({ row }) => {
+        const isRejected = row.original.reviewStatus === "rejected";
+        return (
+          <div className={cn(isRejected && "opacity-60")}>
+            <RsvpResponsePartySizeBadge partySize={row.original.partySize} />
+          </div>
+        );
+      },
     },
     {
       id: "message",
       header: "Message",
-      cell: ({ row }) => <RsvpResponseMessageBadge response={row.original} />,
+      cell: ({ row }) => {
+        const isRejected = row.original.reviewStatus === "rejected";
+        return (
+          <div className={cn(isRejected && "opacity-60")}>
+            <RsvpResponseMessageBadge response={row.original} />
+          </div>
+        );
+      },
     },
     {
       accessorKey: "submittedAt",
       header: "Submitted",
       cell: ({ row }) => {
         const submitted = getResponseSubmittedDisplay(row.original.submittedAt);
+        const isRejected = row.original.reviewStatus === "rejected";
 
         return (
           <span
-            className="block text-sm font-medium leading-5 text-[#75675e]"
+            className={cn("block text-sm font-medium leading-5 text-[#75675e]", isRejected && "opacity-60")}
             title={submitted.fullLabel}
             aria-label={`Submitted ${submitted.fullLabel}`}
           >

@@ -7,7 +7,7 @@ import {
   EventSlugSchema,
   createPublicRsvpResponseSchema,
 } from "@/lib/validations/rsvp-response.schema";
-import { assertServiceData, assertServiceSuccess, ServiceError } from "./service-error";
+import { assertServiceSuccess, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
 type PublishedEventRow = Pick<
@@ -68,28 +68,38 @@ export async function submitRsvpResponse(input: unknown, options?: { source?: st
   const companionRows = buildCompanionRows(payload, rsvpSettings);
   const partySize = payload.attendanceStatus === "attending" ? 1 + payload.companionCount : 1;
   const trimmedMessage = rsvpSettings.messageToHostEnabled ? payload.message?.trim() ?? "" : "";
-  const responsePayload: TablesInsert<"rsvp_responses"> = {
-    attendance_status: payload.attendanceStatus,
-    client_id: event.client_id,
-    dietary_notes: rsvpSettings.foodAllergiesEnabled ? (payload.dietaryNotes ?? null) : null,
-    email: rsvpSettings.emailEnabled ? (payload.email ?? null) : null,
-    event_id: event.id,
-    guest_name: payload.guestName,
-    message: trimmedMessage || null,
-    ...(trimmedMessage ? { message_public_status: "pending_review" } : {}),
-    party_size: partySize,
-    phone: rsvpSettings.phoneEnabled ? (payload.phone ?? null) : null,
-    source: options?.source ?? "public_fallback_page",
+  const responsePayload = {
+    p_attendance_status: payload.attendanceStatus,
+    p_client_id: event.client_id,
+    p_dietary_notes: rsvpSettings.foodAllergiesEnabled ? (payload.dietaryNotes ?? null) : null,
+    p_email: rsvpSettings.emailEnabled ? (payload.email ?? null) : null,
+    p_event_id: event.id,
+    p_guest_name: payload.guestName,
+    p_message: trimmedMessage || null,
+    p_message_public_status: trimmedMessage ? "pending_review" : "private",
+    p_party_size: partySize,
+    p_phone: rsvpSettings.phoneEnabled ? (payload.phone ?? null) : null,
+    p_source: options?.source ?? "public_fallback_page",
   };
 
-  const { data: response, error: responseError } = await supabase
-    .from("rsvp_responses")
-    .insert(responsePayload)
-    .select("*")
-    .single();
+  const { data: response, error: responseError } = await supabase.rpc(
+    "submit_rsvp_response_with_capacity_check",
+    responsePayload,
+  );
 
-  assertServiceSuccess(responseError, "Failed to submit RSVP response.");
-  assertServiceData(response, "RSVP response insert returned no row.");
+  if (responseError) {
+    if (responseError.message?.includes("CAPACITY_EXCEEDED")) {
+      throw new ServiceError(
+        "RSVP is currently full. Please contact the host if you believe this is a mistake.",
+        { code: "CAPACITY_EXCEEDED" },
+      );
+    }
+    assertServiceSuccess(responseError, "Failed to submit RSVP response.");
+  }
+
+  if (!response) {
+    throw new ServiceError("RSVP response insert returned no row.");
+  }
 
   if (companionRows.length > 0) {
     const { error: companionsError } = await supabase.from("rsvp_response_companions").insert(

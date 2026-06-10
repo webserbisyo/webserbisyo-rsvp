@@ -15,7 +15,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { EventWebsiteContentPatchSchema } from "@/lib/validations/event-website.schema";
-import { getEventResponseCount } from "@/server/queries/responses";
+import { getEventAttendingGuestCount, getEventResponseCount } from "@/server/queries/responses";
 
 type DashboardChecklistItem = {
   completed: boolean;
@@ -154,7 +154,10 @@ export type DashboardHomeData = {
     guestLimitLabel: string;
     responsesLabel: string;
     rsvpCoverageLabel: string;
+    attendingGuestCount: number;
+    attendingGuestLabel: string;
   };
+
   warning: string | null;
 };
 
@@ -184,10 +187,10 @@ async function loadDashboardSummary(
   const adminSupabase = createAdminClient();
 
   const [
-    { data: client, error: clientError },
+    clientResult,
     eventResult,
-    { data: payments, error: paymentError },
-    { data: applications, error: applicationError },
+    paymentsResult,
+    applicationsResult,
   ] = await Promise.all([
     supabase
       .from("clients")
@@ -215,20 +218,32 @@ async function loadDashboardSummary(
       .limit(1),
   ]);
 
-  if (clientError) throw clientError;
-  if (paymentError) throw paymentError;
-  if (applicationError) throw applicationError;
+  if (clientResult.error) {
+    console.error("[dashboard] Failed to load client data", clientResult.error);
+    throw clientResult.error;
+  }
+  if (paymentsResult.error) {
+    console.error("[dashboard] Failed to load payments data", paymentsResult.error);
+    throw paymentsResult.error;
+  }
+  if (applicationsResult.error) {
+    console.error("[dashboard] Failed to load applications data", applicationsResult.error);
+    throw applicationsResult.error;
+  }
+
+  const client = clientResult.data;
   if (!client) throw new Error("Dashboard could not load the current tenant client record.");
 
   const event = eventResult.row;
-  const payment = (payments?.[0] ?? null) as DashboardPaymentRow | null;
-  const application = applications?.[0] ?? null;
+  const payment = (paymentsResult.data?.[0] ?? null) as DashboardPaymentRow | null;
+  const application = applicationsResult.data?.[0] ?? null;
   const eventContent = normalizeEventContentRelation(event?.event_content);
 
-  const [packageSettings, refunds, responseCount] = await Promise.all([
+  const [packageSettings, refunds, responseCount, attendingGuestCount] = await Promise.all([
     safeLoadPackageSettings(adminSupabase, client.plan_type),
     safeLoadRefunds(adminSupabase, clientId, payment?.id ?? null),
     event?.id ? getEventResponseCount({ clientId, eventId: event.id, supabase }) : Promise.resolve(0),
+    event?.id ? getEventAttendingGuestCount({ clientId, eventId: event.id, supabase }) : Promise.resolve(0),
   ]);
 
   const displayName = profile.full_name ?? client.contact_name ?? client.name ?? "there";
@@ -375,9 +390,11 @@ async function loadDashboardSummary(
     },
     stats: {
       eventId: event?.id ?? null,
-      guestLimitValue: event?.max_guest_count ?? null,
-      guestLimitLabel: event?.max_guest_count ? `${event.max_guest_count}` : "To be finalized",
+      guestLimitValue: event?.max_guest_count ?? 1000,
+      guestLimitLabel: formatGuestLimit(event?.max_guest_count ?? 1000),
       responsesLabel: `${responseCount} so far`,
+      attendingGuestCount,
+      attendingGuestLabel: `${attendingGuestCount} confirmed`,
       rsvpCoverageLabel: getCoverageLabel({
         client,
         defaultAccessDays,
@@ -439,10 +456,12 @@ function buildFallbackDashboardSummary(profile: AuthenticatedProfile): Dashboard
     },
     stats: {
       eventId: null,
-      guestLimitValue: null,
-      guestLimitLabel: "To be finalized",
+      guestLimitValue: 1000,
+      guestLimitLabel: formatGuestLimit(1000),
       responsesLabel: "0 so far",
-      rsvpCoverageLabel: "Coverage pending",
+      attendingGuestCount: 0,
+      attendingGuestLabel: "0 confirmed",
+      rsvpCoverageLabel: "Access pending",
     },
     warning:
       "Some dashboard details are temporarily unavailable. Core account access is still active.",
@@ -548,6 +567,11 @@ function formatPlanLabel(planType: string | null | undefined) {
   return "Package pending";
 }
 
+function formatGuestLimit(value: number) {
+  const formattedValue = new Intl.NumberFormat("en-PH").format(value);
+  return `${formattedValue} guests`;
+}
+
 function getCoverageDays(start?: string | null, end?: string | null) {
   if (!start || !end) return null;
 
@@ -576,7 +600,7 @@ function getCoverageLabel(input: {
     const endsAt = parseDateTime(servicePeriod.endsAt);
 
     if (startsAt && endsAt) {
-      return `${formatCoverageDate(startsAt)} - ${formatCoverageDate(endsAt)}`;
+      return `${formatCoverageDate(startsAt)} – ${formatCoverageDate(endsAt)}`;
     }
   }
 
@@ -584,13 +608,13 @@ function getCoverageLabel(input: {
     return `${servicePeriod.days}-day package`;
   }
 
-  return "Coverage pending";
+  return "Access pending";
 }
 
 function formatCoverageDate(value: Date) {
   return new Intl.DateTimeFormat("en-PH", {
-    day: "numeric",
     month: "short",
+    year: "numeric",
     timeZone: "Asia/Manila",
   }).format(value);
 }
@@ -601,19 +625,20 @@ function resolveCoveragePeriod(input: {
   payment: DashboardPaymentRow | null;
 }) {
   const startsAt =
-    input.payment?.hosting_starts_at ??
     input.client.hosting_starts_at ??
+    input.payment?.hosting_starts_at ??
     (input.payment?.payment_status === "paid" ? input.payment.paid_at : null) ??
     null;
+
   const endsAt =
-    input.payment?.hosting_ends_at ??
     input.client.hosting_ends_at ??
+    input.payment?.hosting_ends_at ??
     computeEndsAt(startsAt, input.defaultAccessDays);
 
   return {
     days:
-      getCoverageDays(input.payment?.hosting_starts_at, input.payment?.hosting_ends_at) ??
       getCoverageDays(input.client.hosting_starts_at, input.client.hosting_ends_at) ??
+      getCoverageDays(input.payment?.hosting_starts_at, input.payment?.hosting_ends_at) ??
       input.defaultAccessDays,
     endsAt,
     startsAt,
@@ -623,7 +648,7 @@ function resolveCoveragePeriod(input: {
 function computeEndsAt(startsAt: string | null, defaultHostingDays: number | null) {
   const startsAtDate = parseDateTime(startsAt);
 
-  if (!startsAtDate || !defaultHostingDays || defaultHostingDays <= 0) {
+  if (!startsAtDate || defaultHostingDays === null || defaultHostingDays <= 0) {
     return null;
   }
 
@@ -1085,5 +1110,17 @@ async function safeLoadRefunds(
 }
 
 function logDashboardSummaryError(error: unknown) {
-  console.error("[dashboard] Failed to load dashboard summary", error);
+  if (error && typeof error === "object") {
+    const detail = error as Record<string, unknown>;
+    console.error("[dashboard] Failed to load dashboard summary", {
+      name: detail.name || "UnknownError",
+      message: detail.message || "No message provided",
+      code: detail.code || "No code",
+      details: detail.details || null,
+      hint: detail.hint || null,
+      keys: Object.keys(error),
+    });
+  } else {
+    console.error("[dashboard] Failed to load dashboard summary", error);
+  }
 }

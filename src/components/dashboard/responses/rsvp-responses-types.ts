@@ -1,4 +1,5 @@
 export type RsvpResponseStatus = "attending" | "not_attending";
+export type RsvpResponseReviewStatus = "approved" | "rejected";
 export type RsvpResponseGuestbookStatus = "approved" | "hidden" | "pending_review" | "private";
 
 export type RsvpResponseSource = string | null;
@@ -20,6 +21,7 @@ export type RsvpResponseRecord = {
   messageApprovedBy: string | null;
   messagePublicConsent: boolean;
   messagePublicStatus: RsvpResponseGuestbookStatus;
+  reviewStatus: RsvpResponseReviewStatus;
   submittedAt: string;
   updatedAt: string;
   // Internal-only source label for detail views and future auditing.
@@ -33,7 +35,8 @@ export type RsvpResponsesTab =
   | "not_attending"
   | "messages"
   | "guestbook"
-  | "needs_review";
+  | "needs_review"
+  | "rejected";
 
 export type RsvpResponsesExportFormat = "csv" | "pdf_summary";
 export type RsvpResponsesExportRows = "current_view" | "all_responses";
@@ -50,7 +53,10 @@ export const RSVP_RESPONSE_SOURCE_LABELS = {
   internal: "Internal",
 };
 
-export function getResponseStatusLabel(status: RsvpResponseStatus) {
+export function getResponseStatusLabel(status: RsvpResponseStatus, reviewStatus?: RsvpResponseReviewStatus) {
+  if (reviewStatus === "rejected") {
+    return "Rejected";
+  }
   return status === "attending" ? "Attending" : "Not attending";
 }
 
@@ -76,15 +82,25 @@ export function getResponseSourceLabel(source: RsvpResponseSource) {
 export function matchesResponseTab(record: RsvpResponseRecord, tab: RsvpResponsesTab) {
   switch (tab) {
     case "attending":
-      return record.status === "attending";
+      return record.status === "attending" && record.reviewStatus === "approved";
     case "not_attending":
-      return record.status === "not_attending";
+      return record.status === "not_attending" && record.reviewStatus === "approved";
     case "messages":
-      return hasResponseMessage(record);
+      return hasResponseMessage(record) && record.reviewStatus === "approved";
     case "guestbook":
-      return hasResponseMessage(record) && record.messagePublicStatus === "approved";
+      return (
+        hasResponseMessage(record) &&
+        record.messagePublicStatus === "approved" &&
+        record.reviewStatus === "approved"
+      );
     case "needs_review":
-      return hasResponseMessage(record) && record.messagePublicStatus !== "approved";
+      return (
+        hasResponseMessage(record) &&
+        record.messagePublicStatus !== "approved" &&
+        record.reviewStatus === "approved"
+      );
+    case "rejected":
+      return record.reviewStatus === "rejected";
     default:
       return true;
   }

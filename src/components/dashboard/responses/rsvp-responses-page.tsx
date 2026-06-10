@@ -4,10 +4,21 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/feedback/error-state";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   emitDashboardSyncEvent,
   useDashboardRefresh,
 } from "@/lib/dashboard/dashboard-sync";
 import {
+  moderateRsvpResponsesAction,
   removeResponseMessagesFromGuestbookAction,
   showResponseMessagesInGuestbookAction,
 } from "@/server/actions/responses";
@@ -44,6 +55,7 @@ export function RsvpResponsesPage({
   const [prevInitialResponses, setPrevInitialResponses] = useState(initialResponses);
   const [activeTab, setActiveTab] = useState<RsvpResponsesTab>(initialActiveTab);
   const [searchQuery, setSearchQuery] = useState("");
+  const [responseToReject, setResponseToReject] = useState<string | null>(null);
 
   if (initialResponses !== prevInitialResponses) {
     setPrevInitialResponses(initialResponses);
@@ -53,6 +65,9 @@ export function RsvpResponsesPage({
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [pendingResponseIds, setPendingResponseIds] = useState<string[]>([]);
   const [isModerating, startModerationTransition] = useTransition();
+
+  const [bulkRejectIds, setBulkRejectIds] = useState<string[] | null>(null);
+  const [bulkRestoreIds, setBulkRestoreIds] = useState<string[] | null>(null);
 
   useDashboardRefresh({
     events: ["rsvp-responses:guestbook-updated"],
@@ -68,11 +83,15 @@ export function RsvpResponsesPage({
   const currentViewCount = currentViewResponses.length;
 
   const totalResponses = allResponses.length;
-  const attendingCount = allResponses.filter((response) => response.status === "attending").length;
-  const notAttendingCount = allResponses.filter(
-    (response) => response.status === "not_attending",
+  const attendingCount = allResponses.filter(
+    (response) => response.status === "attending" && response.reviewStatus === "approved",
   ).length;
-  const totalPartySize = allResponses.reduce((total, response) => total + response.partySize, 0);
+  const notAttendingCount = allResponses.filter(
+    (response) => response.status === "not_attending" && response.reviewStatus === "approved",
+  ).length;
+  const totalPartySize = allResponses
+    .filter((response) => response.status === "attending" && response.reviewStatus === "approved")
+    .reduce((total, response) => total + response.partySize, 0);
   const canRenderResponses = !errorMessage && hasCurrentEvent;
 
   return (
@@ -98,6 +117,8 @@ export function RsvpResponsesPage({
             onExportClick={() => setIsExportOpen(true)}
             onGuestbookModeration={handleGuestbookModeration}
             onOpenResponse={setSelectedResponse}
+            onRejectResponses={handleBulkReject}
+            onRestoreResponses={handleBulkRestore}
             pendingResponseIds={pendingResponseIds}
             responses={scopedResponses}
             searchQuery={searchQuery}
@@ -114,6 +135,8 @@ export function RsvpResponsesPage({
                     setSelectedResponse(null);
                   }
                 }}
+                onRejectResponse={setResponseToReject}
+                onRestoreResponse={handleRestoreResponse}
               />
 
               <RsvpResponseExportDialog
@@ -126,12 +149,225 @@ export function RsvpResponsesPage({
                 open={isExportOpen}
                 onOpenChange={setIsExportOpen}
               />
+
+              <AlertDialog open={responseToReject !== null} onOpenChange={(open) => !open && setResponseToReject(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reject this RSVP?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This response will no longer count toward your attending guest total. You can restore it later.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-rose-600 text-white hover:bg-rose-700"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (responseToReject) handleRejectResponse(responseToReject);
+                      }}
+                    >
+                      Reject RSVP
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog open={bulkRejectIds !== null} onOpenChange={(open) => !open && setBulkRejectIds(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reject {bulkRejectIds?.length === 1 ? 'this RSVP' : `${bulkRejectIds?.length} RSVPs`}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      These responses will no longer count toward your attending guest total. You can restore them later.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-rose-600 text-white hover:bg-rose-700"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (bulkRejectIds) confirmBulkReject(bulkRejectIds);
+                      }}
+                    >
+                      Reject {bulkRejectIds?.length === 1 ? 'RSVP' : 'RSVPs'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog open={bulkRestoreIds !== null} onOpenChange={(open) => !open && setBulkRestoreIds(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Restore {bulkRestoreIds?.length === 1 ? 'this RSVP' : `${bulkRestoreIds?.length} RSVPs`}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      These responses will count toward your attending guest total again if your guest limit allows.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (bulkRestoreIds) confirmBulkRestore(bulkRestoreIds);
+                      }}
+                    >
+                      Restore {bulkRestoreIds?.length === 1 ? 'RSVP' : 'RSVPs'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           ) : null}
         </>
       )}
     </div>
   );
+
+  function handleBulkReject(responseIds: string[]) {
+    setBulkRejectIds(responseIds);
+  }
+
+  function handleBulkRestore(responseIds: string[]) {
+    setBulkRestoreIds(responseIds);
+  }
+
+  function confirmBulkReject(responseIds: string[]) {
+    const uniqueIds = Array.from(new Set(responseIds));
+    if (uniqueIds.length === 0 || isModerating || pendingResponseIds.some((id) => uniqueIds.includes(id))) return;
+
+    setBulkRejectIds(null);
+    setPendingResponseIds((prev) => [...prev, ...uniqueIds]);
+
+    startModerationTransition(async () => {
+      try {
+        const result = await moderateRsvpResponsesAction({
+          mode: "reject",
+          responseIds: uniqueIds,
+        });
+
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success(`Rejected ${result.data.count} RSVP${result.data.count === 1 ? '' : 's'}.`);
+        setResponses((current) =>
+          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "rejected" } : r))
+        );
+        setSelectedResponse((current) =>
+          current && uniqueIds.includes(current.id) ? { ...current, reviewStatus: "rejected" } : current
+        );
+      } finally {
+        setPendingResponseIds((prev) => prev.filter((id) => !uniqueIds.includes(id)));
+      }
+    });
+  }
+
+  function confirmBulkRestore(responseIds: string[]) {
+    const uniqueIds = Array.from(new Set(responseIds));
+    if (uniqueIds.length === 0 || isModerating || pendingResponseIds.some((id) => uniqueIds.includes(id))) return;
+
+    setBulkRestoreIds(null);
+    setPendingResponseIds((prev) => [...prev, ...uniqueIds]);
+
+    startModerationTransition(async () => {
+      try {
+        const result = await moderateRsvpResponsesAction({
+          mode: "approve",
+          responseIds: uniqueIds,
+        });
+
+        if (!result.ok) {
+          if (result.error.includes("CAPACITY_EXCEEDED")) {
+            toast.error(
+              uniqueIds.length === 1
+                ? "Cannot restore RSVP. Guest limit reached for this event."
+                : "Cannot restore selected RSVPs. Guest limit reached for this event."
+            );
+          } else {
+            toast.error(result.error);
+          }
+          // Note: If partial success happened before capacity was reached,
+          // the server action currently fails the whole batch or throws on the first failure.
+          // For launch, we just report the error and let the next page refresh show true state,
+          // or we assume it failed completely.
+          return;
+        }
+
+        toast.success(`Restored ${result.data.count} RSVP${result.data.count === 1 ? '' : 's'}.`);
+        setResponses((current) =>
+          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "approved" } : r))
+        );
+        setSelectedResponse((current) =>
+          current && uniqueIds.includes(current.id) ? { ...current, reviewStatus: "approved" } : current
+        );
+      } finally {
+        setPendingResponseIds((prev) => prev.filter((id) => !uniqueIds.includes(id)));
+      }
+    });
+  }
+
+  function handleRejectResponse(responseId: string) {
+    if (isModerating || pendingResponseIds.includes(responseId)) return;
+
+    setResponseToReject(null);
+    setPendingResponseIds((prev) => [...prev, responseId]);
+
+    startModerationTransition(async () => {
+      try {
+        const result = await moderateRsvpResponsesAction({
+          mode: "reject",
+          responseIds: [responseId],
+        });
+
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success("RSVP rejected.");
+        setResponses((current) =>
+          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "rejected" } : r))
+        );
+        setSelectedResponse((current) =>
+          current?.id === responseId ? { ...current, reviewStatus: "rejected" } : current
+        );
+      } finally {
+        setPendingResponseIds((prev) => prev.filter((id) => id !== responseId));
+      }
+    });
+  }
+
+  function handleRestoreResponse(responseId: string) {
+    if (isModerating || pendingResponseIds.includes(responseId)) return;
+
+    setPendingResponseIds((prev) => [...prev, responseId]);
+
+    startModerationTransition(async () => {
+      try {
+        const result = await moderateRsvpResponsesAction({
+          mode: "approve",
+          responseIds: [responseId],
+        });
+
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success("RSVP restored.");
+        setResponses((current) =>
+          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "approved" } : r))
+        );
+        setSelectedResponse((current) =>
+          current?.id === responseId ? { ...current, reviewStatus: "approved" } : current
+        );
+      } finally {
+        setPendingResponseIds((prev) => prev.filter((id) => id !== responseId));
+      }
+    });
+  }
 
   function handleGuestbookModeration(
     mode: "approve" | "remove",

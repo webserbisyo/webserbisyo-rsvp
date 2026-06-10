@@ -46,6 +46,11 @@ export async function POST(
       },
       { source: "public_custom_frontend" }
     );
+
+    if (!response) {
+      throw new Error("Failed to submit RSVP response.");
+    }
+
     const data: PublicRsvpSubmitSuccess = {
       responseId: response.id,
       submittedAt: response.submitted_at,

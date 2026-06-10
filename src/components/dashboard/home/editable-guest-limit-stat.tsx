@@ -32,7 +32,7 @@ export function EditableGuestLimitStat({
   const hasChanged = draftValue !== (persistedValue ? `${persistedValue}` : "");
   const canEdit = Boolean(eventId);
   const canSave = canEdit && hasChanged && !validationError && !isPending;
-  const displayValue = persistedValue ? `${persistedValue}` : "To be finalized";
+  const displayValue = formatGuestLimit(persistedValue ?? 1000);
 
   function handleCancel() {
     setDraftValue(persistedValue ? `${persistedValue}` : "");
@@ -177,4 +177,9 @@ function getGuestLimitError(value: string) {
   }
 
   return null;
+}
+
+function formatGuestLimit(value: number) {
+  const formattedValue = new Intl.NumberFormat("en-PH").format(value);
+  return `${formattedValue} guests`;
 }

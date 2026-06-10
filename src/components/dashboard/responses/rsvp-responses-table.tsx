@@ -41,6 +41,8 @@ type RsvpResponsesTableProps = {
   onExportClick: () => void;
   onGuestbookModeration: (mode: "approve" | "remove", responseIds: string[]) => void;
   onOpenResponse: (response: RsvpResponseRecord) => void;
+  onRejectResponses: (responseIds: string[]) => void;
+  onRestoreResponses: (responseIds: string[]) => void;
   pendingResponseIds: string[];
   responses: RsvpResponseRecord[];
   searchQuery: string;
@@ -55,6 +57,8 @@ export function RsvpResponsesTable({
   onExportClick,
   onGuestbookModeration,
   onOpenResponse,
+  onRejectResponses,
+  onRestoreResponses,
   pendingResponseIds,
   responses,
   searchQuery,
@@ -179,7 +183,7 @@ export function RsvpResponsesTable({
                 <p className="text-sm font-semibold text-[#2b2521]">
                   {selectedResponses.length} selected
                 </p>
-                {hasMixedGuestbookSelection ? (
+                {hasMixedGuestbookSelection && allEligibleSelectedAreApproved === false ? (
                   <p className="text-xs font-medium text-[#8a7c72]">
                     Only messages not yet shown will be added.
                   </p>
@@ -187,31 +191,67 @@ export function RsvpResponsesTable({
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={isModerating || !hasEligibleSelection}
-                  variant={allEligibleSelectedAreApproved ? "outline" : "default"}
-                  className={cn(
-                    "w-full rounded-xl px-3 sm:w-auto",
-                    allEligibleSelectedAreApproved
-                      ? "border border-[#efd5ce] bg-white text-[#8a4f43] hover:bg-[#fff6f2]"
-                      : "bg-[#cf734e] text-white hover:bg-[#b85f3c]",
-                  )}
-                  onClick={() =>
-                    onGuestbookModeration(
-                      allEligibleSelectedAreApproved ? "remove" : "approve",
-                      selectedResponses.map((response) => response.id),
-                    )
-                  }
-                >
-                  {allEligibleSelectedAreApproved ? (
-                    <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                  ) : (
-                    <MessageCircleHeart className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                  {allEligibleSelectedAreApproved ? "Remove from Guestbook" : "Show in Guestbook"}
-                </Button>
+                {selectedResponses.some(r => r.reviewStatus === "approved") && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isModerating}
+                    variant="outline"
+                    className="w-full rounded-xl border-rose-200 px-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 sm:w-auto"
+                    onClick={() => {
+                      const idsToReject = selectedResponses.filter(r => r.reviewStatus === "approved").map(r => r.id);
+                      if (onRejectResponses) onRejectResponses(idsToReject);
+                    }}
+                  >
+                    Reject selected
+                  </Button>
+                )}
+
+                {selectedResponses.some(r => r.reviewStatus === "rejected") && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isModerating}
+                    variant="default"
+                    className="w-full rounded-xl px-3 sm:w-auto"
+                    onClick={() => {
+                      const idsToRestore = selectedResponses.filter(r => r.reviewStatus === "rejected").map(r => r.id);
+                      if (onRestoreResponses) onRestoreResponses(idsToRestore);
+                    }}
+                  >
+                    Restore selected
+                  </Button>
+                )}
+
+                {hasEligibleSelection && selectedResponses.every(r => r.reviewStatus === "approved") ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isModerating}
+                    variant={allEligibleSelectedAreApproved ? "outline" : "default"}
+                    className={cn(
+                      "w-full rounded-xl px-3 sm:w-auto",
+                      allEligibleSelectedAreApproved
+                        ? "border border-[#efd5ce] bg-white text-[#8a4f43] hover:bg-[#fff6f2]"
+                        : "bg-[#cf734e] text-white hover:bg-[#b85f3c]",
+                    )}
+                    onClick={() =>
+                      onGuestbookModeration(
+                        allEligibleSelectedAreApproved ? "remove" : "approve",
+                        selectedResponses.filter(r => r.reviewStatus === "approved").map((response) => response.id),
+                      )
+                    }
+                  >
+                    {allEligibleSelectedAreApproved ? (
+                      <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                    ) : (
+                      <MessageCircleHeart className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    {allEligibleSelectedAreApproved ? "Remove from Guestbook" : "Show in Guestbook"}
+                  </Button>
+                ) : null}
+
+                <div className="hidden h-4 w-px bg-[#eadbd0] sm:block" />
 
                 <Button
                   type="button"

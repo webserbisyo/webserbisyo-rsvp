@@ -41,7 +41,16 @@ type RsvpResponseDetailDialogProps = {
   response: RsvpResponseRecord | null;
 };
 
-function StatusChip({ status }: { status: "attending" | "not_attending" }) {
+function StatusChip({ reviewStatus, status }: { reviewStatus?: "approved" | "rejected", status: "attending" | "not_attending" }) {
+  if (reviewStatus === "rejected") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 bg-stone-100 text-stone-600 ring-stone-200">
+        <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+        Rejected
+      </span>
+    );
+  }
+
   const isAttending = status === "attending";
   const Icon = isAttending ? CheckCircle2 : XCircle;
 
@@ -62,16 +71,28 @@ function StatusChip({ status }: { status: "attending" | "not_attending" }) {
 
 export function RsvpResponseDetailDialog({
   onOpenChange,
+  onRejectResponse,
+  onRestoreResponse,
   open,
   response,
-}: RsvpResponseDetailDialogProps) {
+}: RsvpResponseDetailDialogProps & {
+  onRejectResponse?: (responseId: string) => void;
+  onRestoreResponse?: (responseId: string) => void;
+}) {
   const isMobile = useIsMobile();
 
   if (!response) {
     return null;
   }
 
-  const content = <RsvpResponseDetailContent onClose={() => onOpenChange(false)} response={response} />;
+  const content = (
+    <RsvpResponseDetailContent
+      onClose={() => onOpenChange(false)}
+      onRejectResponse={onRejectResponse}
+      onRestoreResponse={onRestoreResponse}
+      response={response}
+    />
+  );
 
   if (isMobile) {
     return (
@@ -147,14 +168,19 @@ function ModalInfo({
 
 function RsvpResponseDetailContent({
   onClose,
+  onRejectResponse,
+  onRestoreResponse,
   response,
 }: {
   onClose: () => void;
+  onRejectResponse?: (responseId: string) => void;
+  onRestoreResponse?: (responseId: string) => void;
   response: RsvpResponseRecord;
 }) {
   const hasCompanions = response.companions.length > 0;
   const hasDietaryNote = Boolean(response.dietaryNotes && response.dietaryNotes.trim());
   const hasMessage = Boolean(response.message && response.message.trim());
+  const isRejected = response.reviewStatus === "rejected";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -178,7 +204,7 @@ function RsvpResponseDetailContent({
 
         <div className="flex shrink-0 items-start gap-3">
           <div className="hidden text-right sm:block">
-            <StatusChip status={response.status as "attending" | "not_attending"} />
+            <StatusChip reviewStatus={response.reviewStatus} status={response.status as "attending" | "not_attending"} />
             <p className="mt-2 text-xs font-medium text-[#8a7c72]">
               {formatResponseSubmittedAt(response.submittedAt)}
             </p>
@@ -198,7 +224,7 @@ function RsvpResponseDetailContent({
 
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-5">
         <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
-          <StatusChip status={response.status as "attending" | "not_attending"} />
+          <StatusChip reviewStatus={response.reviewStatus} status={response.status as "attending" | "not_attending"} />
           <p className="text-xs font-medium text-[#8a7c72]">
             {formatResponseSubmittedAt(response.submittedAt)}
           </p>
@@ -274,6 +300,29 @@ function RsvpResponseDetailContent({
             </div>
           </section>
         </div>
+      </div>
+
+      <div className="flex shrink-0 items-center justify-center gap-3 border-t border-[#eadbd0] bg-white p-4">
+        {isRejected && onRestoreResponse ? (
+          <Button
+            type="button"
+            variant="default"
+            className="w-full sm:w-auto sm:min-w-[12rem] rounded-xl"
+            onClick={() => onRestoreResponse(response.id)}
+          >
+            Restore RSVP
+          </Button>
+        ) : null}
+        {!isRejected && onRejectResponse ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto sm:min-w-[12rem] rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            onClick={() => onRejectResponse(response.id)}
+          >
+            Reject RSVP
+          </Button>
+        ) : null}
       </div>
     </div>
   );

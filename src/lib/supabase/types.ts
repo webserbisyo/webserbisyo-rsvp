@@ -1166,6 +1166,7 @@ export type Database = {
           message_public_status: string;
           party_size: number;
           phone: string | null;
+          review_status: string;
           source: string | null;
           submitted_at: string;
           updated_at: string;
@@ -1186,6 +1187,7 @@ export type Database = {
           message_public_status?: string;
           party_size?: number;
           phone?: string | null;
+          review_status?: string;
           source?: string | null;
           submitted_at?: string;
           updated_at?: string;
@@ -1206,10 +1208,12 @@ export type Database = {
           message_public_status?: string;
           party_size?: number;
           phone?: string | null;
+          review_status?: string;
           source?: string | null;
           submitted_at?: string;
           updated_at?: string;
         };
+
         Relationships: [
           {
             foreignKeyName: "rsvp_responses_client_id_fkey";
@@ -1239,7 +1243,29 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      approve_rsvp_response_with_capacity_check: {
+        Args: {
+          p_client_id: string;
+          p_response_id: string;
+        };
+        Returns: Database["public"]["Tables"]["rsvp_responses"]["Row"];
+      };
+      submit_rsvp_response_with_capacity_check: {
+        Args: {
+          p_attendance_status: string;
+          p_client_id: string;
+          p_dietary_notes: string | null;
+          p_email: string | null;
+          p_event_id: string;
+          p_guest_name: string;
+          p_message: string | null;
+          p_message_public_status: string;
+          p_party_size: number;
+          p_phone: string | null;
+          p_source: string;
+        };
+        Returns: Database["public"]["Tables"]["rsvp_responses"]["Row"];
+      };
     };
     Enums: {
       [_ in never]: never;

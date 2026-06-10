@@ -20,10 +20,21 @@ import {
 } from "./rsvp-responses-types";
 
 export function RsvpResponseStatusBadge({
+  reviewStatus,
   status,
 }: {
+  reviewStatus?: "approved" | "rejected";
   status: "attending" | "not_attending";
 }) {
+  if (reviewStatus === "rejected") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 bg-stone-100 text-stone-600 ring-stone-200">
+        <ShieldMinus className="h-3.5 w-3.5" aria-hidden="true" />
+        Rejected
+      </span>
+    );
+  }
+
   const isAttending = status === "attending";
   const Icon = isAttending ? CheckCircle2 : XCircle;
 
@@ -118,7 +129,9 @@ export function RsvpResponseRowActions({
   const isShownInGuestbook = response.messagePublicStatus === "approved";
   const isPending = pendingResponseIds.has(response.id);
   const isDisabled = isModerating || isPending;
-  const actionLabel =
+  const isRejected = response.reviewStatus === "rejected";
+
+  const guestbookActionLabel =
     actionLabelMode === "full"
       ? isShownInGuestbook
         ? "Remove from Guestbook"
@@ -140,7 +153,7 @@ export function RsvpResponseRowActions({
         align === "end" ? "justify-end" : "justify-start",
       )}
     >
-      {hasMessage ? (
+      {hasMessage && !isRejected ? (
         <Button
           type="button"
           variant={isShownInGuestbook ? "outline" : "default"}
@@ -174,7 +187,7 @@ export function RsvpResponseRowActions({
           ) : (
             <MessageCircleHeart className="h-3.5 w-3.5" aria-hidden="true" />
           )}
-          {actionLabel}
+          {guestbookActionLabel}
         </Button>
       ) : null}
 
@@ -202,7 +215,6 @@ export function RsvpResponseRowActions({
     </div>
   );
 }
-
 function getGuestbookBadgeConfig(status: RsvpResponseGuestbookStatus) {
   switch (status) {
     case "approved":

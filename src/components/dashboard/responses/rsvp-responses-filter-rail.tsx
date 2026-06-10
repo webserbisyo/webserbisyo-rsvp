@@ -16,6 +16,7 @@ export const RSVP_RESPONSE_FILTERS: Array<{
   { label: "Messages", value: "messages" },
   { label: "Guestbook", value: "guestbook" },
   { label: "Needs review", value: "needs_review" },
+  { label: "Rejected", value: "rejected" },
 ];
 
 export function RsvpResponsesFilterRail({
