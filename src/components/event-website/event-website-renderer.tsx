@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import {
   CalendarDays,
+  ChevronDown,
   Gift,
   Mail,
   MessageCircleHeart,
@@ -572,16 +573,19 @@ function RsvpFormSection({
                 Choose how many companions you will bring. You may bring up to {maxCompanions}.
               </p>
               {maxCompanions >= 4 ? (
-                <select
-                  value={previewCompanionCount}
-                  onChange={(event) => setPreviewCompanionCount(Number(event.target.value))}
-                >
-                  {companionOptions.map((count) => (
-                    <option key={count} value={count}>
-                      {count === 0 ? "Just me" : `Me + ${count}`}
-                    </option>
-                  ))}
-                </select>
+                <div className="event-preview-select-shell">
+                  <select
+                    value={previewCompanionCount}
+                    onChange={(event) => setPreviewCompanionCount(Number(event.target.value))}
+                  >
+                    {companionOptions.map((count) => (
+                      <option key={count} value={count}>
+                        {count === 0 ? "Just me" : `Me + ${count}`}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="event-preview-select-chevron" aria-hidden="true" />
+                </div>
               ) : (
                 <div className="event-preview-choice-group" aria-label="Guest count">
                   {companionOptions.map((count) => (

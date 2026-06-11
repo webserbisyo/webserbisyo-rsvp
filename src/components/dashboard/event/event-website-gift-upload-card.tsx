@@ -4,9 +4,11 @@ import Image from "next/image";
 import { useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
+import { EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL } from "@/lib/event-website/gift-media";
 import type { EventWebsiteImageAsset } from "@/lib/event-website/types";
 
 type EventWebsiteGiftUploadCardProps = {
+  errorMessage?: string | null;
   file: File | null;
   fileInputId: string;
   image: EventWebsiteImageAsset | null;
@@ -15,6 +17,7 @@ type EventWebsiteGiftUploadCardProps = {
 };
 
 export function EventWebsiteGiftUploadCard({
+  errorMessage = null,
   file,
   fileInputId,
   image,
@@ -51,7 +54,7 @@ export function EventWebsiteGiftUploadCard({
             </span>
             <div className="event-editor-upload-copy">
               <strong>Upload QR code or gift image</strong>
-              <span>PNG, JPG, or WEBP · max 2 MB</span>
+              <span>PNG, JPG, or WEBP · max {EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL}</span>
             </div>
           </div>
         )}
@@ -87,6 +90,12 @@ export function EventWebsiteGiftUploadCard({
           </Button>
         ) : null}
       </div>
+
+      {errorMessage ? (
+        <p className="event-editor-upload-error" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   );
 }

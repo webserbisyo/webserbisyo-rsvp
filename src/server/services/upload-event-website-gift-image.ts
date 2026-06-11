@@ -6,6 +6,7 @@ import {
   EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES,
   EVENT_WEBSITE_GIFT_MEDIA_BUCKET,
   EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE,
+  EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL,
 } from "@/lib/event-website/gift-media";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ServiceError, assertServiceData, assertServiceSuccess } from "./service-error";
@@ -21,11 +22,11 @@ export async function uploadEventWebsiteGiftImage(input: {
   const { clientId, file, optionId, title } = input;
 
   if (!ALLOWED_GIFT_MEDIA_TYPES.has(file.type as (typeof EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES)[number])) {
-    throw new ServiceError("Gift image must be PNG, JPG, or WebP.");
+    throw new ServiceError("Upload a PNG, JPG, or WEBP image.");
   }
 
   if (file.size > EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE) {
-    throw new ServiceError("Gift image is too large. Max size is 2 MB.");
+    throw new ServiceError(`Image must be ${EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL} or smaller.`);
   }
 
   const extension = path.extname(file.name).toLowerCase() || ".png";

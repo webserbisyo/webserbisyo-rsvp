@@ -156,7 +156,7 @@ export function PublishStatusCard({
                 type="button"
                 disabled={disabled}
                 onClick={onPublish}
-                className="h-11 flex-1 rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] sm:h-10 sm:rounded-xl sm:px-4"
+                className="h-12 w-full justify-center rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] sm:h-10 sm:w-auto sm:flex-1 sm:rounded-xl sm:px-4"
               >
                 <UploadCloud className="h-4 w-4" aria-hidden="true" />
                 Publish latest changes
@@ -177,7 +177,7 @@ export function PublishStatusCard({
                 type="button"
                 disabled={disabled}
                 onClick={onPublish}
-                className="h-11 w-full rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] sm:h-10 sm:rounded-xl sm:px-4"
+                className="h-12 w-full justify-center rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] sm:h-10 sm:rounded-xl sm:px-4"
               >
               <UploadCloud className="h-4 w-4" aria-hidden="true" />
               Publish website

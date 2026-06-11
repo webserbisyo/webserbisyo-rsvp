@@ -26,6 +26,11 @@ import {
   TextField,
   TimeField,
 } from "@/components/dashboard/event/event-website-optional-fields";
+import {
+  EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES,
+  EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE,
+  EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL,
+} from "@/lib/event-website/gift-media";
 import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 
 type SharedOptionalPanelProps = {
@@ -588,6 +593,7 @@ export function OptionalGiftDetailsPanel({
     title: "",
   };
   const giftOptionTwo = values.options[1] ?? null;
+  const [giftUploadErrors, setGiftUploadErrors] = useState<Record<string, string | null>>({});
   const [uploadingOptionIds, setUploadingOptionIds] = useState<Record<string, boolean>>({});
   const latestDraftRef = useRef(previewDraft);
 
@@ -608,6 +614,26 @@ export function OptionalGiftDetailsPanel({
     updateValues({ ...latestDraftRef.current.giftDetails, options });
   }
 
+  function setGiftUploadError(optionId: string, message: string | null) {
+    setGiftUploadErrors((current) => ({ ...current, [optionId]: message }));
+  }
+
+  function validateGiftFile(file: File) {
+    if (
+      !EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES.includes(
+        file.type as (typeof EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES)[number],
+      )
+    ) {
+      return "Upload a PNG, JPG, or WEBP image.";
+    }
+
+    if (file.size > EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE) {
+      return `Image must be ${EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL} or smaller.`;
+    }
+
+    return null;
+  }
+
   async function handleGiftFileChange(index: number, file: File | null) {
     const currentOption =
       latestDraftRef.current.giftDetails.options[index] ??
@@ -618,6 +644,7 @@ export function OptionalGiftDetailsPanel({
     }
 
     if (!file) {
+      setGiftUploadError(currentOption.id, null);
       updateOption(index, {
         ...currentOption,
         file: null,
@@ -626,6 +653,14 @@ export function OptionalGiftDetailsPanel({
       return;
     }
 
+    const validationMessage = validateGiftFile(file);
+
+    if (validationMessage) {
+      setGiftUploadError(currentOption.id, validationMessage);
+      return;
+    }
+
+    setGiftUploadError(currentOption.id, null);
     updateOption(index, {
       ...currentOption,
       file,
@@ -640,7 +675,21 @@ export function OptionalGiftDetailsPanel({
       });
 
       if (!result.ok) {
-        throw new Error(result.error);
+        const message = result.error || "Gift image could not be uploaded.";
+        const isValidationError =
+          message === "Upload a PNG, JPG, or WEBP image." ||
+          message === `Image must be ${EVENT_WEBSITE_GIFT_MEDIA_MAX_SIZE_LABEL} or smaller.`;
+
+        if (isValidationError) {
+          setGiftUploadError(currentOption.id, message);
+          updateOption(index, {
+            ...currentOption,
+            file: null,
+          });
+          return;
+        }
+
+        throw new Error(message);
       }
 
       const latestOption =
@@ -652,6 +701,7 @@ export function OptionalGiftDetailsPanel({
         image: result.data.image,
       });
     } catch (error) {
+      setGiftUploadError(currentOption.id, null);
       updateOption(index, {
         ...currentOption,
         file: null,
@@ -704,6 +754,7 @@ export function OptionalGiftDetailsPanel({
                   <span>QR Code / Gift Image</span>
                 </div>
                 <EventWebsiteGiftUploadCard
+                  errorMessage={giftUploadErrors[giftOptionOne.id] ?? null}
                   file={giftOptionOne.file}
                   fileInputId="event-editor-gift-option-one-upload"
                   image={giftOptionOne.image}
@@ -746,6 +797,7 @@ export function OptionalGiftDetailsPanel({
                     <span>QR Code / Gift Image</span>
                   </div>
                   <EventWebsiteGiftUploadCard
+                    errorMessage={giftUploadErrors[giftOptionTwo.id] ?? null}
                     file={giftOptionTwo.file}
                     fileInputId="event-editor-gift-option-two-upload"
                     image={giftOptionTwo.image}
