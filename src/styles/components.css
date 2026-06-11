@@ -873,23 +873,14 @@
   box-shadow:
     0 18px 42px rgba(62, 39, 23, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.92);
-  padding: 0 0 calc(env(safe-area-inset-bottom) + 20px);
-}
-
-[data-dashboard] .dashboard-more-drawer__handle {
-  flex-shrink: 0;
-  width: 42px;
-  height: 4px;
-  margin: 12px auto 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--dash-border) 86%, var(--dash-muted));
+  padding: 0;
 }
 
 [data-dashboard] .dashboard-more-drawer__header {
   display: grid;
   flex-shrink: 0;
   gap: 4px;
-  padding: 0 18px 12px;
+  padding: 10px 18px 12px;
   justify-items: center;
   text-align: center;
 }
@@ -911,7 +902,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 0 12px;
+  padding: 0 12px calc(env(safe-area-inset-bottom) + 22px);
 }
 
 [data-dashboard] .dashboard-more-drawer__item {
@@ -5583,6 +5574,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--dash-brand) 14%, var(--dash-border));
   position: relative;
   padding: 10px 16px 10px;
+  background: linear-gradient(180deg, rgba(255, 252, 248, 0.98), rgba(255, 250, 244, 0.94));
 }
 
 [data-dashboard] .event-website-mobile-editor-shell__title-row {
@@ -5627,6 +5619,10 @@
   padding: 8px 12px calc(env(safe-area-inset-bottom) + 20px);
 }
 
+[data-dashboard] .event-website-mobile-editor-body--with-sticky-save {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 108px);
+}
+
 [data-dashboard] .event-website-mobile-editor-body .event-website-editor {
   width: 100%;
 }
@@ -5659,6 +5655,35 @@
 
 [data-dashboard] .event-website-mobile-editor-body .event-editor-card:not(.event-editor-card--placeholder) .event-editor-actions {
   padding-top: 2px;
+}
+
+[data-dashboard] .event-website-mobile-editor-footer {
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in srgb, var(--dash-brand) 14%, var(--dash-border));
+  background: linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(255, 249, 243, 0.98));
+  padding: 12px 12px calc(env(safe-area-inset-bottom) + 12px);
+}
+
+[data-dashboard] .event-website-mobile-editor-footer__actions {
+  justify-content: center;
+  padding: 0;
+}
+
+[data-dashboard] .event-website-mobile-editor-footer__button {
+  width: min(100%, 28rem);
+  min-height: 48px;
+}
+
+[data-dashboard] .dashboard-settings-page,
+[data-dashboard] .dashboard-settings-grid,
+[data-dashboard] .dashboard-settings-main,
+[data-dashboard] .dashboard-settings-aside,
+[data-dashboard] .dashboard-settings-card {
+  min-width: 0;
+}
+
+[data-dashboard] .dashboard-settings-card {
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5710,6 +5735,62 @@
 }
 
 @media (max-width: 767px) {
+  [data-dashboard] .dashboard-settings-page {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 6.5rem);
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__hero {
+    display: grid;
+    grid-template-columns: 62px minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__hero-avatar {
+    grid-row: 1 / span 2;
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__hero-status {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 2px;
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__detail,
+  [data-dashboard] .dashboard-settings-notification-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__detail-icon,
+  [data-dashboard] .dashboard-settings-notification-row__icon {
+    grid-row: 1 / span 2;
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__detail-badge,
+  [data-dashboard] .dashboard-settings-notification-row__control {
+    grid-column: 2;
+    justify-self: start;
+    padding-top: 4px;
+  }
+
+  [data-dashboard] .dashboard-settings-account-card__identity-name,
+  [data-dashboard] .dashboard-settings-account-card__identity-email,
+  [data-dashboard] .dashboard-settings-account-card__detail-value {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  [data-dashboard] .dashboard-settings-app-install-card__hero,
+  [data-dashboard] .dashboard-settings-support-card__hero {
+    align-items: start;
+  }
+
   [data-dashboard] .event-website-workspace {
     grid-template-columns: 1fr;
   }
@@ -5850,6 +5931,10 @@
 
   [data-dashboard] .event-website-mobile-editor-body {
     padding: 10px 10px calc(env(safe-area-inset-bottom) + 22px);
+  }
+
+  [data-dashboard] .event-website-mobile-editor-body--with-sticky-save {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 112px);
   }
 }
 

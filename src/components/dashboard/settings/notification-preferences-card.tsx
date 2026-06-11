@@ -187,7 +187,7 @@ export function NotificationPreferencesCard({
   const pushDisabled = pushSaving || !["off", "on"].includes(pushStatus);
 
   return (
-    <SettingsCard>
+    <SettingsCard className="dashboard-settings-notification-card">
       <SectionLabel>Notification Preferences</SectionLabel>
       <div className="mt-5">
         {NOTIFICATION_ROWS.map((row, index) => (
@@ -305,14 +305,14 @@ function NotificationRow({
   onCheckedChange?: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-center gap-5 py-6 first:pt-0 last:pb-0">
+    <div className="dashboard-settings-notification-row flex items-center gap-5 py-6 first:pt-0 last:pb-0">
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f6eee5] text-[color:var(--dash-brand)]"
+        className="dashboard-settings-notification-row__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f6eee5] text-[color:var(--dash-brand)]"
         aria-hidden="true"
       >
         <Icon className={`h-[18px] w-[18px]${disabled ? " opacity-50" : ""}`} />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="dashboard-settings-notification-row__content min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className={`text-base font-black ${disabled ? "text-[#a9978b]" : "text-[color:var(--dash-foreground)]"}`}>
             {label}
@@ -323,13 +323,15 @@ function NotificationRow({
           <p className="mt-1 text-sm font-semibold text-[#9d887a]">{description}</p>
         ) : null}
       </div>
-      <Switch
-        checked={checked}
-        className="data-checked:bg-[color:var(--dash-brand)] data-unchecked:bg-[#efe8df]"
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-        aria-label={label}
-      />
+      <div className="dashboard-settings-notification-row__control">
+        <Switch
+          checked={checked}
+          className="data-checked:bg-[color:var(--dash-brand)] data-unchecked:bg-[#efe8df]"
+          disabled={disabled}
+          onCheckedChange={onCheckedChange}
+          aria-label={label}
+        />
+      </div>
     </div>
   );
 }

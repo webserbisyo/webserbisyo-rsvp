@@ -13,6 +13,10 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import {
+  EditorSaveButton,
+  type EventWebsiteSaveButtonProps,
+} from "@/components/dashboard/event/event-website-optional-fields";
+import {
   EventWebsiteLeftPane,
   type EventWebsiteStatusPill,
 } from "@/components/dashboard/event/event-website-left-pane";
@@ -59,6 +63,7 @@ import {
 } from "@/lib/event-website/readiness";
 import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
 import { markEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
+import { cn } from "@/lib/utils";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
@@ -644,15 +649,17 @@ function ResponsiveSectionEditorSurface({
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   previewDraft: EventWebsitePreviewDraft;
   resolvedSections: ReturnType<typeof resolveEventWebsiteSections>;
-  saveButtonProps: {
-    disabled: boolean;
-    hidden: boolean;
-    label: string;
-    onClick: () => void;
-  };
+  saveButtonProps: EventWebsiteSaveButtonProps;
   selectedSection: EventWebsiteSectionDefinition | undefined;
   selectedSectionId: EventWebsiteSectionKey;
 }) {
+  const showMobileStickySaveButton =
+    saveButtonProps.hidden !== true &&
+    (saveButtonProps.label === "Save changes" || saveButtonProps.label === "Saving...");
+  const inlineEditorSaveButtonProps: EventWebsiteSaveButtonProps = {
+    ...saveButtonProps,
+    hidden: true,
+  };
   const content = (
     <>
       <div className="event-website-mobile-editor-shell">
@@ -676,17 +683,31 @@ function ResponsiveSectionEditorSurface({
         </div>
       </div>
       <div className="event-website-mobile-editor-scroll">
-        <div className="event-website-mobile-editor-body">
+        <div
+          className={cn(
+            "event-website-mobile-editor-body",
+            showMobileStickySaveButton && "event-website-mobile-editor-body--with-sticky-save",
+          )}
+        >
           <EventWebsiteEditorPanel
             eventData={eventData}
             onPreviewDraftChange={onPreviewDraftChange}
             previewDraft={previewDraft}
             resolvedSections={resolvedSections}
-            saveButtonProps={saveButtonProps}
+            saveButtonProps={inlineEditorSaveButtonProps}
             selectedSectionId={selectedSectionId}
           />
         </div>
       </div>
+      {showMobileStickySaveButton ? (
+        <div className="event-website-mobile-editor-footer">
+          <EditorSaveButton
+            {...saveButtonProps}
+            buttonClassName="event-website-mobile-editor-footer__button"
+            containerClassName="event-website-mobile-editor-footer__actions"
+          />
+        </div>
+      ) : null}
     </>
   );
 

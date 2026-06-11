@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { isDashboardNavItemActive } from "@/components/dashboard/nav-items";
@@ -38,20 +44,12 @@ export function DashboardMoreDrawer({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        data-dashboard
-        side="bottom"
-        showCloseButton={false}
-        overlayClassName="dashboard-more-drawer-overlay"
-        className="dashboard-more-drawer"
-      >
-        <SheetHeader className="sr-only">
-          <SheetTitle>More</SheetTitle>
-          <SheetDescription>Account shortcuts and settings.</SheetDescription>
-        </SheetHeader>
-
-        <div className="dashboard-more-drawer__handle" aria-hidden="true" />
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent data-dashboard className="dashboard-more-drawer">
+        <DrawerHeader className="sr-only">
+          <DrawerTitle>More</DrawerTitle>
+          <DrawerDescription>Account shortcuts and settings.</DrawerDescription>
+        </DrawerHeader>
 
         <div className="dashboard-more-drawer__header">
           <h2 className="dashboard-more-drawer__title">More</h2>
@@ -91,7 +89,7 @@ export function DashboardMoreDrawer({
             <span className="dashboard-more-drawer__item-label">Sign out</span>
           </button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 }

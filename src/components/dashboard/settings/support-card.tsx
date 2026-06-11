@@ -10,15 +10,15 @@ type SupportCardProps = {
 
 export function SupportCard({ support }: SupportCardProps) {
   return (
-    <SettingsCard>
-      <div className="flex items-start gap-4">
+    <SettingsCard className="dashboard-settings-support-card">
+      <div className="dashboard-settings-support-card__hero flex items-start gap-4">
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]"
+          className="dashboard-settings-support-card__hero-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]"
           aria-hidden="true"
         >
           <MessengerLogo className="h-5 w-5" />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="dashboard-settings-support-card__hero-content min-w-0 flex-1">
           <p className="text-sm font-black uppercase tracking-[0.16em] text-[color:var(--dash-brand)]">
             Need help?
           </p>

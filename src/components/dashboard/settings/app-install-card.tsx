@@ -16,11 +16,11 @@ export function AppInstallCard() {
 
   return (
     <>
-      <SettingsCard>
+      <SettingsCard className="dashboard-settings-app-install-card">
         <SectionLabel>App Installation</SectionLabel>
-        <div className="mt-5 flex items-center gap-4">
+        <div className="dashboard-settings-app-install-card__hero mt-5 flex items-center gap-4">
           <div
-            className="relative h-[72px] w-[72px] shrink-0 rounded-[1.35rem] border border-[#ead8c4] bg-[#fff7ef] p-[5px] shadow-[0_14px_30px_rgba(112,78,51,0.1),inset_0_1px_0_rgba(255,255,255,0.78)]"
+            className="dashboard-settings-app-install-card__hero-art relative h-[72px] w-[72px] shrink-0 rounded-[1.35rem] border border-[#ead8c4] bg-[#fff7ef] p-[5px] shadow-[0_14px_30px_rgba(112,78,51,0.1),inset_0_1px_0_rgba(255,255,255,0.78)]"
             aria-hidden="true"
           >
             <div className="relative h-full w-full overflow-hidden rounded-[1rem] bg-[#fbf3eb] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
@@ -33,7 +33,7 @@ export function AppInstallCard() {
               />
             </div>
           </div>
-          <h3 className="min-w-0 flex-1 text-lg font-black leading-snug text-[color:var(--dash-foreground)]">
+          <h3 className="dashboard-settings-app-install-card__hero-title min-w-0 flex-1 text-lg font-black leading-snug text-[color:var(--dash-foreground)]">
             Install WebSerbisyo RSVP App
           </h3>
         </div>

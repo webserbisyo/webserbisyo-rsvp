@@ -12,7 +12,7 @@ export function SettingsCard({ children, className, contentClassName }: Settings
   return (
     <Card
       className={cn(
-        "rounded-[1.75rem] border border-[#eadfd4] bg-[linear-gradient(180deg,#fffdf8_0%,#fffaf4_100%)] py-0 shadow-[0_16px_42px_rgba(112,78,51,0.05),0_2px_0_rgba(255,255,255,0.78)_inset]",
+        "dashboard-settings-card rounded-[1.75rem] border border-[#eadfd4] bg-[linear-gradient(180deg,#fffdf8_0%,#fffaf4_100%)] py-0 shadow-[0_16px_42px_rgba(112,78,51,0.05),0_2px_0_rgba(255,255,255,0.78)_inset]",
         className,
       )}
     >

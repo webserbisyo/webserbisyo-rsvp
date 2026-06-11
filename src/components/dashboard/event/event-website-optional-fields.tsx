@@ -26,6 +26,8 @@ export type OptionalFieldConfig = {
 };
 
 export type EventWebsiteSaveButtonProps = {
+  buttonClassName?: string;
+  containerClassName?: string;
   disabled: boolean;
   hidden?: boolean;
   label: string;
@@ -305,6 +307,8 @@ export function ListBuilderRow({
 }
 
 export function EditorSaveButton({
+  buttonClassName,
+  containerClassName,
   disabled,
   hidden = false,
   label,
@@ -315,10 +319,10 @@ export function EditorSaveButton({
   }
 
   return (
-    <div className="event-editor-actions">
+    <div className={`event-editor-actions${containerClassName ? ` ${containerClassName}` : ""}`}>
       <Button
         type="button"
-        className="event-editor-save-button"
+        className={`event-editor-save-button${buttonClassName ? ` ${buttonClassName}` : ""}`}
         disabled={disabled}
         onClick={onClick}
       >
