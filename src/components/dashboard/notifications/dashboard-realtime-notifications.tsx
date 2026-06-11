@@ -6,6 +6,7 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { BellRing, MessageCircleMore, ReceiptText, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
 import {
   DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
   NOTIFICATION_EVENT_TYPES,
@@ -21,6 +22,7 @@ type DashboardRealtimeNotificationsProps = {
 type RsvpResponseRealtimeRow = {
   attendance_status?: string | null;
   client_id?: string | null;
+  event_id?: string | null;
   guest_name?: string | null;
   id?: string | null;
   message?: string | null;
@@ -167,6 +169,11 @@ export function DashboardRealtimeNotifications({
       const responseId = row.id;
 
       if (!responseId || row.client_id !== clientId) return;
+
+      emitDashboardSyncEvent({
+        eventId: row.event_id ?? null,
+        name: "rsvp-responses:inserted",
+      });
 
       const hasGuestMessage = Boolean(row.message?.trim());
       const guestName = formatGuestName(row.guest_name);

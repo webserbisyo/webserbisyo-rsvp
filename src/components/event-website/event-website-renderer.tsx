@@ -662,7 +662,7 @@ function GiftDetailsSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <div className="event-preview-gift-grid">
         {options.map((option, index) => (
           <div key={option.id || `gift-option-${index + 1}`} className="event-preview-gift-card">
-            <GiftPreviewMedia file={option.file} title={option.title} />
+            <GiftPreviewMedia file={option.file} image={option.image} title={option.title} />
             <strong>{option.title}</strong>
           </div>
         ))}
@@ -835,8 +835,20 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
   );
 }
 
-function GiftPreviewMedia({ file, title }: { file: File | null; title: string }) {
-  const imageUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+function GiftPreviewMedia({
+  file,
+  image,
+  title,
+}: {
+  file: File | null;
+  image: { alt?: string; path: string; url?: string } | null;
+  title: string;
+}) {
+  const uploadedImageUrl = image?.url?.trim() || null;
+  const imageUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : uploadedImageUrl),
+    [file, uploadedImageUrl],
+  );
 
   useEffect(() => {
     return () => {
@@ -858,7 +870,7 @@ function GiftPreviewMedia({ file, title }: { file: File | null; title: string })
     <div className="event-preview-gift-image">
       <Image
         src={imageUrl}
-        alt={`${title || "Gift option"} preview`}
+        alt={image?.alt?.trim() || `${title || "Gift option"} preview`}
         fill
         unoptimized
         sizes="160px"
@@ -951,7 +963,9 @@ function normalizeExtraInfoItems(items: EventWebsiteRenderModel["extraInfo"]["it
 }
 
 function normalizeGiftOptions(options: EventWebsiteRenderModel["giftDetails"]["options"]) {
-  const cleaned = options.filter((option) => option.title.trim() || option.file);
+  const cleaned = options.filter(
+    (option) => option.title.trim() || option.file || option.image?.url?.trim(),
+  );
   return cleaned.length > 0 ? cleaned : previewDefaultDraft.giftDetails.options;
 }
 

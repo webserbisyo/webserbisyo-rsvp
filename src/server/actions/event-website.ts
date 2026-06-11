@@ -11,11 +11,20 @@ import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { saveEventWebsiteDraft } from "@/server/services/save-event-website-draft";
 import { ServiceError } from "@/server/services/service-error";
+import { uploadEventWebsiteGiftImage } from "@/server/services/upload-event-website-gift-image";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 const SaveEventWebsiteActionSchema = z.object({
   content: z.unknown(),
   eventId: z.uuid(),
+});
+
+const GiftImageUploadActionSchema = z.object({
+  file: z.custom<File>((value) => value instanceof File && value.size > 0, {
+    message: "Upload a valid image file.",
+  }),
+  optionId: z.string().trim().min(1).max(120),
+  title: z.string().trim().max(80).optional(),
 });
 
 export async function saveEventWebsiteAction(input: unknown) {
@@ -67,6 +76,28 @@ export async function saveEventWebsiteAction(input: unknown) {
       contentId: content.id,
       eventId: content.event_id,
     });
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function uploadEventWebsiteGiftImageAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(GiftImageUploadActionSchema, input);
+
+    if (!profile.client_id) {
+      throw new PermissionError("The current tenant could not be resolved.");
+    }
+
+    const image = await uploadEventWebsiteGiftImage({
+      clientId: profile.client_id,
+      file: payload.file,
+      optionId: payload.optionId,
+      title: payload.title,
+    });
+
+    return actionSuccess({ image });
   } catch (error) {
     return actionFailure(error);
   }

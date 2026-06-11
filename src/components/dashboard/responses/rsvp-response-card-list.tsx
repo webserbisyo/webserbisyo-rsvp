@@ -3,6 +3,7 @@
 import type { Row } from "@tanstack/react-table";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import {
   getResponseInitials,
   getResponseSubmittedDisplay,
@@ -36,12 +37,16 @@ export function RsvpResponseCardList({
         const response = row.original;
         const submitted = getResponseSubmittedDisplay(response.submittedAt);
         const hasMessage = Boolean(response.message && response.message.trim());
+        const isRejected = response.reviewStatus === "rejected";
 
         return (
           <article
             key={row.id}
             data-rsvp-response-card
-            className="overflow-hidden rounded-[1.45rem] border border-[#eadbd0] bg-[#fffdfb] p-4 shadow-sm shadow-[#8a4b2e]/5"
+            className={cn(
+              "overflow-hidden rounded-[1.45rem] border border-[#eadbd0] bg-[#fffdfb] p-4 shadow-sm shadow-[#8a4b2e]/5",
+              isRejected && "opacity-60",
+            )}
           >
             <div className="flex min-w-0 items-start gap-3">
               <div className="flex h-10 shrink-0 items-center justify-center">
@@ -75,7 +80,10 @@ export function RsvpResponseCardList({
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <RsvpResponseStatusBadge status={response.status} />
+              <RsvpResponseStatusBadge
+                reviewStatus={response.reviewStatus}
+                status={response.status}
+              />
               <RsvpResponsePartySizeBadge partySize={response.partySize} />
               {hasMessage ? <RsvpResponseMessageBadge response={response} /> : null}
               {response.messagePublicStatus === "approved" ? (

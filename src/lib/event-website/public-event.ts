@@ -377,8 +377,7 @@ function toPublicGiftImage(
 
   const url = image.url?.trim();
 
-  // Gift upload persistence is not implemented yet. Until storage-backed public URLs exist,
-  // expose only already-public http(s) URLs and never leak storage paths or private file handles.
+  // Expose only already-public http(s) URLs and never leak storage paths or private file handles.
   if (!url || !isPublicHttpUrl(url)) {
     return null;
   }

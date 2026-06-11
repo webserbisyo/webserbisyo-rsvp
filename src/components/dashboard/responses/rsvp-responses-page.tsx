@@ -70,7 +70,7 @@ export function RsvpResponsesPage({
   const [bulkRestoreIds, setBulkRestoreIds] = useState<string[] | null>(null);
 
   useDashboardRefresh({
-    events: ["rsvp-responses:guestbook-updated"],
+    events: ["rsvp-responses:guestbook-updated", "rsvp-responses:inserted"],
     refreshOnFocus: true,
     refreshOnVisibility: true,
   });

@@ -4,6 +4,7 @@ import {
   type EventWebsiteContent,
   type EventWebsiteGuestbookMessage,
   type EventWebsiteCustomQuestionFieldType,
+  type EventWebsiteImageAsset,
 } from "@/lib/event-website/types";
 
 // This file defines the default public renderer contract.
@@ -38,6 +39,7 @@ export type EventWebsiteExtraInfoItemRenderModel = {
 
 export type EventWebsiteGiftOptionRenderModel = {
   file: File | null;
+  image: EventWebsiteImageAsset | null;
   id: string;
   title: string;
 };
@@ -200,6 +202,7 @@ export function buildEventWebsiteRenderModel(content: EventWebsiteContent): Even
       giftNote: content.sections.gift_details.giftNote,
       options: content.sections.gift_details.options.map((option) => ({
         file: null,
+        image: option.image,
         id: option.id,
         title: option.title,
       })),

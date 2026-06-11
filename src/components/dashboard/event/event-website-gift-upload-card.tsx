@@ -4,27 +4,34 @@ import Image from "next/image";
 import { useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
+import type { EventWebsiteImageAsset } from "@/lib/event-website/types";
 
 type EventWebsiteGiftUploadCardProps = {
   file: File | null;
   fileInputId: string;
+  image: EventWebsiteImageAsset | null;
+  isUploading?: boolean;
   onFileChange: (file: File | null) => void;
 };
 
 export function EventWebsiteGiftUploadCard({
   file,
   fileInputId,
+  image,
+  isUploading = false,
   onFileChange,
 }: EventWebsiteGiftUploadCardProps) {
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const persistedUrl = image?.url?.trim() || null;
+  const objectPreviewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const previewUrl = objectPreviewUrl ?? persistedUrl;
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+      if (objectPreviewUrl) {
+        URL.revokeObjectURL(objectPreviewUrl);
       }
     };
-  }, [previewUrl]);
+  }, [objectPreviewUrl]);
 
   return (
     <div className="event-editor-upload-card">
@@ -55,19 +62,25 @@ export function EventWebsiteGiftUploadCard({
         className="sr-only"
         type="file"
         accept="image/png,image/jpeg,image/webp"
+        disabled={isUploading}
         onChange={(event) => onFileChange(event.currentTarget.files?.[0] ?? null)}
       />
 
       <div className="event-editor-upload-footer">
         <span className="event-editor-upload-file-name">
-          {file ? file.name : "No file selected yet."}
+          {isUploading
+            ? "Uploading image..."
+            : file
+              ? file.name
+              : image?.path.split("/").pop() ?? "No file selected yet."}
         </span>
-        {file ? (
+        {file || image ? (
           <Button
             type="button"
             variant="ghost"
             size="sm"
             className="event-editor-upload-clear-button"
+            disabled={isUploading}
             onClick={() => onFileChange(null)}
           >
             Remove image

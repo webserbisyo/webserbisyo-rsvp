@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
 import type {
   EventWebsiteEntourageGroupDraft,
@@ -11,6 +13,7 @@ import type {
   EventWebsiteTimelineItemDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import { createEventWebsiteDraftItemId } from "@/components/dashboard/event/event-website-preview-data";
+import { uploadEventWebsiteGiftImageAction } from "@/server/actions/event-website";
 import {
   EditorGroup,
   EditorSaveButton,
@@ -580,10 +583,17 @@ export function OptionalGiftDetailsPanel({
   const values = previewDraft.giftDetails;
   const giftOptionOne = values.options[0] ?? {
     file: null,
+    image: null,
     id: createEventWebsiteDraftItemId("gift-option"),
     title: "",
   };
   const giftOptionTwo = values.options[1] ?? null;
+  const [uploadingOptionIds, setUploadingOptionIds] = useState<Record<string, boolean>>({});
+  const latestDraftRef = useRef(previewDraft);
+
+  useEffect(() => {
+    latestDraftRef.current = previewDraft;
+  }, [previewDraft]);
 
   function updateValues(nextValues: EventWebsitePreviewDraft["giftDetails"]) {
     onPreviewDraftChange({
@@ -593,9 +603,63 @@ export function OptionalGiftDetailsPanel({
   }
 
   function updateOption(index: number, nextOption: EventWebsiteGiftOptionDraft) {
-    const options = [...values.options];
+    const options = [...latestDraftRef.current.giftDetails.options];
     options[index] = nextOption;
-    updateValues({ ...values, options });
+    updateValues({ ...latestDraftRef.current.giftDetails, options });
+  }
+
+  async function handleGiftFileChange(index: number, file: File | null) {
+    const currentOption =
+      latestDraftRef.current.giftDetails.options[index] ??
+      (index === 0 ? giftOptionOne : giftOptionTwo);
+
+    if (!currentOption) {
+      return;
+    }
+
+    if (!file) {
+      updateOption(index, {
+        ...currentOption,
+        file: null,
+        image: null,
+      });
+      return;
+    }
+
+    updateOption(index, {
+      ...currentOption,
+      file,
+    });
+    setUploadingOptionIds((current) => ({ ...current, [currentOption.id]: true }));
+
+    try {
+      const result = await uploadEventWebsiteGiftImageAction({
+        file,
+        optionId: currentOption.id,
+        title: currentOption.title,
+      });
+
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+
+      const latestOption =
+        latestDraftRef.current.giftDetails.options[index] ?? currentOption;
+
+      updateOption(index, {
+        ...latestOption,
+        file,
+        image: result.data.image,
+      });
+    } catch (error) {
+      updateOption(index, {
+        ...currentOption,
+        file: null,
+      });
+      toast.error(error instanceof Error ? error.message : "Gift image could not be uploaded.");
+    } finally {
+      setUploadingOptionIds((current) => ({ ...current, [currentOption.id]: false }));
+    }
   }
 
   return (
@@ -642,7 +706,9 @@ export function OptionalGiftDetailsPanel({
                 <EventWebsiteGiftUploadCard
                   file={giftOptionOne.file}
                   fileInputId="event-editor-gift-option-one-upload"
-                  onFileChange={(file) => updateOption(0, { ...giftOptionOne, file })}
+                  image={giftOptionOne.image}
+                  isUploading={Boolean(uploadingOptionIds[giftOptionOne.id])}
+                  onFileChange={(file) => void handleGiftFileChange(0, file)}
                 />
               </div>
             </FieldGrid>
@@ -682,7 +748,9 @@ export function OptionalGiftDetailsPanel({
                   <EventWebsiteGiftUploadCard
                     file={giftOptionTwo.file}
                     fileInputId="event-editor-gift-option-two-upload"
-                    onFileChange={(file) => updateOption(1, { ...giftOptionTwo, file })}
+                    image={giftOptionTwo.image}
+                    isUploading={Boolean(uploadingOptionIds[giftOptionTwo.id])}
+                    onFileChange={(file) => void handleGiftFileChange(1, file)}
                   />
                 </div>
               </FieldGrid>
@@ -694,7 +762,10 @@ export function OptionalGiftDetailsPanel({
               onClick={() =>
                 updateValues({
                   ...values,
-                  options: [...values.options, { file: null, id: createEventWebsiteDraftItemId("gift-option"), title: "" }],
+                  options: [
+                    ...values.options,
+                    { file: null, id: createEventWebsiteDraftItemId("gift-option"), image: null, title: "" },
+                  ],
                 })
               }
             >

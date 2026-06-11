@@ -121,8 +121,8 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
     giftNote:
       "If you wish to give a gift, a monetary gift would be greatly appreciated as we begin this new chapter together.",
     options: [
-      { file: null, id: "gift-option-1", title: "GCash" },
-      { file: null, id: "gift-option-2", title: "Bank Transfer" },
+      { file: null, id: "gift-option-1", image: null, title: "GCash" },
+      { file: null, id: "gift-option-2", image: null, title: "Bank Transfer" },
     ],
     sectionIntro: "Your presence is the greatest gift.",
   },
@@ -358,6 +358,7 @@ export function buildEventWebsiteContentFromPreviewDraft({
             savedContent.sections.gift_details.options[index]?.id ||
             createEventWebsiteDraftItemId("gift-option"),
           image:
+            option.image ??
             savedContent.sections.gift_details.options.find((savedOption) => savedOption.id === option.id)?.image ??
             savedContent.sections.gift_details.options[index]?.image ??
             null,
