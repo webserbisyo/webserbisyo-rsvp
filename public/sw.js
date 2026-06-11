@@ -1,12 +1,16 @@
-const CACHE_NAME = "rsvp-offline-v6";
+const CACHE_NAME = "rsvp-offline-v7";
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
   "/favicon.ico",
   "/icon.png",
   "/apple-icon.png",
+  "/images/brand/webserbisyo-logo.jpeg",
+  "/manifest.webmanifest",
+  "/icons/apple-touch-icon.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icons/icon-512-maskable.png",
 ];
 
 self.addEventListener("install", (event) => {

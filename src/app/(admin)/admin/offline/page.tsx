@@ -28,7 +28,7 @@ export default function AdminOfflinePage() {
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">You&apos;re offline</h1>
           <p className="text-muted-foreground text-sm leading-6">
-            Admin pages need a connection for authentication and live RSVP platform data.
+            WebSerbisyo RSVP needs internet to sync your dashboard.
           </p>
         </div>
         <Button asChild>
