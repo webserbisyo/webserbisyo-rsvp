@@ -101,7 +101,6 @@ export async function getEventResponseCount({
   eventId: string;
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
 }) {
-  console.log("[responses] Counting responses for event", eventId);
   const { count, error } = await supabase
     .from("rsvp_responses")
     .select("id", { count: "exact", head: true })

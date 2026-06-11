@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { DashboardShell } from "@/components/dashboard/shell";
+import { getSafeNextPath } from "@/lib/auth/redirects";
 import { AuthenticationError, PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -10,12 +12,13 @@ type DashboardLayoutProps = {
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
   let profile: Awaited<ReturnType<typeof requireTenantMember>>;
   let planType: string | null = null;
+  const loginRedirectPath = await getDashboardLoginRedirectPath();
 
   try {
     profile = await requireTenantMember();
   } catch (error) {
     if (error instanceof AuthenticationError) {
-      redirect("/login?next=/dashboard");
+      redirect(`/login?next=${encodeURIComponent(loginRedirectPath)}`);
     }
 
     if (error instanceof PermissionError) {
@@ -51,4 +54,37 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
       {children}
     </DashboardShell>
   );
+}
+
+async function getDashboardLoginRedirectPath() {
+  const requestHeaders = await headers();
+  const candidates = [
+    buildPathWithQuery(
+      requestHeaders.get("x-webserbisyo-original-path"),
+      requestHeaders.get("x-webserbisyo-original-search"),
+    ),
+  ];
+
+  for (const candidate of candidates) {
+    const safePath = getSafeNextPath(candidate);
+
+    if (safePath?.startsWith("/dashboard")) {
+      return safePath;
+    }
+  }
+
+  return "/dashboard";
+}
+
+function buildPathWithQuery(pathname: string | null, query: string | null) {
+  if (!pathname) {
+    return null;
+  }
+
+  if (!query) {
+    return pathname;
+  }
+
+  const normalizedQuery = query.startsWith("?") ? query : `?${query}`;
+  return `${pathname}${normalizedQuery}`;
 }

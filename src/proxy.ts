@@ -22,8 +22,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  const requestHeaders = createAuthGuardRequestHeaders(request);
+
   if (process.env.RSVP_AUTH_GUARD_ENABLED !== "true") {
-    return NextResponse.next({ request });
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   let env: ReturnType<typeof getSupabasePublicEnv>;
@@ -31,10 +37,18 @@ export async function proxy(request: NextRequest) {
   try {
     env = getSupabasePublicEnv();
   } catch {
-    return NextResponse.next({ request });
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   const supabase = createServerClient(env.url, env.anonKey, {
     cookies: {
@@ -45,7 +59,11 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) =>
           request.cookies.set({ name, value, ...options }),
         );
-        supabaseResponse = NextResponse.next({ request });
+        supabaseResponse = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set({ name, value, ...options }),
         );
@@ -139,6 +157,15 @@ function getRequestHost(request: NextRequest) {
   }
 
   return request.headers.get("host");
+}
+
+function createAuthGuardRequestHeaders(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+
+  requestHeaders.set(ORIGINAL_PATH_HEADER, request.nextUrl.pathname);
+  requestHeaders.set(ORIGINAL_SEARCH_HEADER, request.nextUrl.search);
+
+  return requestHeaders;
 }
 
 export const config = {
