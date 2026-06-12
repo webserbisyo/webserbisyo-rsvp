@@ -193,10 +193,11 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const fallbackRsvpPublicUrl =
     linkSet?.preferredProductionRsvpUrl ??
     (linkSet && publishedSlug ? buildOfficialPublicRsvpStandaloneUrl(publishedSlug) : null);
-  const customWebsiteConnected = await isCustomWebsiteConnected({
+  const customWebsiteConnectedPromise = isCustomWebsiteConnected({
     clientId: profile.client_id ?? "",
     eventId: event.id,
   });
+  const customWebsiteConnected = await customWebsiteConnectedPromise;
   const publicRsvpUrl = customWebsiteConnected
     ? (linkSet?.wildcardProductionRsvpUrl ?? fallbackRsvpPublicUrl)
     : fallbackRsvpPublicUrl;

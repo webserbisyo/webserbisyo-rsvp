@@ -8,7 +8,11 @@ export function registerServiceWorker() {
         scope: "/",
         updateViaCache: "none",
       })
-      .catch(console.error);
+      .catch((error) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[pwa] Service worker registration failed.", error);
+        }
+      });
   };
 
   if (document.readyState === "complete") {

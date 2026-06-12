@@ -88,6 +88,7 @@ export type PublishEventWebsiteInput = {
 };
 
 export type PublishEventWebsiteResult = {
+  privateAccessToken: string | null;
   previousPublishedSlug: string | null;
   previousPublishedSubdomain: string | null;
   publishedAt: string;
@@ -436,6 +437,7 @@ export async function publishEventWebsite(
   });
 
   return {
+    privateAccessToken,
     previousPublishedSlug,
     previousPublishedSubdomain,
     publishedAt,

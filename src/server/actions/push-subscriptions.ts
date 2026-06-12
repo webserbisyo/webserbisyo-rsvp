@@ -7,6 +7,7 @@ import {
   RemovePushSubscriptionSchema,
   SavePushSubscriptionSchema,
 } from "@/lib/validations/notifications.schema";
+import { NOTIFICATION_EVENT_TYPES } from "@/types/notifications";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 export async function savePushSubscriptionAction(input: unknown) {
@@ -121,5 +122,39 @@ async function setPushPreferencesEnabled(
 
   if (error) {
     throw error;
+  }
+
+  const { data: existingRows, error: selectError } = await supabase
+    .from("notification_preferences")
+    .select("event_type")
+    .eq("profile_id", input.profileId)
+    .eq("client_id", input.clientId);
+
+  if (selectError) {
+    throw selectError;
+  }
+
+  const existingTypes = new Set((existingRows ?? []).map((row) => row.event_type));
+  const missingEventTypes = NOTIFICATION_EVENT_TYPES.filter(
+    (eventType) => !existingTypes.has(eventType),
+  );
+
+  if (missingEventTypes.length === 0) {
+    return;
+  }
+
+  const { error: insertError } = await supabase.from("notification_preferences").insert(
+    missingEventTypes.map((eventType) => ({
+      client_id: input.clientId,
+      email_enabled: false,
+      event_type: eventType,
+      in_app_enabled: true,
+      profile_id: input.profileId,
+      push_enabled: input.enabled,
+    })),
+  );
+
+  if (insertError) {
+    throw insertError;
   }
 }

@@ -21,17 +21,38 @@ export type DashboardSyncEventName =
 export type DashboardSyncEvent = {
   eventId?: string | null;
   name: DashboardSyncEventName;
+  originId?: string | null;
   timestamp: number;
 };
 
 type UseDashboardRefreshOptions = {
   events?: DashboardSyncEventName[];
   eventId?: string | null;
+  ignoreSelfEvents?: boolean;
   refreshOnFocus?: boolean;
   refreshOnVisibility?: boolean;
   refreshDelayMs?: number;
   minRefreshIntervalMs?: number;
 };
+
+let dashboardSyncOriginId: string | null = null;
+
+function getDashboardSyncOriginId() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (dashboardSyncOriginId) {
+    return dashboardSyncOriginId;
+  }
+
+  dashboardSyncOriginId =
+    typeof globalThis.crypto?.randomUUID === "function"
+      ? globalThis.crypto.randomUUID()
+      : `ws-dashboard-sync-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return dashboardSyncOriginId;
+}
 
 export function emitDashboardSyncEvent(input: {
   eventId?: string | null;
@@ -44,6 +65,7 @@ export function emitDashboardSyncEvent(input: {
   const event: DashboardSyncEvent = {
     eventId: input.eventId ?? null,
     name: input.name,
+    originId: getDashboardSyncOriginId(),
     timestamp: Date.now(),
   };
 
@@ -77,6 +99,7 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
   const refreshDelayMs = options.refreshDelayMs ?? DEFAULT_REFRESH_DELAY_MS;
   const minRefreshIntervalMs =
     options.minRefreshIntervalMs ?? DEFAULT_MIN_REFRESH_INTERVAL_MS;
+  const ignoreSelfEvents = options.ignoreSelfEvents ?? false;
   const refreshOnFocus = options.refreshOnFocus ?? false;
   const refreshOnVisibility = options.refreshOnVisibility ?? false;
 
@@ -118,6 +141,10 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
       }
 
       if (scopedEventId && event.eventId && scopedEventId !== event.eventId) {
+        return false;
+      }
+
+      if (ignoreSelfEvents && event.originId && event.originId === getDashboardSyncOriginId()) {
         return false;
       }
 
@@ -191,5 +218,5 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [minRefreshIntervalMs, refreshDelayMs, refreshOnFocus, refreshOnVisibility]);
+  }, [ignoreSelfEvents, minRefreshIntervalMs, refreshDelayMs, refreshOnFocus, refreshOnVisibility]);
 }

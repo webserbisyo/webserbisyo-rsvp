@@ -25,8 +25,8 @@ export default function DashboardWebsiteAccessLoading() {
               <DashboardSkeletonLine className="h-6 w-32 rounded-full" />
               <DashboardSkeletonLine className="h-7 w-24 rounded-full" />
             </div>
-            <div className="grid gap-3">
-              {Array.from({ length: 3 }).map((_, index) => (
+          <div className="grid gap-3">
+              {Array.from({ length: 2 }).map((_, index) => (
                 <div key={index} className="grid grid-cols-[2.75rem_1fr_auto] items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white px-4 py-3">
                   <DashboardSkeletonBlock className="h-11 w-11 rounded-[0.875rem]" />
                   <div className="space-y-2">
@@ -47,8 +47,8 @@ export default function DashboardWebsiteAccessLoading() {
               <DashboardSkeletonLine className="h-6 w-36 rounded-full" />
               <DashboardSkeletonLine className="h-7 w-24 rounded-full" />
             </div>
-            <div className="grid gap-3">
-              {Array.from({ length: 4 }).map((_, index) => (
+          <div className="grid gap-3">
+              {Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="flex items-center justify-between rounded-xl bg-[#FEFAF7] px-4 py-3">
                   <DashboardSkeletonLine className="h-4 w-28 rounded-full" />
                   <DashboardSkeletonLine className="h-4 w-20 rounded-full" />
@@ -106,7 +106,7 @@ export default function DashboardWebsiteAccessLoading() {
                 <div className="mx-auto mt-5 flex w-fit items-center justify-center rounded-2xl border border-[#f0e7de] bg-white p-4 shadow-sm shadow-[#8a4b2e]/5">
                   <DashboardSkeletonBlock className="h-[148px] w-[148px] rounded-xl" />
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <DashboardSkeletonLine className="h-10 w-full rounded-xl" />
                   <DashboardSkeletonLine className="h-10 w-full rounded-xl" />
                 </div>

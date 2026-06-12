@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type {
   PublishStatusState,
@@ -13,13 +12,17 @@ import {
   formatWebsiteAccessDate,
   getPublishStatusState,
   getVisibilityLabel,
+  mapDbVisibilityToApp,
 } from "./website-access-utils";
 import { appendPrivateAccessToken } from "@/lib/private-access";
 import { sanitizePublicRsvpSlug, validateOptionalPublicRsvpSlug } from "@/lib/public-rsvp-slugs";
 import {
+  buildOfficialPublicRsvpStandaloneUrl,
+  buildOfficialPublicRsvpUrl,
   buildPublicRsvpUrl,
   buildWildcardRsvpPreviewUrl,
   getPublicAppUrl,
+  resolvePublicRsvpLinkSet,
 } from "@/lib/public-rsvp-url";
 import {
   emitDashboardSyncEvent,
@@ -34,8 +37,52 @@ import {
   updateWebsiteAccessDraftVisibilityAction,
 } from "@/server/actions/website-access";
 
+function resolveLiveWebsiteLinks(state: WebsiteAccessInitialData) {
+  const publishedSlug = state.publishedSlug?.trim() || null;
+
+  if (state.publishState !== "published" || !publishedSlug) {
+    return {
+      copyPublicUrl: null,
+      fallbackPublicUrl: null,
+      fallbackRsvpPublicUrl: null,
+      openPublicUrl: null,
+      productionPublicUrl: null,
+      publicRsvpUrl: null,
+      publicUrl: null,
+      qrPublicUrl: null,
+      rsvpQrPublicUrl: null,
+    };
+  }
+
+  const linkSet = resolvePublicRsvpLinkSet({
+    baseUrl: state.publicBaseUrl,
+    slug: publishedSlug,
+    subdomain: state.subdomainFieldsInstalled ? state.publishedSubdomain : null,
+    wildcardBaseDomain: state.wildcardBaseDomain,
+  });
+  const fallbackPublicUrl =
+    linkSet.fallbackPathUrl ?? buildOfficialPublicRsvpUrl(publishedSlug);
+  const fallbackRsvpPublicUrl =
+    linkSet.preferredProductionRsvpUrl ?? buildOfficialPublicRsvpStandaloneUrl(publishedSlug);
+  const publicUrl = linkSet.preferredProductionUrl ?? null;
+  const publicRsvpUrl = state.customWebsiteConnected
+    ? (linkSet.wildcardProductionRsvpUrl ?? fallbackRsvpPublicUrl)
+    : fallbackRsvpPublicUrl;
+
+  return {
+    copyPublicUrl: publicUrl,
+    fallbackPublicUrl,
+    fallbackRsvpPublicUrl,
+    openPublicUrl: publicUrl,
+    productionPublicUrl: publicUrl,
+    publicRsvpUrl,
+    publicUrl,
+    qrPublicUrl: publicUrl ?? fallbackPublicUrl,
+    rsvpQrPublicUrl: publicRsvpUrl ?? fallbackRsvpPublicUrl,
+  };
+}
+
 export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [serverState, setServerState] = useState(initialData);
   const isDraftSavePending = useEventWebsiteDraftSavePending(serverState.eventId);
@@ -50,6 +97,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     () => getPublicAppUrl({ baseUrl: serverState.publicBaseUrl }),
     [serverState.publicBaseUrl],
   );
+  const liveWebsiteLinks = useMemo(() => resolveLiveWebsiteLinks(serverState), [serverState]);
   const subdomainDraftError = useMemo(
     () => validateOptionalPublicRsvpSlug(draftSubdomain),
     [draftSubdomain],
@@ -83,45 +131,45 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const isPrivateLinkReady = publishedVisibility !== "private" || Boolean(activePrivateAccessToken);
   const websiteUrlOpen = isPrivateLinkReady
     ? (appendPrivateAccessToken(
-        serverState.openPublicUrl ?? serverState.publicUrl ?? "",
+        liveWebsiteLinks.openPublicUrl ?? liveWebsiteLinks.publicUrl ?? "",
         activePrivateAccessToken,
       ) ?? "")
     : "";
   const websiteUrlPublished =
     isPrivateLinkReady
-      ? (appendPrivateAccessToken(serverState.publicUrl ?? "", activePrivateAccessToken) ?? "")
+      ? (appendPrivateAccessToken(liveWebsiteLinks.publicUrl ?? "", activePrivateAccessToken) ?? "")
       : "";
   const websiteUrlCopy =
     isPrivateLinkReady
       ? (appendPrivateAccessToken(
-          serverState.copyPublicUrl ?? websiteUrlPublished,
+          liveWebsiteLinks.copyPublicUrl ?? websiteUrlPublished,
           activePrivateAccessToken,
         ) ?? "")
       : "";
   const websiteUrlProduction =
     isPrivateLinkReady
-      ? (appendPrivateAccessToken(serverState.productionPublicUrl ?? "", activePrivateAccessToken) ?? "")
+      ? (appendPrivateAccessToken(liveWebsiteLinks.productionPublicUrl ?? "", activePrivateAccessToken) ?? "")
       : "";
   const websiteUrlQr =
     isPrivateLinkReady
       ? (appendPrivateAccessToken(
-          serverState.qrPublicUrl ?? websiteUrlPublished ?? serverState.fallbackPublicUrl ?? "",
+          liveWebsiteLinks.qrPublicUrl ?? websiteUrlPublished ?? liveWebsiteLinks.fallbackPublicUrl ?? "",
           activePrivateAccessToken,
         ) ?? "")
       : "";
   const rsvpUrlQr =
     isPrivateLinkReady
       ? (appendPrivateAccessToken(
-          serverState.rsvpQrPublicUrl ??
-            serverState.publicRsvpUrl ??
-            serverState.fallbackRsvpPublicUrl ??
+          liveWebsiteLinks.rsvpQrPublicUrl ??
+            liveWebsiteLinks.publicRsvpUrl ??
+            liveWebsiteLinks.fallbackRsvpPublicUrl ??
             "",
           activePrivateAccessToken,
         ) ?? "")
       : "";
   const websiteUrlFallback =
     isPrivateLinkReady
-      ? (appendPrivateAccessToken(serverState.fallbackPublicUrl ?? "", activePrivateAccessToken) ?? "")
+      ? (appendPrivateAccessToken(liveWebsiteLinks.fallbackPublicUrl ?? "", activePrivateAccessToken) ?? "")
       : "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({
@@ -150,9 +198,33 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       "event-website:unpublished",
       "website-access:private-link-regenerated",
     ],
+    ignoreSelfEvents: true,
     refreshOnFocus: true,
     refreshOnVisibility: true,
   });
+
+  useEffect(() => {
+    persistedDraftSubdomainRef.current = initialData.draftSubdomain ?? "";
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+
+      setServerState(initialData);
+      setDraftVisibility(initialData.draftVisibility);
+      setDraftSubdomain(initialData.draftSubdomain ?? "");
+
+      if (!slugModalOpen) {
+        setSlugModalValue(initialData.draftSubdomain ?? "");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialData, slugModalOpen]);
 
   useEffect(() => {
     if (isSubdomainLocked || !serverState.eventId) {
@@ -302,11 +374,34 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       }
 
       toast.success(isPublished ? "Latest website changes published." : "Website published.");
+      const publishedVisibility = mapDbVisibilityToApp(result.data.publishedVisibility);
+      persistedDraftSubdomainRef.current = result.data.publishedSubdomain ?? "";
+      setDraftVisibility(publishedVisibility);
+      setDraftSubdomain(result.data.publishedSubdomain ?? "");
+      setServerState((current) => ({
+        ...current,
+        draftSubdomain: result.data.publishedSubdomain,
+        draftVisibility: publishedVisibility,
+        hasAccessPendingChanges: false,
+        hasContentPendingChanges: false,
+        hasEverPublished: true,
+        hasPendingChanges: false,
+        hasSlugPendingChanges: false,
+        hasSubdomainPendingChanges: false,
+        lastEditedAt: result.data.publishedAt,
+        privateAccessToken: result.data.privateAccessToken,
+        publishState: "published",
+        publishedAt: result.data.publishedAt,
+        publishedSlug: result.data.publishedSlug,
+        publishedSubdomain: result.data.publishedSubdomain,
+        publishedVisibility,
+        snapshotPublishedAt: result.data.publishedAt,
+        websiteAccessUpdatedAt: result.data.publishedAt,
+      }));
       emitDashboardSyncEvent({
         eventId: serverState.eventId,
         name: "event-website:published",
       });
-      router.refresh();
     });
   }
 
@@ -331,11 +426,22 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       }
 
       toast.success("Website hidden from guests.");
+      setServerState((current) => ({
+        ...current,
+        hasAccessPendingChanges: false,
+        hasContentPendingChanges: false,
+        hasPendingChanges: false,
+        hasSlugPendingChanges: false,
+        hasSubdomainPendingChanges: false,
+        lastEditedAt: current.websiteAccessUpdatedAt ?? current.lastEditedAt,
+        publishState: "unpublished",
+        publishedAt: null,
+        snapshotPublishedAt: null,
+      }));
       emitDashboardSyncEvent({
         eventId: serverState.eventId,
         name: "event-website:unpublished",
       });
-      router.refresh();
     });
   }
 
@@ -377,7 +483,6 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         eventId: serverState.eventId,
         name: "website-access:private-link-regenerated",
       });
-      router.refresh();
     });
   }
 

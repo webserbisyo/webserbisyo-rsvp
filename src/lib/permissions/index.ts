@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -19,7 +20,7 @@ export class AuthenticationError extends Error {
   }
 }
 
-async function requireProfile(): Promise<AuthenticatedProfile> {
+const loadAuthenticatedProfile = cache(async (): Promise<AuthenticatedProfile> => {
   const supabase = await createServerSupabaseClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
@@ -39,6 +40,10 @@ async function requireProfile(): Promise<AuthenticatedProfile> {
   }
 
   return profile;
+});
+
+async function requireProfile(): Promise<AuthenticatedProfile> {
+  return loadAuthenticatedProfile();
 }
 
 export async function requireAdmin(): Promise<AuthenticatedProfile> {

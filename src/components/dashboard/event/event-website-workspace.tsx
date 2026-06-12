@@ -243,6 +243,22 @@ function EnabledEventWebsiteWorkspace({
   const savedContentRef = useRef(savedContent);
 
   useEffect(() => {
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setSelectedSection((current) =>
+          current === initialSectionKey ? current : initialSectionKey,
+        );
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSectionKey]);
+
+  useEffect(() => {
     latestContentRef.current = currentContent;
   }, [currentContent]);
 

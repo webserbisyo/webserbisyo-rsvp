@@ -1,9 +1,17 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Copy, Download, Globe2 } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+
+const QrCodeCanvas = dynamic(
+  () => import("./qr-code-canvas").then((module) => module.QrCodeCanvas),
+  {
+    loading: () => <div className="h-[148px] w-[148px] rounded-xl bg-[#f7ede6]" aria-hidden="true" />,
+    ssr: false,
+  },
+);
 
 type QrCodesCardProps = {
   disabled?: boolean;
@@ -112,15 +120,7 @@ function QrTile({
 
       {/* QR code — centered, modest size */}
       <div className="mx-auto mt-5 flex w-fit items-center justify-center rounded-2xl border border-[#f0e7de] bg-white p-4 shadow-sm shadow-[#8a4b2e]/5">
-        <QRCodeCanvas
-          id={canvasId}
-          value={url}
-          size={148}
-          includeMargin
-          bgColor="#ffffff"
-          fgColor="#2b2521"
-          level="M"
-        />
+        <QrCodeCanvas id={canvasId} value={url} />
       </div>
 
       {/* Buttons directly below QR — no URL text */}

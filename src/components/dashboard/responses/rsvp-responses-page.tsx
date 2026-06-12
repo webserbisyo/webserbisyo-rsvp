@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/feedback/error-state";
 import {
@@ -52,15 +52,9 @@ export function RsvpResponsesPage({
   initialResponses,
 }: RsvpResponsesPageProps) {
   const [responses, setResponses] = useState(initialResponses);
-  const [prevInitialResponses, setPrevInitialResponses] = useState(initialResponses);
   const [activeTab, setActiveTab] = useState<RsvpResponsesTab>(initialActiveTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [responseToReject, setResponseToReject] = useState<string | null>(null);
-
-  if (initialResponses !== prevInitialResponses) {
-    setPrevInitialResponses(initialResponses);
-    setResponses(initialResponses);
-  }
   const [selectedResponse, setSelectedResponse] = useState<RsvpResponseRecord | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [pendingResponseIds, setPendingResponseIds] = useState<string[]>([]);
@@ -68,6 +62,34 @@ export function RsvpResponsesPage({
 
   const [bulkRejectIds, setBulkRejectIds] = useState<string[] | null>(null);
   const [bulkRestoreIds, setBulkRestoreIds] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setResponses(initialResponses);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialResponses]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setActiveTab(initialActiveTab);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialActiveTab]);
 
   useDashboardRefresh({
     events: ["rsvp-responses:guestbook-updated", "rsvp-responses:inserted"],

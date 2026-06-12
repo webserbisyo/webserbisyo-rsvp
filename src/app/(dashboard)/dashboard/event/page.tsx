@@ -24,7 +24,6 @@ export default async function DashboardEventPage({ searchParams }: DashboardEven
       <EventWebsiteWorkspace
         eventWebsiteData={eventWebsiteData}
         initialSelectedSection={requestedSection ?? null}
-        key={requestedSection ?? "host_info"}
       />
     </div>
   );

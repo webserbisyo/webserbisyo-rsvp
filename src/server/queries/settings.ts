@@ -132,34 +132,6 @@ async function loadNotificationPreferences(
   const rowsByType = new Map(
     (data ?? []).map((row) => [row.event_type as NotificationEventType, row]),
   );
-  const missingEventTypes = NOTIFICATION_EVENT_TYPES.filter((eventType) => !rowsByType.has(eventType));
-
-  if (missingEventTypes.length > 0) {
-    const { data: insertedRows, error: insertError } = await supabase
-      .from("notification_preferences")
-      .upsert(
-        missingEventTypes.map((eventType) => ({
-          client_id: input.clientId,
-          email_enabled: false,
-          event_type: eventType,
-          in_app_enabled: true,
-          profile_id: input.profileId,
-          push_enabled: false,
-        })),
-        {
-          onConflict: "profile_id,client_id,event_type",
-        },
-      )
-      .select("email_enabled, event_type, in_app_enabled, push_enabled");
-
-    if (insertError) {
-      throw insertError;
-    }
-
-    for (const row of insertedRows ?? []) {
-      rowsByType.set(row.event_type as NotificationEventType, row);
-    }
-  }
 
   return NOTIFICATION_EVENT_TYPES.reduce(
     (preferences, eventType) => {

@@ -96,10 +96,10 @@ export default function DashboardEventLoading() {
         <DashboardCardSkeleton className="event-website-status-card" contentClassName="px-4 py-4">
           <div className="space-y-4">
             <DashboardSkeletonLine className="h-6 w-28 rounded-full" />
-            <DashboardSkeletonLine className="h-4 w-48 rounded-full" />
-            <div className="grid grid-cols-3 gap-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <DashboardSkeletonBlock key={index} className="h-[4.5rem] w-full rounded-2xl" />
+            <DashboardSkeletonLine className="h-4 w-40 rounded-full" />
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <DashboardSkeletonBlock key={index} className="h-[4rem] w-full rounded-2xl" />
               ))}
             </div>
           </div>

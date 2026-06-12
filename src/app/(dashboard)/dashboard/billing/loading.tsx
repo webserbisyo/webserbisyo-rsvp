@@ -9,6 +9,7 @@ import {
 export default function DashboardBillingLoading() {
   return (
     <div className="space-y-6 pb-24 pt-2 md:pb-8">
+      <DashboardSkeletonLine className="h-4 w-24 rounded-full" />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         <div className="space-y-6">
           <DashboardCardSkeleton
@@ -29,7 +30,7 @@ export default function DashboardBillingLoading() {
             <div className="space-y-5">
               <DashboardSkeletonLine className="h-4 w-28 rounded-full" />
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, index) => (
+                {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="flex items-center justify-between gap-6 border-b border-[color:var(--dash-divider)] py-3.5 last:border-b-0">
                     <DashboardSkeletonLine className="h-4 w-24 rounded-full" />
                     <DashboardSkeletonLine className="h-4 w-28 rounded-full" />
@@ -45,7 +46,7 @@ export default function DashboardBillingLoading() {
             <div className="space-y-5">
               <DashboardSkeletonLine className="h-4 w-40 rounded-full" />
               <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
+                {Array.from({ length: 2 }).map((_, index) => (
                   <div key={index} className="flex items-center justify-between gap-5 border-b border-[color:var(--dash-divider)] py-3.5 last:border-b-0">
                     <DashboardSkeletonLine className="h-4 w-20 rounded-full" />
                     <DashboardSkeletonLine className="h-4 w-24 rounded-full" />

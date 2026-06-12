@@ -167,23 +167,24 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     event?.status === "published" && event?.published_at
       ? (publicLinkSet?.openUrl ?? null)
       : null;
-  const guestbookMessages =
+  const [guestbookMessages, customWebsitePreview] = await Promise.all([
     event?.id && clientId
-      ? await listApprovedGuestbookMessages({
+      ? listApprovedGuestbookMessages({
           clientId,
           eventId: event.id,
         })
-      : [];
-  const customWebsitePreview = await resolveDashboardCustomWebsitePreview({
-    clientId,
-    event: event?.id
-      ? {
-          eventSlug: event.event_slug,
-          id: event.id,
-          subdomainSlug: event.subdomain_slug ?? null,
-        }
-      : null,
-  });
+      : Promise.resolve([]),
+    resolveDashboardCustomWebsitePreview({
+      clientId,
+      event: event?.id
+        ? {
+            eventSlug: event.event_slug,
+            id: event.id,
+            subdomainSlug: event.subdomain_slug ?? null,
+          }
+        : null,
+    }),
+  ]);
 
   return {
     eventId: event?.id ?? null,
