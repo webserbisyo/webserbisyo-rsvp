@@ -14,6 +14,7 @@ export type DashboardSyncEventName =
   | "event-website:draft-updated"
   | "event-website:published"
   | "event-website:unpublished"
+  | "website-access:private-link-regenerated"
   | "rsvp-responses:inserted"
   | "rsvp-responses:guestbook-updated";
 

@@ -1,9 +1,10 @@
 import { notFoundJson, publicApiErrorJson, publicApiSuccessJson } from "@/lib/public-api";
 import { PublicEventSlugSchema } from "@/lib/event-website/public-event";
+import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { resolvePublicEventWebsite } from "@/server/services/resolve-public-event-website";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ eventSlug: string }> },
 ) {
   const { eventSlug } = await context.params;
@@ -19,7 +20,10 @@ export async function GET(
   }
 
   try {
-    const event = await resolvePublicEventWebsite(parsedSlug.data);
+    const event = await resolvePublicEventWebsite(
+      parsedSlug.data,
+      getPrivateAccessTokenFromSearchParams(new URL(request.url).searchParams),
+    );
 
     if (!event) {
       return notFoundJson("public-event", "Published event not found.");

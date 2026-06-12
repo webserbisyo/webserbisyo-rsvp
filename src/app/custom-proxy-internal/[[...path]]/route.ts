@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { buildPublicRsvpPath, buildPublicRsvpStandalonePath, getOfficialPublicAppUrl, getRsvpBaseDomain } from "@/lib/public-rsvp-url";
 import { assertSafeCustomFrontendOriginForFetch } from "@/server/services/custom-websites/custom-website-origin";
 import { resolvePublicCustomFrontendBySubdomain } from "@/server/services/custom-websites/resolve-public-custom-frontend";
@@ -39,6 +40,9 @@ async function handleCustomProxyRequest(request: Request, context: ProxyRouteCon
   const originalHost = readOriginalHost(request);
   const originalPathname = await readOriginalPathname(context, request);
   const originalSearch = request.headers.get(ORIGINAL_SEARCH_HEADER) ?? "";
+  const accessToken = getPrivateAccessTokenFromSearchParams(
+    new URLSearchParams(originalSearch.startsWith("?") ? originalSearch.slice(1) : originalSearch),
+  );
 
   if (!originalHost || !originalPathname || isPlatformOwnedPublicPath(originalPathname)) {
     return new Response("Not Found", { status: 404 });
@@ -50,7 +54,7 @@ async function handleCustomProxyRequest(request: Request, context: ProxyRouteCon
     return new Response("Not Found", { status: 404 });
   }
 
-  const resolution = await resolvePublicCustomFrontendBySubdomain(subdomainSlug);
+  const resolution = await resolvePublicCustomFrontendBySubdomain(subdomainSlug, accessToken);
 
   if (!resolution) {
     return new Response("Not Found", { status: 404 });

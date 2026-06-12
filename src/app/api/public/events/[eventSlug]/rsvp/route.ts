@@ -5,6 +5,7 @@ import {
   publicApiSuccessJson,
 } from "@/lib/public-api";
 import { PublicEventSlugSchema } from "@/lib/event-website/public-event";
+import { getPrivateAccessTokenFromSearchParams, normalizePrivateAccessToken } from "@/lib/private-access";
 import { type PublicRsvpSubmitSuccess } from "@/lib/validations/rsvp-response.schema";
 import { ServiceError } from "@/server/services/service-error";
 import { submitRsvpResponse } from "@/server/services/submit-rsvp-response";
@@ -26,6 +27,7 @@ export async function POST(
   }
 
   let rawBody: unknown;
+  const accessTokenFromQuery = getPrivateAccessTokenFromSearchParams(new URL(request.url).searchParams);
 
   try {
     rawBody = await request.json();
@@ -44,7 +46,16 @@ export async function POST(
         ...(rawBody && typeof rawBody === "object" ? rawBody : {}),
         eventSlug: parsedSlug.data,
       },
-      { source: "public_custom_frontend" }
+      {
+        accessToken:
+          accessTokenFromQuery ||
+          (rawBody && typeof rawBody === "object"
+            ? normalizePrivateAccessToken(
+                (rawBody as { accessToken?: unknown }).accessToken as string | undefined,
+              )
+            : null),
+        source: "public_custom_frontend",
+      },
     );
 
     if (!response) {
@@ -95,7 +106,8 @@ export async function POST(
 function getSubmitErrorStatus(message: string) {
   if (
     message === "RSVP event is not available." ||
-    message === "RSVP form is not available for this event."
+    message === "RSVP form is not available for this event." ||
+    message === "This private event link is not available."
   ) {
     return 404;
   }

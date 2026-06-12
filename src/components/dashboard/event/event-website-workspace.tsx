@@ -495,6 +495,7 @@ function EnabledEventWebsiteWorkspace({
     return (
       <div className="event-website-workspace">
         <EventWebsiteLeftPane
+          allowFullCardDrag={isDesktopLayout}
           autoSaveEnabled={autoSaveEnabled}
           enabledSections={enabledSections}
           defaultWebsiteFlowSections={defaultWebsiteFlowSections}
@@ -572,8 +573,9 @@ function EnabledEventWebsiteWorkspace({
         </TabsList>
 
         <TabsContent value="flow" className="event-website-mode-panel">
-          <EventWebsiteLeftPane
-            autoSaveEnabled={autoSaveEnabled}
+            <EventWebsiteLeftPane
+              allowFullCardDrag={false}
+              autoSaveEnabled={autoSaveEnabled}
             className="event-website-pane--responsive-flow"
             defaultWebsiteFlowSections={defaultWebsiteFlowSections}
             enabledSections={enabledSections}

@@ -32,6 +32,7 @@ export type WebsiteAccessInitialData = {
   hasSubdomainPendingChanges: boolean;
   lastEditedAt: string | null;
   openPublicUrl: string | null;
+  privateAccessToken: string | null;
   publicBaseUrl: string | null;
   publicUrl: string | null;
   publicRsvpUrl: string | null;

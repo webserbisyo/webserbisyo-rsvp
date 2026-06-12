@@ -7,6 +7,7 @@ import {
 } from "@/components/dashboard/website-access/website-access-utils";
 import type { WebsiteAccessInitialData } from "@/components/dashboard/website-access/website-access-types";
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -42,6 +43,7 @@ type WebsiteAccessDataRow = {
   event_time: string | null;
   fallback_page_enabled: boolean;
   id: string;
+  private_access_token: string | null;
   published_at: string | null;
   status: string;
   subdomain_slug: string | null;
@@ -95,6 +97,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       hasSubdomainPendingChanges: false,
       lastEditedAt: null,
       openPublicUrl: null,
+      privateAccessToken: null,
       publicBaseUrl,
       publicUrl: null,
       publishState: "unpublished",
@@ -167,19 +170,29 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     slug: publishedSlug,
     status: event.status,
   });
+  const activePrivateAccessToken =
+    publishState === "published" && publishedVisibility === "private"
+      ? normalizePrivateAccessToken(event.private_access_token)
+      : null;
   const linkSet =
     isShareable && publishedSlug
       ? resolvePublicRsvpLinkSet({
+          accessToken: activePrivateAccessToken,
           baseUrl: publicBaseUrl,
           slug: publishedSlug,
           subdomain: eventRecord.subdomainFieldsInstalled ? publishedSubdomain : null,
           wildcardBaseDomain,
-      })
+        })
       : null;
-  const fallbackPublicUrl = linkSet && publishedSlug ? buildOfficialPublicRsvpUrl(publishedSlug) : null;
+  const fallbackPublicUrl =
+    linkSet?.fallbackPathUrl ??
+    (linkSet && publishedSlug
+      ? buildOfficialPublicRsvpUrl(publishedSlug)
+      : null);
   const publicUrl = linkSet?.preferredProductionUrl ?? null;
   const fallbackRsvpPublicUrl =
-    linkSet && publishedSlug ? buildOfficialPublicRsvpStandaloneUrl(publishedSlug) : null;
+    linkSet?.preferredProductionRsvpUrl ??
+    (linkSet && publishedSlug ? buildOfficialPublicRsvpStandaloneUrl(publishedSlug) : null);
   const customWebsiteConnected = await isCustomWebsiteConnected({
     clientId: profile.client_id ?? "",
     eventId: event.id,
@@ -220,6 +233,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     hasSubdomainPendingChanges,
     lastEditedAt: event.website_access_updated_at ?? contentDraftSavedAt,
     openPublicUrl,
+    privateAccessToken: event.private_access_token,
     publicBaseUrl,
     publicUrl,
     publicRsvpUrl,
@@ -271,6 +285,7 @@ async function getWebsiteAccessEventRow(
         draft_event_slug,
         subdomain_slug,
         draft_subdomain_slug,
+        private_access_token,
         visibility,
         draft_visibility,
         status,
@@ -322,6 +337,7 @@ async function getDraftSchemaFallbackEventRow(
         title,
         event_slug,
         draft_event_slug,
+        private_access_token,
         visibility,
         draft_visibility,
         status,
@@ -374,6 +390,7 @@ async function getDraftSchemaFallbackEventRow(
         id,
         title,
         event_slug,
+        private_access_token,
         visibility,
         status,
         published_at,
@@ -419,6 +436,7 @@ async function getDraftSchemaFallbackEventRow(
       event_time: legacyEvent.event_time,
       fallback_page_enabled: legacyEvent.fallback_page_enabled,
       id: legacyEvent.id,
+      private_access_token: legacyEvent.private_access_token,
       published_at: legacyEvent.published_at,
       status: legacyEvent.status,
       subdomain_slug: legacyEvent.event_slug,

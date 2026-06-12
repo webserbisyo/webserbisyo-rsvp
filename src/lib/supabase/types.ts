@@ -1039,6 +1039,8 @@ export type Database = {
           fallback_page_enabled: boolean;
           id: string;
           max_guest_count: number | null;
+          private_access_token: string | null;
+          private_access_token_rotated_at: string | null;
           published_at: string | null;
           rsvp_close_at: string | null;
           rsvp_open_at: string | null;
@@ -1067,6 +1069,8 @@ export type Database = {
           fallback_page_enabled?: boolean;
           id?: string;
           max_guest_count?: number | null;
+          private_access_token?: string | null;
+          private_access_token_rotated_at?: string | null;
           published_at?: string | null;
           rsvp_close_at?: string | null;
           rsvp_open_at?: string | null;
@@ -1095,6 +1099,8 @@ export type Database = {
           fallback_page_enabled?: boolean;
           id?: string;
           max_guest_count?: number | null;
+          private_access_token?: string | null;
+          private_access_token_rotated_at?: string | null;
           published_at?: string | null;
           rsvp_close_at?: string | null;
           rsvp_open_at?: string | null;

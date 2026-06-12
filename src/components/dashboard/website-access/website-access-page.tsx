@@ -3,6 +3,7 @@
 import type { WebsiteAccessInitialData } from "./website-access-types";
 import { GuestAccessCard } from "./guest-access-card";
 import { LiveWebsiteBar } from "./live-website-bar";
+import { PrivateLinkRegenerateDialog } from "./private-link-regenerate-dialog";
 import { PublishStatusCard } from "./publish-status-card";
 import { QrCodesCard } from "./qr-codes-card";
 import { SlugChangeDialog } from "./slug-change-dialog";
@@ -37,7 +38,9 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         <GuestAccessCard
           hasVisibilityDraft={state.hasVisibilityDraft}
           disabled={state.isInteractionPending}
+          isPrivateLinkApplied={state.isPrivateLinkRegenerateAvailable}
           isPublished={state.isPublished}
+          onRegeneratePrivateLink={state.openRegeneratePrivateLinkDialog}
           onSelect={state.handleVisibilitySelect}
           selectedVisibility={state.visibility}
           visibilityLabel={state.visibilityLabel}
@@ -103,6 +106,20 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
         pending={state.isInteractionPending}
         suffix={state.subdomainBaseDomain}
         value={state.slugModalValue}
+      />
+
+      <PrivateLinkRegenerateDialog
+        open={state.isRegenerateDialogOpen}
+        pending={state.isInteractionPending}
+        onConfirm={state.regeneratePrivateLink}
+        onOpenChange={(open) => {
+          if (open) {
+            state.openRegeneratePrivateLinkDialog();
+            return;
+          }
+
+          state.closeRegeneratePrivateLinkDialog();
+        }}
       />
     </div>
   );

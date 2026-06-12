@@ -4522,6 +4522,11 @@
   outline: none;
 }
 
+[data-dashboard] .event-section-row-reorder-wrapper--touch,
+[data-dashboard] .event-section-list--touch {
+  touch-action: pan-y;
+}
+
 /* Draggable row cursor */
 [data-dashboard] .event-section-row--draggable {
   cursor: grab;
@@ -5536,6 +5541,7 @@
 
 [data-dashboard] .event-website-pane--responsive-flow .event-section-list {
   gap: 10px;
+  touch-action: pan-y;
 }
 
 [data-dashboard] .event-website-pane--responsive-flow .event-section-row {

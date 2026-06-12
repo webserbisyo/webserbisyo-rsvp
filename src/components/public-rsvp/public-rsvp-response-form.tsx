@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import {
   RSVP_ATTENDANCE_LABEL,
@@ -25,6 +26,7 @@ import {
   RSVP_RESPONSE_STATUS_VALUES,
 } from "@/lib/validations/rsvp-response.schema";
 import { cn } from "@/lib/utils";
+import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { submitRsvpResponseAction } from "@/server/actions/responses";
 import { Button } from "@/components/ui/button";
 
@@ -53,6 +55,7 @@ export function PublicRsvpResponseForm({
   isAcceptingResponses,
   settings,
 }: PublicRsvpResponseFormProps) {
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus>("attending");
   const [companionCount, setCompanionCount] = useState(0);
@@ -64,6 +67,7 @@ export function PublicRsvpResponseForm({
     attendanceStatus === "attending" && settings.plusOneEnabled && settings.companionLimit > 0;
   const shouldShowEmail = settings.emailEnabled;
   const shouldShowPhone = settings.phoneEnabled;
+  const accessToken = normalizePrivateAccessToken(searchParams.get("access"));
 
   function updateCompanionCount(value: number) {
     const nextCount = Math.max(0, Math.min(value, settings.companionLimit));
@@ -109,6 +113,7 @@ export function PublicRsvpResponseForm({
         phone: formData.get("phone")?.toString() ?? "",
       };
       const result = await submitRsvpResponseAction({
+        accessToken,
         ...payload,
         eventSlug,
       });

@@ -24,6 +24,7 @@ export type EventWebsiteStatusPill = {
 };
 
 type EventWebsiteLeftPaneProps = {
+  allowFullCardDrag?: boolean;
   autoSaveEnabled: boolean;
   className?: string;
   defaultWebsiteFlowSections: EventWebsiteSectionDefinition[];
@@ -45,6 +46,7 @@ type EventWebsiteLeftPaneProps = {
 };
 
 export function EventWebsiteLeftPane({
+  allowFullCardDrag = true,
   autoSaveEnabled,
   className,
   defaultWebsiteFlowSections,
@@ -149,40 +151,61 @@ export function EventWebsiteLeftPane({
           </Button>
         </div>
 
-        <Reorder.Group
-          axis="y"
-          values={websiteFlowSections}
-          onReorder={onWebsiteFlowSectionsChange}
-          className="event-section-list"
-          as="div"
-        >
-          {websiteFlowSections.map((section, index) => (
-            <Reorder.Item
-              key={section.key}
-              value={section}
-              as="div"
-              className={cn(
-                "event-section-row-reorder-wrapper",
-                !section.comingSoon && "event-section-row--draggable",
-              )}
-              style={{ position: "relative" }}
-              whileDrag={{ zIndex: 20 }}
-            >
-              <EventSectionRow
-                canMoveDown={index < websiteFlowSections.length - 1}
-                canMoveUp={index > 0}
-                enabled={section.required || (enabledSections[section.key] ?? false)}
-                reorderable
-                section={section}
-                selected={selectedSection === section.key}
-                onMoveDown={() => moveFlowSection(section.key, 1)}
-                onMoveUp={() => moveFlowSection(section.key, -1)}
-                onSelect={() => selectSection(section.key)}
-                onToggle={(enabled) => onEnabledSectionChange(section.key, enabled)}
-              />
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
+        {allowFullCardDrag ? (
+          <Reorder.Group
+            axis="y"
+            values={websiteFlowSections}
+            onReorder={onWebsiteFlowSectionsChange}
+            className="event-section-list"
+            as="div"
+          >
+            {websiteFlowSections.map((section, index) => (
+              <Reorder.Item
+                key={section.key}
+                value={section}
+                as="div"
+                className={cn(
+                  "event-section-row-reorder-wrapper",
+                  !section.comingSoon && "event-section-row--draggable",
+                )}
+                style={{ position: "relative" }}
+                whileDrag={{ zIndex: 20 }}
+              >
+                <EventSectionRow
+                  canMoveDown={index < websiteFlowSections.length - 1}
+                  canMoveUp={index > 0}
+                  enabled={section.required || (enabledSections[section.key] ?? false)}
+                  reorderable
+                  section={section}
+                  selected={selectedSection === section.key}
+                  onMoveDown={() => moveFlowSection(section.key, 1)}
+                  onMoveUp={() => moveFlowSection(section.key, -1)}
+                  onSelect={() => selectSection(section.key)}
+                  onToggle={(enabled) => onEnabledSectionChange(section.key, enabled)}
+                />
+              </Reorder.Item>
+            ))}
+          </Reorder.Group>
+        ) : (
+          <div className="event-section-list event-section-list--touch">
+            {websiteFlowSections.map((section, index) => (
+              <div key={section.key} className="event-section-row-reorder-wrapper event-section-row-reorder-wrapper--touch">
+                <EventSectionRow
+                  canMoveDown={index < websiteFlowSections.length - 1}
+                  canMoveUp={index > 0}
+                  enabled={section.required || (enabledSections[section.key] ?? false)}
+                  reorderable
+                  section={section}
+                  selected={selectedSection === section.key}
+                  onMoveDown={() => moveFlowSection(section.key, 1)}
+                  onMoveUp={() => moveFlowSection(section.key, -1)}
+                  onSelect={() => selectSection(section.key)}
+                  onToggle={(enabled) => onEnabledSectionChange(section.key, enabled)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Future development sections — visible but not active for launch */}

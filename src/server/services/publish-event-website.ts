@@ -9,6 +9,7 @@ import {
 import { mergeEventWebsiteContent, normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesUpdate } from "@/lib/supabase/types";
+import { ensurePrivateAccessToken, rotatePrivateAccessToken } from "./private-access-token";
 import { assertServiceData, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
@@ -31,6 +32,8 @@ type EventWebsiteRecord = {
   event_type: string | null;
   fallback_page_enabled: boolean;
   id: string;
+  private_access_token: string | null;
+  private_access_token_rotated_at: string | null;
   published_at: string | null;
   rsvp_close_at: string | null;
   status: string;
@@ -104,6 +107,18 @@ export type UnpublishEventWebsiteResult = {
   previousPublishedSlug: string | null;
   previousPublishedSubdomain: string | null;
   state: "unpublished";
+};
+
+export type RegeneratePrivateLinkInput = {
+  actorUserId: string;
+  clientId: string;
+  eventId: string;
+};
+
+export type RegeneratePrivateLinkResult = {
+  privateAccessToken: string;
+  rotatedAt: string | null;
+  updatedAt: string | null;
 };
 
 export async function updateWebsiteAccessDraftVisibility(
@@ -339,13 +354,25 @@ export async function publishEventWebsite(
     status: "published",
     visibility: eventRecord.draft_visibility,
   };
+  const privateAccessToken =
+    eventRecord.draft_visibility === "private"
+      ? await ensurePrivateAccessToken({
+          clientId: input.clientId,
+          currentToken: eventRecord.private_access_token,
+          eventId: input.eventId,
+        })
+      : null;
   const draftLiveEventRow: TablesUpdate<"rsvp_events"> =
     eventRecord.websiteAccessSchemaMode === "draft_live"
       ? {
           ...eventRow,
+          ...(privateAccessToken ? { private_access_token: privateAccessToken } : {}),
           subdomain_slug: eventRecord.draft_subdomain_slug,
         }
-      : eventRow;
+      : {
+          ...eventRow,
+          ...(privateAccessToken ? { private_access_token: privateAccessToken } : {}),
+        };
 
   const { data: contentUpdate, error: contentError } = await supabase
     .from("event_content")
@@ -490,6 +517,32 @@ export async function unpublishEventWebsite(
   };
 }
 
+export async function regeneratePrivateLink(
+  input: RegeneratePrivateLinkInput,
+): Promise<RegeneratePrivateLinkResult> {
+  const supabase = createAdminClient();
+  const eventRecord = await getOwnedEventRecord(supabase, input.eventId, input.clientId);
+
+  assertWebsiteAccessDraftSchema(eventRecord);
+
+  if (eventRecord.status !== "published" || !eventRecord.published_at) {
+    throw new ServiceError("Publish the website before regenerating the private link.");
+  }
+
+  if (eventRecord.visibility !== "private") {
+    throw new ServiceError(
+      "Private link regeneration is available only while Private Link is live.",
+    );
+  }
+
+  return rotatePrivateAccessToken({
+    actorUserId: input.actorUserId,
+    clientId: input.clientId,
+    eventId: input.eventId,
+    previousToken: eventRecord.private_access_token,
+  });
+}
+
 async function getOwnedEventRecord(
   supabase: ReturnType<typeof createAdminClient>,
   eventId: string,
@@ -505,6 +558,8 @@ async function getOwnedEventRecord(
         draft_event_slug,
         draft_subdomain_slug,
         subdomain_slug,
+        private_access_token,
+        private_access_token_rotated_at,
         visibility,
         draft_visibility,
         status,
@@ -530,6 +585,8 @@ async function getOwnedEventRecord(
         draft_event_slug,
         draft_subdomain_slug,
         subdomain_slug,
+        private_access_token,
+        private_access_token_rotated_at,
         visibility,
         draft_visibility,
         status,
@@ -580,6 +637,8 @@ async function getDraftSchemaFallbackRecord(
         client_id,
         event_slug,
         draft_event_slug,
+        private_access_token,
+        private_access_token_rotated_at,
         visibility,
         draft_visibility,
         status,
@@ -602,6 +661,8 @@ async function getDraftSchemaFallbackRecord(
         client_id,
         event_slug,
         draft_event_slug,
+        private_access_token,
+        private_access_token_rotated_at,
         visibility,
         draft_visibility,
         status,
@@ -646,6 +707,8 @@ async function getDraftSchemaFallbackRecord(
         client_id,
         event_slug,
         event_type,
+        private_access_token,
+        private_access_token_rotated_at,
         visibility,
         status,
         published_at,
@@ -666,6 +729,8 @@ async function getDraftSchemaFallbackRecord(
         id,
         client_id,
         event_slug,
+        private_access_token,
+        private_access_token_rotated_at,
         visibility,
         status,
         published_at,
@@ -677,8 +742,17 @@ async function getDraftSchemaFallbackRecord(
         venue_address
       `;
 
-  const { data: legacyEventRecord, error: legacyError } = await supabase
-    .from("rsvp_events")
+  const legacyEventQuery = supabase.from("rsvp_events") as ReturnType<typeof supabase.from> & {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          single: () => Promise<{ data: unknown; error: PostgrestError | null }>;
+        };
+      };
+    };
+  };
+
+  const { data: legacyEventRecord, error: legacyError } = await legacyEventQuery
     .select(legacySelect)
     .eq("id", eventId)
     .eq("client_id", clientId)
@@ -689,10 +763,24 @@ async function getDraftSchemaFallbackRecord(
   }
 
   assertServiceData(legacyEventRecord, "The selected event could not be found.");
-  const legacyEvent = legacyEventRecord as unknown as Omit<
-    EventWebsiteRecord,
-    "draft_event_slug" | "draft_subdomain_slug" | "draft_visibility" | "subdomain_slug" | "websiteAccessSchemaMode"
-  >;
+  const legacyEvent = legacyEventRecord as unknown as {
+    client_id: string;
+    event_content: EventContentRecord | EventContentRecord[] | null;
+    event_date: string | null;
+    event_slug: string;
+    event_time: string | null;
+    event_type: string | null;
+    fallback_page_enabled: boolean;
+    id: string;
+    private_access_token: string | null;
+    private_access_token_rotated_at: string | null;
+    published_at: string | null;
+    rsvp_close_at: string | null;
+    status: string;
+    venue_address: string | null;
+    venue_name: string | null;
+    visibility: string;
+  };
 
   return {
     ...legacyEvent,

@@ -7,6 +7,7 @@ import {
   PublicEventSlugSchema,
   type PublicEventDto,
 } from "@/lib/event-website/public-event";
+import { hasPublishedPrivateAccess, normalizePrivateAccessToken } from "@/lib/private-access";
 import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listApprovedGuestbookMessages } from "./event-website-guestbook";
@@ -30,6 +31,7 @@ type PublicEventRecord = {
   fallback_page_enabled: boolean;
   id: string;
   published_at: string | null;
+  private_access_token: string | null;
   rsvp_close_at: string | null;
   rsvp_open_at: string | null;
   status: string;
@@ -41,7 +43,10 @@ type PublicEventRecord = {
 };
 
 export const resolvePublicEventWebsite = cache(
-  async (eventSlugInput: string): Promise<PublicEventDto | null> => {
+  async (
+    eventSlugInput: string,
+    accessTokenInput?: string | null,
+  ): Promise<PublicEventDto | null> => {
     const parsedSlug = PublicEventSlugSchema.safeParse(eventSlugInput);
 
     if (!parsedSlug.success) {
@@ -49,6 +54,7 @@ export const resolvePublicEventWebsite = cache(
     }
 
     return loadPublishedPublicEvent({
+      accessToken: normalizePrivateAccessToken(accessTokenInput),
       lookupColumn: "event_slug",
       lookupValue: parsedSlug.data,
     });
@@ -56,7 +62,10 @@ export const resolvePublicEventWebsite = cache(
 );
 
 export const resolvePublicEventWebsiteBySubdomain = cache(
-  async (subdomainSlugInput: string): Promise<PublicEventDto | null> => {
+  async (
+    subdomainSlugInput: string,
+    accessTokenInput?: string | null,
+  ): Promise<PublicEventDto | null> => {
     const parsedSlug = PublicEventSlugSchema.safeParse(subdomainSlugInput);
 
     if (!parsedSlug.success) {
@@ -65,6 +74,7 @@ export const resolvePublicEventWebsiteBySubdomain = cache(
 
     try {
       return await loadPublishedPublicEvent({
+        accessToken: normalizePrivateAccessToken(accessTokenInput),
         lookupColumn: "subdomain_slug",
         lookupValue: parsedSlug.data,
       });
@@ -79,6 +89,7 @@ export const resolvePublicEventWebsiteBySubdomain = cache(
 );
 
 async function loadPublishedPublicEvent(input: {
+  accessToken?: string | null;
   lookupColumn: "event_slug" | "subdomain_slug";
   lookupValue: string;
 }) {
@@ -90,6 +101,7 @@ async function loadPublishedPublicEvent(input: {
         event_time,
         venue_name,
         venue_address,
+        private_access_token,
         visibility,
         status,
         published_at,
@@ -151,14 +163,28 @@ async function loadPublishedPublicEvent(input: {
             subdomain_slug: null,
           } as PublicEventRecord)
         : null,
+      input.accessToken,
     );
   }
 
-  return toPublicEventDto(event as PublicEventRecord | null);
+  return toPublicEventDto(event as PublicEventRecord | null, input.accessToken);
 }
 
-async function toPublicEventDto(event: PublicEventRecord | null) {
+async function toPublicEventDto(
+  event: PublicEventRecord | null,
+  accessToken?: string | null,
+) {
   if (!event || !event.published_at || !isPublicRenderingEventTypeEnabled(event.event_type)) {
+    return null;
+  }
+
+  if (
+    !hasPublishedPrivateAccess({
+      providedToken: accessToken,
+      storedToken: event.private_access_token,
+      visibility: event.visibility,
+    })
+  ) {
     return null;
   }
 

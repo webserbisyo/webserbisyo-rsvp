@@ -1,13 +1,16 @@
 "use client";
 
-import { AlertTriangle, Check, CheckCircle2, Globe2, Link2, Lock } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, Globe2, Link2, Lock, RotateCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/index";
 import type { VisibilityMode } from "./website-access-types";
 
 type GuestAccessCardProps = {
   disabled?: boolean;
   hasVisibilityDraft: boolean;
+  isPrivateLinkApplied: boolean;
   isPublished: boolean;
+  onRegeneratePrivateLink?: () => void;
   onSelect: (mode: VisibilityMode) => void;
   selectedVisibility: VisibilityMode;
   visibilityLabel: string;
@@ -46,7 +49,9 @@ const VISIBILITY_OPTIONS: Array<{
 export function GuestAccessCard({
   disabled = false,
   hasVisibilityDraft,
+  isPrivateLinkApplied,
   isPublished,
+  onRegeneratePrivateLink,
   onSelect,
   selectedVisibility,
   visibilityLabel,
@@ -168,6 +173,29 @@ export function GuestAccessCard({
               : "Current access mode is already applied."}
           </p>
         </div>
+
+        {isPrivateLinkApplied ? (
+          <div className="mt-4 rounded-2xl border border-[#eadbd0] bg-[#fff7f3] p-4">
+            <div className="grid gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-[#A7583C]">Private link tools</p>
+                <p className="text-sm leading-snug text-[#8d6a5b]">
+                  Creates a new private link. Old private links will stop working.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={disabled}
+                onClick={onRegeneratePrivateLink}
+                className="h-11 w-full justify-center rounded-xl border-[#e3b8a3] bg-white text-sm font-semibold text-[#A7583C] hover:bg-[#fff1e8]"
+              >
+                <RotateCw className="h-4 w-4" aria-hidden="true" />
+                Regenerate private link
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

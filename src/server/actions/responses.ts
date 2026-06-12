@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { requireTenantMember } from "@/lib/permissions";
 import { moderateResponseGuestbookMessages } from "@/server/services/moderate-response-guestbook";
 import { moderateRsvpResponses } from "@/server/services/moderate-rsvp-response";
@@ -19,7 +20,13 @@ const RsvpModerationSchema = z.object({
 
 export async function submitRsvpResponseAction(input: unknown) {
   try {
-    const response = await submitRsvpResponse(toPlainInput(input));
+    const plainInput = toPlainInput(input) as { accessToken?: unknown };
+    const response = await submitRsvpResponse(plainInput, {
+      accessToken:
+        typeof plainInput.accessToken === "string"
+          ? normalizePrivateAccessToken(plainInput.accessToken)
+          : null,
+    });
 
     if (!response) {
       throw new Error("Failed to submit RSVP response.");

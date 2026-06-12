@@ -14,6 +14,7 @@ import { PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   publishEventWebsite,
+  regeneratePrivateLink,
   unpublishEventWebsite,
   updateWebsiteAccessDraftSlug,
   updateWebsiteAccessDraftSubdomain,
@@ -43,6 +44,10 @@ const PublishEventWebsiteActionSchema = z.object({
 });
 
 const UnpublishEventWebsiteActionSchema = z.object({
+  eventId: z.uuid(),
+});
+
+const RegeneratePrivateLinkActionSchema = z.object({
   eventId: z.uuid(),
 });
 
@@ -215,11 +220,48 @@ export async function unpublishEventWebsiteAction(input: unknown) {
   }
 }
 
+export async function regeneratePrivateLinkAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(RegeneratePrivateLinkActionSchema, input);
+    const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
+    if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
+      throw new ServiceError(unsupportedBuilderMessage);
+    }
+
+    const result = await regeneratePrivateLink({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      eventId: event.id,
+    });
+
+    revalidatePath("/dashboard/website-access");
+    revalidatePath("/dashboard/event");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+    revalidatePath("/rsvp");
+
+    const publicPaths = new Set<string>();
+    if (event.event_slug) {
+      publicPaths.add(`/r/${event.event_slug}`);
+      publicPaths.add(`/r/${event.event_slug}/rsvp`);
+    }
+
+    for (const path of publicPaths) {
+      revalidatePath(path);
+    }
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
 async function requireOwnedEvent(eventId: string, clientId: string) {
   const supabase = await createServerSupabaseClient();
   const { data: event, error } = await supabase
     .from("rsvp_events")
-    .select("id, client_id, draft_event_slug, event_slug, event_type")
+    .select("id, client_id, draft_event_slug, event_slug, event_type, subdomain_slug, visibility, status, published_at")
     .eq("id", eventId)
     .eq("client_id", clientId)
     .maybeSingle();

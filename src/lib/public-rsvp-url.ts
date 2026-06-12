@@ -1,3 +1,5 @@
+import { appendPrivateAccessToken } from "@/lib/private-access";
+
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
 }
@@ -371,6 +373,7 @@ export type PublicRsvpLinkSet = {
 };
 
 export function resolvePublicRsvpLinkSet(input: {
+  accessToken?: string | null;
   baseUrl?: string | null;
   customDomain?: string | null;
   preferWildcardRsvpPath?: boolean;
@@ -434,29 +437,36 @@ export function resolvePublicRsvpLinkSet(input: {
     : null;
   const useLocalSafeUrls =
     environment === "development" && !isLocalWildcardSimulationEnabled();
-  const displayUrl = useLocalSafeUrls
+  const baseDisplayUrl = useLocalSafeUrls
     ? (localDevelopmentUrl ?? fallbackPathUrl ?? preferredProductionUrl)
     : environment === "preview"
       ? (fallbackPathUrl ?? preferredProductionUrl)
       : (preferredProductionUrl ?? fallbackPathUrl);
-  const openUrl = displayUrl;
-  const copyUrl = displayUrl;
-  const qrUrl = displayUrl;
-  const previewChromeUrl = displayUrl;
+  const displayUrl = appendPrivateAccessToken(baseDisplayUrl, input.accessToken);
+  const openUrl = appendPrivateAccessToken(baseDisplayUrl, input.accessToken);
+  const copyUrl = appendPrivateAccessToken(baseDisplayUrl, input.accessToken);
+  const qrUrl = appendPrivateAccessToken(baseDisplayUrl, input.accessToken);
+  const previewChromeUrl = appendPrivateAccessToken(baseDisplayUrl, input.accessToken);
 
   return {
     copyUrl,
     displayUrl,
-    fallbackPathUrl,
-    fallbackRsvpPathUrl,
+    fallbackPathUrl: appendPrivateAccessToken(fallbackPathUrl, input.accessToken),
+    fallbackRsvpPathUrl: appendPrivateAccessToken(fallbackRsvpPathUrl, input.accessToken),
     localPreviewUrl: localDevelopmentUrl,
     openUrl,
     previewChromeUrl,
-    preferredProductionUrl,
-    preferredProductionRsvpUrl,
+    preferredProductionUrl: appendPrivateAccessToken(preferredProductionUrl, input.accessToken),
+    preferredProductionRsvpUrl: appendPrivateAccessToken(
+      preferredProductionRsvpUrl,
+      input.accessToken,
+    ),
     qrUrl,
-    wildcardProductionUrl,
-    wildcardProductionRsvpUrl,
+    wildcardProductionUrl: appendPrivateAccessToken(wildcardProductionUrl, input.accessToken),
+    wildcardProductionRsvpUrl: appendPrivateAccessToken(
+      wildcardProductionRsvpUrl,
+      input.accessToken,
+    ),
   };
 }
 

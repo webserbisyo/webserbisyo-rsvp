@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { PUBLIC_EVENT_RENDER_VISIBILITIES, PublicEventSlugSchema } from "@/lib/event-website/public-event";
+import { hasPublishedPrivateAccess, normalizePrivateAccessToken } from "@/lib/private-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CustomWebsiteHealthStatus } from "./types";
 
@@ -11,6 +12,7 @@ type PublishedEventLookupRow = {
   event_slug: string;
   fallback_page_enabled: boolean;
   id: string;
+  private_access_token: string | null;
   published_at: string | null;
   status: string;
   subdomain_slug: string | null;
@@ -40,7 +42,10 @@ export type PublicCustomFrontendResolution = {
 };
 
 export const resolvePublicCustomFrontendBySubdomain = cache(
-  async (subdomainSlugInput: string): Promise<PublicCustomFrontendResolution | null> => {
+  async (
+    subdomainSlugInput: string,
+    accessTokenInput?: string | null,
+  ): Promise<PublicCustomFrontendResolution | null> => {
     const parsedSlug = PublicEventSlugSchema.safeParse(subdomainSlugInput);
 
     if (!parsedSlug.success) {
@@ -48,6 +53,7 @@ export const resolvePublicCustomFrontendBySubdomain = cache(
     }
 
     const subdomainSlug = parsedSlug.data;
+    const accessToken = normalizePrivateAccessToken(accessTokenInput);
     const supabase = createAdminClient();
     const { data: event, error: eventError } = await supabase
       .from("rsvp_events")
@@ -60,6 +66,7 @@ export const resolvePublicCustomFrontendBySubdomain = cache(
           status,
           published_at,
           fallback_page_enabled,
+          private_access_token,
           visibility,
           archived_at
         `,
@@ -78,6 +85,16 @@ export const resolvePublicCustomFrontendBySubdomain = cache(
     const publishedEvent = event as PublishedEventLookupRow | null;
 
     if (!publishedEvent?.id || !publishedEvent.event_slug || !publishedEvent.subdomain_slug) {
+      return null;
+    }
+
+    if (
+      !hasPublishedPrivateAccess({
+        providedToken: accessToken,
+        storedToken: publishedEvent.private_access_token,
+        visibility: publishedEvent.visibility,
+      })
+    ) {
       return null;
     }
 

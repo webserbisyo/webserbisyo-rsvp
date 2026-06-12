@@ -14,6 +14,7 @@ import {
   getPublishStatusState,
   getVisibilityLabel,
 } from "./website-access-utils";
+import { appendPrivateAccessToken } from "@/lib/private-access";
 import { sanitizePublicRsvpSlug, validateOptionalPublicRsvpSlug } from "@/lib/public-rsvp-slugs";
 import {
   buildPublicRsvpUrl,
@@ -27,6 +28,7 @@ import {
 import { useEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import {
   publishEventWebsiteAction,
+  regeneratePrivateLinkAction,
   unpublishEventWebsiteAction,
   updateWebsiteAccessDraftSubdomainAction,
   updateWebsiteAccessDraftVisibilityAction,
@@ -39,6 +41,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const isDraftSavePending = useEventWebsiteDraftSavePending(serverState.eventId);
   const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(initialData.draftVisibility);
   const [draftSubdomain, setDraftSubdomain] = useState(initialData.draftSubdomain ?? "");
+  const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
   const [slugModalOpen, setSlugModalOpen] = useState(false);
   const [slugModalValue, setSlugModalValue] = useState(initialData.draftSubdomain ?? "");
   const persistedDraftSubdomainRef = useRef(initialData.draftSubdomain ?? "");
@@ -75,17 +78,51 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     hasSubdomainChange ||
     hasContentPendingChanges;
   const publishStatusState = getPublishStatusState(isPublished, hasPendingChanges);
-  const websiteUrlOpen = serverState.openPublicUrl ?? serverState.publicUrl ?? "";
-  const websiteUrlPublished = serverState.publicUrl ?? "";
-  const websiteUrlCopy = serverState.copyPublicUrl ?? websiteUrlPublished;
-  const websiteUrlProduction = serverState.productionPublicUrl ?? "";
-  const websiteUrlQr = serverState.qrPublicUrl ?? websiteUrlPublished ?? serverState.fallbackPublicUrl ?? "";
+  const activePrivateAccessToken =
+    isPublished && publishedVisibility === "private" ? serverState.privateAccessToken : null;
+  const isPrivateLinkReady = publishedVisibility !== "private" || Boolean(activePrivateAccessToken);
+  const websiteUrlOpen = isPrivateLinkReady
+    ? (appendPrivateAccessToken(
+        serverState.openPublicUrl ?? serverState.publicUrl ?? "",
+        activePrivateAccessToken,
+      ) ?? "")
+    : "";
+  const websiteUrlPublished =
+    isPrivateLinkReady
+      ? (appendPrivateAccessToken(serverState.publicUrl ?? "", activePrivateAccessToken) ?? "")
+      : "";
+  const websiteUrlCopy =
+    isPrivateLinkReady
+      ? (appendPrivateAccessToken(
+          serverState.copyPublicUrl ?? websiteUrlPublished,
+          activePrivateAccessToken,
+        ) ?? "")
+      : "";
+  const websiteUrlProduction =
+    isPrivateLinkReady
+      ? (appendPrivateAccessToken(serverState.productionPublicUrl ?? "", activePrivateAccessToken) ?? "")
+      : "";
+  const websiteUrlQr =
+    isPrivateLinkReady
+      ? (appendPrivateAccessToken(
+          serverState.qrPublicUrl ?? websiteUrlPublished ?? serverState.fallbackPublicUrl ?? "",
+          activePrivateAccessToken,
+        ) ?? "")
+      : "";
   const rsvpUrlQr =
-    serverState.rsvpQrPublicUrl ??
-    serverState.publicRsvpUrl ??
-    serverState.fallbackRsvpPublicUrl ??
-    "";
-  const websiteUrlFallback = serverState.fallbackPublicUrl ?? "";
+    isPrivateLinkReady
+      ? (appendPrivateAccessToken(
+          serverState.rsvpQrPublicUrl ??
+            serverState.publicRsvpUrl ??
+            serverState.fallbackRsvpPublicUrl ??
+            "",
+          activePrivateAccessToken,
+        ) ?? "")
+      : "";
+  const websiteUrlFallback =
+    isPrivateLinkReady
+      ? (appendPrivateAccessToken(serverState.fallbackPublicUrl ?? "", activePrivateAccessToken) ?? "")
+      : "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({
         baseDomain: serverState.wildcardBaseDomain,
@@ -111,6 +148,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       "event-website:draft-updated",
       "event-website:published",
       "event-website:unpublished",
+      "website-access:private-link-regenerated",
     ],
     refreshOnFocus: true,
     refreshOnVisibility: true,
@@ -301,6 +339,48 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     });
   }
 
+  function openRegeneratePrivateLinkDialog() {
+    setIsRegenerateDialogOpen(true);
+  }
+
+  function closeRegeneratePrivateLinkDialog() {
+    setIsRegenerateDialogOpen(false);
+  }
+
+  function regeneratePrivateLink() {
+    if (!serverState.eventId) {
+      toast.error("The current event could not be resolved.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await regeneratePrivateLinkAction({
+        eventId: serverState.eventId,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      setServerState((current) => ({
+        ...current,
+        lastEditedAt: result.data.updatedAt ?? current.lastEditedAt,
+        privateAccessToken: result.data.privateAccessToken,
+        websiteAccessUpdatedAt: result.data.updatedAt ?? current.websiteAccessUpdatedAt,
+      }));
+      setIsRegenerateDialogOpen(false);
+      toast.success("Private link regenerated.", {
+        description: "Old private links will no longer work.",
+      });
+      emitDashboardSyncEvent({
+        eventId: serverState.eventId,
+        name: "website-access:private-link-regenerated",
+      });
+      router.refresh();
+    });
+  }
+
   async function copyText(value: string, successMessage: string) {
     if (!value) {
       toast.error("There is no live website URL to share yet.");
@@ -336,11 +416,11 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       void copyText(websiteUrlCopy, "Website link copied");
     },
     copyWebsiteQrLink: () => {
-      if (!requireLiveUrl(websiteUrlCopy)) {
+      if (!requireLiveUrl(websiteUrlQr)) {
         return;
       }
 
-      void copyText(websiteUrlCopy, "Website QR link copied");
+      void copyText(websiteUrlQr, "Website QR link copied");
     },
     copyRsvpQrLink: () => {
       if (!requireLiveUrl(rsvpUrlQr)) {
@@ -356,10 +436,12 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     hasPendingChanges,
     hasSlugChange,
     hasVisibilityDraft,
+    isPrivateLinkRegenerateAvailable: isPublished && publishedVisibility === "private",
     isDraftSavePending,
     isInteractionPending: isPending,
     isPublishBlocked,
     isPublished,
+    isRegenerateDialogOpen,
     isSlugLocked: isSubdomainLocked,
     lastEditedAt: parseIsoDate(serverState.lastEditedAt ?? serverState.websiteAccessUpdatedAt),
     lastEditedLabel: formatWebsiteAccessDate(
@@ -374,6 +456,9 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     publishedSubdomain,
     publishedVisibility,
     qrActionsEnabled: canShareLiveUrl,
+    regeneratePrivateLink,
+    closeRegeneratePrivateLinkDialog,
+    openRegeneratePrivateLinkDialog,
     setSlugModalValue,
     slugDraft: draftSubdomain,
     slugDraftError: subdomainDraftError,

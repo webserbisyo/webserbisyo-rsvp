@@ -13,6 +13,10 @@ export function buildPublicEventMetadata(event: PublicEventDto | null): Metadata
   if (!event) {
     return {
       description: "Published event website.",
+      robots: {
+        follow: false,
+        index: false,
+      },
       title: "Event Website",
     };
   }
@@ -29,15 +33,25 @@ export function buildPublicEventMetadata(event: PublicEventDto | null): Metadata
   });
 
   return {
-    alternates: canonicalUrl
-      ? {
-          canonical: canonicalUrl,
-        }
-      : undefined,
+    alternates:
+      event.visibility === "private"
+        ? undefined
+        : canonicalUrl
+          ? {
+              canonical: canonicalUrl,
+            }
+          : undefined,
     description:
       summaryParts.length > 0
         ? `${displayName} event details. ${summaryParts.join(" • ")}`
         : `${displayName} event details and RSVP information.`,
+    robots:
+      event.visibility === "private"
+        ? {
+            follow: false,
+            index: false,
+          }
+        : undefined,
     title: displayName,
   };
 }

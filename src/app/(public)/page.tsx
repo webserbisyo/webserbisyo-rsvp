@@ -6,6 +6,7 @@ import { LandingMessageHero } from "@/components/landing/landing-message-hero";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
+import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { resolvePublicEventWebsiteBySubdomain } from "@/server/services/resolve-public-event-website";
@@ -16,14 +17,32 @@ const landingMetadata: Metadata = {
     "Launch a polished RSVP page for your event. Collect guest responses and manage your guestbook from one organized dashboard.",
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-  const event = await resolveWildcardHostEvent();
+type PublicLandingPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-  return event ? buildPublicEventMetadata(event) : landingMetadata;
+export async function generateMetadata({
+  searchParams,
+}: PublicLandingPageProps = {}): Promise<Metadata> {
+  const event = await resolveWildcardHostEvent(await searchParams);
+
+  if (event) {
+    return buildPublicEventMetadata(event);
+  }
+
+  if (await isWildcardHostRequest()) {
+    return {
+      title: "Event unavailable | WebSerbisyo RSVP",
+      description: "This event website is not currently available.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  return landingMetadata;
 }
 
-export default async function PublicLandingPage() {
-  const event = await resolveWildcardHostEvent();
+export default async function PublicLandingPage({ searchParams }: PublicLandingPageProps) {
+  const event = await resolveWildcardHostEvent(await searchParams);
 
   if (event) {
     const pixels = await getPublicMetaPixelsForRoute({
@@ -49,7 +68,9 @@ export default async function PublicLandingPage() {
   );
 }
 
-async function resolveWildcardHostEvent() {
+async function resolveWildcardHostEvent(
+  searchParams?: Record<string, string | string[] | undefined>,
+) {
   const host = await getRequestHost();
   const subdomain = host ? extractPublicRsvpSubdomainSlug(host) : null;
 
@@ -57,7 +78,17 @@ async function resolveWildcardHostEvent() {
     return null;
   }
 
-  return resolvePublicEventWebsiteBySubdomain(subdomain);
+  const requestSearchParams = new URLSearchParams();
+  const access = Array.isArray(searchParams?.access) ? searchParams?.access[0] : searchParams?.access;
+
+  if (access) {
+    requestSearchParams.set("access", access);
+  }
+
+  return resolvePublicEventWebsiteBySubdomain(
+    subdomain,
+    getPrivateAccessTokenFromSearchParams(requestSearchParams),
+  );
 }
 
 async function isWildcardHostRequest() {

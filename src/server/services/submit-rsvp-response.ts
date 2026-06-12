@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
+import { hasPublishedPrivateAccess, normalizePrivateAccessToken } from "@/lib/private-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import {
@@ -16,6 +17,7 @@ type PublishedEventRow = Pick<
   | "event_slug"
   | "fallback_page_enabled"
   | "id"
+  | "private_access_token"
   | "published_at"
   | "rsvp_close_at"
   | "rsvp_open_at"
@@ -37,12 +39,15 @@ type RsvpCompanionSubmissionPayload = {
   companions?: RsvpCompanionPayload[] | undefined;
 };
 
-export async function submitRsvpResponse(input: unknown, options?: { source?: string }) {
+export async function submitRsvpResponse(
+  input: unknown,
+  options?: { accessToken?: string | null; source?: string },
+) {
   const eventSlug = parseEventSlug(input);
   const supabase = createAdminClient();
   // Public RSVP writes intentionally use a server-only admin client after validation.
   // Dashboard reads stay on SSR + RLS so browser-facing code never receives service-role access.
-  const event = await getPublishedEvent(eventSlug);
+  const event = await getPublishedEvent(eventSlug, options?.accessToken);
   const eventContent = await getPublishedEventContent(event.id);
   const { parseEventWebsiteContentJson } = await import("@/lib/event-website/hydration");
   const content = parseEventWebsiteContentJson(eventContent.published_content_json);
@@ -137,12 +142,15 @@ function parseEventSlug(input: unknown) {
   return EventSlugSchema.parse((input as { eventSlug?: unknown }).eventSlug);
 }
 
-async function getPublishedEvent(eventSlug: string): Promise<PublishedEventRow> {
+async function getPublishedEvent(
+  eventSlug: string,
+  accessToken?: string | null,
+): Promise<PublishedEventRow> {
   const supabase = createAdminClient();
   const { data: event, error } = await supabase
     .from("rsvp_events")
     .select(
-      "id, client_id, event_slug, event_type, fallback_page_enabled, status, visibility, published_at, rsvp_open_at, rsvp_close_at",
+      "id, client_id, event_slug, event_type, fallback_page_enabled, private_access_token, status, visibility, published_at, rsvp_open_at, rsvp_close_at",
     )
     .eq("event_slug", eventSlug)
     .eq("status", "published")
@@ -155,6 +163,16 @@ async function getPublishedEvent(eventSlug: string): Promise<PublishedEventRow> 
 
   if (!event?.published_at) {
     throw new ServiceError("RSVP event is not available.");
+  }
+
+  if (
+    !hasPublishedPrivateAccess({
+      providedToken: normalizePrivateAccessToken(accessToken),
+      storedToken: event.private_access_token,
+      visibility: event.visibility,
+    })
+  ) {
+    throw new ServiceError("This private event link is not available.");
   }
 
   return event;

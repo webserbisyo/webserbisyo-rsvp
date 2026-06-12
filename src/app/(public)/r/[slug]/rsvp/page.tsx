@@ -8,6 +8,7 @@ import {
   formatEventWebsiteTime,
 } from "@/lib/event-website/formatting";
 import { type PublicEventDto } from "@/lib/event-website/public-event";
+import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { buildOfficialPublicRsvpStandaloneUrl } from "@/lib/public-rsvp-url";
 import type { PublicMetaPixelConfig } from "@/server/queries/public-meta-pixels";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
@@ -15,17 +16,24 @@ import { resolvePublicEventWebsite } from "@/server/services/resolve-public-even
 
 type PublicStandaloneRsvpPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PublicStandaloneRsvpPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const event = await resolvePublicEventWebsite(slug);
+  const token = getAccessTokenFromSearchParams(await searchParams);
+  const event = await resolvePublicEventWebsite(slug, token);
 
   if (!event) {
     return {
       description: "Published RSVP page.",
+      robots: {
+        follow: false,
+        index: false,
+      },
       title: "RSVP",
     };
   }
@@ -38,22 +46,34 @@ export async function generateMetadata({
   ].filter(Boolean);
 
   return {
-    alternates: {
-      canonical: buildOfficialPublicRsvpStandaloneUrl(event.eventSlug),
-    },
+    alternates:
+      event.visibility === "private"
+        ? undefined
+        : {
+            canonical: buildOfficialPublicRsvpStandaloneUrl(event.eventSlug),
+          },
     description:
       summaryParts.length > 0
         ? `RSVP for ${displayName}. ${summaryParts.join(" • ")}`
         : `RSVP for ${displayName}.`,
+    robots:
+      event.visibility === "private"
+        ? {
+            follow: false,
+            index: false,
+          }
+        : undefined,
     title: `RSVP | ${displayName}`,
   };
 }
 
 export default async function PublicStandaloneRsvpPage({
   params,
+  searchParams,
 }: PublicStandaloneRsvpPageProps) {
   const { slug } = await params;
-  const event = await resolvePublicEventWebsite(slug);
+  const token = getAccessTokenFromSearchParams(await searchParams);
+  const event = await resolvePublicEventWebsite(slug, token);
 
   if (!event) {
     notFound();
@@ -155,4 +175,11 @@ function formatPublicDate(value: string | null) {
 
 function formatPublicTime(value: string | null) {
   return value ? formatEventWebsiteTime(value, "") || null : null;
+}
+
+function getAccessTokenFromSearchParams(
+  searchParams?: Record<string, string | string[] | undefined>,
+) {
+  const rawValue = searchParams?.access;
+  return normalizePrivateAccessToken(Array.isArray(rawValue) ? rawValue[0] : rawValue);
 }
