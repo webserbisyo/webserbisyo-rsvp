@@ -288,7 +288,7 @@ function RsvpResponseExportContent({
         </div>
       </div>
 
-      <div className="flex flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:pb-4">
         <Button
           type="button"
           variant="outline"

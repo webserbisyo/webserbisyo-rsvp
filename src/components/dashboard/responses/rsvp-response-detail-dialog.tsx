@@ -302,7 +302,7 @@ function RsvpResponseDetailContent({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-center gap-3 border-t border-[#eadbd0] bg-white p-4">
+      <div className="flex shrink-0 items-center justify-center gap-3 border-t border-[#eadbd0] bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">
         {isRejected && onRestoreResponse ? (
           <Button
             type="button"
