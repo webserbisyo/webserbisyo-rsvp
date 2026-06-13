@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,10 +8,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { dashboardNavItems } from "@/components/dashboard/nav-items";
+import { useDashboardSpaPathname } from "@/lib/dashboard/dashboard-spa-navigation";
 import { useDashboardBreadcrumbDetail } from "./dashboard-breadcrumb-state";
 
 export function DashboardBreadcrumb() {
-  const pathname = usePathname();
+  const pathname = useDashboardSpaPathname();
   const detail = useDashboardBreadcrumbDetail();
 
   const currentItem = dashboardNavItems.find(

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type {
   PublishStatusState,
@@ -28,6 +29,7 @@ import {
   emitDashboardSyncEvent,
   useDashboardRefresh,
 } from "@/lib/dashboard/dashboard-sync";
+import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import { useEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import {
   publishEventWebsiteAction,
@@ -84,6 +86,7 @@ function resolveLiveWebsiteLinks(state: WebsiteAccessInitialData) {
 
 export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
   const [serverState, setServerState] = useState(initialData);
   const isDraftSavePending = useEventWebsiteDraftSavePending(serverState.eventId);
   const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(initialData.draftVisibility);
@@ -301,6 +304,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         ...current,
         draftVisibility: result.data.draftVisibility,
       }));
+      invalidateWebsiteAccessQueries(queryClient);
       toast.success("Guest access draft saved.");
     });
   }
@@ -347,6 +351,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         ...current,
         draftSubdomain: result.data.draftSubdomain ?? null,
       }));
+      invalidateWebsiteAccessQueries(queryClient);
       setSlugModalOpen(false);
       toast.success("Subdomain change added. Publish to apply.");
     });
@@ -402,6 +407,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         eventId: serverState.eventId,
         name: "event-website:published",
       });
+      invalidateWebsiteAccessQueries(queryClient);
     });
   }
 
@@ -442,6 +448,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         eventId: serverState.eventId,
         name: "event-website:unpublished",
       });
+      invalidateWebsiteAccessQueries(queryClient);
     });
   }
 
@@ -483,6 +490,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         eventId: serverState.eventId,
         name: "website-access:private-link-regenerated",
       });
+      invalidateWebsiteAccessQueries(queryClient);
     });
   }
 
@@ -586,6 +594,12 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     websiteUrlQr,
     rsvpUrlQr,
   };
+}
+
+function invalidateWebsiteAccessQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.websiteAccess() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.home() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.event() });
 }
 
 function parseIsoDate(value: string | null) {

@@ -2,11 +2,14 @@
 
 import { useEffect, useEffectEvent, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { BellRing, MessageCircleMore, ReceiptText, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
+import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
+import { requestDashboardSpaNavigation } from "@/lib/dashboard/dashboard-spa-navigation";
 import {
   DASHBOARD_NOTIFICATION_PREFERENCE_EVENT,
   NOTIFICATION_EVENT_TYPES,
@@ -48,11 +51,15 @@ export function DashboardRealtimeNotifications({
   profileId,
 }: DashboardRealtimeNotificationsProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const preferencesRef = useRef<InAppPreferenceState>(DEFAULT_IN_APP_PREFERENCES);
   const shownEventsRef = useRef(new Set<string>());
   const handleToastAction = useEffectEvent((toastId: string, url: string) => {
     toast.dismiss(toastId);
-    router.push(url);
+
+    if (!requestDashboardSpaNavigation(url)) {
+      router.push(url);
+    }
   });
 
   useEffect(() => {
@@ -174,6 +181,8 @@ export function DashboardRealtimeNotifications({
         eventId: row.event_id ?? null,
         name: "rsvp-responses:inserted",
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.responses() });
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.home() });
 
       const hasGuestMessage = Boolean(row.message?.trim());
       const guestName = formatGuestName(row.guest_name);
@@ -212,6 +221,8 @@ export function DashboardRealtimeNotifications({
       const paymentId = row.id;
 
       if (!paymentId || row.client_id !== clientId) return;
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.billing() });
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.home() });
       if (!preferencesRef.current.billing_update) return;
       const statusChange = getBillingStatusChange(payload);
 
@@ -304,7 +315,7 @@ export function DashboardRealtimeNotifications({
       window.removeEventListener(DASHBOARD_NOTIFICATION_PREFERENCE_EVENT, handlePreferenceChange);
       cleanupRealtime?.();
     };
-  }, [clientId, profileId]);
+  }, [clientId, profileId, queryClient]);
 
   return null;
 }

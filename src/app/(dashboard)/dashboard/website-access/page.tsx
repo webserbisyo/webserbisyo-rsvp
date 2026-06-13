@@ -1,8 +1,5 @@
-import { WebsiteAccessPage } from "@/components/dashboard/website-access/website-access-page";
-import { getWebsiteAccessData } from "@/server/queries/website-access";
+import { DashboardApp } from "@/components/dashboard/dashboard-app";
 
-export default async function DashboardWebsiteAccessPage() {
-  const initialData = await getWebsiteAccessData();
-
-  return <WebsiteAccessPage initialData={initialData} />;
+export default function DashboardWebsiteAccessPage() {
+  return <DashboardApp initialView="websiteAccess" />;
 }

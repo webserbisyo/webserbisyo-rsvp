@@ -1,10 +1,11 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
+import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import type { WebsiteAccessData } from "@/server/queries/website-access";
 import {
   publishEventWebsiteAction,
@@ -22,7 +23,7 @@ export function WebsiteAccessControls({
   publishState,
   workflowStatus,
 }: WebsiteAccessControlsProps) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
 
   function handlePublish() {
@@ -45,7 +46,7 @@ export function WebsiteAccessControls({
         eventId,
         name: "event-website:published",
       });
-      router.refresh();
+      invalidateAccessQueries(queryClient);
     });
   }
 
@@ -63,7 +64,7 @@ export function WebsiteAccessControls({
         eventId,
         name: "event-website:unpublished",
       });
-      router.refresh();
+      invalidateAccessQueries(queryClient);
     });
   }
 
@@ -89,4 +90,10 @@ export function WebsiteAccessControls({
       <p className="text-sm text-muted-foreground">{workflowStatus.description}</p>
     </div>
   );
+}
+
+function invalidateAccessQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.event() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.websiteAccess() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.home() });
 }

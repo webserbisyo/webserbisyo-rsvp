@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { DashboardNavLink } from "@/components/dashboard/dashboard-nav-link";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { dashboardNavItems, isDashboardNavItemActive } from "@/components/dashboard/nav-items";
 import { createClient } from "@/lib/supabase/client";
+import { useDashboardSpaPathname } from "@/lib/dashboard/dashboard-spa-navigation";
 import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ type DashboardSidebarProps = {
 };
 
 export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) {
-  const pathname = usePathname();
+  const pathname = useDashboardSpaPathname();
   const router = useRouter();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -45,7 +46,7 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip="WebSerbisyo RSVP">
-              <Link href="/dashboard" className="w-full min-w-0">
+              <DashboardNavLink href="/dashboard" className="w-full min-w-0">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                   <Image
                     src="/images/brand/webserbisyo-logo.jpeg"
@@ -62,7 +63,7 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
                   </span>
                   <span className="text-muted-foreground truncate text-xs font-medium">RSVP Platform</span>
                 </span>
-              </Link>
+              </DashboardNavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -83,10 +84,10 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
                   isActive={isActive}
                   tooltip={item.label}
                 >
-                  <Link href={item.href} className="w-full min-w-0 group-data-[collapsible=icon]:justify-center">
+                  <DashboardNavLink href={item.href} className="w-full min-w-0 group-data-[collapsible=icon]:justify-center">
                     <Icon className="size-4 shrink-0" />
                     <span className="min-w-0 truncate group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </Link>
+                  </DashboardNavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

@@ -1,8 +1,5 @@
-import { SettingsPage } from "@/components/dashboard/settings/settings-page";
-import { getSettingsPageData } from "@/server/queries/settings";
+import { DashboardApp } from "@/components/dashboard/dashboard-app";
 
-export default async function DashboardSettingsPage() {
-  const data = await getSettingsPageData();
-
-  return <SettingsPage data={data} />;
+export default function DashboardSettingsPage() {
+  return <DashboardApp initialView="settings" />;
 }

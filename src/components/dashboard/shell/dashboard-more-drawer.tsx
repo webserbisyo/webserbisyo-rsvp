@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { DashboardNavLink } from "@/components/dashboard/dashboard-nav-link";
 import {
   Drawer,
   DrawerContent,
@@ -61,7 +61,7 @@ export function DashboardMoreDrawer({
             const Icon = item.icon;
 
             return (
-              <Link
+              <DashboardNavLink
                 key={item.href}
                 href={item.href}
                 onClick={() => onOpenChange(false)}
@@ -72,7 +72,7 @@ export function DashboardMoreDrawer({
                 </span>
                 <span className="dashboard-more-drawer__item-label">{item.label}</span>
                 <ChevronRight className="dashboard-more-drawer__item-chevron h-4 w-4 shrink-0" />
-              </Link>
+              </DashboardNavLink>
             );
           })}
 

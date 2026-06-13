@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/feedback/error-state";
 import {
@@ -17,6 +18,7 @@ import {
   emitDashboardSyncEvent,
   useDashboardRefresh,
 } from "@/lib/dashboard/dashboard-sync";
+import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import {
   moderateRsvpResponsesAction,
   removeResponseMessagesFromGuestbookAction,
@@ -59,6 +61,7 @@ export function RsvpResponsesPage({
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [pendingResponseIds, setPendingResponseIds] = useState<string[]>([]);
   const [isModerating, startModerationTransition] = useTransition();
+  const queryClient = useQueryClient();
 
   const [bulkRejectIds, setBulkRejectIds] = useState<string[] | null>(null);
   const [bulkRestoreIds, setBulkRestoreIds] = useState<string[] | null>(null);
@@ -280,6 +283,7 @@ export function RsvpResponsesPage({
         setSelectedResponse((current) =>
           current && uniqueIds.includes(current.id) ? { ...current, reviewStatus: "rejected" } : current
         );
+        invalidateResponseQueries(queryClient);
       } finally {
         setPendingResponseIds((prev) => prev.filter((id) => !uniqueIds.includes(id)));
       }
@@ -324,6 +328,7 @@ export function RsvpResponsesPage({
         setSelectedResponse((current) =>
           current && uniqueIds.includes(current.id) ? { ...current, reviewStatus: "approved" } : current
         );
+        invalidateResponseQueries(queryClient);
       } finally {
         setPendingResponseIds((prev) => prev.filter((id) => !uniqueIds.includes(id)));
       }
@@ -355,6 +360,7 @@ export function RsvpResponsesPage({
         setSelectedResponse((current) =>
           current?.id === responseId ? { ...current, reviewStatus: "rejected" } : current
         );
+        invalidateResponseQueries(queryClient);
       } finally {
         setPendingResponseIds((prev) => prev.filter((id) => id !== responseId));
       }
@@ -385,6 +391,7 @@ export function RsvpResponsesPage({
         setSelectedResponse((current) =>
           current?.id === responseId ? { ...current, reviewStatus: "approved" } : current
         );
+        invalidateResponseQueries(queryClient);
       } finally {
         setPendingResponseIds((prev) => prev.filter((id) => id !== responseId));
       }
@@ -464,6 +471,7 @@ export function RsvpResponsesPage({
                 }
               : current;
           });
+          invalidateResponseQueries(queryClient);
         }
 
         const successLabel =
@@ -509,4 +517,10 @@ export function RsvpResponsesPage({
       }
     });
   }
+}
+
+function invalidateResponseQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.responses() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.home() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.event() });
 }

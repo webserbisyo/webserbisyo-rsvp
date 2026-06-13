@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { dashboardKeys } from "./dashboard-query-keys";
 
 const DASHBOARD_SYNC_CHANNEL = "ws:dashboard-sync";
 const DASHBOARD_SYNC_STORAGE_KEY = "ws:dashboard-sync:last-event";
@@ -90,8 +91,8 @@ export function emitDashboardSyncEvent(input: {
 }
 
 export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
-  const router = useRouter();
-  const routerRef = useRef(router);
+  const queryClient = useQueryClient();
+  const queryClientRef = useRef(queryClient);
   const timerRef = useRef<number | null>(null);
   const lastRefreshAtRef = useRef(0);
   const eventsRef = useRef(options.events);
@@ -104,8 +105,8 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
   const refreshOnVisibility = options.refreshOnVisibility ?? false;
 
   useEffect(() => {
-    routerRef.current = router;
-  }, [router]);
+    queryClientRef.current = queryClient;
+  }, [queryClient]);
 
   useEffect(() => {
     eventsRef.current = options.events;
@@ -128,7 +129,7 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
         lastRefreshAtRef.current = Date.now();
-        routerRef.current.refresh();
+        invalidateDashboardQueries(queryClientRef.current, eventsRef.current);
       }, refreshDelayMs);
     }
 
@@ -219,4 +220,38 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [ignoreSelfEvents, minRefreshIntervalMs, refreshDelayMs, refreshOnFocus, refreshOnVisibility]);
+}
+
+function invalidateDashboardQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  events?: DashboardSyncEventName[],
+) {
+  const eventNames = events?.length ? events : ["dashboard:refresh" as const];
+  const keys = new Set<readonly unknown[]>();
+
+  for (const eventName of eventNames) {
+    for (const key of getDashboardQueryKeysForSyncEvent(eventName)) {
+      keys.add(key);
+    }
+  }
+
+  for (const queryKey of keys) {
+    void queryClient.invalidateQueries({ queryKey });
+  }
+}
+
+function getDashboardQueryKeysForSyncEvent(eventName: DashboardSyncEventName) {
+  switch (eventName) {
+    case "event-website:draft-updated":
+    case "event-website:published":
+    case "event-website:unpublished":
+    case "website-access:private-link-regenerated":
+      return [dashboardKeys.home(), dashboardKeys.event(), dashboardKeys.websiteAccess()];
+    case "rsvp-responses:guestbook-updated":
+    case "rsvp-responses:inserted":
+      return [dashboardKeys.home(), dashboardKeys.responses(), dashboardKeys.event()];
+    case "dashboard:refresh":
+    default:
+      return [dashboardKeys.all];
+  }
 }

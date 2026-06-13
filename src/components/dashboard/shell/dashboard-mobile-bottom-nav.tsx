@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { DashboardNavLink } from "@/components/dashboard/dashboard-nav-link";
 import { DashboardMoreDrawer } from "./dashboard-more-drawer";
 import { CalendarSearch, LayoutDashboard, LayoutGrid, Users } from "lucide-react";
+import { useDashboardSpaPathname } from "@/lib/dashboard/dashboard-spa-navigation";
 import { cn } from "@/lib/utils";
 
 type DashboardMobileBottomNavProps = {
@@ -12,7 +12,7 @@ type DashboardMobileBottomNavProps = {
 };
 
 export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProps) {
-  const pathname = usePathname();
+  const pathname = useDashboardSpaPathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const items = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -41,7 +41,7 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
             const Icon = item.icon;
 
             return (
-              <Link
+              <DashboardNavLink
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
@@ -52,7 +52,7 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
                 <span className="dashboard-mobile-bottom-nav__label">
                   {item.label}
                 </span>
-              </Link>
+              </DashboardNavLink>
             );
           })}
 

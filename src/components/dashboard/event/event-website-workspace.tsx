@@ -10,6 +10,7 @@ import {
   useTransition,
 } from "react";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import {
@@ -62,6 +63,7 @@ import {
   summarizeEventWebsiteSections,
 } from "@/lib/event-website/readiness";
 import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
+import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import { markEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import { cn } from "@/lib/utils";
 import { saveEventWebsiteAction } from "@/server/actions/event-website";
@@ -145,6 +147,7 @@ function EnabledEventWebsiteWorkspace({
   eventWebsiteData,
   initialSelectedSection = null,
 }: EventWebsiteWorkspaceProps) {
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const isDesktopLayout = useMediaQuery(DESKTOP_LAYOUT_QUERY, true);
   const isTabletLayout = useMediaQuery(TABLET_LAYOUT_QUERY, false);
@@ -382,6 +385,7 @@ function EnabledEventWebsiteWorkspace({
             eventId: eventWebsiteData.eventId,
             name: "event-website:draft-updated",
           });
+          invalidateEventWebsiteQueries(queryClient);
         }
 
         const hasNewerLocalEdits = draftRevisionRef.current > submittedRevision;
@@ -408,7 +412,7 @@ function EnabledEventWebsiteWorkspace({
       activeSaveRevisionRef.current = null;
       markEventWebsiteDraftSavePending(eventWebsiteData.eventId, false);
     }
-  }, [eventWebsiteData.eventId]);
+  }, [eventWebsiteData.eventId, queryClient]);
 
   function handleSaveChanges() {
     startTransition(async () => {
@@ -646,6 +650,12 @@ function EnabledEventWebsiteWorkspace({
       />
     </div>
   );
+}
+
+function invalidateEventWebsiteQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.event() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.websiteAccess() });
+  void queryClient.invalidateQueries({ queryKey: dashboardKeys.home() });
 }
 
 function ResponsiveSectionEditorSurface({
