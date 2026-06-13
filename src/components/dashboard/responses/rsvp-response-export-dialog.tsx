@@ -178,8 +178,8 @@ function RsvpResponseExportContent({
   ];
 
   return (
-    <div className="flex max-h-[88vh] flex-col bg-[#fffaf6] text-[#2b2521]">
-      <div className="flex items-start justify-between gap-4 border-b border-[#eadbd0] bg-white/80 p-5">
+    <div className="flex min-h-0 flex-1 flex-col bg-[#fffaf6] text-[#2b2521] sm:max-h-[88vh]">
+      <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#eadbd0] bg-white/80 p-5">
         <div>
           <p className="text-[11px] font-bold tracking-[0.18em] text-[#a88d7f] uppercase">
             Export responses
@@ -288,7 +288,7 @@ function RsvpResponseExportContent({
         </div>
       </div>
 
-      <div className="flex flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:pb-4">
+      <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:pb-4">
         <Button
           type="button"
           variant="outline"
