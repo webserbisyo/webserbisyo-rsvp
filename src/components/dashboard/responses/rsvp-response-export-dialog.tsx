@@ -83,6 +83,7 @@ export function RsvpResponseExportDialog({
       exportCount={exportCount}
       format={format}
       includes={includes}
+      isMobile={isMobile}
       metadata={metadata}
       onClose={() => onOpenChange(false)}
       onExport={async () => {
@@ -144,6 +145,7 @@ function RsvpResponseExportContent({
   exportCount,
   format,
   includes,
+  isMobile,
   metadata,
   onClose,
   onExport,
@@ -157,6 +159,7 @@ function RsvpResponseExportContent({
   exportCount: number;
   format: RsvpResponsesExportFormat;
   includes: Record<RsvpResponsesExportInclude, boolean>;
+  isMobile: boolean;
   metadata: RsvpResponsesExportMetadata;
   onClose: () => void;
   onExport: () => void | Promise<void>;
@@ -178,7 +181,7 @@ function RsvpResponseExportContent({
   ];
 
   return (
-    <div className="flex max-h-[88vh] flex-col bg-[#fffaf6] text-[#2b2521]">
+    <div className="flex flex-col bg-[#fffaf6] text-[#2b2521] sm:max-h-[88vh]">
       <div className="flex items-start justify-between gap-4 border-b border-[#eadbd0] bg-white/80 p-5">
         <div>
           <p className="text-[11px] font-bold tracking-[0.18em] text-[#a88d7f] uppercase">
@@ -200,7 +203,12 @@ function RsvpResponseExportContent({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto p-5">
+      <div
+        className={cn(
+          "min-h-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto p-5",
+          isMobile && "pb-[calc(1.25rem+env(safe-area-inset-bottom))]",
+        )}
+      >
         <section>
           <p className="mb-2 text-sm font-bold text-[#2b2521]">Format</p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -286,9 +294,20 @@ function RsvpResponseExportContent({
         <div className="rounded-2xl border border-[#eadbd0] bg-white px-4 py-3 text-sm text-[#65584f]">
           <span className="font-semibold text-[#2b2521]">File:</span> {fileName}
         </div>
+
+        <div className="sm:hidden">
+          <Button
+            type="button"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#c96f4c] px-4 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143]"
+            onClick={() => void onExport()}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export {exportCount} response{exportCount === 1 ? "" : "s"}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:pb-4">
+      <div className="hidden flex-col-reverse gap-2 border-t border-[#eadbd0] bg-white/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex sm:flex-row sm:justify-end sm:pb-4">
         <Button
           type="button"
           variant="outline"
