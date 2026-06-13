@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { appendPrivateAccessToken } from "@/lib/private-access";
 import {
   buildPublicRsvpPath,
   getPublicAppUrl,
@@ -19,6 +20,7 @@ const CUSTOM_WEBSITE_PREVIEW_COLUMNS =
   "id, event_id, custom_frontend_origin_url, custom_frontend_enabled, platform_event_slug, preview_enabled, last_health_status, last_health_checked_at";
 
 export async function resolveDashboardCustomWebsitePreview(input: {
+  accessToken?: string | null;
   clientId: string;
   event: CustomWebsitePreviewEvent | null;
 }): Promise<DashboardCustomWebsitePreviewDto> {
@@ -74,6 +76,7 @@ export async function resolveDashboardCustomWebsitePreview(input: {
     customPreviewUrl:
       canPreview && originUrl
         ? buildCustomPreviewUrl({
+            accessToken: input.accessToken,
             eventSlug: data.platform_event_slug ?? eventSlug,
             originUrl,
           })
@@ -117,7 +120,11 @@ function buildDashboardPreviewDto(input: {
   };
 }
 
-function buildCustomPreviewUrl(input: { eventSlug: string | null; originUrl: string }) {
+function buildCustomPreviewUrl(input: {
+  accessToken?: string | null;
+  eventSlug: string | null;
+  originUrl: string;
+}) {
   const url = new URL(input.originUrl);
 
   if (input.eventSlug) {
@@ -126,7 +133,7 @@ function buildCustomPreviewUrl(input: { eventSlug: string | null; originUrl: str
 
   url.searchParams.set("preview", "dashboard");
 
-  return url.toString();
+  return appendPrivateAccessToken(url.toString(), input.accessToken) ?? url.toString();
 }
 
 function normalizeHealthStatus(value: string | null): CustomWebsiteHealthStatus {

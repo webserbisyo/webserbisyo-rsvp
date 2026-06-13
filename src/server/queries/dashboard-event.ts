@@ -2,6 +2,7 @@ import "server-only";
 
 import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
 import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
+import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { getPublicAppUrl, getRsvpPreviewBaseDomain, resolvePublicRsvpLinkSet } from "@/lib/public-rsvp-url";
 import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/event-website/types";
 import { requireTenantMember } from "@/lib/permissions";
@@ -67,6 +68,8 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
           id,
           event_slug,
           subdomain_slug,
+          visibility,
+          private_access_token,
           status,
           published_at,
           title,
@@ -157,6 +160,10 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
   );
   const publicLinkSet = event?.event_slug
     ? resolvePublicRsvpLinkSet({
+        accessToken:
+          event?.status === "published" && event?.visibility === "private"
+            ? normalizePrivateAccessToken(event.private_access_token)
+            : null,
         baseUrl: getPublicAppUrl(),
         slug: event.event_slug,
         subdomain: event.subdomain_slug ?? null,
@@ -175,6 +182,10 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
         })
       : Promise.resolve([]),
     resolveDashboardCustomWebsitePreview({
+      accessToken:
+        event?.status === "published" && event?.visibility === "private"
+          ? normalizePrivateAccessToken(event.private_access_token)
+          : null,
       clientId,
       event: event?.id
         ? {
