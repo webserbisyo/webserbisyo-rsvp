@@ -4,8 +4,6 @@ import type { FieldError } from "react-hook-form";
 import { toast } from "sonner";
 import type { PublicPaymentOption } from "@/lib/apply/public-payment-option-dto";
 import { getPaymentOptionLabel } from "@/lib/apply/public-payment-option-dto";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PaymentOptionCard } from "./payment-option-card";
 
 type PaymentOptionPickerProps = {
@@ -22,35 +20,27 @@ export function PaymentOptionPicker({
   value,
 }: PaymentOptionPickerProps) {
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <Label className="text-sm font-medium">Manual payment option</Label>
-        <p className="text-muted-foreground text-sm leading-6">
-          Choose the manual payment method you prefer so the team can prepare the right details.
-        </p>
-      </div>
-
-      <RadioGroup
-        value={value}
-        onValueChange={(nextValue) => onValueChange(nextValue as "gcash" | "maya")}
-        className="grid gap-4 lg:grid-cols-2"
-      >
+    <div className="pop-wrap">
+      <div className="pop-grid">
         {options.map((option) => (
-          <div key={option.provider} className="space-y-3">
-            <Label
-              htmlFor={`payment-${option.provider}`}
-              className="border-border/70 flex items-center gap-3 rounded-3xl border p-3"
-            >
-              <RadioGroupItem id={`payment-${option.provider}`} value={option.provider} />
-              <div className="space-y-0.5">
-                <span className="block text-sm font-medium">{option.label}</span>
-                <span className="text-muted-foreground block text-xs">
-                  {option.accountNumber
-                    ? "Ready for manual coordination"
-                    : "Account number to follow"}
-                </span>
-              </div>
-            </Label>
+          <button
+            key={option.provider}
+            type="button"
+            className={`pop-option-btn ${value === option.provider ? "pop-option-btn--selected" : ""}`}
+            onClick={() => onValueChange(option.provider as "gcash" | "maya")}
+          >
+            {/* Header row */}
+            <div className="pop-option-header">
+              <span className="pop-option-name">{option.label}</span>
+              {value === option.provider && (
+                <span className="pop-selected-badge">Selected ✓</span>
+              )}
+              {value !== option.provider && (
+                <span className="pop-radio-circle" />
+              )}
+            </div>
+
+            {/* Card content */}
             <PaymentOptionCard
               option={option}
               isSelected={value === option.provider}
@@ -67,11 +57,11 @@ export function PaymentOptionPicker({
                   : undefined
               }
             />
-          </div>
+          </button>
         ))}
-      </RadioGroup>
+      </div>
 
-      {error?.message ? <p className="text-destructive text-sm">{error.message}</p> : null}
+      {error?.message ? <p className="pop-error">{error.message}</p> : null}
     </div>
   );
 }

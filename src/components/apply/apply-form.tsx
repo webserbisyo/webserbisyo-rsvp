@@ -1,10 +1,19 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Loader2, MessageCircleMore } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  Crown,
+  Loader2,
+  MapPin,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { buildMessengerFollowupMessage } from "@/lib/apply/messenger";
@@ -16,9 +25,6 @@ import {
   createApplicationSchema,
 } from "@/lib/validations/application.schema";
 import { submitApplicationAction } from "@/server/actions/applications";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -39,21 +45,58 @@ type ApplyFormProps = {
 const APPLY_SUCCESS_STORAGE_KEY = "ws-rsvp-apply-success";
 const applicationEventTypeOptions = getApplicationEventTypeOptions();
 
+const PLAN_DETAILS = {
+  pro: {
+    label: "PRO Plan",
+    price: "₱1,899",
+    originalPrice: "₱3,800",
+    description: "Everything you need for a beautiful wedding website.",
+    features: [
+      "Lifetime Wedding Website",
+      "Online RSVP Management",
+      "Unlimited RSVP Responses",
+      "Free WebSerbisyo Subdomain",
+      "Mobile-Friendly Design",
+      "Hosting Included",
+      "Website Access Controls",
+      "RSVP Dashboard",
+    ],
+    icon: Sparkles,
+  },
+  max: {
+    label: "MAX Plan",
+    price: "₱3,599",
+    originalPrice: "₱7,500",
+    description: "A premium, unforgettable wedding website experience.",
+    features: [
+      "Everything in PRO",
+      "Advanced UI & UX",
+      "Premium Motion Experience",
+      "Enhanced Visual Storytelling",
+      "Higher Design Polish",
+      "Priority Support",
+    ],
+    icon: Crown,
+  },
+} as const;
+
 export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [step, setStep] = useState<1 | 2>(1);
   const hasPaymentOptions = config.paymentOptions.length > 0;
   const validationSchema = useMemo(
     () => createApplicationSchema({ requireManualPaymentOption: hasPaymentOptions }),
     [hasPaymentOptions],
   );
   const {
-    control,
     formState: { errors },
     handleSubmit,
     register,
     setError,
     setValue,
+    trigger,
+    control,
   } = useForm<ApplicationFormInput, unknown, ApplicationInput>({
     mode: "onBlur",
     reValidateMode: "onChange",
@@ -72,34 +115,35 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
     },
   });
 
-  const selectedPaymentOption = useWatch({
-    control,
-    name: "preferredManualPaymentOption",
-  });
-  const selectedPlan = useWatch({
-    control,
-    name: "preferredPlan",
-  });
-  const selectedEventType = useWatch({
-    control,
-    name: "eventType",
-  });
+  const selectedPaymentOption = useWatch({ control, name: "preferredManualPaymentOption" });
+  const selectedPlan = useWatch({ control, name: "preferredPlan" });
+  const selectedEventType = useWatch({ control, name: "eventType" });
+
+  const planKey = (selectedPlan ?? initialPlan) as keyof typeof PLAN_DETAILS;
+  const planDetails = PLAN_DETAILS[planKey] ?? PLAN_DETAILS.pro;
+  const PlanIcon = planDetails.icon;
 
   function assignServerFieldErrors(fieldErrors: Record<string, string[] | undefined> | undefined) {
-    if (!fieldErrors) {
-      return;
-    }
-
+    if (!fieldErrors) return;
     Object.entries(fieldErrors).forEach(([field, messages]) => {
-      if (!messages?.[0]) {
-        return;
-      }
-
-      setError(field as keyof ApplicationFormInput, {
-        message: messages[0],
-        type: "server",
-      });
+      if (!messages?.[0]) return;
+      setError(field as keyof ApplicationFormInput, { message: messages[0], type: "server" });
     });
+  }
+
+  async function handleContinueToReview() {
+    const valid = await trigger([
+      "fullName",
+      "email",
+      "phone",
+      "eventType",
+      "eventDate",
+      "eventLocation",
+      "estimatedGuestCount",
+      "message",
+      "preferredPlan",
+    ]);
+    if (valid) setStep(2);
   }
 
   const submit = handleSubmit((values) => {
@@ -146,230 +190,326 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   });
 
   return (
-    <Card className="rsvp-panel border-border/70 rounded-[2rem]">
-      <CardHeader className="space-y-3">
-        <CardTitle className="text-2xl">Start your application</CardTitle>
-        <p className="text-muted-foreground text-sm leading-6">
-          Submit your event details, choose your preferred manual payment option, and continue on
-          Messenger after you receive your reference code.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <form className="space-y-6" onSubmit={submit}>
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input id="fullName" {...register("fullName")} disabled={isPending} />
-              {errors.fullName?.message ? (
-                <p className="text-destructive text-sm">{errors.fullName.message}</p>
-              ) : null}
-            </div>
+    <div className="af-shell">
+      {/* ── Top navbar ── */}
+      <header className="af-topbar">
+        <span className="af-topbar-wordmark">
+          WEBSERBISYO <span className="af-topbar-rsvp">RSVP</span>
+        </span>
+        <div className="af-plan-pill">
+          <PlanIcon className="af-plan-pill-icon" />
+          <span className="af-plan-pill-label">
+            {planDetails.label} — {planDetails.price}
+          </span>
+          <span className="af-plan-pill-original">{planDetails.originalPrice}</span>
+        </div>
+      </header>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                {...register("email")}
-                disabled={isPending}
-              />
-              {errors.email?.message ? (
-                <p className="text-destructive text-sm">{errors.email.message}</p>
-              ) : null}
-            </div>
+      {/* ── 3-step stepper ── */}
+      <div className="af-stepper">
+        <div className={`af-step ${step >= 1 ? "af-step--active" : ""} ${step > 1 ? "af-step--done" : ""}`}>
+          <div className="af-step-circle">
+            {step > 1 ? <span className="af-step-check">✓</span> : <span>1</span>}
+          </div>
+          <span className="af-step-label">Your Details</span>
+        </div>
+        <div className={`af-step-line ${step > 1 ? "af-step-line--done" : ""}`} />
+        <div className={`af-step ${step >= 2 ? "af-step--active" : ""}`}>
+          <div className="af-step-circle">2</div>
+          <span className="af-step-label">Review &amp; Pay</span>
+        </div>
+        <div className="af-step-line" />
+        <div className="af-step">
+          <div className="af-step-circle">3</div>
+          <span className="af-step-label">Confirmed</span>
+        </div>
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone number</Label>
-              <Input
-                id="phone"
-                autoComplete="tel"
-                inputMode="tel"
-                placeholder="09171234567 or +639171234567"
-                {...register("phone")}
-                disabled={isPending}
-              />
-              {errors.phone?.message ? (
-                <p className="text-destructive text-sm">{errors.phone.message}</p>
-              ) : null}
-            </div>
+      {/* ── Form card ── */}
+      <div className="af-card">
+        <form onSubmit={submit}>
+          {/* ══ STEP 1: Your Details ══ */}
+          {step === 1 && (
+            <>
+              <div className="af-card-header">
+                <h1 className="af-card-title">Tell us about your wedding</h1>
+                <p className="af-card-subtitle">
+                  We&apos;ll use these details to personalise and set up your website.
+                </p>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="eventType">Event type</Label>
-              <Select
-                value={selectedEventType}
-                onValueChange={(value) =>
-                  setValue("eventType", value as ApplicationFormInput["eventType"], {
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  })
-                }
-                disabled={isPending}
-              >
-                <SelectTrigger id="eventType" className="h-11 w-full">
-                  <SelectValue placeholder="Select event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {applicationEventTypeOptions.map((eventType) => (
-                    <SelectItem
-                      key={eventType.eventType}
-                      value={eventType.eventType}
-                      disabled={eventType.disabled}
+              <div className="af-fields-grid">
+                {/* Full Name */}
+                <div className="af-field">
+                  <Label htmlFor="fullName" className="af-label">Full Name <span className="af-required">*</span></Label>
+                  <Input
+                    id="fullName"
+                    placeholder="e.g. Maria & Juan Santos"
+                    className="af-input"
+                    {...register("fullName")}
+                    disabled={isPending}
+                  />
+                  {errors.fullName?.message && <p className="af-field-error">{errors.fullName.message}</p>}
+                </div>
+
+                {/* Email */}
+                <div className="af-field">
+                  <Label htmlFor="email" className="af-label">Email Address <span className="af-required">*</span></Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    inputMode="email"
+                    className="af-input"
+                    {...register("email")}
+                    disabled={isPending}
+                  />
+                  {errors.email?.message && <p className="af-field-error">{errors.email.message}</p>}
+                </div>
+
+                {/* Phone */}
+                <div className="af-field">
+                  <Label htmlFor="phone" className="af-label">Phone Number <span className="af-required">*</span></Label>
+                  <Input
+                    id="phone"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder="09171234567"
+                    className="af-input"
+                    {...register("phone")}
+                    disabled={isPending}
+                  />
+                  {errors.phone?.message && <p className="af-field-error">{errors.phone.message}</p>}
+                </div>
+
+                {/* Event Type */}
+                <div className="af-field">
+                  <Label htmlFor="eventType" className="af-label">Event Type</Label>
+                  <div className="af-event-type-wrap">
+                    <Select
+                      value={selectedEventType}
+                      onValueChange={(value) =>
+                        setValue("eventType", value as ApplicationFormInput["eventType"], {
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        })
+                      }
+                      disabled={isPending}
                     >
-                      {eventType.statusLabel
-                        ? `${eventType.label} (${eventType.statusLabel})`
-                        : eventType.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-muted-foreground text-sm">
-                Wedding applications are available now. More celebration types are coming soon.
-              </p>
-              {errors.eventType?.message ? (
-                <p className="text-destructive text-sm">{errors.eventType.message}</p>
-              ) : null}
-            </div>
+                      <SelectTrigger id="eventType" className="af-input af-input--select">
+                        <span className="af-event-type-dot" />
+                        <SelectValue placeholder="Select event type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {applicationEventTypeOptions.map((eventType) => (
+                          <SelectItem
+                            key={eventType.eventType}
+                            value={eventType.eventType}
+                            disabled={eventType.disabled}
+                          >
+                            {eventType.statusLabel
+                              ? `${eventType.label} (${eventType.statusLabel})`
+                              : eventType.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="af-available-badge">Available</span>
+                  </div>
+                  <p className="af-field-hint">
+                    Wedding is available now. More types coming soon.
+                  </p>
+                  {errors.eventType?.message && <p className="af-field-error">{errors.eventType.message}</p>}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="eventDate">Event date</Label>
-              <Input id="eventDate" type="date" {...register("eventDate")} disabled={isPending} />
-              {errors.eventDate?.message ? (
-                <p className="text-destructive text-sm">{errors.eventDate.message}</p>
-              ) : null}
-            </div>
+                {/* Wedding Date */}
+                <div className="af-field">
+                  <Label htmlFor="eventDate" className="af-label">
+                    <CalendarDays className="af-label-icon" />
+                    Wedding Date <span className="af-required">*</span>
+                  </Label>
+                  <Input
+                    id="eventDate"
+                    type="date"
+                    className="af-input"
+                    {...register("eventDate")}
+                    disabled={isPending}
+                  />
+                  {errors.eventDate?.message && <p className="af-field-error">{errors.eventDate.message}</p>}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="eventLocation">Event location</Label>
-              <Input id="eventLocation" {...register("eventLocation")} disabled={isPending} />
-              {errors.eventLocation?.message ? (
-                <p className="text-destructive text-sm">{errors.eventLocation.message}</p>
-              ) : null}
-            </div>
+                {/* Venue / Location */}
+                <div className="af-field">
+                  <Label htmlFor="eventLocation" className="af-label">
+                    <MapPin className="af-label-icon" />
+                    Venue / Location <span className="af-required">*</span>
+                  </Label>
+                  <Input
+                    id="eventLocation"
+                    placeholder="e.g. Batangas, Philippines"
+                    className="af-input"
+                    {...register("eventLocation")}
+                    disabled={isPending}
+                  />
+                  {errors.eventLocation?.message && <p className="af-field-error">{errors.eventLocation.message}</p>}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="preferredPlan">Preferred plan</Label>
-              <Select
-                value={selectedPlan}
-                onValueChange={(value) =>
-                  setValue("preferredPlan", value as "pro" | "max", {
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  })
-                }
-                disabled={isPending}
-              >
-                <SelectTrigger id="preferredPlan" className="h-11 w-full">
-                  <SelectValue placeholder="Select plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pro">Pro</SelectItem>
-                  <SelectItem value="max">Max</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.preferredPlan?.message ? (
-                <p className="text-destructive text-sm">{errors.preferredPlan.message}</p>
-              ) : null}
-            </div>
+                {/* Estimated Guest Count */}
+                <div className="af-field af-field--full">
+                  <Label htmlFor="estimatedGuestCount" className="af-label">
+                    <Users className="af-label-icon" />
+                    Estimated Guest Count <span className="af-required">*</span>
+                  </Label>
+                  <Input
+                    id="estimatedGuestCount"
+                    type="number"
+                    min={1}
+                    max={1000}
+                    step={1}
+                    placeholder="e.g. 150"
+                    className="af-input af-input--half"
+                    {...register("estimatedGuestCount")}
+                    disabled={isPending}
+                  />
+                  {errors.estimatedGuestCount?.message && (
+                    <p className="af-field-error">{errors.estimatedGuestCount.message}</p>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="estimatedGuestCount">Estimated guest count</Label>
-              <Input
-                id="estimatedGuestCount"
-                type="number"
-                min={1}
-                max={1000}
-                step={1}
-                {...register("estimatedGuestCount")}
-                disabled={isPending}
-              />
-              {errors.estimatedGuestCount?.message ? (
-                <p className="text-destructive text-sm">{errors.estimatedGuestCount.message}</p>
-              ) : null}
-            </div>
-          </div>
+                {/* Message */}
+                <div className="af-field af-field--full">
+                  <Label htmlFor="message" className="af-label">Message</Label>
+                  <Textarea
+                    id="message"
+                    rows={4}
+                    placeholder="Tell WebSerbisyo about your event..."
+                    className="af-input af-input--textarea"
+                    {...register("message")}
+                    disabled={isPending}
+                  />
+                  <p className="af-field-hint">Special requests, timing, or anything we should know.</p>
+                  {errors.message?.message && <p className="af-field-error">{errors.message.message}</p>}
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              rows={5}
-              placeholder="Tell WebSerbisyo about your event, timing, or anything important."
-              {...register("message")}
-              disabled={isPending}
-            />
-            {errors.message?.message ? (
-              <p className="text-destructive text-sm">{errors.message.message}</p>
-            ) : null}
-          </div>
+              {/* Continue button */}
+              <div className="af-actions">
+                <button
+                  type="button"
+                  className="af-btn-primary"
+                  onClick={() => void handleContinueToReview()}
+                  disabled={isPending}
+                >
+                  Continue to Review <ArrowRight className="af-btn-arrow" />
+                </button>
+              </div>
 
-          {hasPaymentOptions ? (
-            <PaymentOptionPicker
-              options={config.paymentOptions}
-              value={selectedPaymentOption}
-              onValueChange={(value) =>
-                setValue("preferredManualPaymentOption", value, {
-                  shouldTouch: true,
-                  shouldValidate: true,
-                })
-              }
-              error={errors.preferredManualPaymentOption}
-            />
-          ) : (
-            <Alert className="border-border/70 rounded-3xl">
-              <AlertTitle>Payment details will be confirmed through Messenger.</AlertTitle>
-              <AlertDescription>
-                The admin has not enabled public wallet details yet. You can still submit your
-                application and follow up manually after you receive your reference code.
-              </AlertDescription>
-            </Alert>
+              <div className="af-back-link-wrap">
+                <Link href="/apply" className="af-back-link">
+                  ← Back to overview
+                </Link>
+              </div>
+            </>
           )}
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-muted-foreground text-sm leading-6">
-              Need more context first?{" "}
-              <Link
-                href="/apply"
-                className="text-rsvp-brand font-medium underline underline-offset-4"
-              >
-                Back to the overview
-              </Link>
-            </p>
+          {/* ══ STEP 2: Review & Pay ══ */}
+          {step === 2 && (
+            <>
+              <div className="af-card-header">
+                <h1 className="af-card-title">Review &amp; Payment</h1>
+                <p className="af-card-subtitle">
+                  Confirm your plan and choose your preferred payment method.
+                </p>
+              </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isPending}
-              className="bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90"
-            >
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin" />
+              {/* Selected plan summary card */}
+              <div className="af-plan-summary">
+                <div className="af-plan-summary-header">
+                  <div className="af-plan-summary-left">
+                    <PlanIcon className="af-plan-summary-icon" />
+                    <div>
+                      <p className="af-plan-summary-name">{planDetails.label.toUpperCase()}</p>
+                      <p className="af-plan-summary-desc">{planDetails.description}</p>
+                    </div>
+                  </div>
+                  <div className="af-plan-summary-price-wrap">
+                    <span className="af-plan-summary-price">{planDetails.price}</span>
+                    <span className="af-plan-summary-original">{planDetails.originalPrice}</span>
+                  </div>
+                </div>
+                <div className="af-plan-summary-features">
+                  {planDetails.features.map((f: string) => (
+                    <div key={f} className="af-plan-summary-feature">
+                      <span className="af-plan-summary-check">✓</span>
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment method */}
+              {hasPaymentOptions ? (
+                <div className="af-payment-section">
+                  <p className="af-payment-label">PAYMENT METHOD</p>
+                  <p className="af-payment-hint">
+                    We&apos;ll confirm the final payment details on Messenger. Choose your preferred option below.
+                  </p>
+                  <PaymentOptionPicker
+                    options={config.paymentOptions}
+                    value={selectedPaymentOption}
+                    onValueChange={(value) =>
+                      setValue("preferredManualPaymentOption", value, {
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    error={errors.preferredManualPaymentOption}
+                  />
+                </div>
               ) : (
-                <ArrowRight className="size-4" />
+                <div className="af-payment-section">
+                  <p className="af-payment-label">PAYMENT METHOD</p>
+                  <p className="af-payment-hint">
+                    No payment required now — we&apos;ll reach out on Messenger to confirm your slot and send payment instructions.
+                  </p>
+                </div>
               )}
-              {isPending ? "Submitting..." : "Submit application"}
-            </Button>
-          </div>
-        </form>
 
-        {config.messengerPageUrl ? (
-          <div className="border-border/80 text-muted-foreground rounded-3xl border border-dashed px-4 py-4 text-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p>
-                Need to continue the conversation right away? WebSerbisyo will still confirm the
-                next steps on Messenger.
+              {/* Step 2 actions */}
+              <div className="af-actions af-actions--row">
+                <button
+                  type="button"
+                  className="af-btn-back"
+                  onClick={() => setStep(1)}
+                  disabled={isPending}
+                >
+                  <ArrowLeft className="af-btn-arrow" /> Back
+                </button>
+                <button
+                  type="submit"
+                  className="af-btn-submit"
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <Loader2 className="af-btn-arrow animate-spin" />
+                  ) : (
+                    <ArrowRight className="af-btn-arrow" />
+                  )}
+                  {isPending ? "Submitting..." : "Submit Application"}
+                </button>
+              </div>
+
+              <p className="af-disclaimer">
+                No payment required now — we&apos;ll reach out on Messenger to confirm your slot and send payment instructions.
               </p>
-              <Button asChild variant="ghost">
-                <Link href={config.messengerPageUrl} target="_blank" rel="noreferrer">
-                  Continue on Messenger
-                  <MessageCircleMore className="size-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+            </>
+          )}
+        </form>
+      </div>
+
+      {/* Footer */}
+      <p className="af-footer">© 2024 WebSerbisyo RSVP · Made with love for Filipino couples</p>
+    </div>
   );
 }

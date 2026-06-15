@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Copy, MessageCircleMore, ReceiptText } from "lucide-react";
+import { Copy, MessageCircleMore } from "lucide-react";
 import { toast } from "sonner";
-import { buildReferenceOnlyFollowupMessage, formatPlanLabel } from "@/lib/apply/messenger";
+import {
+  buildReferenceOnlyFollowupMessage,
+  buildMessengerContinueUrl,
+  formatPlanLabel,
+} from "@/lib/apply/messenger";
 import { getPaymentOptionLabel } from "@/lib/apply/public-payment-option-dto";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessengerFollowup } from "./messenger-followup";
 
 type ApplySuccessProps = {
   messengerPageUrl: string | null;
@@ -27,12 +28,8 @@ type StoredSuccessPayload = {
 const APPLY_SUCCESS_STORAGE_KEY = "ws-rsvp-apply-success";
 
 function isStoredSuccessPayload(value: unknown): value is StoredSuccessPayload {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
+  if (!value || typeof value !== "object") return false;
   const payload = value as Partial<StoredSuccessPayload>;
-
   return (
     typeof payload.followupMessage === "string" &&
     typeof payload.referenceCode === "string" &&
@@ -44,27 +41,13 @@ function isStoredSuccessPayload(value: unknown): value is StoredSuccessPayload {
 }
 
 function readStoredSuccessPayload(referenceCode: string | null): StoredSuccessPayload | null {
-  if (!referenceCode) {
-    return null;
-  }
-
-  if (typeof window === "undefined") {
-    return null;
-  }
-
+  if (!referenceCode) return null;
+  if (typeof window === "undefined") return null;
   try {
     const raw = window.sessionStorage.getItem(APPLY_SUCCESS_STORAGE_KEY);
-
-    if (!raw) {
-      return null;
-    }
-
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as unknown;
-
-    if (!isStoredSuccessPayload(parsed)) {
-      return null;
-    }
-
+    if (!isStoredSuccessPayload(parsed)) return null;
     return parsed.referenceCode === referenceCode ? parsed : null;
   } catch {
     return null;
@@ -94,11 +77,10 @@ export function ApplySuccess({
     [referenceCode, storedPayload?.followupMessage],
   );
 
-  async function copyReference() {
-    if (!referenceCode) {
-      return;
-    }
+  const messengerUrl = buildMessengerContinueUrl(messengerPageUrl);
 
+  async function copyReference() {
+    if (!referenceCode) return;
     try {
       await navigator.clipboard.writeText(referenceCode);
       toast.success("Reference code copied.");
@@ -107,88 +89,154 @@ export function ApplySuccess({
     }
   }
 
+  async function copyFollowupMessage() {
+    try {
+      await navigator.clipboard.writeText(followupMessage);
+      toast.success("Follow-up message copied.");
+    } catch {
+      toast.error("Could not copy the follow-up message.");
+    }
+  }
+
+  async function handleContinueOnMessenger() {
+    // Auto-copy the full followup message to clipboard first
+    try {
+      await navigator.clipboard.writeText(followupMessage);
+      toast.success("Message copied! Opening Messenger…");
+    } catch {
+      // Non-fatal — still open Messenger
+    }
+    if (messengerUrl) {
+      window.open(messengerUrl, "_blank", "noreferrer");
+    }
+  }
+
+  const planLabel = formatPlanLabel(displayPlan);
+  const paymentLabel = getPaymentOptionLabel(
+    (displayPaymentOption as "gcash" | "maya" | null | undefined) ?? null,
+  );
+
   return (
-    <main className="rsvp-shell min-h-screen">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-        <Card className="rsvp-panel border-border/70 rounded-[2rem]">
-          <CardHeader className="space-y-3">
-            <div className="bg-rsvp-brand text-rsvp-brand-foreground flex size-12 items-center justify-center rounded-2xl">
-              <ReceiptText className="size-5" />
-            </div>
-            <div className="space-y-2">
-              <CardTitle className="text-3xl font-semibold tracking-tight">
-                Application submitted
-              </CardTitle>
-              <p className="text-muted-foreground text-sm leading-6">
-                Please continue on Messenger and send your reference number so WebSerbisyo can
-                manually confirm your application and payment details.
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
-            <div className="space-y-4">
-              <div className="border-border/70 bg-background rounded-3xl border px-4 py-4">
-                <p className="text-rsvp-brand text-xs font-semibold tracking-[0.22em] uppercase">
-                  Reference code
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight">
-                  {referenceCode ?? "Not available"}
-                </p>
-                {!referenceCode ? (
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    If you just submitted, return to the application flow and try again.
-                  </p>
-                ) : null}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="border-border/70 bg-background rounded-3xl border px-4 py-4">
-                  <p className="text-rsvp-brand text-xs font-semibold tracking-[0.22em] uppercase">
-                    Selected plan
-                  </p>
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    {formatPlanLabel(displayPlan) ?? "Saved on submission"}
-                  </p>
-                </div>
-                <div className="border-border/70 bg-background rounded-3xl border px-4 py-4">
-                  <p className="text-rsvp-brand text-xs font-semibold tracking-[0.22em] uppercase">
-                    Payment option
-                  </p>
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    {getPaymentOptionLabel(
-                      (displayPaymentOption as "gcash" | "maya" | null | undefined) ?? null,
-                    ) ?? "To be confirmed on Messenger"}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Button
-                type="button"
-                onClick={() => void copyReference()}
-                disabled={!referenceCode}
-                className="bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90"
-              >
-                <Copy className="size-4" />
-                Copy reference
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/apply">Back to Apply</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="as-shell">
+      {/* Confetti particles */}
+      <div className="as-confetti" aria-hidden="true">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div key={i} className={`as-confetti-piece as-confetti-piece--${(i % 5) + 1}`} />
+        ))}
+      </div>
 
-        <MessengerFollowup message={followupMessage} messengerPageUrl={messengerPageUrl} />
+      {/* ── Main card ── */}
+      <div className="as-card">
+        {/* Gold checkmark icon */}
+        <div className="as-icon-wrap">
+          <div className="as-icon-circle">
+            <span className="as-icon-check">✓</span>
+          </div>
+        </div>
 
-        <div className="flex justify-start">
-          <Button asChild variant="ghost">
-            <Link href="/apply/start?plan=pro">
-              New application
-              <MessageCircleMore className="size-4" />
-            </Link>
-          </Button>
+        {/* Heading */}
+        <h1 className="as-title">Application Received!</h1>
+        <p className="as-subtitle">
+          Congratulations on your upcoming wedding 💍
+          <br />
+          We&apos;ll confirm your{" "}
+          <strong>{planLabel ? `${planLabel} plan` : "plan"}</strong> and next steps on Messenger.
+        </p>
+
+        {/* Reference code box */}
+        <div className="as-ref-section">
+          <p className="as-ref-label">YOUR REFERENCE CODE</p>
+          <div className="as-ref-box">
+            <span className="as-ref-code">{referenceCode ?? "Not available"}</span>
+            <button
+              type="button"
+              className="as-ref-copy-btn"
+              onClick={() => void copyReference()}
+              disabled={!referenceCode}
+            >
+              <Copy className="as-ref-copy-icon" />
+              Copy
+            </button>
+          </div>
+          <p className="as-ref-hint">Save this code — you&apos;ll need it when messaging us.</p>
+        </div>
+
+        {/* Meta info */}
+        {(planLabel || paymentLabel) && (
+          <div className="as-meta-row">
+            {planLabel && (
+              <div className="as-meta-item">
+                <span className="as-meta-label">Plan</span>
+                <span className="as-meta-value">{planLabel}</span>
+              </div>
+            )}
+            {paymentLabel && (
+              <div className="as-meta-item">
+                <span className="as-meta-label">Payment</span>
+                <span className="as-meta-value">{paymentLabel}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* What happens next */}
+        <div className="as-next-section">
+          <p className="as-next-label">WHAT HAPPENS NEXT</p>
+          <ol className="as-next-list">
+            <li className="as-next-item">
+              <span className="as-next-num">1</span>
+              <span>We&apos;ll message you on Messenger within 1–2 business days.</span>
+            </li>
+            <li className="as-next-item">
+              <span className="as-next-num">2</span>
+              <span>Send your payment and we&apos;ll confirm your slot.</span>
+            </li>
+            <li className="as-next-item">
+              <span className="as-next-num">3</span>
+              <span>We&apos;ll build your wedding website and RSVP system.</span>
+            </li>
+          </ol>
+        </div>
+
+        {/* Copyable follow-up message block */}
+        <div className="as-message-section">
+          <p className="as-message-label">YOUR MESSAGE FOR MESSENGER</p>
+          <p className="as-message-hint">
+            Copy this message before opening Messenger so your reference is easy to share.
+          </p>
+          <pre className="as-message-pre">{followupMessage}</pre>
+          <button
+            type="button"
+            className="as-copy-msg-btn"
+            onClick={() => void copyFollowupMessage()}
+          >
+            <Copy className="as-copy-msg-icon" />
+            Copy message
+          </button>
+        </div>
+
+        {/* Continue on Messenger button */}
+        {messengerUrl ? (
+          <button
+            type="button"
+            className="as-messenger-btn"
+            onClick={() => void handleContinueOnMessenger()}
+          >
+            <MessageCircleMore className="as-messenger-icon" />
+            Continue on Messenger
+          </button>
+        ) : null}
+
+        {/* Back link */}
+        <div className="as-footer">
+          <Link href="/apply" className="as-back-link">
+            ← Back to Apply
+          </Link>
         </div>
       </div>
-    </main>
+
+      {/* Footer */}
+      <p className="as-page-footer">© 2024 WebSerbisyo RSVP · Made with love for Filipino couples</p>
+    </div>
   );
 }
