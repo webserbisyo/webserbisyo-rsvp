@@ -23,11 +23,18 @@ export function PaymentOptionPicker({
     <div className="pop-wrap">
       <div className="pop-grid">
         {options.map((option) => (
-          <button
+          <div
             key={option.provider}
-            type="button"
+            role="button"
+            tabIndex={0}
             className={`pop-option-btn ${value === option.provider ? "pop-option-btn--selected" : ""}`}
             onClick={() => onValueChange(option.provider as "gcash" | "maya")}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onValueChange(option.provider as "gcash" | "maya");
+              }
+            }}
           >
             {/* Header row */}
             <div className="pop-option-header">
@@ -57,7 +64,7 @@ export function PaymentOptionPicker({
                   : undefined
               }
             />
-          </button>
+          </div>
         ))}
       </div>
 
