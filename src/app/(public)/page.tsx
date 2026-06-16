@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { PublicEventPageContent, buildPublicEventMetadata } from "@/components/event-website/public-event-page-content";
-import { LandingMessageHero } from "@/components/landing/landing-message-hero";
+import {
+  PublicEventPageContent,
+  buildPublicEventMetadata,
+} from "@/components/event-website/public-event-page-content";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
@@ -62,7 +64,6 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
       <LandingNavbar />
       <main>
         <LandingVisualHero />
-        <LandingMessageHero />
       </main>
     </>
   );
@@ -79,7 +80,9 @@ async function resolveWildcardHostEvent(
   }
 
   const requestSearchParams = new URLSearchParams();
-  const access = Array.isArray(searchParams?.access) ? searchParams?.access[0] : searchParams?.access;
+  const access = Array.isArray(searchParams?.access)
+    ? searchParams?.access[0]
+    : searchParams?.access;
 
   if (access) {
     requestSearchParams.set("access", access);
@@ -98,9 +101,9 @@ async function isWildcardHostRequest() {
 
   return Boolean(
     normalizedHost &&
-      wildcardBaseDomain &&
-      normalizedHost !== wildcardBaseDomain &&
-      normalizedHost.endsWith(`.${wildcardBaseDomain}`),
+    wildcardBaseDomain &&
+    normalizedHost !== wildcardBaseDomain &&
+    normalizedHost.endsWith(`.${wildcardBaseDomain}`),
   );
 }
 
