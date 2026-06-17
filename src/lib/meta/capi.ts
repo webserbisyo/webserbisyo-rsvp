@@ -4,12 +4,17 @@ import { createHash } from "node:crypto";
 
 export type MetaCapiEventInput = {
   amount: number;
+  clientUserAgent?: string | null;
   currency: "PHP";
   email?: string | null;
   eventId: string;
   eventName?: "PaidConfirmed" | "Purchase";
-  pixelId?: string | null;
+  externalId?: string | null;
+  fbc?: string | null;
+  fbp?: string | null;
+  fullName?: string | null;
   phone?: string | null;
+  pixelId?: string | null;
   sourceUrl?: string | null;
   testEventCode?: string | null;
 };
@@ -41,7 +46,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
   const body = {
     data: [
       {
-        action_source: process.env.META_CAPI_ACTION_SOURCE ?? "system_generated",
+        action_source: "website" as const,
         custom_data: {
           currency: input.currency,
           order_id: input.eventId,
@@ -91,7 +96,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
 }
 
 function buildUserData(input: MetaCapiEventInput) {
-  const userData: Record<string, string[]> = {};
+  const userData: Record<string, string | string[]> = {};
   const email = normalizeEmail(input.email);
   const phone = normalizePhone(input.phone);
 
@@ -101,6 +106,37 @@ function buildUserData(input: MetaCapiEventInput) {
 
   if (phone) {
     userData.ph = [sha256(phone)];
+  }
+
+  // First name / last name from fullName
+  const nameParts = input.fullName?.trim().split(/\s+/) ?? [];
+
+  if (nameParts.length > 0 && nameParts[0]) {
+    userData.fn = [sha256(nameParts[0].toLowerCase())];
+
+    if (nameParts.length > 1) {
+      userData.ln = [sha256(nameParts.slice(1).join(" ").toLowerCase())];
+    }
+  }
+
+  // External ID (hashed)
+  if (input.externalId) {
+    userData.external_id = [sha256(input.externalId)];
+  }
+
+  // Browser ID (fbp) — raw, not hashed per Meta spec
+  if (input.fbp) {
+    userData.fbp = input.fbp;
+  }
+
+  // Click ID (fbc) — raw, not hashed per Meta spec
+  if (input.fbc) {
+    userData.fbc = input.fbc;
+  }
+
+  // Client user agent
+  if (input.clientUserAgent) {
+    userData.client_user_agent = input.clientUserAgent;
   }
 
   return userData;

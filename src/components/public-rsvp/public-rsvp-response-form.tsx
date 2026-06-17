@@ -257,8 +257,8 @@ export function PublicRsvpResponseForm({
         <div className="event-preview-field">
           <span>{RSVP_GUEST_COUNT_LABEL}</span>
           <p className="mb-1 text-[11.5px] leading-snug text-[#7a746f]">
-            Choose how many companions you will bring. You may bring up to{" "}
-            {settings.companionLimit}.
+            Choose how many companions you will bring. You may bring up to {settings.companionLimit}
+            .
           </p>
           <div className="event-preview-choice-group" aria-label="Guest count">
             {Array.from({ length: settings.companionLimit + 1 }, (_, index) => (
@@ -372,7 +372,11 @@ function AttendanceOption({
   return (
     <label
       htmlFor={id}
-      className={cn("event-preview-choice-option", checked && "is-selected", disabled && "is-disabled")}
+      className={cn(
+        "event-preview-choice-option",
+        checked && "is-selected",
+        disabled && "is-disabled",
+      )}
     >
       <input
         id={id}

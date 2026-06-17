@@ -5,37 +5,37 @@
       "type": "remote",
       "url": "https://mcp.grep.app",
       "enabled": true,
-      "timeout": 10000
+      "timeout": 10000,
     },
     "playwright": {
       "type": "remote",
       "url": "http://localhost:8931/mcp",
       "enabled": true,
-      "timeout": 60000
+      "timeout": 60000,
     },
     "shadcn": {
       "type": "local",
       "command": ["npx", "-y", "shadcn@latest", "mcp"],
       "enabled": true,
-      "timeout": 60000
+      "timeout": 60000,
     },
     "vercel": {
       "type": "remote",
       "url": "https://mcp.vercel.com",
       "enabled": true,
-      "timeout": 10000
+      "timeout": 10000,
     },
     "github": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp/",
       "enabled": false,
-      "timeout": 10000
+      "timeout": 10000,
     },
     "context7": {
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp"],
       "enabled": true,
-      "timeout": 60000
-    }
-  }
+      "timeout": 60000,
+    },
+  },
 }

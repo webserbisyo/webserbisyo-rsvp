@@ -10,7 +10,14 @@ import {
   type RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download, MessageCircleHeart, Search, XCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  MessageCircleHeart,
+  Search,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -20,7 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { getRsvpResponseColumns } from "./rsvp-response-columns";
 import { RsvpResponseCardList } from "./rsvp-response-card-list";
@@ -111,7 +125,9 @@ export function RsvpResponsesTable({
   const filteredRowCount = table.getFilteredRowModel().rows.length;
   const pageRows = table.getRowModel().rows;
   const selectedResponses = table.getSelectedRowModel().rows.map((row) => row.original);
-  const selectedEligibleResponses = selectedResponses.filter((response) => hasResponseMessage(response));
+  const selectedEligibleResponses = selectedResponses.filter((response) =>
+    hasResponseMessage(response),
+  );
   const allEligibleSelectedAreApproved =
     selectedEligibleResponses.length > 0 &&
     selectedEligibleResponses.every((response) => response.messagePublicStatus === "approved");
@@ -133,10 +149,7 @@ export function RsvpResponsesTable({
   return (
     <Card className="gap-0 overflow-hidden rounded-[1.6rem] border border-[#eadbd0] bg-white/80 p-0 shadow-sm shadow-[#8a4b2e]/5">
       <div className="border-b border-[#eadbd0] bg-white/70 p-4">
-        <RsvpResponsesFilterRail
-          activeTab={activeTab}
-          onActiveTabChange={onActiveTabChange}
-        />
+        <RsvpResponsesFilterRail activeTab={activeTab} onActiveTabChange={onActiveTabChange} />
 
         <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
           <div className="relative flex-1">
@@ -191,7 +204,7 @@ export function RsvpResponsesTable({
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                {selectedResponses.some(r => r.reviewStatus === "approved") && (
+                {selectedResponses.some((r) => r.reviewStatus === "approved") && (
                   <Button
                     type="button"
                     size="sm"
@@ -199,7 +212,9 @@ export function RsvpResponsesTable({
                     variant="outline"
                     className="w-full rounded-xl border-rose-200 px-3 text-rose-600 hover:bg-rose-50 hover:text-rose-700 sm:w-auto"
                     onClick={() => {
-                      const idsToReject = selectedResponses.filter(r => r.reviewStatus === "approved").map(r => r.id);
+                      const idsToReject = selectedResponses
+                        .filter((r) => r.reviewStatus === "approved")
+                        .map((r) => r.id);
                       if (onRejectResponses) onRejectResponses(idsToReject);
                     }}
                   >
@@ -207,7 +222,7 @@ export function RsvpResponsesTable({
                   </Button>
                 )}
 
-                {selectedResponses.some(r => r.reviewStatus === "rejected") && (
+                {selectedResponses.some((r) => r.reviewStatus === "rejected") && (
                   <Button
                     type="button"
                     size="sm"
@@ -215,7 +230,9 @@ export function RsvpResponsesTable({
                     variant="default"
                     className="w-full rounded-xl px-3 sm:w-auto"
                     onClick={() => {
-                      const idsToRestore = selectedResponses.filter(r => r.reviewStatus === "rejected").map(r => r.id);
+                      const idsToRestore = selectedResponses
+                        .filter((r) => r.reviewStatus === "rejected")
+                        .map((r) => r.id);
                       if (onRestoreResponses) onRestoreResponses(idsToRestore);
                     }}
                   >
@@ -223,7 +240,8 @@ export function RsvpResponsesTable({
                   </Button>
                 )}
 
-                {hasEligibleSelection && selectedResponses.every(r => r.reviewStatus === "approved") ? (
+                {hasEligibleSelection &&
+                selectedResponses.every((r) => r.reviewStatus === "approved") ? (
                   <Button
                     type="button"
                     size="sm"
@@ -238,7 +256,9 @@ export function RsvpResponsesTable({
                     onClick={() =>
                       onGuestbookModeration(
                         allEligibleSelectedAreApproved ? "remove" : "approve",
-                        selectedResponses.filter(r => r.reviewStatus === "approved").map((response) => response.id),
+                        selectedResponses
+                          .filter((r) => r.reviewStatus === "approved")
+                          .map((response) => response.id),
                       )
                     }
                   >
@@ -279,7 +299,7 @@ export function RsvpResponsesTable({
 
           <div className="hidden xl:block">
             <Table className="w-full min-w-[980px] border-0 text-left text-sm">
-              <TableHeader className="bg-[#fffaf6] text-xs uppercase tracking-[0.14em] text-[#9a8b80]">
+              <TableHeader className="bg-[#fffaf6] text-xs tracking-[0.14em] text-[#9a8b80] uppercase">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow
                     key={headerGroup.id}
@@ -331,7 +351,11 @@ export function RsvpResponsesTable({
       <div className="border-t border-[#eadbd0] bg-white/70 px-5 py-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <p className="text-sm font-medium text-[#8a7c72]">
-            Showing <span className="font-bold text-[#2b2521]">{firstItem}–{lastItem}</span> of {totalRows} responses
+            Showing{" "}
+            <span className="font-bold text-[#2b2521]">
+              {firstItem}–{lastItem}
+            </span>{" "}
+            of {totalRows} responses
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between xl:justify-end">
@@ -353,12 +377,32 @@ export function RsvpResponsesTable({
                   position="popper"
                   sideOffset={8}
                   align="end"
-                  className="z-[80] rounded-[20px] border border-[#eadbd0] bg-[#fffaf6] p-1 text-[#2b2521] shadow-lg shadow-[#2b2521]/10 ring-0"
+                  className="z-[80] rounded-[20px] border border-[#eadbd0] bg-[#fffaf6] p-1 text-[#2b2521] shadow-lg ring-0 shadow-[#2b2521]/10"
                 >
-                  <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="5">5</SelectItem>
-                  <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="10">10</SelectItem>
-                  <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="25">25</SelectItem>
-                  <SelectItem className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]" value="50">50</SelectItem>
+                  <SelectItem
+                    className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]"
+                    value="5"
+                  >
+                    5
+                  </SelectItem>
+                  <SelectItem
+                    className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]"
+                    value="10"
+                  >
+                    10
+                  </SelectItem>
+                  <SelectItem
+                    className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]"
+                    value="25"
+                  >
+                    25
+                  </SelectItem>
+                  <SelectItem
+                    className="rounded-[14px] px-3 py-2 text-sm font-medium focus:bg-[#fff0e8] focus:text-[#c96f4c]"
+                    value="50"
+                  >
+                    50
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

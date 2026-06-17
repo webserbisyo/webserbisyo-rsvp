@@ -17,7 +17,9 @@ export function BillingStatCard({ icon, label, value }: BillingStatCardProps) {
         </div>
       </div>
       <p className="mb-2 text-sm font-medium text-[color:var(--dash-heading-muted)]">{label}</p>
-      <div className="text-xl font-black tracking-tight text-[color:var(--dash-foreground)]">{value}</div>
+      <div className="text-xl font-black tracking-tight text-[color:var(--dash-foreground)]">
+        {value}
+      </div>
     </BillingCard>
   );
 }

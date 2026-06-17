@@ -64,10 +64,7 @@ export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
     .single();
 
   if (error) {
-    throw new ServiceError(
-      formatSupabaseWriteError("Failed to save event content.", error),
-      error,
-    );
+    throw new ServiceError(formatSupabaseWriteError("Failed to save event content.", error), error);
   }
 
   assertServiceData(content, "Event Website draft save returned no row.");
@@ -97,7 +94,8 @@ export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
     entityType: "event_content",
     eventId: input.eventId,
     metadata: {
-      enabledSectionCount: Object.values(input.content.layout.enabledSections).filter(Boolean).length,
+      enabledSectionCount: Object.values(input.content.layout.enabledSections).filter(Boolean)
+        .length,
       eventType: input.content.eventType,
       version: input.content.version,
     },

@@ -69,9 +69,9 @@ for (const viewport of VIEWPORTS) {
     await maybeVisitPublicRsvpRoute(page);
 
     expect(pageErrors).toEqual([]);
-    expect(
-      consoleErrors.filter((message) => !isKnownNonBlockingConsoleMessage(message)),
-    ).toEqual([]);
+    expect(consoleErrors.filter((message) => !isKnownNonBlockingConsoleMessage(message))).toEqual(
+      [],
+    );
   });
 }
 

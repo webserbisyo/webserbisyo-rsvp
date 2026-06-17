@@ -25,9 +25,7 @@ export function buildEventWebsiteCanonicalEventPatchInput(
   return {
     event_date: normalizeCanonicalDateInput(content.sections.main_event.eventDate),
     event_time: normalizeCanonicalTimeInput(content.sections.main_event.eventTime),
-    rsvp_close_at: formatManilaLocalDateTimeInputToIso(
-      content.sections.main_event.rsvpDeadline,
-    ),
+    rsvp_close_at: formatManilaLocalDateTimeInputToIso(content.sections.main_event.rsvpDeadline),
     venue_address: normalizeCanonicalText(content.sections.venue.address),
     venue_name: normalizeCanonicalText(content.sections.venue.venueName),
   };

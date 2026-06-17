@@ -177,7 +177,7 @@ function WebsiteAccessLoadingFrame() {
 
 function SettingsLoadingFrame() {
   return (
-    <div className="space-y-6 pb-24 pt-2 md:pb-8">
+    <div className="space-y-6 pt-2 pb-24 md:pb-8">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         <div className="space-y-6">
           <DashboardCardSkeleton contentClassName="px-6 py-7 sm:px-7">
@@ -210,7 +210,7 @@ function SettingsLoadingFrame() {
 
 function BillingLoadingFrame() {
   return (
-    <div className="space-y-6 pb-24 pt-2 md:pb-8">
+    <div className="space-y-6 pt-2 pb-24 md:pb-8">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         <div className="space-y-6">
           <DashboardCardSkeleton contentClassName="px-6 py-7 sm:px-7 sm:py-8">

@@ -28,7 +28,7 @@ export function RsvpResponseStatusBadge({
 }) {
   if (reviewStatus === "rejected") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 bg-stone-100 text-stone-600 ring-stone-200">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600 ring-1 ring-stone-200">
         <ShieldMinus className="h-3.5 w-3.5" aria-hidden="true" />
         Rejected
       </span>
@@ -90,16 +90,17 @@ export function RsvpResponseMessageBadge({
   );
 }
 
-export function RsvpResponseGuestbookBadge({
-  status,
-}: {
-  status: RsvpResponseGuestbookStatus;
-}) {
+export function RsvpResponseGuestbookBadge({ status }: { status: RsvpResponseGuestbookStatus }) {
   const config = getGuestbookBadgeConfig(status);
   const Icon = config.icon;
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold", config.className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold",
+        config.className,
+      )}
+    >
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {config.label}
     </span>
@@ -148,8 +149,8 @@ export function RsvpResponseRowActions({
     <div
       className={cn(
         actionLabelMode === "mobile"
-          ? "flex flex-nowrap shrink-0 items-center gap-1.5"
-          : "flex flex-nowrap shrink-0 items-center gap-2",
+          ? "flex shrink-0 flex-nowrap items-center gap-1.5"
+          : "flex shrink-0 flex-nowrap items-center gap-2",
         align === "end" ? "justify-end" : "justify-start",
       )}
     >
@@ -207,9 +208,7 @@ export function RsvpResponseRowActions({
           onOpenResponse(response);
         }}
       >
-        {actionLabelMode !== "mobile" ? (
-          <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-        ) : null}
+        {actionLabelMode !== "mobile" ? <Eye className="h-3.5 w-3.5" aria-hidden="true" /> : null}
         View
       </Button>
     </div>

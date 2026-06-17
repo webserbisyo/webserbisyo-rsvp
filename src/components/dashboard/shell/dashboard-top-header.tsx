@@ -10,11 +10,7 @@ type DashboardTopHeaderProps = {
   planType?: string | null;
 };
 
-export function DashboardTopHeader({
-  email,
-  displayName,
-  planType,
-}: DashboardTopHeaderProps) {
+export function DashboardTopHeader({ email, displayName, planType }: DashboardTopHeaderProps) {
   return (
     <header
       className="sticky top-0 z-40 flex h-[var(--dash-header-height)] items-center gap-3 border-b px-4"

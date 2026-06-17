@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PublicEventPageContent, buildPublicEventMetadata } from "@/components/event-website/public-event-page-content";
+import {
+  PublicEventPageContent,
+  buildPublicEventMetadata,
+} from "@/components/event-website/public-event-page-content";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { resolvePublicEventWebsite } from "@/server/services/resolve-public-event-website";

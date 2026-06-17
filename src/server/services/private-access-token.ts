@@ -62,7 +62,9 @@ export async function ensurePrivateAccessToken(input: EnsurePrivateAccessTokenIn
           throw new ServiceError("Failed to verify the event private link.");
         }
 
-        const persistedToken = normalizePrivateAccessToken(currentRow?.private_access_token ?? null);
+        const persistedToken = normalizePrivateAccessToken(
+          currentRow?.private_access_token ?? null,
+        );
 
         if (persistedToken) {
           return persistedToken;
@@ -76,9 +78,7 @@ export async function ensurePrivateAccessToken(input: EnsurePrivateAccessTokenIn
   throw new ServiceError("Could not generate a unique private link.");
 }
 
-export async function rotatePrivateAccessToken(
-  input: RotatePrivateAccessTokenInput,
-) {
+export async function rotatePrivateAccessToken(input: RotatePrivateAccessTokenInput) {
   const supabase = createAdminClient();
 
   for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt += 1) {
@@ -140,9 +140,9 @@ function generatePrivateAccessToken() {
 function isPrivateTokenUniqueViolation(error: unknown) {
   return Boolean(
     error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code?: string }).code === "23505",
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: string }).code === "23505",
   );
 }
 

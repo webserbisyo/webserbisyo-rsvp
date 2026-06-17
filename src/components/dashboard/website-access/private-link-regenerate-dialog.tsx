@@ -29,12 +29,17 @@ export function PrivateLinkRegenerateDialog({
         <DialogHeader className="gap-2 text-left">
           <DialogTitle>Regenerate private link?</DialogTitle>
           <DialogDescription>
-            This will create a new private link for this event. Anyone with the old private
-            link will no longer be able to access the website.
+            This will create a new private link for this event. Anyone with the old private link
+            will no longer be able to access the website.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:justify-end">
-          <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button

@@ -28,7 +28,13 @@ type DashboardChecklistState = {
   items: DashboardChecklistItem[];
 };
 
-type DashboardPaymentState = "confirmed" | "missing" | "partial" | "pending" | "refunded" | "unpaid";
+type DashboardPaymentState =
+  | "confirmed"
+  | "missing"
+  | "partial"
+  | "pending"
+  | "refunded"
+  | "unpaid";
 
 type DashboardPaymentSummary = {
   description: string;
@@ -186,12 +192,7 @@ async function loadDashboardSummary(
   const supabase = await createServerSupabaseClient();
   const adminSupabase = createAdminClient();
 
-  const [
-    clientResult,
-    eventResult,
-    paymentsResult,
-    applicationsResult,
-  ] = await Promise.all([
+  const [clientResult, eventResult, paymentsResult, applicationsResult] = await Promise.all([
     supabase
       .from("clients")
       .select(
@@ -242,8 +243,12 @@ async function loadDashboardSummary(
   const [packageSettings, refunds, responseCount, attendingGuestCount] = await Promise.all([
     safeLoadPackageSettings(adminSupabase, client.plan_type),
     safeLoadRefunds(adminSupabase, clientId, payment?.id ?? null),
-    event?.id ? getEventResponseCount({ clientId, eventId: event.id, supabase }) : Promise.resolve(0),
-    event?.id ? getEventAttendingGuestCount({ clientId, eventId: event.id, supabase }) : Promise.resolve(0),
+    event?.id
+      ? getEventResponseCount({ clientId, eventId: event.id, supabase })
+      : Promise.resolve(0),
+    event?.id
+      ? getEventAttendingGuestCount({ clientId, eventId: event.id, supabase })
+      : Promise.resolve(0),
   ]);
 
   const displayName = profile.full_name ?? client.contact_name ?? client.name ?? "there";
@@ -319,7 +324,9 @@ async function loadDashboardSummary(
   });
   const hostInfoCompleted =
     parsedContentPatch.success && hasHostInfoContent(websiteContent.sections.host_info);
-  const mainEventCompleted = Boolean(event?.event_date && event?.event_time && event?.rsvp_close_at);
+  const mainEventCompleted = Boolean(
+    event?.event_date && event?.event_time && event?.rsvp_close_at,
+  );
   const venueCompleted = Boolean(event?.venue_name && event?.venue_address);
   const websiteContentCompleted = Boolean(getEventWebsiteSavedAt(websiteContent));
   const checklistItems = buildChecklistItems({
@@ -423,7 +430,8 @@ function buildFallbackDashboardSummary(profile: AuthenticatedProfile): Dashboard
     client: {
       contactName: displayName,
       name: displayName,
-      planDescription: "Your dashboard details are temporarily unavailable while we reconnect your data.",
+      planDescription:
+        "Your dashboard details are temporarily unavailable while we reconnect your data.",
       planLabel: "Package pending",
       planType: "pro",
       roleLabel,
@@ -444,7 +452,8 @@ function buildFallbackDashboardSummary(profile: AuthenticatedProfile): Dashboard
     packageDefaults: undefined,
     payment: {
       amountLabel: "Amount pending",
-      description: "Payment details are temporarily unavailable. Please refresh or try again shortly.",
+      description:
+        "Payment details are temporarily unavailable. Please refresh or try again shortly.",
       isConfirmed: false,
       status: "Pending",
     },
@@ -691,7 +700,8 @@ function getDashboardPaymentSummary(input: {
       };
     case "refunded":
       return {
-        description: "A refund is recorded on this billing account. Review Billing for the current balance.",
+        description:
+          "A refund is recorded on this billing account. Review Billing for the current balance.",
         isConfirmed: false,
         label: "Refunded",
         state,
@@ -705,7 +715,8 @@ function getDashboardPaymentSummary(input: {
       };
     case "unpaid":
       return {
-        description: "Payment has not been completed yet. Review Billing for the latest instructions.",
+        description:
+          "Payment has not been completed yet. Review Billing for the latest instructions.",
         isConfirmed: false,
         label: "Unpaid",
         state,
@@ -762,7 +773,11 @@ function getDashboardPaymentAmount(input: {
   payment: DashboardPaymentRow | null;
   paymentState: DashboardPaymentState;
 }) {
-  if (input.paymentState === "confirmed" || input.paymentState === "partial" || input.paymentState === "refunded") {
+  if (
+    input.paymentState === "confirmed" ||
+    input.paymentState === "partial" ||
+    input.paymentState === "refunded"
+  ) {
     return input.netAmountPaid || input.payment?.amount_due || input.defaultAmount;
   }
 
@@ -875,7 +890,8 @@ function hasWebsiteAccessConfigured(input: {
   publishedSubdomain?: string | null;
   visibility?: string | null;
 }) {
-  const slug = input.draftSubdomain ?? input.publishedSubdomain ?? input.draftSlug ?? input.publishedSlug;
+  const slug =
+    input.draftSubdomain ?? input.publishedSubdomain ?? input.draftSlug ?? input.publishedSlug;
   const visibility = input.draftVisibility ?? input.visibility;
 
   return Boolean(slug && visibility && ["private", "public", "unlisted"].includes(visibility));

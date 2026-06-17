@@ -71,24 +71,24 @@ Warm ivory · terracotta · floral elegance · premium invitation feel · soft s
 
 ### Active tokens (defined in `src/styles/themes.css`)
 
-| Token | Light value | Role |
-|---|---|---|
-| `--rsvp-brand` | `oklch(0.61 0.16 35)` | Terracotta — primary CTA, brand accent |
-| `--rsvp-brand-foreground` | `oklch(0.99 0.01 85)` | Warm ivory — text on brand surfaces |
-| `--rsvp-accent` | `oklch(0.96 0.03 58)` | Light peach — badge bg, icon chip bg |
-| `--rsvp-accent-foreground` | `oklch(0.31 0.05 32)` | Dark brown — text on accent surfaces |
-| `--rsvp-surface` | `oklch(0.99 0.01 85)` | Near-white ivory — card backgrounds |
-| `--rsvp-surface-muted` | `oklch(0.97 0.01 85)` | Deeper ivory — muted card backgrounds |
-| `--rsvp-border` | `oklch(0.91 0.02 60)` | Warm beige — borders |
-| `--rsvp-ring` | `oklch(0.75 0.1 42)` | Warm amber — focus rings |
-| `--rsvp-success` | `oklch(0.73 0.14 152)` | Sage green — confirmed states |
-| `--rsvp-warning` | `oklch(0.78 0.15 70)` | Gold/amber — pending states |
+| Token                      | Light value            | Role                                   |
+| -------------------------- | ---------------------- | -------------------------------------- |
+| `--rsvp-brand`             | `oklch(0.61 0.16 35)`  | Terracotta — primary CTA, brand accent |
+| `--rsvp-brand-foreground`  | `oklch(0.99 0.01 85)`  | Warm ivory — text on brand surfaces    |
+| `--rsvp-accent`            | `oklch(0.96 0.03 58)`  | Light peach — badge bg, icon chip bg   |
+| `--rsvp-accent-foreground` | `oklch(0.31 0.05 32)`  | Dark brown — text on accent surfaces   |
+| `--rsvp-surface`           | `oklch(0.99 0.01 85)`  | Near-white ivory — card backgrounds    |
+| `--rsvp-surface-muted`     | `oklch(0.97 0.01 85)`  | Deeper ivory — muted card backgrounds  |
+| `--rsvp-border`            | `oklch(0.91 0.02 60)`  | Warm beige — borders                   |
+| `--rsvp-ring`              | `oklch(0.75 0.1 42)`   | Warm amber — focus rings               |
+| `--rsvp-success`           | `oklch(0.73 0.14 152)` | Sage green — confirmed states          |
+| `--rsvp-warning`           | `oklch(0.78 0.15 70)`  | Gold/amber — pending states            |
 
 ### Planned tokens (document only — do not add to CSS yet)
 
-| Token | Suggested value | Purpose |
-|---|---|---|
-| `--rsvp-brand-hover` | `oklch(0.53 0.17 33)` | Darker terracotta for CTA hover |
+| Token                 | Suggested value       | Purpose                             |
+| --------------------- | --------------------- | ----------------------------------- |
+| `--rsvp-brand-hover`  | `oklch(0.53 0.17 33)` | Darker terracotta for CTA hover     |
 | `--rsvp-brand-active` | `oklch(0.48 0.17 31)` | Deepest terracotta for active/press |
 
 ### Inherited from shadcn (do not duplicate)
@@ -97,28 +97,28 @@ Text primary inherits `--foreground`. Text muted inherits `--muted-foreground`. 
 
 ## 8. Typography
 
-| Role | Treatment |
-|---|---|
-| Font family | Geist Sans (`--font-geist-sans`) for both headings and body |
-| Page title (h1) | `text-4xl font-semibold tracking-tight` or `sm:text-5xl` |
-| Section heading (h2) | `text-3xl font-semibold tracking-tight` |
-| Card title | `text-xl` or `text-2xl` via `CardTitle` |
-| Section label | `text-rsvp-brand text-sm font-semibold tracking-[0.22em] uppercase` |
-| Body copy | `text-muted-foreground text-base leading-7` or `text-sm leading-6` |
-| Small/caption | `text-xs` |
+| Role                 | Treatment                                                           |
+| -------------------- | ------------------------------------------------------------------- |
+| Font family          | Geist Sans (`--font-geist-sans`) for both headings and body         |
+| Page title (h1)      | `text-4xl font-semibold tracking-tight` or `sm:text-5xl`            |
+| Section heading (h2) | `text-3xl font-semibold tracking-tight`                             |
+| Card title           | `text-xl` or `text-2xl` via `CardTitle`                             |
+| Section label        | `text-rsvp-brand text-sm font-semibold tracking-[0.22em] uppercase` |
+| Body copy            | `text-muted-foreground text-base leading-7` or `text-sm leading-6`  |
+| Small/caption        | `text-xs`                                                           |
 
 Heading font (`--font-heading`) currently maps to Geist Sans (same as body). No separate display font is used.
 
 ## 9. Layout
 
-| Property | Value |
-|---|---|
-| Page max-width | `max-w-6xl` (apply landing) or `max-w-5xl` (form pages) |
-| Section vertical gap | `gap-14` between major sections |
-| Section padding | `px-4 sm:px-6 lg:px-8`, `py-10 lg:py-14` |
+| Property              | Value                                                         |
+| --------------------- | ------------------------------------------------------------- |
+| Page max-width        | `max-w-6xl` (apply landing) or `max-w-5xl` (form pages)       |
+| Section vertical gap  | `gap-14` between major sections                               |
+| Section padding       | `px-4 sm:px-6 lg:px-8`, `py-10 lg:py-14`                      |
 | Card internal padding | `px-4` (CardContent default), `px-6 sm:px-10` for hero panels |
-| Grid gap | `gap-4` to `gap-5` between cards |
-| Background | `.rsvp-shell` gradient — not a flat color |
+| Grid gap              | `gap-4` to `gap-5` between cards                              |
+| Background            | `.rsvp-shell` gradient — not a flat color                     |
 
 ## 10. Button System
 
@@ -159,21 +159,21 @@ The `PlanCard` component with `tone="default"` applies **no custom className** t
 
 ## 11. Card System
 
-| Class | Usage | Properties |
-|---|---|---|
-| `.rsvp-panel` | Primary cards (hero panel, form card, info cards) | `border: 1px solid var(--rsvp-border)`, warm ivory bg, `box-shadow: 0 22px 50px rgb(15 23 42 / 0.08)` |
-| `.rsvp-panel-muted` | Secondary cards (step cards, FAQ card, followup) | Lighter border at 82% opacity, `rsvp-surface-muted` bg |
-| Radius | `rounded-3xl` standard, `rounded-[2rem]` for hero-level panels, `rounded-[1.75rem]` for nested cards |
-| Border | Always `border-border/70` — never bare `border-border` |
-| Featured card | Add `border-rsvp-brand/40` and warm shadow `rgba(123,63,38,0.18)` |
+| Class               | Usage                                                                                                | Properties                                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `.rsvp-panel`       | Primary cards (hero panel, form card, info cards)                                                    | `border: 1px solid var(--rsvp-border)`, warm ivory bg, `box-shadow: 0 22px 50px rgb(15 23 42 / 0.08)` |
+| `.rsvp-panel-muted` | Secondary cards (step cards, FAQ card, followup)                                                     | Lighter border at 82% opacity, `rsvp-surface-muted` bg                                                |
+| Radius              | `rounded-3xl` standard, `rounded-[2rem]` for hero-level panels, `rounded-[1.75rem]` for nested cards |
+| Border              | Always `border-border/70` — never bare `border-border`                                               |
+| Featured card       | Add `border-rsvp-brand/40` and warm shadow `rgba(123,63,38,0.18)`                                    |
 
 ## 12. Badge / Pill System
 
-| Variant | Classes | Usage |
-|---|---|---|
-| Default label | `bg-rsvp-accent text-rsvp-accent-foreground hover:bg-rsvp-accent` | "WebSerbisyo RSVP" label, "Pro" badge |
-| Featured/brand | `bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand` | "Max" badge, status badges |
-| Nav wordmark pill | `bg-rsvp-accent text-rsvp-accent-foreground` small pill | "[RSVP]" in top nav wordmark |
+| Variant           | Classes                                                           | Usage                                 |
+| ----------------- | ----------------------------------------------------------------- | ------------------------------------- |
+| Default label     | `bg-rsvp-accent text-rsvp-accent-foreground hover:bg-rsvp-accent` | "WebSerbisyo RSVP" label, "Pro" badge |
+| Featured/brand    | `bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand`    | "Max" badge, status badges            |
+| Nav wordmark pill | `bg-rsvp-accent text-rsvp-accent-foreground` small pill           | "[RSVP]" in top nav wordmark          |
 
 Always include `w-fit` on badges to prevent stretching.
 
@@ -181,13 +181,13 @@ Always include `w-fit` on badges to prevent stretching.
 
 Rounded containers holding Lucide icons.
 
-| Size | Classes |
-|---|---|
-| Standard | `flex size-11 items-center justify-center rounded-2xl` |
-| Large | `flex size-12 items-center justify-center rounded-2xl` |
-| Fill: accent | `bg-rsvp-accent text-rsvp-accent-foreground` |
-| Fill: brand | `bg-rsvp-brand text-rsvp-brand-foreground` |
-| Icon size | `size-5` |
+| Size         | Classes                                                |
+| ------------ | ------------------------------------------------------ |
+| Standard     | `flex size-11 items-center justify-center rounded-2xl` |
+| Large        | `flex size-12 items-center justify-center rounded-2xl` |
+| Fill: accent | `bg-rsvp-accent text-rsvp-accent-foreground`           |
+| Fill: brand  | `bg-rsvp-brand text-rsvp-brand-foreground`             |
+| Icon size    | `size-5`                                               |
 
 ## 14. FAQ / Form System
 
@@ -228,9 +228,9 @@ Footer-only. Do not place in top nav — it distracts from the public conversion
 
 ### Glass behavior
 
-| State | Background | Blur | Border |
-|---|---|---|---|
-| Initial (top) | `bg-rsvp-surface/70` | `backdrop-blur(8px)` | none |
+| State                | Background           | Blur                  | Border                           |
+| -------------------- | -------------------- | --------------------- | -------------------------------- |
+| Initial (top)        | `bg-rsvp-surface/70` | `backdrop-blur(8px)`  | none                             |
 | After scroll (>50px) | `bg-rsvp-surface/85` | `backdrop-blur(16px)` | `border-b border-rsvp-border/50` |
 
 ### Positioning
@@ -253,10 +253,10 @@ Footer-only. Do not place in top nav — it distracts from the public conversion
 
 ### Assets
 
-| File | Role | Dimensions | Size |
-|---|---|---|---|
-| `/images/landing/rsvp-hero-bg-floral-envelope.jpeg` | Full-bleed background | 2752×1536 | 2.2 MB |
-| `/images/landing/rsvp-hero-object-invitation-phone.png` | Centered floating product object | 2048×1529 | 1.9 MB |
+| File                                                    | Role                             | Dimensions | Size   |
+| ------------------------------------------------------- | -------------------------------- | ---------- | ------ |
+| `/images/landing/rsvp-hero-bg-floral-envelope.jpeg`     | Full-bleed background            | 2752×1536  | 2.2 MB |
+| `/images/landing/rsvp-hero-object-invitation-phone.png` | Centered floating product object | 2048×1529  | 1.9 MB |
 
 ### Layout
 
@@ -306,17 +306,17 @@ Positioned at absolute bottom center. Subtle bounce animation. `text-muted-foreg
 
 ### Allowed CSS animations
 
-| Element | Animation | Spec |
-|---|---|---|
-| Top nav | Fade in on load | `opacity 0→1`, `0.4s ease-out` |
-| Top nav glass | Strengthen on scroll | JS scroll listener toggles class, CSS transition on bg/blur |
-| Hero background | Very slow scale-in | `scale(1) → scale(1.03)`, 15s linear, CSS `@keyframes` |
-| Hero object | Gentle floating | `translateY(0) → translateY(-8px) → translateY(0)`, 6s ease-in-out infinite, CSS `@keyframes` |
-| Microcopy | Fade-up on load | `opacity 0→1, translateY(12px→0)`, 0.6s, 0.5s delay |
-| Scroll cue | Subtle bounce | `translateY(0→4px→0)`, 2s ease-in-out infinite |
-| CTA arrow | Translate on hover | `translateX(0→3px)`, `transition-transform 0.2s` |
-| Cards (future) | Fade-up on viewport entry | IntersectionObserver + CSS class toggle |
-| Card hover (future) | Lift | `translateY(0→-2px)` + shadow increase, CSS `transition` |
+| Element             | Animation                 | Spec                                                                                          |
+| ------------------- | ------------------------- | --------------------------------------------------------------------------------------------- |
+| Top nav             | Fade in on load           | `opacity 0→1`, `0.4s ease-out`                                                                |
+| Top nav glass       | Strengthen on scroll      | JS scroll listener toggles class, CSS transition on bg/blur                                   |
+| Hero background     | Very slow scale-in        | `scale(1) → scale(1.03)`, 15s linear, CSS `@keyframes`                                        |
+| Hero object         | Gentle floating           | `translateY(0) → translateY(-8px) → translateY(0)`, 6s ease-in-out infinite, CSS `@keyframes` |
+| Microcopy           | Fade-up on load           | `opacity 0→1, translateY(12px→0)`, 0.6s, 0.5s delay                                           |
+| Scroll cue          | Subtle bounce             | `translateY(0→4px→0)`, 2s ease-in-out infinite                                                |
+| CTA arrow           | Translate on hover        | `translateX(0→3px)`, `transition-transform 0.2s`                                              |
+| Cards (future)      | Fade-up on viewport entry | IntersectionObserver + CSS class toggle                                                       |
+| Card hover (future) | Lift                      | `translateY(0→-2px)` + shadow increase, CSS `transition`                                      |
 
 ### Animations to avoid
 
@@ -335,7 +335,9 @@ All continuous/decorative animations **must** respect `prefers-reduced-motion: r
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  .hero-float, .hero-bg-scale, .scroll-cue-bounce {
+  .hero-float,
+  .hero-bg-scale,
+  .scroll-cue-bounce {
     animation: none;
   }
 }
@@ -346,6 +348,7 @@ Keep instant state changes (color, opacity on hover). Remove transforms and loop
 ### Future Framer Motion upgrade path
 
 Framer Motion becomes worthwhile when:
+
 - Staggered card reveals need precise orchestration
 - Exit/enter animations are needed for route transitions
 - Gesture-driven interactions (drag, swipe) are added
@@ -355,29 +358,29 @@ Until then, CSS-only is sufficient and avoids a ~30KB bundle addition.
 
 ## 18. Accessibility Rules
 
-| Requirement | Rule |
-|---|---|
-| Color contrast | All text on RSVP surfaces must meet WCAG AA (4.5:1 normal, 3:1 large). Terracotta on ivory passes. Verify microcopy on hero background. |
-| Focus-visible | All interactive elements must show `focus-visible` ring. shadcn defaults handle this via `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`. |
-| Button labels | Every button must have readable text or `aria-label`. Icon-only buttons require `aria-label`. |
-| Keyboard navigation | Full tab order through nav links, CTA, plan cards, form fields, FAQ accordion. |
-| Mobile tap targets | Minimum 44×44px for all interactive elements. |
-| Semantic structure | Public pages must use `<header>` (nav), `<main>`, `<section>`, `<footer>`. Not just `<div>`. |
-| FAQ accordion | Use Radix `Accordion` primitives (already in use) — these provide ARIA roles automatically. |
-| Hero images | Background floral image: decorative → `alt=""` or CSS background. Object phone: `alt="RSVP invitation preview on a phone"`. |
-| Reduced motion | See Motion Rules §17. |
+| Requirement         | Rule                                                                                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Color contrast      | All text on RSVP surfaces must meet WCAG AA (4.5:1 normal, 3:1 large). Terracotta on ivory passes. Verify microcopy on hero background.                               |
+| Focus-visible       | All interactive elements must show `focus-visible` ring. shadcn defaults handle this via `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`. |
+| Button labels       | Every button must have readable text or `aria-label`. Icon-only buttons require `aria-label`.                                                                         |
+| Keyboard navigation | Full tab order through nav links, CTA, plan cards, form fields, FAQ accordion.                                                                                        |
+| Mobile tap targets  | Minimum 44×44px for all interactive elements.                                                                                                                         |
+| Semantic structure  | Public pages must use `<header>` (nav), `<main>`, `<section>`, `<footer>`. Not just `<div>`.                                                                          |
+| FAQ accordion       | Use Radix `Accordion` primitives (already in use) — these provide ARIA roles automatically.                                                                           |
+| Hero images         | Background floral image: decorative → `alt=""` or CSS background. Object phone: `alt="RSVP invitation preview on a phone"`.                                           |
+| Reduced motion      | See Motion Rules §17.                                                                                                                                                 |
 
 ## 19. Performance Rules
 
-| Concern | Rule |
-|---|---|
-| Hero background JPEG (2.2MB) | Use CSS `background-image` or Next.js `Image fill` with `priority`. Consider serving WebP via Next.js image optimization. Do not lazy-load — it's above the fold. |
-| Hero object PNG (1.9MB) | Use Next.js `<Image>` with `priority` and explicit `width`/`height`. The PNG transparency is needed — cannot convert to JPEG. Consider `quality={85}` to reduce size. |
-| Below-fold images | Lazy-load everything below the hero fold. |
-| `backdrop-filter` | Limit to the nav glass effect only. Do not stack multiple blur layers. Keep blur radius ≤16px. |
-| Scroll listeners | Use passive scroll listeners for nav glass toggle. Throttle or use `requestAnimationFrame`. No heavy computation in scroll handlers. |
-| CSS animations | Prefer `transform` and `opacity` only (GPU-composited). Avoid animating `width`, `height`, `margin`, `box-shadow` on scroll. |
-| Bundle size | Do not install Framer Motion until CSS-only proves insufficient. Each new dependency must justify its weight. |
+| Concern                      | Rule                                                                                                                                                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hero background JPEG (2.2MB) | Use CSS `background-image` or Next.js `Image fill` with `priority`. Consider serving WebP via Next.js image optimization. Do not lazy-load — it's above the fold.     |
+| Hero object PNG (1.9MB)      | Use Next.js `<Image>` with `priority` and explicit `width`/`height`. The PNG transparency is needed — cannot convert to JPEG. Consider `quality={85}` to reduce size. |
+| Below-fold images            | Lazy-load everything below the hero fold.                                                                                                                             |
+| `backdrop-filter`            | Limit to the nav glass effect only. Do not stack multiple blur layers. Keep blur radius ≤16px.                                                                        |
+| Scroll listeners             | Use passive scroll listeners for nav glass toggle. Throttle or use `requestAnimationFrame`. No heavy computation in scroll handlers.                                  |
+| CSS animations               | Prefer `transform` and `opacity` only (GPU-composited). Avoid animating `width`, `height`, `margin`, `box-shadow` on scroll.                                          |
+| Bundle size                  | Do not install Framer Motion until CSS-only proves insufficient. Each new dependency must justify its weight.                                                         |
 
 ## 20. Do / Don't List
 
@@ -412,12 +415,12 @@ Until then, CSS-only is sufficient and avoids a ~30KB bundle addition.
 
 ## 21. Token Strategy / Staged Adoption
 
-| Stage | Action | When |
-|---|---|---|
-| **1 — Document** | Document all rules in this file. Keep RSVP-specific styles as local Tailwind classes in component `className` props. | Now (current stage) |
-| **2 — Extract patterns** | Extract repeated className strings (e.g., the 19× `bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90` pattern) into documented constants or CVA variants, only after repetition is proven. | After landing page ships |
-| **3 — Add hover/active tokens** | Add `--rsvp-brand-hover` and `--rsvp-brand-active` to `themes.css` and bridge in `globals.css`, only when the button system is formally consolidated. | After 2–3 public pages are stable |
-| **4 — Protect shadcn defaults** | Do not override shadcn core tokens (`--primary`, `--secondary`, `--accent`, etc.) unless there is a strong, documented reason approved in this file. | Ongoing rule |
+| Stage                           | Action                                                                                                                                                                                                   | When                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **1 — Document**                | Document all rules in this file. Keep RSVP-specific styles as local Tailwind classes in component `className` props.                                                                                     | Now (current stage)               |
+| **2 — Extract patterns**        | Extract repeated className strings (e.g., the 19× `bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90` pattern) into documented constants or CVA variants, only after repetition is proven. | After landing page ships          |
+| **3 — Add hover/active tokens** | Add `--rsvp-brand-hover` and `--rsvp-brand-active` to `themes.css` and bridge in `globals.css`, only when the button system is formally consolidated.                                                    | After 2–3 public pages are stable |
+| **4 — Protect shadcn defaults** | Do not override shadcn core tokens (`--primary`, `--secondary`, `--accent`, etc.) unless there is a strong, documented reason approved in this file.                                                     | Ongoing rule                      |
 
 ## 22. Files Scanned
 
@@ -467,6 +470,7 @@ This document was informed by a visual system scan of the following files:
 The next implementation task should be **landing page top nav + Section 1 visual cover hero only**.
 
 Scope:
+
 - Create nav component(s) in `src/components/landing/`
 - Create hero section component in `src/components/landing/`
 - Update `src/app/(public)/page.tsx` to render the nav and hero

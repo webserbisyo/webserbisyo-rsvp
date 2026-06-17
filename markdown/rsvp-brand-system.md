@@ -560,3 +560,4 @@ This is the version I’d lock moving forward for **WebSerbisyo RSVP**. It gives
 - easier token extraction,
 - cleaner Codex guidance,
 - shared engineering foundation but distinct product personality.
+```

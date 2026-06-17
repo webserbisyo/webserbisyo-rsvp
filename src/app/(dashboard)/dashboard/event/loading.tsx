@@ -16,7 +16,10 @@ function EventWebsiteFlowPaneSkeleton() {
           <DashboardSkeletonLine className="h-4 w-40 rounded-full" />
           <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="rounded-2xl border border-[color:var(--dash-border)] bg-white/60 px-4 py-3">
+              <div
+                key={index}
+                className="rounded-2xl border border-[color:var(--dash-border)] bg-white/60 px-4 py-3"
+              >
                 <DashboardSkeletonLine className="h-3 w-20 rounded-full" />
                 <DashboardSkeletonLine className="mt-2 h-7 w-16 rounded-full" />
               </div>

@@ -64,7 +64,10 @@ export default function DashboardHomeLoading() {
             <DashboardSkeletonLine className="h-2.5 w-full rounded-full" />
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white/60 px-4 py-3">
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white/60 px-4 py-3"
+                >
                   <DashboardSkeletonCircle className="h-6 w-6" />
                   <DashboardSkeletonLine className="h-4 flex-1 rounded-full" />
                   <DashboardSkeletonLine className="h-4 w-16 rounded-full" />
@@ -91,7 +94,10 @@ export default function DashboardHomeLoading() {
             <div className="space-y-4">
               <DashboardSkeletonLine className="h-6 w-28 rounded-full" />
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white/55 px-4 py-3">
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white/55 px-4 py-3"
+                >
                   <DashboardSkeletonCircle className="h-8 w-8" />
                   <DashboardSkeletonLine className="h-4 w-32 rounded-full" />
                   <DashboardSkeletonLine className="ml-auto h-5 w-16 rounded-full" />

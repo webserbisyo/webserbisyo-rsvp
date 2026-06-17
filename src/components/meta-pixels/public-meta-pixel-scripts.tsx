@@ -1,8 +1,15 @@
 import Script from "next/script";
 import type { PublicMetaPixelConfig } from "@/server/queries/public-meta-pixels";
 
+type MetaPixelEventName =
+  | "CompleteRegistration"
+  | "InitiateCheckout"
+  | "Lead"
+  | "RSVPSubmitted"
+  | "ViewContent";
+
 type PublicMetaPixelScriptsProps = {
-  eventName?: "Lead" | "ViewContent" | "CompleteRegistration" | "RSVPSubmitted";
+  eventName?: MetaPixelEventName | MetaPixelEventName[];
   pixels: PublicMetaPixelConfig[];
 };
 
@@ -49,14 +56,18 @@ export function PublicMetaPixelScripts({ eventName, pixels }: PublicMetaPixelScr
   );
 }
 
-function buildInitScript(pixelIds: string[], eventName: PublicMetaPixelScriptsProps["eventName"]) {
+function buildInitScript(
+  pixelIds: string[],
+  eventName: PublicMetaPixelScriptsProps["eventName"],
+) {
   const initLines = pixelIds.map((pixelId) => `fbq('init', ${JSON.stringify(pixelId)});`);
   const eventLines = [`fbq('track', 'PageView');`];
+  const names = eventName ? (Array.isArray(eventName) ? eventName : [eventName]) : [];
 
-  if (eventName) {
-    const method = eventName === "RSVPSubmitted" ? "trackCustom" : "track";
+  for (const name of names) {
+    const method = name === "RSVPSubmitted" ? "trackCustom" : "track";
 
-    eventLines.push(`fbq('${method}', ${JSON.stringify(eventName)});`);
+    eventLines.push(`fbq('${method}', ${JSON.stringify(name)});`);
   }
 
   return [...initLines, ...eventLines].join("\n");

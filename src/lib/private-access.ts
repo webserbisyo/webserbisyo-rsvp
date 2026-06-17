@@ -40,7 +40,9 @@ export function appendPrivateAccessToken(url?: string | null, token?: string | n
   return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
-export function getPrivateAccessTokenFromSearchParams(searchParams: { get(name: string): string | null }) {
+export function getPrivateAccessTokenFromSearchParams(searchParams: {
+  get(name: string): string | null;
+}) {
   return normalizePrivateAccessToken(searchParams.get(PRIVATE_ACCESS_QUERY_PARAM));
 }
 

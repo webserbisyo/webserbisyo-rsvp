@@ -138,7 +138,9 @@ function mergeEventWebsiteContentPatch(
   };
 }
 
-function normalizeRsvpFormSection(settings: EventWebsiteRsvpFormSection): EventWebsiteRsvpFormSection {
+function normalizeRsvpFormSection(
+  settings: EventWebsiteRsvpFormSection,
+): EventWebsiteRsvpFormSection {
   const emailEnabled = settings.emailEnabled;
   const phoneEnabled = settings.phoneEnabled;
 

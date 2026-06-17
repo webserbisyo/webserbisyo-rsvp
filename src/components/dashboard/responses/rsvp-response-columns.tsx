@@ -63,11 +63,14 @@ export function getRsvpResponseColumns({
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#fbf7f3] text-sm font-bold text-[#c96f4c]">
               {getResponseInitials(response.guestName)}
             </div>
-            <div className="min-w-0 max-w-[240px]">
+            <div className="max-w-[240px] min-w-0">
               <p className="truncate font-bold text-[#2b2521]" title={response.guestName}>
                 {response.guestName}
               </p>
-              <p className="truncate text-xs font-medium text-[#8a7c72]" title={response.email ?? "No email added"}>
+              <p
+                className="truncate text-xs font-medium text-[#8a7c72]"
+                title={response.email ?? "No email added"}
+              >
                 {response.email ?? "No email added"}
               </p>
             </div>
@@ -123,7 +126,10 @@ export function getRsvpResponseColumns({
 
         return (
           <span
-            className={cn("block text-sm font-medium leading-5 text-[#75675e]", isRejected && "opacity-60")}
+            className={cn(
+              "block text-sm leading-5 font-medium text-[#75675e]",
+              isRejected && "opacity-60",
+            )}
             title={submitted.fullLabel}
             aria-label={`Submitted ${submitted.fullLabel}`}
           >

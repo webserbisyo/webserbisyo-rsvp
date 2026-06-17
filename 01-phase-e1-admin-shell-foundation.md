@@ -113,20 +113,20 @@ Follow this order strictly:
 
 **Check first, install only if missing:**
 
-| Component        | Purpose                                        |
-|------------------|------------------------------------------------|
-| `sidebar`        | Desktop collapsible sidebar shell              |
-| `button`         | Nav items, actions, placeholders               |
-| `card`           | Stat cards, section cards, placeholder cards   |
-| `badge`          | Status indicators                              |
-| `separator`      | Sidebar and section dividers                   |
-| `dropdown-menu`  | Admin identity menu, More overflow             |
-| `avatar`         | Admin identity display                         |
-| `tooltip`        | Collapsed sidebar icon labels                  |
-| `sheet`          | Mobile More drawer (if needed)                 |
-| `skeleton`       | Loading states for list/card areas             |
-| `alert`          | Error, offline, and permission denied states   |
-| `sonner`         | Toast feedback (replaces deprecated Toast)     |
+| Component       | Purpose                                      |
+| --------------- | -------------------------------------------- |
+| `sidebar`       | Desktop collapsible sidebar shell            |
+| `button`        | Nav items, actions, placeholders             |
+| `card`          | Stat cards, section cards, placeholder cards |
+| `badge`         | Status indicators                            |
+| `separator`     | Sidebar and section dividers                 |
+| `dropdown-menu` | Admin identity menu, More overflow           |
+| `avatar`        | Admin identity display                       |
+| `tooltip`       | Collapsed sidebar icon labels                |
+| `sheet`         | Mobile More drawer (if needed)               |
+| `skeleton`      | Loading states for list/card areas           |
+| `alert`         | Error, offline, and permission denied states |
+| `sonner`        | Toast feedback (replaces deprecated Toast)   |
 
 **Do not install in this task:**
 
@@ -222,22 +222,22 @@ Work through these steps in order. Do not skip ahead.
 
 Create each component. Do not skip any. These prevent inconsistent one-off layouts.
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| `EmptyState` | `src/components/feedback/empty-state.tsx` | No data, first-run |
-| `ComingSoonCard` | `src/components/feedback/coming-soon-card.tsx` | Deferred features |
-| `PermissionDenied` | `src/components/feedback/permission-denied.tsx` | Unauthorized access |
-| `OfflineBanner` | `src/components/feedback/offline-banner.tsx` | Full-width offline strip |
-| `LoadingSkeleton` | `src/components/feedback/loading-skeleton.tsx` | List and card loading |
-| `ErrorState` | `src/components/feedback/error-state.tsx` | Fetch/server errors |
+| Component          | File                                            | Purpose                  |
+| ------------------ | ----------------------------------------------- | ------------------------ |
+| `EmptyState`       | `src/components/feedback/empty-state.tsx`       | No data, first-run       |
+| `ComingSoonCard`   | `src/components/feedback/coming-soon-card.tsx`  | Deferred features        |
+| `PermissionDenied` | `src/components/feedback/permission-denied.tsx` | Unauthorized access      |
+| `OfflineBanner`    | `src/components/feedback/offline-banner.tsx`    | Full-width offline strip |
+| `LoadingSkeleton`  | `src/components/feedback/loading-skeleton.tsx`  | List and card loading    |
+| `ErrorState`       | `src/components/feedback/error-state.tsx`       | Fetch/server errors      |
 
 And these shared display components:
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| `SectionCard` | `src/components/shared/section-card.tsx` | Consistent card wrapper |
+| Component     | File                                     | Purpose                  |
+| ------------- | ---------------------------------------- | ------------------------ |
+| `SectionCard` | `src/components/shared/section-card.tsx` | Consistent card wrapper  |
 | `StatusBadge` | `src/components/shared/status-badge.tsx` | Color-coded status pills |
-| `StatCard` | `src/components/shared/stat-card.tsx` | Admin home stat tiles |
+| `StatCard`    | `src/components/shared/stat-card.tsx`    | Admin home stat tiles    |
 
 **Adapt all paths to actual repo conventions.** If a component already exists under a different path, reuse it — do not duplicate.
 
@@ -286,7 +286,7 @@ Apply to every page under `/admin` using Next.js App Router metadata:
 export const metadata: Metadata = {
   title: "[Page Name] · RSVP Admin",
   robots: { index: false, follow: false },
-}
+};
 ```
 
 - Apply at the admin layout level where possible to avoid repeating it per page
@@ -297,13 +297,13 @@ export const metadata: Metadata = {
 
 Before running build commands, manually check layout at these widths:
 
-| Breakpoint | Expected behavior |
-|------------|-------------------|
-| 390px | Bottom nav visible, sidebar hidden, stacked cards, no overflow |
-| 640px | Bottom nav still acceptable, two-column stat cards |
-| 900px | Sidebar begins, no broken wide tables |
-| 1024px | Full desktop sidebar, sticky header, content max-width enforced |
-| 1440px | Content does not stretch — max-width cap applied |
+| Breakpoint | Expected behavior                                               |
+| ---------- | --------------------------------------------------------------- |
+| 390px      | Bottom nav visible, sidebar hidden, stacked cards, no overflow  |
+| 640px      | Bottom nav still acceptable, two-column stat cards              |
+| 900px      | Sidebar begins, no broken wide tables                           |
+| 1024px     | Full desktop sidebar, sticky header, content max-width enforced |
+| 1440px     | Content does not stretch — max-width cap applied                |
 
 ### Step 11 — Run validation commands
 
@@ -377,13 +377,13 @@ Offline
 
 ## Responsive Layout Requirements
 
-| Breakpoint | Layout rule |
-|------------|-------------|
-| 0–639px | Single column, bottom nav, stacked cards, no wide tables |
-| 640–899px | Bottom nav still acceptable, two-column stat cards |
-| 900–1023px | Compact sidebar or stable transition state |
-| 1024px+ | Desktop sidebar, sticky header, tables permitted |
-| 1440px+ | Hard max-width cap on content (~1280px), never full-bleed |
+| Breakpoint | Layout rule                                               |
+| ---------- | --------------------------------------------------------- |
+| 0–639px    | Single column, bottom nav, stacked cards, no wide tables  |
+| 640–899px  | Bottom nav still acceptable, two-column stat cards        |
+| 900–1023px | Compact sidebar or stable transition state                |
+| 1024px+    | Desktop sidebar, sticky header, tables permitted          |
+| 1440px+    | Hard max-width cap on content (~1280px), never full-bleed |
 
 - Mobile bottom nav **must** use `padding-bottom: env(safe-area-inset-bottom)` — required for iOS PWA safe area
 - Content must never be obscured by the bottom nav or sticky top bar
@@ -603,13 +603,13 @@ Codex must return a report with all of the following sections. Do not omit any s
 
 ## Phase Sequence Reference
 
-| Phase | Scope | Status |
-|-------|-------|--------|
-| Phase 1 | Database and backend foundation | ✅ Complete |
-| Phase A | Auth Foundation and Login UX | ✅ Complete |
-| Phase D | Public apply form wiring | ✅ Functionally complete |
-| **Phase E.1** | **Admin Shell Foundation** | 🔄 This task |
-| Phase E.2 | Applications List + Detail (read-only data) | Pending E.1 |
-| Phase E.3 | Approval/Rejection workflow | Pending E.2 |
-| Phase E.4 | Manual Payment Confirmation | Pending E.3 |
-| Phase F | Meta Pixels, Sales, Hardening | Pending E.4 |
+| Phase         | Scope                                       | Status                   |
+| ------------- | ------------------------------------------- | ------------------------ |
+| Phase 1       | Database and backend foundation             | ✅ Complete              |
+| Phase A       | Auth Foundation and Login UX                | ✅ Complete              |
+| Phase D       | Public apply form wiring                    | ✅ Functionally complete |
+| **Phase E.1** | **Admin Shell Foundation**                  | 🔄 This task             |
+| Phase E.2     | Applications List + Detail (read-only data) | Pending E.1              |
+| Phase E.3     | Approval/Rejection workflow                 | Pending E.2              |
+| Phase E.4     | Manual Payment Confirmation                 | Pending E.3              |
+| Phase F       | Meta Pixels, Sales, Hardening               | Pending E.4              |

@@ -50,7 +50,7 @@ export function AccountAccessCard({ account }: AccountAccessCardProps) {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.72rem] font-black uppercase tracking-[0.18em] text-[color:var(--dash-brand)]">
+    <p className="text-[0.72rem] font-black tracking-[0.18em] text-[color:var(--dash-brand)] uppercase">
       {children}
     </p>
   );
@@ -104,10 +104,17 @@ function StatusBadge({ statusLabel }: { statusLabel: string }) {
 }
 
 function RoleBadge({ roleLabel }: { roleLabel: string }) {
-  const shortLabel = roleLabel.includes("Admin") ? "Admin" : roleLabel.includes("Staff") ? "Staff" : "Member";
+  const shortLabel = roleLabel.includes("Admin")
+    ? "Admin"
+    : roleLabel.includes("Staff")
+      ? "Staff"
+      : "Member";
 
   return (
-    <Badge className="rounded-full border-[#f0d1c3] bg-[#fff2ec] px-2.5 py-1 text-[0.7rem] font-black text-[color:var(--dash-brand)]" variant="outline">
+    <Badge
+      className="rounded-full border-[#f0d1c3] bg-[#fff2ec] px-2.5 py-1 text-[0.7rem] font-black text-[color:var(--dash-brand)]"
+      variant="outline"
+    >
       {shortLabel}
     </Badge>
   );

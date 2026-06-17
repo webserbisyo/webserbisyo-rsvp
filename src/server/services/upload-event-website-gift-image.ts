@@ -21,7 +21,11 @@ export async function uploadEventWebsiteGiftImage(input: {
 }): Promise<EventWebsiteImageAsset> {
   const { clientId, file, optionId, title } = input;
 
-  if (!ALLOWED_GIFT_MEDIA_TYPES.has(file.type as (typeof EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES)[number])) {
+  if (
+    !ALLOWED_GIFT_MEDIA_TYPES.has(
+      file.type as (typeof EVENT_WEBSITE_GIFT_MEDIA_ALLOWED_TYPES)[number],
+    )
+  ) {
     throw new ServiceError("Upload a PNG, JPG, or WEBP image.");
   }
 
@@ -44,9 +48,8 @@ export async function uploadEventWebsiteGiftImage(input: {
   assertServiceSuccess(error, "Failed to upload gift image.");
   assertServiceData(data, "Gift image upload returned no file path.");
 
-  const publicUrl = supabase.storage
-    .from(EVENT_WEBSITE_GIFT_MEDIA_BUCKET)
-    .getPublicUrl(data.path).data.publicUrl;
+  const publicUrl = supabase.storage.from(EVENT_WEBSITE_GIFT_MEDIA_BUCKET).getPublicUrl(data.path)
+    .data.publicUrl;
 
   return {
     alt: title?.trim() ? `${title.trim()} gift image` : undefined,

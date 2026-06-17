@@ -14,7 +14,7 @@ export default async function ApplyPage() {
   return (
     <>
       <ApplyLanding config={config} />
-      <PublicMetaPixelScripts pixels={pixels} />
+      <PublicMetaPixelScripts eventName="ViewContent" pixels={pixels} />
     </>
   );
 }

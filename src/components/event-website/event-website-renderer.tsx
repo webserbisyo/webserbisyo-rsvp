@@ -239,14 +239,26 @@ function MusicSection({ draft }: { draft: EventWebsiteRenderModel }) {
           <p>{note}</p>
         </div>
         {values.musicLink.trim() ? (
-          <Button asChild type="button" variant="outline" size="sm" className="event-preview-music-button">
+          <Button
+            asChild
+            type="button"
+            variant="outline"
+            size="sm"
+            className="event-preview-music-button"
+          >
             <a href={values.musicLink.trim()} target="_blank" rel="noreferrer">
               <Play className="size-3.5" aria-hidden="true" />
               {buttonLabel}
             </a>
           </Button>
         ) : (
-          <Button type="button" variant="outline" size="sm" className="event-preview-music-button" disabled>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="event-preview-music-button"
+            disabled
+          >
             <Play className="size-3.5" aria-hidden="true" />
             {buttonLabel}
           </Button>
@@ -381,7 +393,9 @@ function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
         Timeline / Program
       </Badge>
       <h3>Wedding Day Timeline</h3>
-      <p className="event-preview-copy">Here is the flow of the day so guests know what to expect.</p>
+      <p className="event-preview-copy">
+        Here is the flow of the day so guests know what to expect.
+      </p>
       <div className="event-preview-timeline-list">
         {items.map((item, index) => (
           <div key={item.id || `timeline-${index + 1}`} className="event-preview-timeline-item">
@@ -615,7 +629,9 @@ function RsvpFormSection({
                     className="flex flex-col gap-2 rounded-[10px] border border-[#ece9e5] bg-[#fbfbfa] p-3"
                   >
                     <span className="!text-[11px] !font-bold">Companion {index + 1}</span>
-                    {rsvp.companionNameEnabled ? <input type="text" placeholder="Full Name" /> : null}
+                    {rsvp.companionNameEnabled ? (
+                      <input type="text" placeholder="Full Name" />
+                    ) : null}
                     {rsvp.companionAgeEnabled ? <input type="text" placeholder="Age" /> : null}
                   </div>
                 ))}
@@ -686,11 +702,9 @@ function GuestbookSection({
     draft.guestbook.sectionTitle,
     previewDefaultDraft.guestbook.sectionTitle,
   );
-  const intro =
-    draft.guestbook.sectionIntro.trim() || previewDefaultDraft.guestbook.sectionIntro;
+  const intro = draft.guestbook.sectionIntro.trim() || previewDefaultDraft.guestbook.sectionIntro;
   const emptyState =
-    draft.guestbook.emptyStateMessage.trim() ||
-    previewDefaultDraft.guestbook.emptyStateMessage;
+    draft.guestbook.emptyStateMessage.trim() || previewDefaultDraft.guestbook.emptyStateMessage;
 
   return (
     <section className="event-preview-section event-preview-section--guestbook">
@@ -714,11 +728,7 @@ function GuestbookSection({
   );
 }
 
-function GuestbookMessageCard({
-  message,
-}: {
-  message: EventWebsiteGuestbookMessage;
-}) {
+function GuestbookMessageCard({ message }: { message: EventWebsiteGuestbookMessage }) {
   const isExpandable = message.message.length > 180 || /\n.{0,}\n/.test(message.message);
   const [isExpanded, setIsExpanded] = useState(false);
   const displayedDate = message.submittedAt ?? message.approvedAt;
@@ -826,7 +836,14 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
       {socialLinks.length > 0 ? (
         <div className="event-preview-social-row">
           {socialLinks.map((item) => (
-            <Button key={item.label} type="button" variant="outline" size="sm" className="event-preview-social-button" asChild>
+            <Button
+              key={item.label}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="event-preview-social-button"
+              asChild
+            >
               <a href={item.value} target="_blank" rel="noreferrer">
                 {item.label}
               </a>
@@ -919,11 +936,11 @@ function normalizeTimelineItems(items: EventWebsiteRenderModel["timelineProgram"
     : hasDraftContent
       ? cleaned
       : previewDefaultDraft.timelineProgram.items.map((item) => ({
-        description: item.description,
-        id: item.id,
-        time: formatPreviewTime(item.time, item.time),
-        title: item.title,
-      }));
+          description: item.description,
+          id: item.id,
+          time: formatPreviewTime(item.time, item.time),
+          title: item.title,
+        }));
 }
 
 function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["groups"]) {
@@ -936,7 +953,11 @@ function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["
     }))
     .filter((group) => group.groupTitle || group.names);
 
-  return cleaned.length > 0 ? cleaned : hasDraftContent ? cleaned : previewDefaultDraft.entourage.groups;
+  return cleaned.length > 0
+    ? cleaned
+    : hasDraftContent
+      ? cleaned
+      : previewDefaultDraft.entourage.groups;
 }
 
 function normalizeLineList(value: string): string[] {
@@ -963,7 +984,11 @@ function normalizeExtraInfoItems(items: EventWebsiteRenderModel["extraInfo"]["it
       title: item.title.trim() || (item.details.trim() ? "Note" : ""),
     }));
 
-  return cleaned.length > 0 ? cleaned : hasDraftContent ? cleaned : previewDefaultDraft.extraInfo.items;
+  return cleaned.length > 0
+    ? cleaned
+    : hasDraftContent
+      ? cleaned
+      : previewDefaultDraft.extraInfo.items;
 }
 
 function normalizeGiftOptions(options: EventWebsiteRenderModel["giftDetails"]["options"]) {

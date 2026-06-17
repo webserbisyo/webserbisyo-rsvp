@@ -26,11 +26,7 @@ export function DashboardShell({
 }: DashboardShellProps) {
   return (
     <DashboardQueryProvider>
-      <div
-        data-dashboard
-        className="min-h-screen"
-        style={{ background: "var(--dash-surface)" }}
-      >
+      <div data-dashboard className="min-h-screen" style={{ background: "var(--dash-surface)" }}>
         <DashboardRealtimeNotifications clientId={clientId} profileId={profileId} />
         <SidebarProvider
           style={

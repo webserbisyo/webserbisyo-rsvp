@@ -26,26 +26,14 @@ export function DashboardCardSkeleton({
   );
 }
 
-export function DashboardSkeletonLine({
-  className,
-}: {
-  className?: string;
-}) {
+export function DashboardSkeletonLine({ className }: { className?: string }) {
   return <Skeleton className={cn(warmSkeletonClassName, className)} />;
 }
 
-export function DashboardSkeletonCircle({
-  className,
-}: {
-  className?: string;
-}) {
+export function DashboardSkeletonCircle({ className }: { className?: string }) {
   return <Skeleton className={cn("rounded-full", warmSkeletonClassName, className)} />;
 }
 
-export function DashboardSkeletonBlock({
-  className,
-}: {
-  className?: string;
-}) {
+export function DashboardSkeletonBlock({ className }: { className?: string }) {
   return <Skeleton className={cn("rounded-2xl", warmSkeletonClassName, className)} />;
 }

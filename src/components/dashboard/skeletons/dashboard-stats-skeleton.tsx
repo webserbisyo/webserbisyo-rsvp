@@ -1,4 +1,8 @@
-import { DashboardCardSkeleton, DashboardSkeletonBlock, DashboardSkeletonLine } from "./dashboard-card-skeleton";
+import {
+  DashboardCardSkeleton,
+  DashboardSkeletonBlock,
+  DashboardSkeletonLine,
+} from "./dashboard-card-skeleton";
 
 export function DashboardStatsSkeleton({
   columns = "xl:grid-cols-4",

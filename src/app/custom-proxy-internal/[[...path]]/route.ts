@@ -1,7 +1,12 @@
 import "server-only";
 
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
-import { buildPublicRsvpPath, buildPublicRsvpStandalonePath, getOfficialPublicAppUrl, getRsvpBaseDomain } from "@/lib/public-rsvp-url";
+import {
+  buildPublicRsvpPath,
+  buildPublicRsvpStandalonePath,
+  getOfficialPublicAppUrl,
+  getRsvpBaseDomain,
+} from "@/lib/public-rsvp-url";
 import { assertSafeCustomFrontendOriginForFetch } from "@/server/services/custom-websites/custom-website-origin";
 import { resolvePublicCustomFrontendBySubdomain } from "@/server/services/custom-websites/resolve-public-custom-frontend";
 
@@ -11,9 +16,28 @@ const ORIGINAL_HOST_HEADER = "x-webserbisyo-original-host";
 const ORIGINAL_PATH_HEADER = "x-webserbisyo-original-path";
 const ORIGINAL_SEARCH_HEADER = "x-webserbisyo-original-search";
 const SKIP_CUSTOM_PROXY_HEADER = "x-webserbisyo-skip-custom-proxy";
-const PLATFORM_OWNED_PUBLIC_PATH_PREFIXES = ["/admin", "/dashboard", "/login", "/api", "/r"] as const;
-const REQUEST_HEADER_ALLOWLIST = ["accept", "accept-language", "cache-control", "if-none-match", "if-modified-since", "user-agent"] as const;
-const RESPONSE_HEADER_BLOCKLIST = ["connection", "content-encoding", "content-length", "keep-alive", "transfer-encoding"] as const;
+const PLATFORM_OWNED_PUBLIC_PATH_PREFIXES = [
+  "/admin",
+  "/dashboard",
+  "/login",
+  "/api",
+  "/r",
+] as const;
+const REQUEST_HEADER_ALLOWLIST = [
+  "accept",
+  "accept-language",
+  "cache-control",
+  "if-none-match",
+  "if-modified-since",
+  "user-agent",
+] as const;
+const RESPONSE_HEADER_BLOCKLIST = [
+  "connection",
+  "content-encoding",
+  "content-length",
+  "keep-alive",
+  "transfer-encoding",
+] as const;
 
 type ProxyRouteContext = {
   params: Promise<{ path?: string[] }>;
@@ -147,7 +171,7 @@ async function readOriginalPathname(context: ProxyRouteContext, request: Request
 function readOriginalHost(request: Request) {
   const host = request.headers.get(ORIGINAL_HOST_HEADER) ?? request.headers.get("x-forwarded-host");
 
-  return host ? host.split(",")[0]?.trim() ?? null : null;
+  return host ? (host.split(",")[0]?.trim() ?? null) : null;
 }
 
 function extractSubdomainSlugFromHost(host: string) {
@@ -229,7 +253,10 @@ async function fetchPlatformFallbackResponse(input: {
   originalSearch: string;
   request: Request;
 }) {
-  const fallbackPath = mapWildcardPathToPlatformFallbackPath(input.eventSlug, input.originalPathname);
+  const fallbackPath = mapWildcardPathToPlatformFallbackPath(
+    input.eventSlug,
+    input.originalPathname,
+  );
   const fallbackUrl = new URL(`${fallbackPath}${input.originalSearch}`, input.request.url);
   const fallbackHeaders = new Headers();
   const accept = input.request.headers.get("accept");

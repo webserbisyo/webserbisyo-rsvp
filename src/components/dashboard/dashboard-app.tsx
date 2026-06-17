@@ -80,7 +80,10 @@ export function DashboardApp({ initialView }: DashboardAppProps) {
     }
 
     function handlePopState() {
-      applyNavigation(`${window.location.pathname}${window.location.search}${window.location.hash}`, true);
+      applyNavigation(
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+        true,
+      );
     }
 
     window.addEventListener(DASHBOARD_SPA_NAVIGATE_EVENT, handleNavigate);

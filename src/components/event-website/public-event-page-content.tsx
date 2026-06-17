@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { EventWebsiteRenderer } from "@/components/event-website/event-website-renderer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
-import {
-  formatEventWebsiteDate,
-  formatEventWebsiteTime,
-} from "@/lib/event-website/formatting";
+import { formatEventWebsiteDate, formatEventWebsiteTime } from "@/lib/event-website/formatting";
 import type { PublicEventDto } from "@/lib/event-website/public-event";
 import { getBestPublicRsvpUrl } from "@/lib/public-rsvp-url";
 import type { PublicMetaPixelConfig } from "@/server/queries/public-meta-pixels";

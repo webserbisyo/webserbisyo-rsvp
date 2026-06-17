@@ -68,7 +68,9 @@ test("Test 1 — Shell renders without crash", async ({ page }) => {
     await expect(header).toBeVisible();
 
     // Sign out button in sidebar footer
-    const signOut = page.locator('[data-slot="sidebar-footer"] button').filter({ hasText: /sign out/i });
+    const signOut = page
+      .locator('[data-slot="sidebar-footer"] button')
+      .filter({ hasText: /sign out/i });
     await expect(signOut).toBeVisible();
   });
 });
@@ -116,9 +118,7 @@ test("Test 3 — Gradient full viewport height", async ({ page }) => {
     await expect(main).toBeVisible();
 
     // Background should not be plain white or default background
-    const bg = await main.evaluate((el) =>
-      window.getComputedStyle(el).backgroundImage,
-    );
+    const bg = await main.evaluate((el) => window.getComputedStyle(el).backgroundImage);
     // Gradient pages have backgroundImage containing "gradient" or "radial-gradient"
     expect(bg).toMatch(/gradient/i);
 
@@ -153,9 +153,7 @@ test("Test 4 — More drawer opens and is not transparent", async ({ page }) => 
     await expect(drawer).toBeVisible({ timeout: 5000 });
 
     // Background should not be transparent
-    const drawerBg = await drawer.evaluate((el) =>
-      window.getComputedStyle(el).backgroundColor,
-    );
+    const drawerBg = await drawer.evaluate((el) => window.getComputedStyle(el).backgroundColor);
     expect(drawerBg).not.toBe("rgba(0, 0, 0, 0)");
     expect(drawerBg).not.toBe("transparent");
 
@@ -189,7 +187,7 @@ test("Test 5 — Avatar dropdown", async ({ page }) => {
     await trigger.click();
 
     // Dropdown content visible
-    const dropdown = page.locator('[data-radix-popper-content-wrapper]');
+    const dropdown = page.locator("[data-radix-popper-content-wrapper]");
     await expect(dropdown).toBeVisible({ timeout: 3000 });
 
     // Settings item
@@ -202,8 +200,8 @@ test("Test 5 — Avatar dropdown", async ({ page }) => {
 
     // Dropdown background not transparent
     const dropdownContent = page.locator('[role="menu"]');
-    const dropdownBg = await dropdownContent.evaluate((el) =>
-      window.getComputedStyle(el).backgroundColor,
+    const dropdownBg = await dropdownContent.evaluate(
+      (el) => window.getComputedStyle(el).backgroundColor,
     );
     expect(dropdownBg).not.toBe("rgba(0, 0, 0, 0)");
     expect(dropdownBg).not.toBe("transparent");

@@ -116,7 +116,7 @@ export function PublishStatusCard({
                 </span>
                 <span
                   className={cn(
-                    "min-w-0 max-w-[58%] text-right text-sm font-medium break-words",
+                    "max-w-[58%] min-w-0 text-right text-sm font-medium break-words",
                     row.valueColor,
                   )}
                 >
@@ -173,12 +173,12 @@ export function PublishStatusCard({
               </Button>
             </>
           ) : (
-              <Button
-                type="button"
-                disabled={disabled}
-                onClick={onPublish}
-                className="h-12 w-full justify-center rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] sm:h-10 sm:rounded-xl sm:px-4"
-              >
+            <Button
+              type="button"
+              disabled={disabled}
+              onClick={onPublish}
+              className="h-12 w-full justify-center rounded-2xl bg-[#c96f4c] px-5 text-sm font-semibold text-white shadow-sm shadow-[#c96f4c]/20 hover:bg-[#b96143] sm:h-10 sm:rounded-xl sm:px-4"
+            >
               <UploadCloud className="h-4 w-4" aria-hidden="true" />
               Publish website
             </Button>

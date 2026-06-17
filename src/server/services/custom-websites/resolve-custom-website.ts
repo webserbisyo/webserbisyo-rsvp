@@ -60,9 +60,9 @@ export async function resolveDashboardCustomWebsitePreview(input: {
   const healthStatus = normalizeHealthStatus(data.last_health_status);
   const canPreview = Boolean(
     data.custom_frontend_enabled &&
-      data.preview_enabled &&
-      originUrl &&
-      (healthStatus === "healthy" || healthStatus === "unknown"),
+    data.preview_enabled &&
+    originUrl &&
+    (healthStatus === "healthy" || healthStatus === "unknown"),
   );
 
   if (canPreview) {
@@ -99,7 +99,9 @@ function buildDashboardPreviewDto(input: {
   linkSet: ReturnType<typeof resolvePublicRsvpLinkSet> | null;
   routeMode?: "custom" | "default";
 }): DashboardCustomWebsitePreviewDto {
-  const fallbackUrl = input.linkSet?.fallbackPathUrl ?? (input.eventSlug ? buildPublicRsvpPath(input.eventSlug) : null);
+  const fallbackUrl =
+    input.linkSet?.fallbackPathUrl ??
+    (input.eventSlug ? buildPublicRsvpPath(input.eventSlug) : null);
   const customPreviewAvailable = Boolean(input.customPreviewUrl);
 
   return {

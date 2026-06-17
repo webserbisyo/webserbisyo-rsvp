@@ -19,13 +19,13 @@ export function SupportCard({ support }: SupportCardProps) {
           <MessengerLogo className="h-5 w-5" />
         </div>
         <div className="dashboard-settings-support-card__hero-content min-w-0 flex-1">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-[color:var(--dash-brand)]">
+          <p className="text-sm font-black tracking-[0.16em] text-[color:var(--dash-brand)] uppercase">
             Need help?
           </p>
           <h3 className="mt-1 text-[1.2rem] font-black tracking-[-0.02em] text-[color:var(--dash-foreground)]">
             We&apos;re here for you
           </h3>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-[#8d7667]">
+          <p className="mt-2 text-sm leading-relaxed font-semibold text-[#8d7667]">
             Message WebSerbisyo for account, RSVP, or dashboard support.
           </p>
         </div>

@@ -26,37 +26,36 @@ function normalizeOptionalInput(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
-const RequiredEmailSchema = z
-  .preprocess(
-    normalizeOptionalInput,
-    z
-      .string()
-      .trim()
-      .min(1, "Email address is required.")
-      .max(PUBLIC_RSVP_EMAIL_MAX_LENGTH, `Email address must be ${PUBLIC_RSVP_EMAIL_MAX_LENGTH} characters or fewer.`)
-      .transform((value) => value.toLowerCase())
-      .refine((value) => z.email().safeParse(value).success, {
-        message: "Enter a valid email address.",
-      }),
-  );
+const RequiredEmailSchema = z.preprocess(
+  normalizeOptionalInput,
+  z
+    .string()
+    .trim()
+    .min(1, "Email address is required.")
+    .max(
+      PUBLIC_RSVP_EMAIL_MAX_LENGTH,
+      `Email address must be ${PUBLIC_RSVP_EMAIL_MAX_LENGTH} characters or fewer.`,
+    )
+    .transform((value) => value.toLowerCase())
+    .refine((value) => z.email().safeParse(value).success, {
+      message: "Enter a valid email address.",
+    }),
+);
 
-const OptionalEmailSchema = z
-  .preprocess(
-    normalizeOptionalInput,
-    z
-      .string()
-      .trim()
-      .transform((value) => (value ? value.toLowerCase() : undefined))
-      .refine(
-        (value) =>
-          value === undefined ||
-          value.length <= PUBLIC_RSVP_EMAIL_MAX_LENGTH,
-        `Email address must be ${PUBLIC_RSVP_EMAIL_MAX_LENGTH} characters or fewer.`,
-      )
-      .refine((value) => value === undefined || z.email().safeParse(value).success, {
-        message: "Enter a valid email address.",
-      }),
-  );
+const OptionalEmailSchema = z.preprocess(
+  normalizeOptionalInput,
+  z
+    .string()
+    .trim()
+    .transform((value) => (value ? value.toLowerCase() : undefined))
+    .refine(
+      (value) => value === undefined || value.length <= PUBLIC_RSVP_EMAIL_MAX_LENGTH,
+      `Email address must be ${PUBLIC_RSVP_EMAIL_MAX_LENGTH} characters or fewer.`,
+    )
+    .refine((value) => value === undefined || z.email().safeParse(value).success, {
+      message: "Enter a valid email address.",
+    }),
+);
 
 const DisabledInputSchema = z.preprocess(
   normalizeOptionalInput,
@@ -66,41 +65,38 @@ const DisabledInputSchema = z.preprocess(
     .transform(() => undefined),
 );
 
-const RequiredPhoneSchema = z
-  .preprocess(
-    normalizeOptionalInput,
-    z
-      .string()
-      .trim()
-      .min(1, "Phone number is required.")
-      .transform((value) => value.replace(/[\s-]+/g, ""))
-      .refine((value) => value.length <= PUBLIC_RSVP_PHONE_MAX_LENGTH, {
-        message: "Phone number is too long.",
-      }),
-  );
+const RequiredPhoneSchema = z.preprocess(
+  normalizeOptionalInput,
+  z
+    .string()
+    .trim()
+    .min(1, "Phone number is required.")
+    .transform((value) => value.replace(/[\s-]+/g, ""))
+    .refine((value) => value.length <= PUBLIC_RSVP_PHONE_MAX_LENGTH, {
+      message: "Phone number is too long.",
+    }),
+);
 
-const OptionalPhoneSchema = z
-  .preprocess(
-    normalizeOptionalInput,
-    z
-      .string()
-      .trim()
-      .transform((value) => (value ? value.replace(/[\s-]+/g, "") : undefined))
-      .refine((value) => value === undefined || value.length <= PUBLIC_RSVP_PHONE_MAX_LENGTH, {
-        message: "Phone number is too long.",
-      }),
-  );
+const OptionalPhoneSchema = z.preprocess(
+  normalizeOptionalInput,
+  z
+    .string()
+    .trim()
+    .transform((value) => (value ? value.replace(/[\s-]+/g, "") : undefined))
+    .refine((value) => value === undefined || value.length <= PUBLIC_RSVP_PHONE_MAX_LENGTH, {
+      message: "Phone number is too long.",
+    }),
+);
 
 const OptionalTextSchema = (max: number, message: string) =>
-  z
-    .preprocess(
-      normalizeOptionalInput,
-      z
-        .string()
-        .trim()
-        .transform((value) => (value ? value : undefined))
-        .refine((value) => value === undefined || value.length <= max, message),
-    );
+  z.preprocess(
+    normalizeOptionalInput,
+    z
+      .string()
+      .trim()
+      .transform((value) => (value ? value : undefined))
+      .refine((value) => value === undefined || value.length <= max, message),
+  );
 
 const CompanionCountSchema = z
   .union([z.string(), z.number(), z.undefined()])
@@ -141,8 +137,14 @@ const CompanionCountSchema = z
   });
 
 const CompanionSchema = z.object({
-  ageLabel: OptionalTextSchema(PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH, "Companion age label is too long."),
-  fullName: z.string().trim().max(PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH, "Companion name is too long."),
+  ageLabel: OptionalTextSchema(
+    PUBLIC_RSVP_COMPANION_AGE_LABEL_MAX_LENGTH,
+    "Companion age label is too long.",
+  ),
+  fullName: z
+    .string()
+    .trim()
+    .max(PUBLIC_RSVP_COMPANION_NAME_MAX_LENGTH, "Companion name is too long."),
 });
 
 export const PublicRsvpResponseFieldsSchema = z.object({
@@ -151,7 +153,10 @@ export const PublicRsvpResponseFieldsSchema = z.object({
   }),
   companionCount: CompanionCountSchema,
   companions: z.array(CompanionSchema).max(20, "Too many companions.").optional(),
-  dietaryNotes: OptionalTextSchema(PUBLIC_RSVP_DIETARY_NOTES_MAX_LENGTH, "Dietary notes are too long."),
+  dietaryNotes: OptionalTextSchema(
+    PUBLIC_RSVP_DIETARY_NOTES_MAX_LENGTH,
+    "Dietary notes are too long.",
+  ),
   email: RequiredEmailSchema,
   guestName: GuestNameSchema,
   message: OptionalTextSchema(

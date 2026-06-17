@@ -40,7 +40,7 @@ export default async function ApplyStartPage({ searchParams }: ApplyStartPagePro
         </section>
         <ApplyForm config={config} initialPlan={initialPlan} />
       </div>
-      <PublicMetaPixelScripts pixels={pixels} />
+      <PublicMetaPixelScripts eventName="InitiateCheckout" pixels={pixels} />
     </main>
   );
 }

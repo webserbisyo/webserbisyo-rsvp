@@ -49,33 +49,30 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   const supabase = await createServerSupabaseClient();
   const adminSupabase = createAdminClient();
 
-  const [
-    { data: client, error: clientError },
-    messengerUrl,
-    preferences,
-    activePushSubscription,
-  ] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("contact_email, contact_name, name, plan_type, status")
-      .eq("id", clientId)
-      .single(),
-    safeLoadMessengerUrl(adminSupabase),
-    loadNotificationPreferences(supabase, {
-      clientId,
-      profileId: profile.id,
-    }),
-    loadActivePushSubscription(supabase, {
-      clientId,
-      profileId: profile.id,
-    }),
-  ]);
+  const [{ data: client, error: clientError }, messengerUrl, preferences, activePushSubscription] =
+    await Promise.all([
+      supabase
+        .from("clients")
+        .select("contact_email, contact_name, name, plan_type, status")
+        .eq("id", clientId)
+        .single(),
+      safeLoadMessengerUrl(adminSupabase),
+      loadNotificationPreferences(supabase, {
+        clientId,
+        profileId: profile.id,
+      }),
+      loadActivePushSubscription(supabase, {
+        clientId,
+        profileId: profile.id,
+      }),
+    ]);
 
   if (clientError) {
     throw clientError;
   }
 
-  const name = profile.full_name?.trim() || client.contact_name?.trim() || client.name?.trim() || null;
+  const name =
+    profile.full_name?.trim() || client.contact_name?.trim() || client.name?.trim() || null;
   const email = profile.email?.trim() || client.contact_email?.trim() || null;
   const planType = getPlanType(client.plan_type);
   const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() || null;

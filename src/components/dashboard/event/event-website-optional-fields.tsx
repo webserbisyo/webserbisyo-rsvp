@@ -71,13 +71,7 @@ export function EditorGroup({
   );
 }
 
-export function FieldGrid({
-  children,
-  layout,
-}: {
-  children: ReactNode;
-  layout?: "two-column";
-}) {
+export function FieldGrid({ children, layout }: { children: ReactNode; layout?: "two-column" }) {
   return (
     <div className={`event-editor-fields${layout ? ` event-editor-fields--${layout}` : ""}`}>
       {children}
@@ -228,7 +222,12 @@ export function ListBuilder({
   return (
     <div className="event-editor-list-builder">
       <div className="event-editor-list-stack">{children}</div>
-      <Button type="button" variant="outline" className="event-editor-list-add-button" onClick={onAdd}>
+      <Button
+        type="button"
+        variant="outline"
+        className="event-editor-list-add-button"
+        onClick={onAdd}
+      >
         <Plus className="size-4" aria-hidden="true" />
         {addLabel}
       </Button>

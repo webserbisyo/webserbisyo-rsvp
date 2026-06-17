@@ -25,9 +25,10 @@ export function getDefaultWeddingSectionOrder(): EventWebsiteContentSectionKey[]
 }
 
 export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSectionKey, boolean> {
-  return Object.fromEntries(
-    eventWebsiteContentSectionKeys.map((key) => [key, true]),
-  ) as Record<EventWebsiteContentSectionKey, boolean>;
+  return Object.fromEntries(eventWebsiteContentSectionKeys.map((key) => [key, true])) as Record<
+    EventWebsiteContentSectionKey,
+    boolean
+  >;
 }
 
 export function buildDefaultWeddingEventWebsiteContent(
@@ -45,8 +46,10 @@ export function buildDefaultWeddingEventWebsiteContent(
     context.eventContent?.heroSubtitle,
     buildWeddingInvitationMessage(coupleNames.groomName, coupleNames.brideName),
   );
-  const eventDate = normalizeCanonicalDateInput(context.event?.eventDate) || DEFAULT_WEDDING_EVENT_DATE;
-  const eventTime = normalizeCanonicalTimeInput(context.event?.eventTime) || DEFAULT_WEDDING_EVENT_TIME;
+  const eventDate =
+    normalizeCanonicalDateInput(context.event?.eventDate) || DEFAULT_WEDDING_EVENT_DATE;
+  const eventTime =
+    normalizeCanonicalTimeInput(context.event?.eventTime) || DEFAULT_WEDDING_EVENT_TIME;
   const rsvpDeadline =
     formatCanonicalRsvpCloseAtToEditorInput(context.event?.rsvpCloseAt) ||
     buildDefaultRsvpDeadline(eventDate, DEFAULT_RSVP_DEADLINE_OFFSET_DAYS);
@@ -56,7 +59,11 @@ export function buildDefaultWeddingEventWebsiteContent(
     extractApplicationLocation(context.application),
     "Talisay City, Negros Occidental, Philippines",
   );
-  const contactPerson = firstNonEmpty(context.client?.contactName, context.profile?.fullName, "Anna Santos");
+  const contactPerson = firstNonEmpty(
+    context.client?.contactName,
+    context.profile?.fullName,
+    "Anna Santos",
+  );
   const contactEmail = firstNonEmpty(context.profile?.email, "hello@example.com");
 
   return {
@@ -105,11 +112,10 @@ export function buildDefaultWeddingEventWebsiteContent(
         sectionTitle: "Additional Details",
       },
       gift_details: {
-        giftNote:
-          firstNonEmpty(
-            context.eventContent?.giftNote,
-            "If you wish to give a gift, a monetary gift would be greatly appreciated as we begin this new chapter together.",
-          ),
+        giftNote: firstNonEmpty(
+          context.eventContent?.giftNote,
+          "If you wish to give a gift, a monetary gift would be greatly appreciated as we begin this new chapter together.",
+        ),
         options: [
           { id: "gift-option-1", image: null, title: "GCash" },
           { id: "gift-option-2", image: null, title: "Bank Transfer" },

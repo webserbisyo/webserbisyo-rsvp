@@ -4,7 +4,13 @@ import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getSupabasePublicEnv } from "./lib/supabase/env";
 
 const AUTH_GUARD_PATH_PREFIXES = ["/admin", "/dashboard"] as const;
-const PLATFORM_OWNED_PUBLIC_PATH_PREFIXES = ["/admin", "/dashboard", "/login", "/api", "/r"] as const;
+const PLATFORM_OWNED_PUBLIC_PATH_PREFIXES = [
+  "/admin",
+  "/dashboard",
+  "/login",
+  "/api",
+  "/r",
+] as const;
 const INTERNAL_CUSTOM_PROXY_PREFIX = "/custom-proxy-internal";
 const SKIP_CUSTOM_PROXY_HEADER = "x-webserbisyo-skip-custom-proxy";
 const ORIGINAL_HOST_HEADER = "x-webserbisyo-original-host";

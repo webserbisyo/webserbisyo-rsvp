@@ -65,9 +65,7 @@ export function GuestAccessCard({
           <span
             className={cn(
               "rounded-full px-3.5 py-1.5 text-xs font-semibold",
-              hasVisibilityDraft
-                ? "bg-amber-50 text-amber-800"
-                : "bg-[#f1e7df] text-[#A7583C]",
+              hasVisibilityDraft ? "bg-amber-50 text-amber-800" : "bg-[#f1e7df] text-[#A7583C]",
             )}
           >
             {visibilityLabel}
@@ -120,9 +118,7 @@ export function GuestAccessCard({
                     <p
                       className={cn(
                         "text-sm font-semibold",
-                        isSelected && !option.disabled
-                          ? "text-[#A7583C]"
-                          : "text-[#2D1F1A]",
+                        isSelected && !option.disabled ? "text-[#A7583C]" : "text-[#2D1F1A]",
                       )}
                     >
                       {option.label}
@@ -133,9 +129,7 @@ export function GuestAccessCard({
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-sm leading-snug text-[#B49B90]">
-                    {option.description}
-                  </p>
+                  <p className="mt-0.5 text-sm leading-snug text-[#B49B90]">{option.description}</p>
                 </div>
 
                 {/* Selected check indicator */}
@@ -155,9 +149,7 @@ export function GuestAccessCard({
         <div
           className={cn(
             "mt-4 flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium",
-            hasVisibilityDraft
-              ? "bg-amber-50/90 text-amber-800"
-              : "bg-[#FEFAF7] text-[#A38376]",
+            hasVisibilityDraft ? "bg-amber-50/90 text-amber-800" : "bg-[#FEFAF7] text-[#A38376]",
           )}
         >
           {hasVisibilityDraft ? (

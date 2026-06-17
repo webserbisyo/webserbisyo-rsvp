@@ -10,7 +10,7 @@ type SettingsPageProps = {
 
 export function SettingsPage({ data }: SettingsPageProps) {
   return (
-    <div className="dashboard-settings-page space-y-6 pb-24 pt-2 md:pb-8">
+    <div className="dashboard-settings-page space-y-6 pt-2 pb-24 md:pb-8">
       <div className="dashboard-settings-grid grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         <div className="dashboard-settings-main space-y-6">
           <AccountAccessCard account={data.account} />

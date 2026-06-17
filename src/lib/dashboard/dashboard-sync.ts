@@ -98,8 +98,7 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
   const eventsRef = useRef(options.events);
   const eventIdRef = useRef(options.eventId);
   const refreshDelayMs = options.refreshDelayMs ?? DEFAULT_REFRESH_DELAY_MS;
-  const minRefreshIntervalMs =
-    options.minRefreshIntervalMs ?? DEFAULT_MIN_REFRESH_INTERVAL_MS;
+  const minRefreshIntervalMs = options.minRefreshIntervalMs ?? DEFAULT_MIN_REFRESH_INTERVAL_MS;
   const ignoreSelfEvents = options.ignoreSelfEvents ?? false;
   const refreshOnFocus = options.refreshOnFocus ?? false;
   const refreshOnVisibility = options.refreshOnVisibility ?? false;
@@ -160,9 +159,7 @@ export function useDashboardRefresh(options: UseDashboardRefreshOptions = {}) {
 
     const handleLocalEvent = (event: Event) => {
       const detail =
-        event instanceof CustomEvent
-          ? (event.detail as DashboardSyncEvent | undefined)
-          : undefined;
+        event instanceof CustomEvent ? (event.detail as DashboardSyncEvent | undefined) : undefined;
 
       if (detail) {
         handleSyncEvent(detail);

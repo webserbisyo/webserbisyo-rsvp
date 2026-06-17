@@ -33,11 +33,11 @@ export function AppInstallCard() {
               />
             </div>
           </div>
-          <h3 className="dashboard-settings-app-install-card__hero-title min-w-0 flex-1 text-lg font-black leading-snug text-[color:var(--dash-foreground)]">
+          <h3 className="dashboard-settings-app-install-card__hero-title min-w-0 flex-1 text-lg leading-snug font-black text-[color:var(--dash-foreground)]">
             Install WebSerbisyo RSVP App
           </h3>
         </div>
-        <p className="mt-4 text-sm font-semibold leading-relaxed text-[#8d7667]">
+        <p className="mt-4 text-sm leading-relaxed font-semibold text-[#8d7667]">
           Access your dashboard faster from your home screen.
         </p>
         <Button
@@ -65,7 +65,7 @@ export function AppInstallCard() {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.72rem] font-black uppercase tracking-[0.18em] text-[color:var(--dash-brand)]">
+    <p className="text-[0.72rem] font-black tracking-[0.18em] text-[color:var(--dash-brand)] uppercase">
       {children}
     </p>
   );

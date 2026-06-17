@@ -6,13 +6,20 @@ import { BillingStatusBadge } from "@/components/dashboard/billing/billing-statu
 import type { BillingPageData } from "@/components/dashboard/billing/billing-types";
 import { MessengerLogo } from "@/components/dashboard/billing/messenger-logo";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, ChevronRight, ReceiptText, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronRight,
+  ReceiptText,
+  ShieldCheck,
+  Sparkles,
+  WalletCards,
+} from "lucide-react";
 
 export function BillingPage({ data }: { data: BillingPageData }) {
   const latestPaymentStatus = data.latestPayment?.status ?? data.paymentStatus;
 
   return (
-    <div className="space-y-6 pb-24 pt-2 md:pb-8">
+    <div className="space-y-6 pt-2 pb-24 md:pb-8">
       {/* ── Two-column layout ── */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         {/* ── Left / main column ── */}
@@ -24,22 +31,25 @@ export function BillingPage({ data }: { data: BillingPageData }) {
           >
             <div className="max-w-2xl">
               {/* CURRENT PLAN eyebrow label */}
-              <p className="text-xs font-bold uppercase tracking-[0.17em] text-[color:var(--dash-heading-muted)]">
+              <p className="text-xs font-bold tracking-[0.17em] text-[color:var(--dash-heading-muted)] uppercase">
                 Current Plan
               </p>
               {/* Plan name — large serif terracotta */}
-              <h2 className="mt-3 font-serif text-[3.25rem] font-black leading-[0.92] tracking-tight text-[color:var(--dash-brand)]">
+              <h2 className="mt-3 font-serif text-[3.25rem] leading-[0.92] font-black tracking-tight text-[color:var(--dash-brand)]">
                 {data.planName}
               </h2>
               {/* Plan description */}
-              <p className="mt-5 text-[17px] font-semibold leading-relaxed text-[color:color-mix(in_srgb,var(--dash-foreground)_72%,var(--dash-heading-muted))]">
+              <p className="mt-5 text-[17px] leading-relaxed font-semibold text-[color:color-mix(in_srgb,var(--dash-foreground)_72%,var(--dash-heading-muted))]">
                 {data.planDescription}
               </p>
             </div>
           </BillingCard>
 
           {/* Payment overview — 4 stat cards in one row at xl, 2×2 at sm */}
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Payment overview">
+          <section
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            aria-label="Payment overview"
+          >
             <BillingStatCard
               icon={<WalletCards className="h-[18px] w-[18px]" aria-hidden="true" />}
               label="Total Package"
@@ -64,11 +74,14 @@ export function BillingPage({ data }: { data: BillingPageData }) {
 
           {/* Latest Payment card */}
           <BillingCard contentClassName="px-6 py-6 sm:px-7 sm:py-7">
-            <p className="mb-1 text-xs font-bold uppercase tracking-[0.17em] text-[color:var(--dash-heading-muted)]">
+            <p className="mb-1 text-xs font-bold tracking-[0.17em] text-[color:var(--dash-heading-muted)] uppercase">
               Latest Payment
             </p>
             <div className="mt-4">
-              <BillingDetailRow label="Status" value={<BillingStatusBadge status={latestPaymentStatus} />} />
+              <BillingDetailRow
+                label="Status"
+                value={<BillingStatusBadge status={latestPaymentStatus} />}
+              />
               <BillingDetailRow
                 label="Amount"
                 value={formatCurrency(data.latestPayment?.amount ?? null, data.currency)}
@@ -90,13 +103,16 @@ export function BillingPage({ data }: { data: BillingPageData }) {
         <aside className="space-y-5 self-start lg:sticky lg:top-[calc(var(--dash-header-height)+1rem)]">
           {/* Hosting & Service Period */}
           <BillingCard contentClassName="px-5 py-5 sm:px-6 sm:py-6">
-            <p className="text-xs font-bold uppercase tracking-[0.17em] text-[color:var(--dash-heading-muted)]">
+            <p className="text-xs font-bold tracking-[0.17em] text-[color:var(--dash-heading-muted)] uppercase">
               Hosting &amp; Service Period
             </p>
             <div className="mt-4">
               <div className="flex items-center justify-between gap-5 border-b border-[color:var(--dash-divider)] py-3.5 last:border-b-0">
                 <div className="flex items-center gap-2.5 text-[color:var(--dash-heading-muted)]">
-                  <CalendarDays className="h-4 w-4 shrink-0 text-[color:var(--dash-brand)]" aria-hidden="true" />
+                  <CalendarDays
+                    className="h-4 w-4 shrink-0 text-[color:var(--dash-brand)]"
+                    aria-hidden="true"
+                  />
                   <span className="text-[15px] font-medium">Starts</span>
                 </div>
                 <span className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
@@ -105,7 +121,10 @@ export function BillingPage({ data }: { data: BillingPageData }) {
               </div>
               <div className="flex items-center justify-between gap-5 border-b border-[color:var(--dash-divider)] py-3.5 last:border-b-0">
                 <div className="flex items-center gap-2.5 text-[color:var(--dash-heading-muted)]">
-                  <CalendarDays className="h-4 w-4 shrink-0 text-[color:var(--dash-brand)]" aria-hidden="true" />
+                  <CalendarDays
+                    className="h-4 w-4 shrink-0 text-[color:var(--dash-brand)]"
+                    aria-hidden="true"
+                  />
                   <span className="text-[15px] font-medium">Ends</span>
                 </div>
                 <span className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
@@ -114,7 +133,10 @@ export function BillingPage({ data }: { data: BillingPageData }) {
               </div>
               <div className="flex items-center justify-between gap-5 py-3.5">
                 <div className="flex items-center gap-2.5 text-[color:var(--dash-heading-muted)]">
-                  <CalendarDays className="h-4 w-4 shrink-0 text-[color:var(--dash-brand)]" aria-hidden="true" />
+                  <CalendarDays
+                    className="h-4 w-4 shrink-0 text-[color:var(--dash-brand)]"
+                    aria-hidden="true"
+                  />
                   <span className="text-[15px] font-medium">Renewal</span>
                 </div>
                 <span className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
@@ -122,7 +144,7 @@ export function BillingPage({ data }: { data: BillingPageData }) {
                 </span>
               </div>
             </div>
-            <p className="mt-3 text-sm font-medium leading-relaxed text-[color:var(--dash-heading-muted)]">
+            <p className="mt-3 text-sm leading-relaxed font-medium text-[color:var(--dash-heading-muted)]">
               {data.serviceDescription}
             </p>
           </BillingCard>
@@ -146,8 +168,10 @@ export function BillingPage({ data }: { data: BillingPageData }) {
                 <MessengerLogo className="h-[18px] w-[18px]" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-black text-[color:var(--dash-foreground)]">Need help with billing?</h3>
-                <p className="mt-1 text-sm font-medium leading-relaxed text-[color:var(--dash-heading-muted)]">
+                <h3 className="text-base font-black text-[color:var(--dash-foreground)]">
+                  Need help with billing?
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed font-medium text-[color:var(--dash-heading-muted)]">
                   Contact WebSerbisyo for payment, receipt, or renewal questions.
                 </p>
               </div>

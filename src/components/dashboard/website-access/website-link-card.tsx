@@ -52,11 +52,13 @@ export function WebsiteLinkCard({
       <div className="p-5 sm:p-6">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold tracking-tight text-[#2D1F1A]">Your Website Link</h2>
-          <p className="text-sm font-medium text-[#A38376]">Copy the live link or prepare your event website subdomain</p>
+          <p className="text-sm font-medium text-[#A38376]">
+            Copy the live link or prepare your event website subdomain
+          </p>
         </div>
 
         <div className="mb-5 grid min-w-0 items-center gap-3 sm:grid-cols-[1fr_auto]">
-          <div className="flex min-w-0 h-12 items-center overflow-hidden rounded-xl border border-[#eacdbf] bg-[#FBF4EF] px-4 font-mono text-sm font-medium text-[#2D1F1A]">
+          <div className="flex h-12 min-w-0 items-center overflow-hidden rounded-xl border border-[#eacdbf] bg-[#FBF4EF] px-4 font-mono text-sm font-medium text-[#2D1F1A]">
             <span className="block min-w-0 truncate">{displayUrl}</span>
           </div>
           <Button
@@ -72,19 +74,31 @@ export function WebsiteLinkCard({
         </div>
 
         <div className="mb-2 flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between">
-          <label htmlFor="website-slug-preview" className="text-sm font-semibold text-[#A38376]">Event website subdomain</label>
+          <label htmlFor="website-slug-preview" className="text-sm font-semibold text-[#A38376]">
+            Event website subdomain
+          </label>
           <p className="text-xs font-medium text-[#A38376] lg:text-sm">{helperText}</p>
         </div>
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className={cn(
-            "flex h-12 flex-1 items-center gap-2 rounded-xl border px-4 font-mono text-sm font-medium",
-            hasSlugChange ? "border-[#F0D2A6] bg-amber-50 text-amber-800" : "border-[#e9dcd2] bg-[#FBF4EF] text-[#6B4B40]",
-          )}>
+          <div
+            className={cn(
+              "flex h-12 flex-1 items-center gap-2 rounded-xl border px-4 font-mono text-sm font-medium",
+              hasSlugChange
+                ? "border-[#F0D2A6] bg-amber-50 text-amber-800"
+                : "border-[#e9dcd2] bg-[#FBF4EF] text-[#6B4B40]",
+            )}
+          >
             {isSlugLocked ? (
               <>
                 <span className="truncate">{slugDraft || "fallback-only"}</span>
-                <Lock className={cn("ml-auto h-4 w-4 shrink-0", hasSlugChange ? "text-amber-700" : "text-[#A38376]")} aria-hidden="true" />
+                <Lock
+                  className={cn(
+                    "ml-auto h-4 w-4 shrink-0",
+                    hasSlugChange ? "text-amber-700" : "text-[#A38376]",
+                  )}
+                  aria-hidden="true"
+                />
               </>
             ) : (
               <>
@@ -97,29 +111,53 @@ export function WebsiteLinkCard({
                   placeholder="your-name"
                   className="h-auto border-0 bg-transparent px-0 py-0 text-sm font-semibold text-[#2D1F1A] shadow-none focus-visible:ring-0"
                 />
-                <span className="ml-auto shrink-0 text-xs text-[#A38376]">.{subdomainBaseDomain}</span>
+                <span className="ml-auto shrink-0 text-xs text-[#A38376]">
+                  .{subdomainBaseDomain}
+                </span>
               </>
             )}
           </div>
 
-          <span className={cn(
-            "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold whitespace-nowrap",
-            hasSlugChange ? "bg-amber-50 text-amber-800" : isSlugLocked ? "bg-[#f1e7df] text-[#A38376]" : "bg-[#FFF4EE] text-[#A7583C]",
-          )}>
-            {isSlugLocked ? <Lock className="h-3.5 w-3.5" aria-hidden="true" /> : <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />}
-            {hasSlugChange ? "Pending publish" : isSlugLocked ? "Locked after first publish" : "Editable before publish"}
+          <span
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold whitespace-nowrap",
+              hasSlugChange
+                ? "bg-amber-50 text-amber-800"
+                : isSlugLocked
+                  ? "bg-[#f1e7df] text-[#A38376]"
+                  : "bg-[#FFF4EE] text-[#A7583C]",
+            )}
+          >
+            {isSlugLocked ? (
+              <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            {hasSlugChange
+              ? "Pending publish"
+              : isSlugLocked
+                ? "Locked after first publish"
+                : "Editable before publish"}
           </span>
 
           {isSlugLocked && (
-            <Button type="button" disabled={isUpdating} onClick={onChangeUrl} className="h-10 rounded-xl border border-[#eacdbf] bg-[#FFF7F3] px-4 text-sm font-semibold text-[#A7583C] shadow-none hover:bg-[#fff0e8]">
+            <Button
+              type="button"
+              disabled={isUpdating}
+              onClick={onChangeUrl}
+              className="h-10 rounded-xl border border-[#eacdbf] bg-[#FFF7F3] px-4 text-sm font-semibold text-[#A7583C] shadow-none hover:bg-[#fff0e8]"
+            >
               Change subdomain
             </Button>
           )}
         </div>
 
         <div className="mt-3 space-y-2 text-sm">
-          <p className="break-all font-mono text-[#6B4B40]">
-            Preview: <span className="text-[#2D1F1A]">{websiteUrlDraft || `https://${subdomainBaseDomain}`}</span>
+          <p className="font-mono break-all text-[#6B4B40]">
+            Preview:{" "}
+            <span className="text-[#2D1F1A]">
+              {websiteUrlDraft || `https://${subdomainBaseDomain}`}
+            </span>
           </p>
           {slugDraftError ? (
             <p className="text-[#A86F2A]">{slugDraftError}</p>
@@ -133,12 +171,12 @@ export function WebsiteLinkCard({
             </p>
           )}
           {websiteUrlFallback ? (
-            <p className="break-all font-mono text-xs text-[#A38376]">
+            <p className="font-mono text-xs break-all text-[#A38376]">
               Central fallback: {websiteUrlFallback}
             </p>
           ) : null}
           {websiteUrlProduction && websiteUrlProduction !== displayUrl ? (
-            <p className="break-all font-mono text-xs text-[#A38376]">
+            <p className="font-mono text-xs break-all text-[#A38376]">
               Production: {websiteUrlProduction}
             </p>
           ) : null}

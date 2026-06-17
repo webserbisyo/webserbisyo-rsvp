@@ -25,9 +25,12 @@ export default function DashboardWebsiteAccessLoading() {
               <DashboardSkeletonLine className="h-6 w-32 rounded-full" />
               <DashboardSkeletonLine className="h-7 w-24 rounded-full" />
             </div>
-          <div className="grid gap-3">
+            <div className="grid gap-3">
               {Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className="grid grid-cols-[2.75rem_1fr_auto] items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white px-4 py-3">
+                <div
+                  key={index}
+                  className="grid grid-cols-[2.75rem_1fr_auto] items-center gap-3 rounded-2xl border border-[color:var(--dash-border)] bg-white px-4 py-3"
+                >
                   <DashboardSkeletonBlock className="h-11 w-11 rounded-[0.875rem]" />
                   <div className="space-y-2">
                     <DashboardSkeletonLine className="h-4 w-24 rounded-full" />
@@ -47,9 +50,12 @@ export default function DashboardWebsiteAccessLoading() {
               <DashboardSkeletonLine className="h-6 w-36 rounded-full" />
               <DashboardSkeletonLine className="h-7 w-24 rounded-full" />
             </div>
-          <div className="grid gap-3">
+            <div className="grid gap-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="flex items-center justify-between rounded-xl bg-[#FEFAF7] px-4 py-3">
+                <div
+                  key={index}
+                  className="flex items-center justify-between rounded-xl bg-[#FEFAF7] px-4 py-3"
+                >
                   <DashboardSkeletonLine className="h-4 w-28 rounded-full" />
                   <DashboardSkeletonLine className="h-4 w-20 rounded-full" />
                 </div>

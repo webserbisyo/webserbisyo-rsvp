@@ -62,10 +62,7 @@ export function getVisibilitySummary(visibility: VisibilityMode) {
   }
 }
 
-export function getPublishStatusState(
-  isPublished: boolean,
-  hasPendingChanges: boolean,
-) {
+export function getPublishStatusState(isPublished: boolean, hasPendingChanges: boolean) {
   if (!isPublished) {
     return "hidden" as const;
   }

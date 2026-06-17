@@ -7,7 +7,7 @@ import {
 
 export default function DashboardSettingsLoading() {
   return (
-    <div className="space-y-6 pb-24 pt-2 md:pb-8">
+    <div className="space-y-6 pt-2 pb-24 md:pb-8">
       <DashboardSkeletonLine className="h-4 w-20 rounded-full" />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         <div className="space-y-6">
@@ -23,7 +23,10 @@ export default function DashboardSettingsLoading() {
             </div>
             <div className="mt-7">
               {Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className="flex items-center gap-5 border-t border-[#eee5db] py-6 first:border-t-0">
+                <div
+                  key={index}
+                  className="flex items-center gap-5 border-t border-[#eee5db] py-6 first:border-t-0"
+                >
                   <DashboardSkeletonCircle className="h-10 w-10" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <DashboardSkeletonLine className="h-4 w-16 rounded-full" />

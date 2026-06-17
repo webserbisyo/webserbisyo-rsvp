@@ -147,7 +147,9 @@ export type EventWebsiteRenderModel = {
 export const eventWebsiteRenderModelSectionKeys =
   eventWebsiteContentSectionKeys as readonly EventWebsiteSectionKey[];
 
-export function buildEventWebsiteRenderModel(content: EventWebsiteContent): EventWebsiteRenderModel {
+export function buildEventWebsiteRenderModel(
+  content: EventWebsiteContent,
+): EventWebsiteRenderModel {
   return {
     attireDressCode: {
       colorMotifNote: content.sections.attire_motif.colorMotifNote,

@@ -148,7 +148,16 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 
   const submit = handleSubmit((values) => {
     startTransition(async () => {
-      const result = await submitApplicationAction(values);
+      // Capture Meta cookie values for CAPI event matching
+      const fbFbp = getCookieValue("_fbp");
+      const fbFbc = getCookieValue("_fbc") ?? buildFbcFromUrl();
+      const enrichedValues = {
+        ...values,
+        ...(fbFbp ? { fbFbp } : {}),
+        ...(fbFbc ? { fbFbc } : {}),
+      };
+
+      const result = await submitApplicationAction(enrichedValues);
 
       if (!result.ok) {
         assignServerFieldErrors(result.fieldErrors);
@@ -512,4 +521,29 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
       <p className="af-footer">© 2024 WebSerbisyo RSVP · Made with love for Filipino couples</p>
     </div>
   );
+}
+
+function getCookieValue(name: string): string | null {
+  if (typeof document === "undefined") return null;
+
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${name}=`));
+
+  return match ? decodeURIComponent(match.split("=").slice(1).join("=")) : null;
+}
+
+function buildFbcFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fbclid = params.get("fbclid");
+
+    if (!fbclid) return null;
+
+    return `fb.1.${Date.now()}.${fbclid}`;
+  } catch {
+    return null;
+  }
 }

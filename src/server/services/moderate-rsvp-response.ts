@@ -59,10 +59,9 @@ export async function moderateRsvpResponses(input: ModerateRsvpResponseInput) {
 
     if (error) {
       if (error.message?.includes("CAPACITY_EXCEEDED")) {
-        throw new ServiceError(
-          "Cannot restore RSVP. Guest limit reached for this event.",
-          { code: "CAPACITY_EXCEEDED" }
-        );
+        throw new ServiceError("Cannot restore RSVP. Guest limit reached for this event.", {
+          code: "CAPACITY_EXCEEDED",
+        });
       }
       assertServiceSuccess(error, "Failed to approve RSVP response.");
     }

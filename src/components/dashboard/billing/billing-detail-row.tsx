@@ -15,8 +15,12 @@ export function BillingDetailRow({ className, label, value }: BillingDetailRowPr
         className,
       )}
     >
-      <span className="text-[15px] font-medium text-[color:var(--dash-heading-muted)]">{label}</span>
-      <div className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">{value}</div>
+      <span className="text-[15px] font-medium text-[color:var(--dash-heading-muted)]">
+        {label}
+      </span>
+      <div className="text-right text-[15px] font-semibold text-[color:var(--dash-foreground)]">
+        {value}
+      </div>
     </div>
   );
 }

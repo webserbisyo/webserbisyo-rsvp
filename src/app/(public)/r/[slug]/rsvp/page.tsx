@@ -3,10 +3,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-response-form";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
-import {
-  formatEventWebsiteDate,
-  formatEventWebsiteTime,
-} from "@/lib/event-website/formatting";
+import { formatEventWebsiteDate, formatEventWebsiteTime } from "@/lib/event-website/formatting";
 import { type PublicEventDto } from "@/lib/event-website/public-event";
 import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { buildOfficialPublicRsvpStandaloneUrl } from "@/lib/public-rsvp-url";
@@ -98,7 +95,7 @@ function PublicStandaloneRsvpPageContent({
   const eventDateTimeLabel =
     formatPublicDate(event.eventDate) && formatPublicTime(event.eventTime)
       ? `${formatPublicDate(event.eventDate)} at ${formatPublicTime(event.eventTime)}`
-      : formatPublicDate(event.eventDate) ?? formatPublicTime(event.eventTime);
+      : (formatPublicDate(event.eventDate) ?? formatPublicTime(event.eventTime));
   const venueLabel = [event.venueName?.trim(), event.venueAddress?.trim()]
     .filter(Boolean)
     .join(", ");
@@ -110,7 +107,7 @@ function PublicStandaloneRsvpPageContent({
       <div className="event-preview-public-shell">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 rounded-[28px] border border-[#eadbd0] bg-white/95 p-6 shadow-sm shadow-[#8a4b2e]/10 sm:p-8">
           <div className="space-y-3 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#a38376]">
+            <p className="text-[11px] font-semibold tracking-[0.24em] text-[#a38376] uppercase">
               Dedicated RSVP
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-[#2d1f1a] sm:text-4xl">

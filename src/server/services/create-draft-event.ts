@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  isValidPublicRsvpSlug,
-  sanitizePublicRsvpSlug,
-} from "@/lib/public-rsvp-slugs";
+import { isValidPublicRsvpSlug, sanitizePublicRsvpSlug } from "@/lib/public-rsvp-slugs";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { TablesInsert } from "@/lib/supabase/types";
 import { assertServiceData, assertServiceSuccess, ServiceError } from "./service-error";

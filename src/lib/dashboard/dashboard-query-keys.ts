@@ -11,7 +11,9 @@ export const dashboardKeys = {
   event: () => [...dashboardKeys.all, "event"] as const,
   home: () => [...dashboardKeys.all, "home"] as const,
   responses: (filters?: DashboardResponsesFilters) =>
-    filters ? ([...dashboardKeys.all, "responses", filters] as const) : ([...dashboardKeys.all, "responses"] as const),
+    filters
+      ? ([...dashboardKeys.all, "responses", filters] as const)
+      : ([...dashboardKeys.all, "responses"] as const),
   settings: () => [...dashboardKeys.all, "settings"] as const,
   websiteAccess: () => [...dashboardKeys.all, "website-access"] as const,
 };

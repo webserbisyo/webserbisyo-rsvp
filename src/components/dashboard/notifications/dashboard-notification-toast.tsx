@@ -30,15 +30,13 @@ export function DashboardNotificationToast({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.875rem] font-semibold text-[#191311]">
-          {body}
-        </p>
+        <p className="truncate text-[0.875rem] font-semibold text-[#191311]">{body}</p>
       </div>
 
       <button
         type="button"
         onClick={onAction}
-        className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-xl border border-[#d66f49] bg-[#d66f49] px-3 text-xs font-black text-white shadow-[0_4px_12px_rgba(198,90,55,0.22)] transition hover:bg-[#c66240] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d66f49]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf4]"
+        className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-xl border border-[#d66f49] bg-[#d66f49] px-3 text-xs font-black text-white shadow-[0_4px_12px_rgba(198,90,55,0.22)] transition hover:bg-[#c66240] focus-visible:ring-2 focus-visible:ring-[#d66f49]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf4] focus-visible:outline-none"
         aria-label={`${ctaLabel}: ${title}`}
       >
         {ctaLabel}

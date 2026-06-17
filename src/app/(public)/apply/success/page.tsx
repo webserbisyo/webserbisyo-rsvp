@@ -33,7 +33,7 @@ export default async function ApplySuccessPage({ searchParams }: ApplySuccessPag
         plan={summary?.preferred_plan ?? null}
         referenceCode={referenceCode}
       />
-      <PublicMetaPixelScripts eventName="Lead" pixels={pixels} />
+      <PublicMetaPixelScripts eventName={["Lead", "CompleteRegistration"]} pixels={pixels} />
     </>
   );
 }

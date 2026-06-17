@@ -41,7 +41,9 @@ type WebsiteAccessStatusInput = {
 
 const requiredSections = new Set(["host_info", "main_event", "venue", "rsvp_form"]);
 
-export function summarizeEventWebsiteSections(content: EventWebsiteContent): EventWebsiteSectionSummary {
+export function summarizeEventWebsiteSections(
+  content: EventWebsiteContent,
+): EventWebsiteSectionSummary {
   const activeSectionCount = eventWebsiteContentSectionKeys.filter(
     (sectionKey) => requiredSections.has(sectionKey) || content.layout.enabledSections[sectionKey],
   ).length;
@@ -137,7 +139,7 @@ function isDraftNewerThanPublished(savedAt?: string | null, publishedAt?: string
 }
 
 function normalizeIsoDateString(value?: string | null) {
-  return parseIsoDateString(value) === null ? null : value ?? null;
+  return parseIsoDateString(value) === null ? null : (value ?? null);
 }
 
 function parseIsoDateString(value?: string | null) {

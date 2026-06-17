@@ -53,7 +53,10 @@ export const RSVP_RESPONSE_SOURCE_LABELS = {
   internal: "Internal",
 };
 
-export function getResponseStatusLabel(status: RsvpResponseStatus, reviewStatus?: RsvpResponseReviewStatus) {
+export function getResponseStatusLabel(
+  status: RsvpResponseStatus,
+  reviewStatus?: RsvpResponseReviewStatus,
+) {
   if (reviewStatus === "rejected") {
     return "Rejected";
   }
@@ -117,21 +120,13 @@ export function matchesResponseSearch(record: RsvpResponseRecord, query: string)
     return true;
   }
 
-  const searchableValues = [
-    record.guestName,
-    record.email ?? "",
-    record.phone ?? "",
-  ];
+  const searchableValues = [record.guestName, record.email ?? "", record.phone ?? ""];
 
   return searchableValues.some((value) => value.toLowerCase().includes(normalizedQuery));
 }
 
 export function getResponseInitials(name: string) {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
+  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
 
   return parts.map((part) => part[0]?.toUpperCase() ?? "").join("") || "RS";
 }

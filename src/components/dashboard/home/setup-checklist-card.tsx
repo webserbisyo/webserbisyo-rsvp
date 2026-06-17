@@ -20,7 +20,9 @@ export function SetupChecklistCard({
       <div className="ws-panel-header">
         <div>
           <h3>Setup Checklist</h3>
-          <p>{completedCount} of {totalCount} completed</p>
+          <p>
+            {completedCount} of {totalCount} completed
+          </p>
         </div>
         <strong>{progress}%</strong>
       </div>

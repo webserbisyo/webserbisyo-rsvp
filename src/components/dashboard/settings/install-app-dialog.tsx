@@ -13,7 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { EllipsisVertical, Share, Smartphone, SquarePlus, XIcon, LaptopMinimal } from "lucide-react";
+import {
+  EllipsisVertical,
+  Share,
+  Smartphone,
+  SquarePlus,
+  XIcon,
+  LaptopMinimal,
+} from "lucide-react";
 
 type InstallPlatform = "android" | "desktop" | "iphone";
 
@@ -41,7 +48,8 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Tap the <InlineInstructionIcon icon={<Share className="size-4" />} label="Share" /> Share icon near the address bar.
+            Tap the <InlineInstructionIcon icon={<Share className="size-4" />} label="Share" />{" "}
+            Share icon near the address bar.
           </>
         ),
         hint: "It may be at the bottom on some devices.",
@@ -49,7 +57,12 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Tap <InlineInstructionIcon icon={<SquarePlus className="size-4" />} label="Add to Home Screen" /> Add to Home Screen.
+            Tap{" "}
+            <InlineInstructionIcon
+              icon={<SquarePlus className="size-4" />}
+              label="Add to Home Screen"
+            />{" "}
+            Add to Home Screen.
           </>
         ),
         hint: "Scroll down or tap More if you can’t find it.",
@@ -66,7 +79,9 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Tap the <InlineInstructionIcon icon={<EllipsisVertical className="size-4" />} label="menu" /> menu near the address bar.
+            Tap the{" "}
+            <InlineInstructionIcon icon={<EllipsisVertical className="size-4" />} label="menu" />{" "}
+            menu near the address bar.
           </>
         ),
       },
@@ -85,7 +100,12 @@ const INSTALL_GUIDES: Record<InstallPlatform, InstallGuide> = {
       {
         body: (
           <>
-            Click the <InlineInstructionIcon icon={<DesktopInstallGlyph className="size-4" />} label="install" /> install icon in the address bar.
+            Click the{" "}
+            <InlineInstructionIcon
+              icon={<DesktopInstallGlyph className="size-4" />}
+              label="install"
+            />{" "}
+            install icon in the address bar.
           </>
         ),
       },
@@ -166,10 +186,10 @@ export function InstallAppDialog({
                 </div>
               </div>
               <div className="min-w-0">
-                <DialogTitle className="text-2xl font-black leading-tight tracking-[-0.04em] text-[#171313] sm:text-[1.95rem]">
+                <DialogTitle className="text-2xl leading-tight font-black tracking-[-0.04em] text-[#171313] sm:text-[1.95rem]">
                   Install WebSerbisyo RSVP
                 </DialogTitle>
-                <DialogDescription className="mt-1 text-[14px] font-bold leading-6 text-[#705f57]">
+                <DialogDescription className="mt-1 text-[14px] leading-6 font-bold text-[#705f57]">
                   Open your dashboard faster from your home screen.
                 </DialogDescription>
               </div>
@@ -190,7 +210,7 @@ export function InstallAppDialog({
                   key={option.value}
                   value={option.value}
                   className={cn(
-                    "h-10 rounded-full border border-[#ead9ce] bg-white px-4 text-sm font-black text-[#725f56] shadow-none transition hover:bg-[#fff6ef] after:hidden",
+                    "h-10 rounded-full border border-[#ead9ce] bg-white px-4 text-sm font-black text-[#725f56] shadow-none transition after:hidden hover:bg-[#fff6ef]",
                     "data-active:border-[#d9a891] data-active:bg-[#fff0e7] data-active:text-[#c45f3f] data-active:shadow-[0_8px_20px_rgba(196,95,63,0.12)]",
                   )}
                 >
@@ -205,15 +225,15 @@ export function InstallAppDialog({
             <ol className="space-y-5">
               {guide.steps.map((step, index) => (
                 <li key={index} className="grid grid-cols-[38px_minmax(0,1fr)] items-start gap-4">
-                  <span className="mt-0.5 grid h-9 w-9 place-items-center rounded-full bg-[#221c18] text-base font-black leading-none text-white shadow-[0_8px_18px_rgba(34,28,24,0.20)]">
+                  <span className="mt-0.5 grid h-9 w-9 place-items-center rounded-full bg-[#221c18] text-base leading-none font-black text-white shadow-[0_8px_18px_rgba(34,28,24,0.20)]">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[17px] font-black leading-7 text-[#1f1a17]">
-                      {step.body}
-                    </p>
+                    <p className="text-[17px] leading-7 font-black text-[#1f1a17]">{step.body}</p>
                     {step.hint ? (
-                      <p className="mt-1 text-[14px] font-bold leading-6 text-[#79675f]">{step.hint}</p>
+                      <p className="mt-1 text-[14px] leading-6 font-bold text-[#79675f]">
+                        {step.hint}
+                      </p>
                     ) : null}
                   </div>
                 </li>
@@ -237,15 +257,9 @@ export function InstallAppDialog({
   );
 }
 
-function InlineInstructionIcon({
-  icon,
-  label,
-}: {
-  icon: ReactNode;
-  label: string;
-}) {
+function InlineInstructionIcon({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="mx-1 inline-flex h-7 w-7 translate-y-[1px] items-center justify-center rounded-lg border border-[#ead6c9] bg-white text-[#171313] align-middle shadow-[0_5px_12px_rgba(70,45,31,0.09)]">
+    <span className="mx-1 inline-flex h-7 w-7 translate-y-[1px] items-center justify-center rounded-lg border border-[#ead6c9] bg-white align-middle text-[#171313] shadow-[0_5px_12px_rgba(70,45,31,0.09)]">
       <span className="sr-only">{label}</span>
       <span aria-hidden="true">{icon}</span>
     </span>

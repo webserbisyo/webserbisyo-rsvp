@@ -52,9 +52,7 @@ const NOTIFICATION_ROWS: Array<{
   },
 ];
 
-export function NotificationPreferencesCard({
-  notifications,
-}: NotificationPreferencesCardProps) {
+export function NotificationPreferencesCard({ notifications }: NotificationPreferencesCardProps) {
   const [inAppState, setInAppState] = useState(() => ({
     billing_update: notifications.preferences.billing_update.inAppEnabled,
     guest_message: notifications.preferences.guest_message.inAppEnabled,
@@ -178,7 +176,9 @@ export function NotificationPreferencesCard({
           ? "blocked"
           : previousStatus,
       );
-      toast.error(error instanceof Error ? error.message : "Push notification setting could not be updated.");
+      toast.error(
+        error instanceof Error ? error.message : "Push notification setting could not be updated.",
+      );
     } finally {
       setPushSaving(false);
     }
@@ -216,7 +216,7 @@ export function NotificationPreferencesCard({
           }}
         />
       </div>
-      <p className="mt-4 text-sm font-semibold leading-relaxed text-[#b09887]">
+      <p className="mt-4 text-sm leading-relaxed font-semibold text-[#b09887]">
         Preferences sync with your WebSerbisyo account.
       </p>
     </SettingsCard>
@@ -240,7 +240,7 @@ function NotificationRowGroup({
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.72rem] font-black uppercase tracking-[0.18em] text-[color:var(--dash-brand)]">
+    <p className="text-[0.72rem] font-black tracking-[0.18em] text-[color:var(--dash-brand)] uppercase">
       {children}
     </p>
   );
@@ -310,11 +310,13 @@ function NotificationRow({
         className="dashboard-settings-notification-row__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f6eee5] text-[color:var(--dash-brand)]"
         aria-hidden="true"
       >
-        <Icon className={`h-[18px] w-[18px]${disabled ? " opacity-50" : ""}`} />
+        <Icon className={`h-[18px] w-[18px]${disabled ? "opacity-50" : ""}`} />
       </div>
       <div className="dashboard-settings-notification-row__content min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className={`text-base font-black ${disabled ? "text-[#a9978b]" : "text-[color:var(--dash-foreground)]"}`}>
+          <p
+            className={`text-base font-black ${disabled ? "text-[#a9978b]" : "text-[color:var(--dash-foreground)]"}`}
+          >
             {label}
           </p>
           {badge}

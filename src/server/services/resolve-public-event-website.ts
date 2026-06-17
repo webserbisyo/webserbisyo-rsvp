@@ -170,10 +170,7 @@ async function loadPublishedPublicEvent(input: {
   return toPublicEventDto(event as PublicEventRecord | null, input.accessToken);
 }
 
-async function toPublicEventDto(
-  event: PublicEventRecord | null,
-  accessToken?: string | null,
-) {
+async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: string | null) {
   if (!event || !event.published_at || !isPublicRenderingEventTypeEnabled(event.event_type)) {
     return null;
   }
@@ -196,9 +193,8 @@ async function toPublicEventDto(
     return null;
   }
 
-  const { mergeEventWebsiteContent, parseEventWebsiteContentJson } = await import(
-    "@/lib/event-website/hydration"
-  );
+  const { mergeEventWebsiteContent, parseEventWebsiteContentJson } =
+    await import("@/lib/event-website/hydration");
   const parsedContent = parseEventWebsiteContentJson(eventContent.published_content_json);
 
   if (!parsedContent) {

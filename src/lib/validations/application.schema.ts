@@ -170,6 +170,8 @@ export function createApplicationSchema(options?: { requireManualPaymentOption?:
     eventDate: OptionalDateSchema,
     eventLocation: optionalText(180, "Event location is too long."),
     eventType: ApplicationEnabledEventTypeSchema,
+    fbFbc: z.string().max(500).optional(),
+    fbFbp: z.string().max(500).optional(),
     fullName: FullNameSchema,
     message: optionalText(1000, "Message is too long."),
     phone: PhoneSchema,

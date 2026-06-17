@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 const QrCodeCanvas = dynamic(
   () => import("./qr-code-canvas").then((module) => module.QrCodeCanvas),
   {
-    loading: () => <div className="h-[148px] w-[148px] rounded-xl bg-[#f7ede6]" aria-hidden="true" />,
+    loading: () => (
+      <div className="h-[148px] w-[148px] rounded-xl bg-[#f7ede6]" aria-hidden="true" />
+    ),
     ssr: false,
   },
 );
@@ -65,7 +67,9 @@ export function QrCodesCard({
             disabled={disabled}
             icon={<Globe2 className="h-5 w-5" aria-hidden="true" />}
             onCopy={onCopyWebsiteLink}
-            onDownload={() => downloadQr("website-access-website-qr", `${slugPublished}-website-qr.png`)}
+            onDownload={() =>
+              downloadQr("website-access-website-qr", `${slugPublished}-website-qr.png`)
+            }
             subtitle="Opens the full event website."
             title="Website QR"
             url={websiteUrl}

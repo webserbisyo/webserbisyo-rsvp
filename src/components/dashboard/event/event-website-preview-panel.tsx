@@ -52,14 +52,13 @@ export function EventWebsitePreviewPanel({
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const visiblePreviewSections = websiteFlowSections.filter(
     (section) =>
-      supportedSectionKeySet.has(section.key) &&
-      (section.required || enabledSections[section.key]),
+      supportedSectionKeySet.has(section.key) && (section.required || enabledSections[section.key]),
   );
   const selectedSectionIsOff = Boolean(
     selectedSection &&
-      !selectedSection.required &&
-      !selectedSection.comingSoon &&
-      !enabledSections[selectedSection.key],
+    !selectedSection.required &&
+    !selectedSection.comingSoon &&
+    !enabledSections[selectedSection.key],
   );
   const selectedSectionKey = selectedSection?.key;
   const activeDevice = showDeviceTabs ? device : defaultDevice;
@@ -70,7 +69,11 @@ export function EventWebsitePreviewPanel({
   const showCustomPreview = previewMode === "custom";
 
   useEffect(() => {
-    if (!selectedSectionKey || !supportedSectionKeySet.has(selectedSectionKey) || selectedSectionIsOff) {
+    if (
+      !selectedSectionKey ||
+      !supportedSectionKeySet.has(selectedSectionKey) ||
+      selectedSectionIsOff
+    ) {
       return;
     }
 
@@ -97,7 +100,10 @@ export function EventWebsitePreviewPanel({
 
   return (
     <aside
-      className={cn("event-website-preview-space", mode === "responsive" && "event-website-preview-space--responsive")}
+      className={cn(
+        "event-website-preview-space",
+        mode === "responsive" && "event-website-preview-space--responsive",
+      )}
       aria-label="Website preview"
     >
       <div className="event-preview-panel">
@@ -214,12 +220,23 @@ function PreviewDeviceTabs({
   onDeviceChange: (device: EventWebsitePreviewDevice) => void;
 }) {
   return (
-    <Tabs value={device} onValueChange={(value) => onDeviceChange(value as EventWebsitePreviewDevice)}>
+    <Tabs
+      value={device}
+      onValueChange={(value) => onDeviceChange(value as EventWebsitePreviewDevice)}
+    >
       <TabsList className="event-preview-device-tabs" aria-label="Preview device">
-        <TabsTrigger value="desktop" className="event-preview-device-trigger" aria-label="Desktop preview">
+        <TabsTrigger
+          value="desktop"
+          className="event-preview-device-trigger"
+          aria-label="Desktop preview"
+        >
           <Monitor className="size-3.5" aria-hidden="true" />
         </TabsTrigger>
-        <TabsTrigger value="mobile" className="event-preview-device-trigger" aria-label="Mobile preview">
+        <TabsTrigger
+          value="mobile"
+          className="event-preview-device-trigger"
+          aria-label="Mobile preview"
+        >
           <Smartphone className="size-3.5" aria-hidden="true" />
         </TabsTrigger>
       </TabsList>

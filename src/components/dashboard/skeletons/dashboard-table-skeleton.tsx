@@ -1,4 +1,8 @@
-import { DashboardCardSkeleton, DashboardSkeletonBlock, DashboardSkeletonLine } from "./dashboard-card-skeleton";
+import {
+  DashboardCardSkeleton,
+  DashboardSkeletonBlock,
+  DashboardSkeletonLine,
+} from "./dashboard-card-skeleton";
 
 export function DashboardTableSkeleton({
   mobileCardCount = 3,
@@ -10,7 +14,7 @@ export function DashboardTableSkeleton({
   showFooter?: boolean;
 }) {
   return (
-    <DashboardCardSkeleton className="rounded-[1.6rem] overflow-hidden" contentClassName="p-0">
+    <DashboardCardSkeleton className="overflow-hidden rounded-[1.6rem]" contentClassName="p-0">
       <div className="border-b border-[color:var(--dash-border)] bg-white/70 p-4">
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: 5 }).map((_, index) => (
@@ -64,7 +68,10 @@ export function DashboardTableSkeleton({
         </div>
         <div className="divide-y divide-[color:color-mix(in_srgb,var(--dash-border)_88%,white)]">
           {Array.from({ length: rowCount }).map((_, index) => (
-            <div key={index} className="grid grid-cols-[48px_1.2fr_1fr_130px_110px_150px] gap-4 px-5 py-4">
+            <div
+              key={index}
+              className="grid grid-cols-[48px_1.2fr_1fr_130px_110px_150px] gap-4 px-5 py-4"
+            >
               <DashboardSkeletonBlock className="h-5 w-5 rounded-md" />
               <div className="space-y-2">
                 <DashboardSkeletonLine className="h-4 w-36 rounded-xl" />

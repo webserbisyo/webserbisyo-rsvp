@@ -654,8 +654,12 @@ function buildNotesColumns(contentWidth: number, includes: ExportIncludeState): 
 function buildExportStats(rows: RsvpResponseRecord[]) {
   return {
     totalResponses: rows.length,
-    attendingCount: rows.filter((row) => row.status === "attending" && row.reviewStatus === "approved").length,
-    notAttendingCount: rows.filter((row) => row.status === "not_attending" && row.reviewStatus === "approved").length,
+    attendingCount: rows.filter(
+      (row) => row.status === "attending" && row.reviewStatus === "approved",
+    ).length,
+    notAttendingCount: rows.filter(
+      (row) => row.status === "not_attending" && row.reviewStatus === "approved",
+    ).length,
     totalPartySize: rows
       .filter((row) => row.status === "attending" && row.reviewStatus === "approved")
       .reduce((sum, row) => sum + row.partySize, 0),

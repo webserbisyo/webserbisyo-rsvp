@@ -206,7 +206,9 @@ export function buildPublicRenderableSections(
   eventType: string | null | undefined,
   guestbookMessageCount = 0,
 ): EventWebsiteSectionKey[] {
-  const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(eventWebsiteRenderModelSectionKeys);
+  const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(
+    eventWebsiteRenderModelSectionKeys,
+  );
   const resolvedSections = resolveEventWebsiteSections(eventType);
   const allowedSections = new Set<EventWebsiteSectionKey>(
     [...resolvedSections.requiredSections, ...resolvedSections.optionalSections].map(

@@ -71,18 +71,18 @@ function getFallbackMessage(status: number) {
 function isDashboardSuccessPayload<T>(payload: unknown): payload is DashboardSuccessPayload<T> {
   return Boolean(
     payload &&
-      typeof payload === "object" &&
-      "ok" in payload &&
-      (payload as { ok?: unknown }).ok === true &&
-      "data" in payload,
+    typeof payload === "object" &&
+    "ok" in payload &&
+    (payload as { ok?: unknown }).ok === true &&
+    "data" in payload,
   );
 }
 
 function isDashboardErrorPayload(payload: unknown): payload is DashboardErrorPayload {
   return Boolean(
     payload &&
-      typeof payload === "object" &&
-      "ok" in payload &&
-      (payload as { ok?: unknown }).ok === false,
+    typeof payload === "object" &&
+    "ok" in payload &&
+    (payload as { ok?: unknown }).ok === false,
   );
 }

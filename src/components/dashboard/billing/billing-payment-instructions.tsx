@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Copy, QrCode } from "lucide-react";
 import { toast } from "sonner";
-import type { BillingPageData, BillingPaymentOption } from "@/components/dashboard/billing/billing-types";
+import type {
+  BillingPageData,
+  BillingPaymentOption,
+} from "@/components/dashboard/billing/billing-types";
 import { MessengerLogo } from "@/components/dashboard/billing/messenger-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +36,10 @@ export function BillingPaymentInstructions({
 }: BillingPaymentInstructionsProps) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.17em] text-[color:var(--dash-heading-muted)]">
+      <p className="text-xs font-bold tracking-[0.17em] text-[color:var(--dash-heading-muted)] uppercase">
         Payment Instructions
       </p>
-      <p className="mt-4 text-base font-medium leading-relaxed text-[color:var(--dash-muted)]">
+      <p className="mt-4 text-base leading-relaxed font-medium text-[color:var(--dash-muted)]">
         {paymentInstructions.description}
       </p>
       {paymentInstructions.options.length > 0 ? (
@@ -90,7 +93,7 @@ function PaymentOptionDialog({
         <button
           type="button"
           className={cn(
-            "group w-full cursor-pointer rounded-[1.35rem] border px-4 py-4 text-left shadow-[0_8px_22px_rgba(99,74,55,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(99,74,55,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--dash-brand)_26%,white)]",
+            "group w-full cursor-pointer rounded-[1.35rem] border px-4 py-4 text-left shadow-[0_8px_22px_rgba(99,74,55,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(99,74,55,0.1)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--dash-brand)_26%,white)] focus-visible:outline-none",
             PROVIDER_STYLES[providerKey] ??
               "border-[color:var(--dash-divider)] bg-[color:color-mix(in_srgb,var(--dash-surface-muted)_60%,white)] text-[color:var(--dash-foreground)] hover:border-[color:var(--dash-border-hover)]",
           )}
@@ -103,9 +106,7 @@ function PaymentOptionDialog({
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent
-        className="max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-[1.6rem] border border-[#ead8c4] bg-[#fffaf3] p-0 text-[color:var(--dash-foreground)] shadow-[0_24px_60px_rgba(83,54,33,0.16)] ring-[#f1e2d0]/80 sm:max-w-[500px]"
-      >
+      <DialogContent className="max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-[1.6rem] border border-[#ead8c4] bg-[#fffaf3] p-0 text-[color:var(--dash-foreground)] shadow-[0_24px_60px_rgba(83,54,33,0.16)] ring-[#f1e2d0]/80 sm:max-w-[500px]">
         <div className="px-5 pt-5 pb-0 sm:px-5 sm:pt-5">
           <DialogHeader className="gap-1 pr-10">
             <DialogTitle className="text-[1.08rem] font-black tracking-[-0.01em] text-[color:var(--dash-foreground)]">
@@ -121,10 +122,10 @@ function PaymentOptionDialog({
             <div className="rounded-[1.15rem] border border-[#efe0cf] bg-[color:color-mix(in_srgb,#fff9f1_78%,white)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--dash-heading-muted)]">
+                  <p className="text-xs font-bold tracking-[0.14em] text-[color:var(--dash-heading-muted)] uppercase">
                     Account number
                   </p>
-                  <p className="mt-2 break-all text-sm font-black tracking-[0.02em] text-[color:var(--dash-foreground)]">
+                  <p className="mt-2 text-sm font-black tracking-[0.02em] break-all text-[color:var(--dash-foreground)]">
                     {option.accountNumber || "—"}
                   </p>
                 </div>
@@ -145,7 +146,7 @@ function PaymentOptionDialog({
             </div>
 
             <div className="rounded-[1.2rem] border border-[#efe0cf] bg-[color:color-mix(in_srgb,#fff8ef_76%,white)] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-              <p className="text-center text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--dash-heading-muted)]">
+              <p className="text-center text-xs font-bold tracking-[0.14em] text-[color:var(--dash-heading-muted)] uppercase">
                 QR code
               </p>
               {option.qrImageUrl ? (
@@ -154,7 +155,7 @@ function PaymentOptionDialog({
                   <img
                     src={option.qrImageUrl}
                     alt={`${providerLabel} payment QR code`}
-                    className="mx-auto aspect-square w-full max-w-[260px] max-h-[32dvh] object-contain"
+                    className="mx-auto aspect-square max-h-[32dvh] w-full max-w-[260px] object-contain"
                   />
                 </div>
               ) : (
@@ -197,7 +198,7 @@ function PaymentOptionDialog({
 function DetailBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[1.15rem] border border-[#efe0cf] bg-[color:color-mix(in_srgb,#fff9f1_78%,white)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--dash-heading-muted)]">
+      <p className="text-xs font-bold tracking-[0.14em] text-[color:var(--dash-heading-muted)] uppercase">
         {label}
       </p>
       <p className="mt-2 text-sm font-semibold text-[color:var(--dash-foreground)]">{value}</p>

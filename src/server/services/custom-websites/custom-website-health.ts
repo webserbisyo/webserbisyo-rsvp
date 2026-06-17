@@ -2,7 +2,11 @@ import "server-only";
 
 import type { TablesUpdate } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ServiceError, assertServiceData, assertServiceSuccess } from "@/server/services/service-error";
+import {
+  ServiceError,
+  assertServiceData,
+  assertServiceSuccess,
+} from "@/server/services/service-error";
 import { assertSafeCustomFrontendOriginForFetch } from "@/server/services/custom-websites/custom-website-origin";
 import type { CustomWebsiteHealthStatus } from "@/server/services/custom-websites/types";
 
@@ -16,10 +20,7 @@ export type CustomWebsiteHealthCheckResult = {
   statusCode: number | null;
 };
 
-export async function checkCustomWebsiteOriginHealth(input: {
-  clientId: string;
-  eventId: string;
-}) {
+export async function checkCustomWebsiteOriginHealth(input: { clientId: string; eventId: string }) {
   const supabase = createAdminClient();
   const { data: row, error: loadError } = await supabase
     .from("client_custom_websites")
@@ -60,7 +61,9 @@ export async function checkCustomWebsiteOriginHealth(input: {
   return data;
 }
 
-export async function probeCustomWebsiteOrigin(origin: string): Promise<CustomWebsiteHealthCheckResult> {
+export async function probeCustomWebsiteOrigin(
+  origin: string,
+): Promise<CustomWebsiteHealthCheckResult> {
   const checkedAt = new Date().toISOString();
 
   try {

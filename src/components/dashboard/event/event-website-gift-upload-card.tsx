@@ -75,7 +75,7 @@ export function EventWebsiteGiftUploadCard({
             ? "Uploading image..."
             : file
               ? file.name
-              : image?.path.split("/").pop() ?? "No file selected yet."}
+              : (image?.path.split("/").pop() ?? "No file selected yet.")}
         </span>
         {file || image ? (
           <Button

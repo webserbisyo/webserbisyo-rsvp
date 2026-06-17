@@ -16,7 +16,8 @@ export function DashboardBreadcrumb() {
   const detail = useDashboardBreadcrumbDetail();
 
   const currentItem = dashboardNavItems.find(
-    (item) => item.href === pathname || (item.href !== "/dashboard" && pathname.startsWith(item.href)),
+    (item) =>
+      item.href === pathname || (item.href !== "/dashboard" && pathname.startsWith(item.href)),
   );
   const label = currentItem?.label ?? "Home";
   const showDetail = pathname === "/dashboard/event" && detail;

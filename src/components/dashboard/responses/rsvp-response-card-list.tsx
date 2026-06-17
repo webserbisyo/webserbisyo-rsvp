@@ -64,7 +64,7 @@ export function RsvpResponseCardList({
               <div className="min-w-0 flex-1 overflow-hidden">
                 <div className="min-w-0 overflow-hidden">
                   <p
-                    className="truncate text-base font-bold leading-5 text-[#2b2521]"
+                    className="truncate text-base leading-5 font-bold text-[#2b2521]"
                     title={response.guestName}
                   >
                     {response.guestName}
@@ -87,12 +87,12 @@ export function RsvpResponseCardList({
               <RsvpResponsePartySizeBadge partySize={response.partySize} />
               {hasMessage ? <RsvpResponseMessageBadge response={response} /> : null}
               {response.messagePublicStatus === "approved" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold ring-1 ring-emerald-200 text-emerald-700">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                   <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                   In Guestbook
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fbf7f3] px-2.5 py-1 text-xs font-semibold ring-1 ring-[#eadbd0] text-[#8a7c72]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fbf7f3] px-2.5 py-1 text-xs font-semibold text-[#8a7c72] ring-1 ring-[#eadbd0]">
                   <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                   Not on Guestbook
                 </span>
@@ -130,7 +130,16 @@ export function RsvpResponseCardList({
 function formatMobileFullDate(dateStr: string) {
   const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return dateStr;
-  const d = new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" }).format(date);
-  const t = new Intl.DateTimeFormat("en-PH", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(date);
+  const d = new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "Asia/Manila",
+  }).format(date);
+  const t = new Intl.DateTimeFormat("en-PH", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Manila",
+  }).format(date);
   return `${d} \u00B7 ${t}`;
 }

@@ -28,7 +28,7 @@ export function BillingPaymentProviderLogo({
     return (
       <span
         className={cn(
-          "inline-flex h-10 min-w-20 items-center justify-center rounded-full px-3 text-sm font-black tracking-[0.04em] uppercase text-[color:var(--dash-foreground)]",
+          "inline-flex h-10 min-w-20 items-center justify-center rounded-full px-3 text-sm font-black tracking-[0.04em] text-[color:var(--dash-foreground)] uppercase",
           className,
         )}
       >

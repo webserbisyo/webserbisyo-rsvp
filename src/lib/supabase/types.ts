@@ -943,6 +943,8 @@ export type Database = {
           event_date: string | null;
           event_location: string | null;
           event_type: string;
+          fb_fbc: string | null;
+          fb_fbp: string | null;
           full_name: string;
           id: string;
           message: string | null;
@@ -967,6 +969,8 @@ export type Database = {
           event_date?: string | null;
           event_location?: string | null;
           event_type: string;
+          fb_fbc?: string | null;
+          fb_fbp?: string | null;
           full_name: string;
           id?: string;
           message?: string | null;
@@ -991,6 +995,8 @@ export type Database = {
           event_date?: string | null;
           event_location?: string | null;
           event_type?: string;
+          fb_fbc?: string | null;
+          fb_fbp?: string | null;
           full_name?: string;
           id?: string;
           message?: string | null;

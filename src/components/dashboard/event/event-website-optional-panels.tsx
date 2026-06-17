@@ -47,7 +47,10 @@ export function OptionalCountdownPanel({
 }: SharedOptionalPanelProps) {
   const values = previewDraft.countdown;
 
-  function updateCountdownValue(fieldId: keyof EventWebsitePreviewDraft["countdown"], value: string) {
+  function updateCountdownValue(
+    fieldId: keyof EventWebsitePreviewDraft["countdown"],
+    value: string,
+  ) {
     onPreviewDraftChange({
       ...previewDraft,
       countdown: { ...previewDraft.countdown, [fieldId]: value },
@@ -83,7 +86,10 @@ export function OptionalReceptionPanel({
 }: SharedOptionalPanelProps) {
   const values = previewDraft.reception;
 
-  function updateReceptionValue(fieldId: keyof EventWebsitePreviewDraft["reception"], value: string) {
+  function updateReceptionValue(
+    fieldId: keyof EventWebsitePreviewDraft["reception"],
+    value: string,
+  ) {
     onPreviewDraftChange({
       ...previewDraft,
       reception: { ...previewDraft.reception, [fieldId]: value },
@@ -102,12 +108,24 @@ export function OptionalReceptionPanel({
           onChange={(value) => updateReceptionValue("title", value)}
         />
         <TimeField
-          field={{ colSpan: "half", id: "receptionStartTime", label: "Start Time", maxLength: 8, showCounter: false }}
+          field={{
+            colSpan: "half",
+            id: "receptionStartTime",
+            label: "Start Time",
+            maxLength: 8,
+            showCounter: false,
+          }}
           value={values.startTime}
           onChange={(value) => updateReceptionValue("startTime", value)}
         />
         <TimeField
-          field={{ colSpan: "half", id: "receptionEndTime", label: "End Time", maxLength: 8, showCounter: false }}
+          field={{
+            colSpan: "half",
+            id: "receptionEndTime",
+            label: "End Time",
+            maxLength: 8,
+            showCounter: false,
+          }}
           value={values.endTime}
           onChange={(value) => updateReceptionValue("endTime", value)}
         />
@@ -189,7 +207,10 @@ export function OptionalTimelinePanel({
   }
 
   function addItem() {
-    updateItems([...items, { description: "", id: createEventWebsiteDraftItemId("timeline-item"), time: "", title: "" }]);
+    updateItems([
+      ...items,
+      { description: "", id: createEventWebsiteDraftItemId("timeline-item"), time: "", title: "" },
+    ]);
   }
 
   function removeItem(index: number) {
@@ -290,7 +311,10 @@ export function OptionalEntouragePanel({
   }
 
   function addGroup() {
-    updateGroups([...groups, { groupTitle: "", id: createEventWebsiteDraftItemId("entourage-group"), names: "" }]);
+    updateGroups([
+      ...groups,
+      { groupTitle: "", id: createEventWebsiteDraftItemId("entourage-group"), names: "" },
+    ]);
   }
 
   function removeGroup(index: number) {
@@ -368,7 +392,10 @@ export function OptionalPrincipalSponsorsPanel({
 }: SharedOptionalPanelProps) {
   const values = previewDraft.principalSponsors;
 
-  function updateValues(fieldId: keyof EventWebsitePreviewDraft["principalSponsors"], value: string) {
+  function updateValues(
+    fieldId: keyof EventWebsitePreviewDraft["principalSponsors"],
+    value: string,
+  ) {
     onPreviewDraftChange({
       ...previewDraft,
       principalSponsors: { ...values, [fieldId]: value },
@@ -382,7 +409,12 @@ export function OptionalPrincipalSponsorsPanel({
     >
       <EditorGroup title="Sponsor Intro">
         <TextAreaField
-          field={{ colSpan: "full", id: "principalSponsorsIntroLine", label: "Section Intro", maxLength: 220 }}
+          field={{
+            colSpan: "full",
+            id: "principalSponsorsIntroLine",
+            label: "Section Intro",
+            maxLength: 220,
+          }}
           value={values.introLine}
           onChange={(value) => updateValues("introLine", value)}
         />
@@ -504,10 +536,7 @@ export function OptionalGuestbookPanel({
   }
 
   return (
-    <EditorShell
-      title="Guestbook"
-      description="Managed from RSVP Responses."
-    >
+    <EditorShell title="Guestbook" description="Managed from RSVP Responses.">
       <EditorGroup title="Guestbook Copy">
         <TextField
           field={{ id: "guestbookSectionTitle", label: "Section Title", maxLength: 80 }}
@@ -552,7 +581,7 @@ export function OptionalGuestbookPanel({
                 key={message.id}
                 className="rounded-[1.2rem] border border-[#eadbd0] bg-[#fffaf6] px-4 py-3"
               >
-                <p className="text-sm font-semibold leading-6 text-[#2b2521] [overflow-wrap:anywhere]">
+                <p className="text-sm leading-6 font-semibold [overflow-wrap:anywhere] text-[#2b2521]">
                   {message.guestName}
                 </p>
               </li>
@@ -692,8 +721,7 @@ export function OptionalGiftDetailsPanel({
         throw new Error(message);
       }
 
-      const latestOption =
-        latestDraftRef.current.giftDetails.options[index] ?? currentOption;
+      const latestOption = latestDraftRef.current.giftDetails.options[index] ?? currentOption;
 
       updateOption(index, {
         ...latestOption,
@@ -816,7 +844,12 @@ export function OptionalGiftDetailsPanel({
                   ...values,
                   options: [
                     ...values.options,
-                    { file: null, id: createEventWebsiteDraftItemId("gift-option"), image: null, title: "" },
+                    {
+                      file: null,
+                      id: createEventWebsiteDraftItemId("gift-option"),
+                      image: null,
+                      title: "",
+                    },
                   ],
                 })
               }
@@ -942,10 +975,7 @@ export function OptionalMusicEffectsPanel({
   }
 
   return (
-    <EditorShell
-      title="Music & Effects"
-      description="Add a music link for the wedding website."
-    >
+    <EditorShell title="Music & Effects" description="Add a music link for the wedding website.">
       <EditorGroup title="Background Music">
         <TextField
           field={{ id: "musicEffectsTitle", label: "Music Title", maxLength: 80 }}
@@ -1013,7 +1043,10 @@ export function OptionalExtraInfoPanel({
   }
 
   function addItem() {
-    updateItems([...items, { details: "", id: createEventWebsiteDraftItemId("extra-info"), title: "" }]);
+    updateItems([
+      ...items,
+      { details: "", id: createEventWebsiteDraftItemId("extra-info"), title: "" },
+    ]);
   }
 
   function removeItem(index: number) {

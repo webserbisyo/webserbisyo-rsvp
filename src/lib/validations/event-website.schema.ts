@@ -391,15 +391,18 @@ export const EventWebsiteStoryMessageSectionSchema = z
   })
   .strict();
 
-const emailDraftSchema = draftText(120).refine((value) => {
-  if (!value) {
-    return true;
-  }
+const emailDraftSchema = draftText(120).refine(
+  (value) => {
+    if (!value) {
+      return true;
+    }
 
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}, {
-  error: "Enter a valid email address.",
-});
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  },
+  {
+    error: "Enter a valid email address.",
+  },
+);
 
 export const EventWebsiteContactSocialsSectionSchema = z
   .object({
@@ -446,16 +449,17 @@ export const EventWebsiteEnabledSectionsSchema = z.object(enabledSectionsShape).
 export const EventWebsiteLayoutSchema = z
   .object({
     enabledSections: EventWebsiteEnabledSectionsSchema,
-    sectionOrder: z.array(EventWebsiteContentSectionKeySchema).length(SECTION_COUNT).superRefine(
-      (value, ctx) => {
+    sectionOrder: z
+      .array(EventWebsiteContentSectionKeySchema)
+      .length(SECTION_COUNT)
+      .superRefine((value, ctx) => {
         if (new Set(value).size !== SECTION_COUNT) {
           ctx.addIssue({
             code: "custom",
             message: "Section order must contain each accepted section exactly once.",
           });
         }
-      },
-    ),
+      }),
   })
   .strict();
 
@@ -498,10 +502,7 @@ export const EventWebsiteCanonicalEventPatchSchema = z
       normalizeNullableTextInput,
       z.union([z.string().max(180), z.null()]),
     ),
-    venue_name: z.preprocess(
-      normalizeNullableTextInput,
-      z.union([z.string().max(80), z.null()]),
-    ),
+    venue_name: z.preprocess(normalizeNullableTextInput, z.union([z.string().max(80), z.null()])),
   })
   .strict()
   .superRefine((value, ctx) => {

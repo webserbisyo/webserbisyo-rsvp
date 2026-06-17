@@ -99,9 +99,7 @@ export async function moderateResponseGuestbookMessages(
   const rowsWithMessage = ownedRows.filter((row) => hasMessage(row.message));
   const skippedNoMessageCount = ownedRows.length - rowsWithMessage.length;
   const targetStatus = input.mode === "approve" ? "approved" : "private";
-  const rowsToUpdate = rowsWithMessage.filter(
-    (row) => row.message_public_status !== targetStatus,
-  );
+  const rowsToUpdate = rowsWithMessage.filter((row) => row.message_public_status !== targetStatus);
   const skippedAlreadySetCount = rowsWithMessage.length - rowsToUpdate.length;
 
   if (rowsToUpdate.length === 0) {

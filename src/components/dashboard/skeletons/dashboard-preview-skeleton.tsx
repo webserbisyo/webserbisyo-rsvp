@@ -1,4 +1,8 @@
-import { DashboardSkeletonBlock, DashboardSkeletonCircle, DashboardSkeletonLine } from "./dashboard-card-skeleton";
+import {
+  DashboardSkeletonBlock,
+  DashboardSkeletonCircle,
+  DashboardSkeletonLine,
+} from "./dashboard-card-skeleton";
 import { cn } from "@/lib/utils";
 
 export function DashboardPreviewSkeleton({
@@ -9,7 +13,10 @@ export function DashboardPreviewSkeleton({
   compact?: boolean;
 }) {
   return (
-    <aside className={cn("event-website-preview-space", className)} aria-label="Website preview loading">
+    <aside
+      className={cn("event-website-preview-space", className)}
+      aria-label="Website preview loading"
+    >
       <div className="event-preview-panel">
         <div className={cn("event-preview-frame-shell", compact && "is-compact")}>
           <div className="event-preview-browser-bar">

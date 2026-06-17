@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
-  mapAppVisibilityToDb, mapDbVisibilityToApp,
+  mapAppVisibilityToDb,
+  mapDbVisibilityToApp,
 } from "@/components/dashboard/website-access/website-access-utils";
 import {
   isDashboardBuilderEventTypeEnabled,
@@ -261,7 +262,9 @@ async function requireOwnedEvent(eventId: string, clientId: string) {
   const supabase = await createServerSupabaseClient();
   const { data: event, error } = await supabase
     .from("rsvp_events")
-    .select("id, client_id, draft_event_slug, event_slug, event_type, subdomain_slug, visibility, status, published_at")
+    .select(
+      "id, client_id, draft_event_slug, event_slug, event_type, subdomain_slug, visibility, status, published_at",
+    )
     .eq("id", eventId)
     .eq("client_id", clientId)
     .maybeSingle();

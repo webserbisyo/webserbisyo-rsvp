@@ -89,7 +89,7 @@ export function EditableGuestLimitStat({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-[var(--dash-border)] bg-white px-2.5 text-[12px] font-semibold leading-none text-[var(--dash-brand-active)] transition hover:border-[var(--dash-border-hover)] hover:bg-[var(--dash-brand-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dash-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-[var(--dash-border)] bg-white px-2.5 text-[12px] leading-none font-semibold text-[var(--dash-brand-active)] transition hover:border-[var(--dash-border-hover)] hover:bg-[var(--dash-brand-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dash-ring)] disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canEdit}
             >
               <span>Edit</span>
@@ -102,10 +102,10 @@ export function EditableGuestLimitStat({
             sideOffset={10}
             avoidCollisions
             collisionPadding={16}
-            className="min-w-[18rem] w-[min(19rem,calc(100vw-2rem))] gap-3 rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-lg"
+            className="border-border bg-popover text-popover-foreground w-[min(19rem,calc(100vw-2rem))] min-w-[18rem] gap-3 rounded-2xl border p-4 shadow-lg"
           >
             <PopoverHeader className="gap-1">
-              <PopoverTitle className="text-sm font-semibold text-foreground">
+              <PopoverTitle className="text-foreground text-sm font-semibold">
                 Edit guest limit
               </PopoverTitle>
             </PopoverHeader>
@@ -126,13 +126,13 @@ export function EditableGuestLimitStat({
                 aria-invalid={validationError || serverError ? "true" : "false"}
                 aria-describedby={validationError || serverError ? errorId : undefined}
                 aria-label="Guest limit"
-                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm font-semibold text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+                className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-ring/20 h-11 w-full rounded-2xl border px-3 text-sm font-semibold shadow-sm transition outline-none focus:ring-2"
                 placeholder="Enter guest limit"
               />
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="inline-flex h-10 items-center rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
+                  className="bg-primary text-primary-foreground focus-visible:outline-ring disabled:border-border disabled:bg-muted disabled:text-muted-foreground inline-flex h-10 items-center rounded-xl px-3.5 text-sm font-semibold shadow-sm transition hover:brightness-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:border disabled:opacity-100"
                   onClick={handleSave}
                   disabled={!canSave}
                 >
@@ -140,7 +140,7 @@ export function EditableGuestLimitStat({
                 </button>
                 <button
                   type="button"
-                  className="inline-flex h-10 items-center rounded-xl border border-border bg-secondary px-3.5 text-sm font-semibold text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60"
+                  className="border-border bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-ring inline-flex h-10 items-center rounded-xl border px-3.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={handleCancel}
                   disabled={isPending}
                 >

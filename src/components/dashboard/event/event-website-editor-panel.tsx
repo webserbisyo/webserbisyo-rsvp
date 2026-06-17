@@ -567,7 +567,10 @@ function MainEventForm({
   const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
   const values = isWedding ? previewDraft.ceremony : localValues;
 
-  function updateMainEventValue(fieldId: keyof EventWebsitePreviewDraft["ceremony"], value: string) {
+  function updateMainEventValue(
+    fieldId: keyof EventWebsitePreviewDraft["ceremony"],
+    value: string,
+  ) {
     if (!isWedding) {
       setLocalValues((current) => ({ ...current, [fieldId]: value }));
       return;
@@ -588,17 +591,35 @@ function MainEventForm({
           onChange={(value) => updateMainEventValue("eventLabel", value)}
         />
         <DateField
-          field={{ colSpan: "half", id: "eventDate", label: "Date", maxLength: 10, showCounter: false }}
+          field={{
+            colSpan: "half",
+            id: "eventDate",
+            label: "Date",
+            maxLength: 10,
+            showCounter: false,
+          }}
           value={values.eventDate}
           onChange={(value) => updateMainEventValue("eventDate", value)}
         />
         <TimeField
-          field={{ colSpan: "half", id: "eventTime", label: "Start Time", maxLength: 8, showCounter: false }}
+          field={{
+            colSpan: "half",
+            id: "eventTime",
+            label: "Start Time",
+            maxLength: 8,
+            showCounter: false,
+          }}
           value={values.eventTime}
           onChange={(value) => updateMainEventValue("eventTime", value)}
         />
         <TimeField
-          field={{ colSpan: "half", id: "endTime", label: "End Time", maxLength: 8, showCounter: false }}
+          field={{
+            colSpan: "half",
+            id: "endTime",
+            label: "End Time",
+            maxLength: 8,
+            showCounter: false,
+          }}
           value={values.endTime}
           onChange={(value) => updateMainEventValue("endTime", value)}
         />
@@ -646,7 +667,10 @@ function VenueForm({
   }
 
   return (
-    <EditorShell title={section.label} description="Set the main location guests need to find for your event.">
+    <EditorShell
+      title={section.label}
+      description="Set the main location guests need to find for your event."
+    >
       <EditorGroup title="Location Details">
         <TextField
           field={{
@@ -735,18 +759,9 @@ function RsvpFormConfigPanel({
       description="Choose the basic questions guests will answer when they RSVP."
     >
       <EditorGroup title="RSVP Fields">
-        <AlwaysOnRow
-          title="Guest Name"
-          description="Required · always included"
-        />
-        <AlwaysOnRow
-          title={RSVP_EMAIL_LABEL}
-          description="Required · always included"
-        />
-        <AlwaysOnRow
-          title="Attendance"
-          description="Required · attending or not attending"
-        />
+        <AlwaysOnRow title="Guest Name" description="Required · always included" />
+        <AlwaysOnRow title={RSVP_EMAIL_LABEL} description="Required · always included" />
+        <AlwaysOnRow title="Attendance" description="Required · attending or not attending" />
         <ToggleRow
           title={RSVP_PHONE_LABEL}
           description="Optional contact field"
@@ -762,7 +777,12 @@ function RsvpFormConfigPanel({
         {plusOneEnabled ? (
           <div className="event-editor-nested-settings">
             <TextField
-              field={{ id: "companionLimit", label: "Maximum Companions Allowed", maxLength: 2, showCounter: false }}
+              field={{
+                id: "companionLimit",
+                label: "Maximum Companions Allowed",
+                maxLength: 2,
+                showCounter: false,
+              }}
               inputMode="numeric"
               inputType="number"
               max={10}
@@ -808,8 +828,8 @@ function RsvpFormConfigPanel({
           {savedCustomQuestionCount > 0 ? (
             <p className="mt-2 text-xs text-[#946d5e]">
               {savedCustomQuestionCount} saved custom{" "}
-              {savedCustomQuestionCount === 1 ? "question remains" : "questions remain"} hidden
-              from guests until full submission support is added.
+              {savedCustomQuestionCount === 1 ? "question remains" : "questions remain"} hidden from
+              guests until full submission support is added.
             </p>
           ) : null}
         </div>
@@ -1070,8 +1090,20 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
         `${groom} + ${bride}`,
       ],
       fields: [
-        { colSpan: "half", id: "groomName", label: "Groom's Name", maxLength: 40, placeholder: "Juan" },
-        { colSpan: "half", id: "brideName", label: "Bride's Name", maxLength: 40, placeholder: "Maria" },
+        {
+          colSpan: "half",
+          id: "groomName",
+          label: "Groom's Name",
+          maxLength: 40,
+          placeholder: "Juan",
+        },
+        {
+          colSpan: "half",
+          id: "brideName",
+          label: "Bride's Name",
+          maxLength: 40,
+          placeholder: "Maria",
+        },
         { colSpan: "full", id: "displayAs", label: "Display As", maxLength: 80, type: "select" },
         ...baseHostMessage,
       ],

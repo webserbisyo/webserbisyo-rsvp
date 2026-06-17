@@ -71,7 +71,7 @@ export function EventWebsiteStatusCard({
             {statusPill.label}
           </span>
         )}
-        <span className="event-status-card-count text-sm font-semibold tabular-nums text-[--dash-foreground]">
+        <span className="event-status-card-count text-sm font-semibold text-[--dash-foreground] tabular-nums">
           {sectionSummary.activeSectionCount}/{sectionSummary.totalSectionCount}
         </span>
       </div>

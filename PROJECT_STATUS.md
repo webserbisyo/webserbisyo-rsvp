@@ -24,7 +24,6 @@ Phase 1 Supabase foundation is complete, including the RSVP base schema, RLS, an
 
 ## Completed Today - 2026-04-27
 
-
 ### Project direction locked
 
 - Confirmed this RSVP MVP will remain a clean standalone Next.js app for v1.
@@ -110,13 +109,6 @@ Commit:
 ```txt
 0b1deac docs: align RSVP project rules and status tracking
 ```
-
-
-
-
-
-
-
 
 ## Completed Today — 2026-04-27
 
@@ -315,6 +307,7 @@ Build confirms these runtime routes exist:
 ## Completed Today — 2026-04-29
 
 ### Phase E.1 — Minimal Platform Admin Shell
+
 - Built the protected `/admin` shell foundation for platform-admin use.
 - Added reusable admin shell structure with desktop sidebar, mobile navigation, page container, page header, feedback states, and shared cards/badges.
 - Added safe placeholder admin routes for Events, Payments, Logs, Settings, More, and Offline.
@@ -324,6 +317,7 @@ Build confirms these runtime routes exist:
 - Confirmed admin routes remain focused on platform-admin operations only, with no client dashboard UI.
 
 ### Phase E.2A — Admin Home Operational Snapshot
+
 - Wired `/admin` to a real read-only operational snapshot pattern.
 - Added server-side admin home query structure through `src/server/queries/admin-home.ts`.
 - Added Admin Home stat cards, Needs Attention list, Recent Applications grid, and Quick Actions.
@@ -331,6 +325,7 @@ Build confirms these runtime routes exist:
 - Kept counts and summaries read-only and safe for the current phase.
 
 ### Phase E.2B — Applications List + Detail Read-Only Workflow
+
 - Finalized `/admin/applications` as the real read-only application review queue.
 - Finalized `/admin/applications/[id]` as the real read-only application detail page.
 - Added server-only application queries through `src/server/queries/admin-applications.ts`.
@@ -342,7 +337,9 @@ Build confirms these runtime routes exist:
 - Preserved server-side auth/RLS boundaries with no service-role exposure and no schema/RLS changes.
 
 ### Checkpoint Commit
+
 - Created checkpoint commit:
 
 ```text
 d8e38c0 feat: finalize RSVP admin shell and applications read-only workflow
+```

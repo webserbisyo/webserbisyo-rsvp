@@ -264,14 +264,20 @@ export async function markClientAsPaid(
     warnings.push(auditWarning);
   }
 
+  const capiSourceUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://webserbisyo-rsvp.vercel.app"}/apply/success`;
   const capiWarning = await safeSendMetaCapiPurchase({
     actorUserId,
     amount: payment.amount_paid,
     clientId: client.id,
     customerEmail: application.email,
+    customerFullName: application.full_name,
     customerPhone: application.phone,
     eventId: event.id,
+    externalId: application.reference_code,
+    fbc: application.fb_fbc,
+    fbp: application.fb_fbp,
     paymentId: payment.id,
+    sourceUrl: capiSourceUrl,
   });
 
   if (capiWarning) {
@@ -1220,7 +1226,7 @@ async function getApprovedApplicationForClient(clientId: string) {
   const { data, error } = await supabase
     .from("rsvp_applications")
     .select(
-      "id, approved_at, email, full_name, phone, preferred_manual_payment_option, preferred_plan",
+      "id, approved_at, email, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, fb_fbp, fb_fbc",
     )
     .eq("approved_client_id", clientId)
     .order("approved_at", { ascending: false, nullsFirst: false })

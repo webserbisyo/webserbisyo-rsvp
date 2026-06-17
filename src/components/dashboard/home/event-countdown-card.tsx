@@ -43,13 +43,7 @@ function CountdownTile({ label, value }: { label: string; value: number }) {
   );
 }
 
-function CountdownMessage({
-  description,
-  title,
-}: {
-  description: string;
-  title: string;
-}) {
+function CountdownMessage({ description, title }: { description: string; title: string }) {
   return (
     <div className="ws-after-event">
       <div className="ws-after-copy">
@@ -131,7 +125,10 @@ export function EventCountdownCard({
         </div>
 
         <div className="ws-hero-right ws-hero-empty">
-          <p>Your hero countdown, RSVP deadline, and event timeline will appear here once your date is set.</p>
+          <p>
+            Your hero countdown, RSVP deadline, and event timeline will appear here once your date
+            is set.
+          </p>
         </div>
       </motion.section>
     );
@@ -170,7 +167,8 @@ export function EventCountdownCard({
 
         <div className="ws-hero-right ws-hero-empty">
           <p>
-            Your event date is saved. Add the ceremony time to unlock the live countdown and guest-facing timeline.
+            Your event date is saved. Add the ceremony time to unlock the live countdown and
+            guest-facing timeline.
           </p>
         </div>
       </motion.section>

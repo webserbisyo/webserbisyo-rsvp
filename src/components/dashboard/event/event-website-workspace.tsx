@@ -169,7 +169,11 @@ function EnabledEventWebsiteWorkspace({
         requestedSection: initialSelectedSection,
         resolvedSections,
       }),
-    [eventWebsiteData.eventWebsiteContent.layout.enabledSections, initialSelectedSection, resolvedSections],
+    [
+      eventWebsiteData.eventWebsiteContent.layout.enabledSections,
+      initialSelectedSection,
+      resolvedSections,
+    ],
   );
   const [selectedSection, setSelectedSection] = useState<EventWebsiteSectionKey>(initialSectionKey);
   const [previewScrollRequest, setPreviewScrollRequest] = useState(0);
@@ -178,21 +182,16 @@ function EnabledEventWebsiteWorkspace({
     [resolvedSections.optionalSections, resolvedSections.requiredSections],
   );
   const defaultWebsiteFlowSections = useMemo(
-    () =>
-      buildInitialWebsiteFlow(
-        editableSections,
-        savedContent.layout.sectionOrder,
-      ),
+    () => buildInitialWebsiteFlow(editableSections, savedContent.layout.sectionOrder),
     [editableSections, savedContent.layout.sectionOrder],
   );
   const [websiteFlowSections, setWebsiteFlowSections] = useState(defaultWebsiteFlowSections);
   const [enabledSections, setEnabledSections] = useState(() =>
-    buildInitialEnabledSections(
-      editableSections,
-      savedContent.layout.enabledSections,
-    ),
+    buildInitialEnabledSections(editableSections, savedContent.layout.enabledSections),
   );
-  const [previewDraft, setPreviewDraft] = useState(() => buildInitialPreviewDraft(eventWebsiteData));
+  const [previewDraft, setPreviewDraft] = useState(() =>
+    buildInitialPreviewDraft(eventWebsiteData),
+  );
   const currentContent = useMemo(
     () =>
       buildEventWebsiteContentFromPreviewDraft({
@@ -207,7 +206,10 @@ function EnabledEventWebsiteWorkspace({
     () => !areContentsEqual(currentContent, savedContent),
     [currentContent, savedContent],
   );
-  const sectionSummary = useMemo(() => summarizeEventWebsiteSections(currentContent), [currentContent]);
+  const sectionSummary = useMemo(
+    () => summarizeEventWebsiteSections(currentContent),
+    [currentContent],
+  );
   const savedAt = useMemo(() => getEventWebsiteSavedAt(savedContent), [savedContent]);
   const workflowStatus = useMemo(
     () =>
@@ -217,7 +219,13 @@ function EnabledEventWebsiteWorkspace({
         publishedAt: eventWebsiteData.snapshotPublishedAt ?? eventWebsiteData.publishedAt,
         savedAt,
       }),
-    [eventWebsiteData.publishState, eventWebsiteData.publishedAt, eventWebsiteData.snapshotPublishedAt, isDirty, savedAt],
+    [
+      eventWebsiteData.publishState,
+      eventWebsiteData.publishedAt,
+      eventWebsiteData.snapshotPublishedAt,
+      isDirty,
+      savedAt,
+    ],
   );
   const sectionsByKey = useMemo(
     () =>
@@ -326,93 +334,96 @@ function EnabledEventWebsiteWorkspace({
     setIsResponsiveEditorOpen(true);
   }
 
-  const persistDraft = useCallback(async (trigger: "auto" | "manual") => {
-    clearAutosaveTimer();
+  const persistDraft = useCallback(
+    async (trigger: "auto" | "manual") => {
+      clearAutosaveTimer();
 
-    if (!eventWebsiteData.eventId) {
-      const message = "The current event could not be resolved for saving.";
-      setDraftSaveState("error");
-      setDraftSaveErrorMessage(message);
+      if (!eventWebsiteData.eventId) {
+        const message = "The current event could not be resolved for saving.";
+        setDraftSaveState("error");
+        setDraftSaveErrorMessage(message);
 
-      if (trigger === "manual") {
-        toast.error(message);
+        if (trigger === "manual") {
+          toast.error(message);
+        }
+        return;
       }
-      return;
-    }
 
-    if (saveInFlightRef.current) {
-      queuedAutosaveRef.current =
-        draftRevisionRef.current > (activeSaveRevisionRef.current ?? draftRevisionRef.current);
-      return;
-    }
+      if (saveInFlightRef.current) {
+        queuedAutosaveRef.current =
+          draftRevisionRef.current > (activeSaveRevisionRef.current ?? draftRevisionRef.current);
+        return;
+      }
 
-    saveInFlightRef.current = true;
-    setDraftSaveState("saving");
-    setDraftSaveErrorMessage(null);
-    markEventWebsiteDraftSavePending(eventWebsiteData.eventId, true);
+      saveInFlightRef.current = true;
+      setDraftSaveState("saving");
+      setDraftSaveErrorMessage(null);
+      markEventWebsiteDraftSavePending(eventWebsiteData.eventId, true);
 
-    let currentTrigger = trigger;
+      let currentTrigger = trigger;
 
-    try {
-      while (true) {
-        queuedAutosaveRef.current = false;
-        const submittedRevision = draftRevisionRef.current;
-        activeSaveRevisionRef.current = submittedRevision;
+      try {
+        while (true) {
+          queuedAutosaveRef.current = false;
+          const submittedRevision = draftRevisionRef.current;
+          activeSaveRevisionRef.current = submittedRevision;
 
-        const result = await saveEventWebsiteAction({
-          content: latestContentRef.current,
-          eventId: eventWebsiteData.eventId,
-        });
+          const result = await saveEventWebsiteAction({
+            content: latestContentRef.current,
+            eventId: eventWebsiteData.eventId,
+          });
 
-        if (!result.ok) {
-          const message =
-            result.error === "The request could not be completed."
-              ? "Event Website draft could not be saved."
-              : result.error;
-          setDraftSaveState("error");
-          setDraftSaveErrorMessage(message);
+          if (!result.ok) {
+            const message =
+              result.error === "The request could not be completed."
+                ? "Event Website draft could not be saved."
+                : result.error;
+            setDraftSaveState("error");
+            setDraftSaveErrorMessage(message);
+
+            if (currentTrigger === "manual") {
+              toast.error(message);
+            }
+            return;
+          }
+
+          if (submittedRevision > lastSavedRevisionRef.current) {
+            lastSavedRevisionRef.current = submittedRevision;
+            setSavedContent(result.data.content);
+            emitDashboardSyncEvent({
+              eventId: eventWebsiteData.eventId,
+              name: "event-website:draft-updated",
+            });
+            invalidateEventWebsiteQueries(queryClient);
+          }
+
+          const hasNewerLocalEdits = draftRevisionRef.current > submittedRevision;
+          if (hasNewerLocalEdits) {
+            queuedAutosaveRef.current = true;
+          }
+
+          setDraftSaveState(hasNewerLocalEdits ? "saving" : "saved");
+          setDraftSaveErrorMessage(null);
 
           if (currentTrigger === "manual") {
-            toast.error(message);
+            toast.success("Event Website draft saved.");
           }
-          return;
+
+          if (!queuedAutosaveRef.current) {
+            return;
+          }
+
+          currentTrigger = "auto";
+          setDraftSaveState("saving");
         }
-
-        if (submittedRevision > lastSavedRevisionRef.current) {
-          lastSavedRevisionRef.current = submittedRevision;
-          setSavedContent(result.data.content);
-          emitDashboardSyncEvent({
-            eventId: eventWebsiteData.eventId,
-            name: "event-website:draft-updated",
-          });
-          invalidateEventWebsiteQueries(queryClient);
-        }
-
-        const hasNewerLocalEdits = draftRevisionRef.current > submittedRevision;
-        if (hasNewerLocalEdits) {
-          queuedAutosaveRef.current = true;
-        }
-
-        setDraftSaveState(hasNewerLocalEdits ? "saving" : "saved");
-        setDraftSaveErrorMessage(null);
-
-        if (currentTrigger === "manual") {
-          toast.success("Event Website draft saved.");
-        }
-
-        if (!queuedAutosaveRef.current) {
-          return;
-        }
-
-        currentTrigger = "auto";
-        setDraftSaveState("saving");
+      } finally {
+        saveInFlightRef.current = false;
+        activeSaveRevisionRef.current = null;
+        markEventWebsiteDraftSavePending(eventWebsiteData.eventId, false);
       }
-    } finally {
-      saveInFlightRef.current = false;
-      activeSaveRevisionRef.current = null;
-      markEventWebsiteDraftSavePending(eventWebsiteData.eventId, false);
-    }
-  }, [eventWebsiteData.eventId, queryClient]);
+    },
+    [eventWebsiteData.eventId, queryClient],
+  );
 
   function handleSaveChanges() {
     startTransition(async () => {
@@ -493,7 +504,14 @@ function EnabledEventWebsiteWorkspace({
       label: "All changes saved",
       tone: "neutral",
     };
-  }, [draftSaveErrorMessage, draftSaveState, isDirty, workflowStatus.label, workflowStatus.state, workflowStatus.tone]);
+  }, [
+    draftSaveErrorMessage,
+    draftSaveState,
+    isDirty,
+    workflowStatus.label,
+    workflowStatus.state,
+    workflowStatus.tone,
+  ]);
 
   const saveButtonLabel = isPending
     ? "Saving..."
@@ -593,9 +611,9 @@ function EnabledEventWebsiteWorkspace({
         </TabsList>
 
         <TabsContent value="flow" className="event-website-mode-panel">
-            <EventWebsiteLeftPane
-              allowFullCardDrag={false}
-              autoSaveEnabled={autoSaveEnabled}
+          <EventWebsiteLeftPane
+            allowFullCardDrag={false}
+            autoSaveEnabled={autoSaveEnabled}
             className="event-website-pane--responsive-flow"
             defaultWebsiteFlowSections={defaultWebsiteFlowSections}
             enabledSections={enabledSections}
@@ -791,9 +809,12 @@ function LockedEventWebsiteWorkspace({
             In development
           </Badge>
           <div className="space-y-1.5">
-            <h2 className="text-sm font-semibold text-[--dash-foreground]">{eventTypeLabel} Event Website</h2>
+            <h2 className="text-sm font-semibold text-[--dash-foreground]">
+              {eventTypeLabel} Event Website
+            </h2>
             <p className="text-xs leading-5 text-[--dash-muted]">
-              Wedding websites are available now. Other event website builders stay locked on this page for now.
+              Wedding websites are available now. Other event website builders stay locked on this
+              page for now.
             </p>
           </div>
           <Button asChild type="button" variant="outline" size="sm" className="w-fit">
@@ -827,7 +848,8 @@ function LockedEventWebsiteWorkspace({
                   <h1>{lockedTitle}</h1>
                   <p>{lockedDescription}</p>
                   <p className="text-sm text-[--dash-muted]">
-                    Your account and event record are safe. This builder will be unlocked in a future update.
+                    Your account and event record are safe. This builder will be unlocked in a
+                    future update.
                   </p>
                 </div>
               </div>
@@ -836,23 +858,31 @@ function LockedEventWebsiteWorkspace({
         </section>
       </div>
 
-      <aside className="event-website-preview-space" aria-label="Event Website preview availability">
+      <aside
+        className="event-website-preview-space"
+        aria-label="Event Website preview availability"
+      >
         <div className="event-preview-panel">
           <div className="event-preview-frame-shell">
             <div className="event-preview-browser-bar">
               <span className="event-preview-browser-dot is-red" />
               <span className="event-preview-browser-dot is-green" />
               <span className="event-preview-browser-dot is-neutral" />
-              <span className="event-preview-address">{eventTypeLabel.toLowerCase()}.event-website.preview</span>
+              <span className="event-preview-address">
+                {eventTypeLabel.toLowerCase()}.event-website.preview
+              </span>
             </div>
             <div className="event-preview-frame grid place-items-center bg-[linear-gradient(180deg,#fff8ef_0%,#ffffff_55%,#fff6ec_100%)]">
               <div className="mx-auto max-w-sm rounded-[2rem] border border-[rgba(184,122,56,0.16)] bg-white/90 p-6 text-center shadow-[0_18px_46px_rgba(70,46,20,0.08)] backdrop-blur">
                 <Badge variant="outline" className="mb-3">
                   Preview locked
                 </Badge>
-                <h3 className="text-lg font-semibold text-slate-900">{eventTypeLabel} preview is not available yet</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {eventTypeLabel} preview is not available yet
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  The Wedding preview stays live in production. Other event website previews remain unavailable on this page until their dedicated builder is ready.
+                  The Wedding preview stays live in production. Other event website previews remain
+                  unavailable on this page until their dedicated builder is ready.
                 </p>
               </div>
             </div>

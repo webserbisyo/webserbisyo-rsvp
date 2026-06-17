@@ -200,7 +200,10 @@ function ClientCustomWebsiteEditor({
             value={customWebsite.publicWebsiteUrl ?? "Not configured"}
           />
           <SummaryPanel label="Website route" value={customWebsite.websiteRouteLabel} />
-          <SummaryPanel label="Fallback URL" value={customWebsite.fallbackUrl ?? "Not configured"} />
+          <SummaryPanel
+            label="Fallback URL"
+            value={customWebsite.fallbackUrl ?? "Not configured"}
+          />
         </div>
 
         <Separator />
@@ -332,7 +335,7 @@ function ClientCustomWebsiteEditor({
             />
           </div>
           {customWebsite.lastHealthError ? (
-            <p className="text-muted-foreground rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs">
+            <p className="text-muted-foreground border-destructive/20 bg-destructive/5 rounded-lg border p-3 text-xs">
               {customWebsite.lastHealthError}
             </p>
           ) : null}

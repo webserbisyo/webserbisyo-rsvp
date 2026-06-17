@@ -7,6 +7,7 @@ import {
 } from "@/components/event-website/public-event-page-content";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
+import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
@@ -59,12 +60,15 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
     notFound();
   }
 
+  const landingPixels = await getPublicMetaPixelsForRoute({ route: "application" });
+
   return (
     <>
       <LandingNavbar />
       <main>
         <LandingVisualHero />
       </main>
+      <PublicMetaPixelScripts eventName="ViewContent" pixels={landingPixels} />
     </>
   );
 }

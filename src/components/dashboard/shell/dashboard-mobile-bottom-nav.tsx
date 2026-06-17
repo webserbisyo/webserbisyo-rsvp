@@ -49,9 +49,7 @@ export function DashboardMobileBottomNav({ email }: DashboardMobileBottomNavProp
                 className="dashboard-mobile-bottom-nav__item"
               >
                 <Icon className="dashboard-mobile-bottom-nav__icon" />
-                <span className="dashboard-mobile-bottom-nav__label">
-                  {item.label}
-                </span>
+                <span className="dashboard-mobile-bottom-nav__label">{item.label}</span>
               </DashboardNavLink>
             );
           })}

@@ -14,10 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  emitDashboardSyncEvent,
-  useDashboardRefresh,
-} from "@/lib/dashboard/dashboard-sync";
+import { emitDashboardSyncEvent, useDashboardRefresh } from "@/lib/dashboard/dashboard-sync";
 import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import {
   moderateRsvpResponsesAction,
@@ -101,7 +98,9 @@ export function RsvpResponsesPage({
   });
 
   const allResponses = responses;
-  const scopedResponses = allResponses.filter((response) => matchesResponseTab(response, activeTab));
+  const scopedResponses = allResponses.filter((response) =>
+    matchesResponseTab(response, activeTab),
+  );
   const currentViewResponses = scopedResponses.filter((response) =>
     matchesResponseSearch(response, searchQuery),
   );
@@ -175,12 +174,16 @@ export function RsvpResponsesPage({
                 onOpenChange={setIsExportOpen}
               />
 
-              <AlertDialog open={responseToReject !== null} onOpenChange={(open) => !open && setResponseToReject(null)}>
+              <AlertDialog
+                open={responseToReject !== null}
+                onOpenChange={(open) => !open && setResponseToReject(null)}
+              >
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Reject this RSVP?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This response will no longer count toward your attending guest total. You can restore it later.
+                      This response will no longer count toward your attending guest total. You can
+                      restore it later.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -198,12 +201,20 @@ export function RsvpResponsesPage({
                 </AlertDialogContent>
               </AlertDialog>
 
-              <AlertDialog open={bulkRejectIds !== null} onOpenChange={(open) => !open && setBulkRejectIds(null)}>
+              <AlertDialog
+                open={bulkRejectIds !== null}
+                onOpenChange={(open) => !open && setBulkRejectIds(null)}
+              >
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Reject {bulkRejectIds?.length === 1 ? 'this RSVP' : `${bulkRejectIds?.length} RSVPs`}?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Reject{" "}
+                      {bulkRejectIds?.length === 1 ? "this RSVP" : `${bulkRejectIds?.length} RSVPs`}
+                      ?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      These responses will no longer count toward your attending guest total. You can restore them later.
+                      These responses will no longer count toward your attending guest total. You
+                      can restore them later.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -215,18 +226,28 @@ export function RsvpResponsesPage({
                         if (bulkRejectIds) confirmBulkReject(bulkRejectIds);
                       }}
                     >
-                      Reject {bulkRejectIds?.length === 1 ? 'RSVP' : 'RSVPs'}
+                      Reject {bulkRejectIds?.length === 1 ? "RSVP" : "RSVPs"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
 
-              <AlertDialog open={bulkRestoreIds !== null} onOpenChange={(open) => !open && setBulkRestoreIds(null)}>
+              <AlertDialog
+                open={bulkRestoreIds !== null}
+                onOpenChange={(open) => !open && setBulkRestoreIds(null)}
+              >
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Restore {bulkRestoreIds?.length === 1 ? 'this RSVP' : `${bulkRestoreIds?.length} RSVPs`}?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Restore{" "}
+                      {bulkRestoreIds?.length === 1
+                        ? "this RSVP"
+                        : `${bulkRestoreIds?.length} RSVPs`}
+                      ?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      These responses will count toward your attending guest total again if your guest limit allows.
+                      These responses will count toward your attending guest total again if your
+                      guest limit allows.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -237,7 +258,7 @@ export function RsvpResponsesPage({
                         if (bulkRestoreIds) confirmBulkRestore(bulkRestoreIds);
                       }}
                     >
-                      Restore {bulkRestoreIds?.length === 1 ? 'RSVP' : 'RSVPs'}
+                      Restore {bulkRestoreIds?.length === 1 ? "RSVP" : "RSVPs"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -259,7 +280,12 @@ export function RsvpResponsesPage({
 
   function confirmBulkReject(responseIds: string[]) {
     const uniqueIds = Array.from(new Set(responseIds));
-    if (uniqueIds.length === 0 || isModerating || pendingResponseIds.some((id) => uniqueIds.includes(id))) return;
+    if (
+      uniqueIds.length === 0 ||
+      isModerating ||
+      pendingResponseIds.some((id) => uniqueIds.includes(id))
+    )
+      return;
 
     setBulkRejectIds(null);
     setPendingResponseIds((prev) => [...prev, ...uniqueIds]);
@@ -276,12 +302,14 @@ export function RsvpResponsesPage({
           return;
         }
 
-        toast.success(`Rejected ${result.data.count} RSVP${result.data.count === 1 ? '' : 's'}.`);
+        toast.success(`Rejected ${result.data.count} RSVP${result.data.count === 1 ? "" : "s"}.`);
         setResponses((current) =>
-          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "rejected" } : r))
+          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "rejected" } : r)),
         );
         setSelectedResponse((current) =>
-          current && uniqueIds.includes(current.id) ? { ...current, reviewStatus: "rejected" } : current
+          current && uniqueIds.includes(current.id)
+            ? { ...current, reviewStatus: "rejected" }
+            : current,
         );
         invalidateResponseQueries(queryClient);
       } finally {
@@ -292,7 +320,12 @@ export function RsvpResponsesPage({
 
   function confirmBulkRestore(responseIds: string[]) {
     const uniqueIds = Array.from(new Set(responseIds));
-    if (uniqueIds.length === 0 || isModerating || pendingResponseIds.some((id) => uniqueIds.includes(id))) return;
+    if (
+      uniqueIds.length === 0 ||
+      isModerating ||
+      pendingResponseIds.some((id) => uniqueIds.includes(id))
+    )
+      return;
 
     setBulkRestoreIds(null);
     setPendingResponseIds((prev) => [...prev, ...uniqueIds]);
@@ -309,7 +342,7 @@ export function RsvpResponsesPage({
             toast.error(
               uniqueIds.length === 1
                 ? "Cannot restore RSVP. Guest limit reached for this event."
-                : "Cannot restore selected RSVPs. Guest limit reached for this event."
+                : "Cannot restore selected RSVPs. Guest limit reached for this event.",
             );
           } else {
             toast.error(result.error);
@@ -321,12 +354,14 @@ export function RsvpResponsesPage({
           return;
         }
 
-        toast.success(`Restored ${result.data.count} RSVP${result.data.count === 1 ? '' : 's'}.`);
+        toast.success(`Restored ${result.data.count} RSVP${result.data.count === 1 ? "" : "s"}.`);
         setResponses((current) =>
-          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "approved" } : r))
+          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "approved" } : r)),
         );
         setSelectedResponse((current) =>
-          current && uniqueIds.includes(current.id) ? { ...current, reviewStatus: "approved" } : current
+          current && uniqueIds.includes(current.id)
+            ? { ...current, reviewStatus: "approved" }
+            : current,
         );
         invalidateResponseQueries(queryClient);
       } finally {
@@ -355,10 +390,10 @@ export function RsvpResponsesPage({
 
         toast.success("RSVP rejected.");
         setResponses((current) =>
-          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "rejected" } : r))
+          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "rejected" } : r)),
         );
         setSelectedResponse((current) =>
-          current?.id === responseId ? { ...current, reviewStatus: "rejected" } : current
+          current?.id === responseId ? { ...current, reviewStatus: "rejected" } : current,
         );
         invalidateResponseQueries(queryClient);
       } finally {
@@ -386,10 +421,10 @@ export function RsvpResponsesPage({
 
         toast.success("RSVP restored.");
         setResponses((current) =>
-          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "approved" } : r))
+          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "approved" } : r)),
         );
         setSelectedResponse((current) =>
-          current?.id === responseId ? { ...current, reviewStatus: "approved" } : current
+          current?.id === responseId ? { ...current, reviewStatus: "approved" } : current,
         );
         invalidateResponseQueries(queryClient);
       } finally {
@@ -398,10 +433,7 @@ export function RsvpResponsesPage({
     });
   }
 
-  function handleGuestbookModeration(
-    mode: "approve" | "remove",
-    responseIds: string[],
-  ) {
+  function handleGuestbookModeration(mode: "approve" | "remove", responseIds: string[]) {
     const uniqueIds = Array.from(new Set(responseIds));
 
     if (uniqueIds.length === 0) {
@@ -485,9 +517,7 @@ export function RsvpResponsesPage({
           skippedAlreadySetCount > 0
             ? `${skippedAlreadySetCount} already ${mode === "approve" ? "shown" : "private"}`
             : null,
-          skippedUnauthorizedCount > 0
-            ? `${skippedUnauthorizedCount} could not be verified`
-            : null,
+          skippedUnauthorizedCount > 0 ? `${skippedUnauthorizedCount} could not be verified` : null,
         ].filter(Boolean);
 
         if (updatedCount === 0) {

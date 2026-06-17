@@ -102,14 +102,20 @@ export async function approveApplication(input: ApprovalInput, actorUserId: stri
     });
   }
 
+  const capiSourceUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://webserbisyo-rsvp.vercel.app"}/apply/success`;
   await sendMetaCapiPurchase({
     actorUserId,
     amount: payment.amount_paid,
     clientId: client.id,
     customerEmail: application.email,
+    customerFullName: application.full_name,
     customerPhone: application.phone,
     eventId: eventBundle.event.id,
+    externalId: application.reference_code,
+    fbc: application.fb_fbc,
+    fbp: application.fb_fbp,
     paymentId: payment.id,
+    sourceUrl: capiSourceUrl,
   });
 
   await writeAuditLog({

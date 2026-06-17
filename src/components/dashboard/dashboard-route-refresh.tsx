@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  type DashboardSyncEventName,
-  useDashboardRefresh,
-} from "@/lib/dashboard/dashboard-sync";
+import { type DashboardSyncEventName, useDashboardRefresh } from "@/lib/dashboard/dashboard-sync";
 
 type DashboardRouteRefreshProps = {
   eventId?: string | null;

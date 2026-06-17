@@ -72,7 +72,7 @@ export async function submitRsvpResponse(
   // until a storage model and dashboard read flow are defined for them.
   const companionRows = buildCompanionRows(payload, rsvpSettings);
   const partySize = payload.attendanceStatus === "attending" ? 1 + payload.companionCount : 1;
-  const trimmedMessage = rsvpSettings.messageToHostEnabled ? payload.message?.trim() ?? "" : "";
+  const trimmedMessage = rsvpSettings.messageToHostEnabled ? (payload.message?.trim() ?? "") : "";
   const responsePayload = {
     p_attendance_status: payload.attendanceStatus,
     p_client_id: event.client_id,

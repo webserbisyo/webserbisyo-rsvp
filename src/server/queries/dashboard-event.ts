@@ -1,9 +1,16 @@
 import "server-only";
 
-import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import {
+  mergeEventWebsiteContent,
+  parseEventWebsiteContentJson,
+} from "@/lib/event-website/hydration";
 import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
 import { normalizePrivateAccessToken } from "@/lib/private-access";
-import { getPublicAppUrl, getRsvpPreviewBaseDomain, resolvePublicRsvpLinkSet } from "@/lib/public-rsvp-url";
+import {
+  getPublicAppUrl,
+  getRsvpPreviewBaseDomain,
+  resolvePublicRsvpLinkSet,
+} from "@/lib/public-rsvp-url";
 import type { EventWebsiteContent, EventWebsiteDefaultsContext } from "@/lib/event-website/types";
 import { requireTenantMember } from "@/lib/permissions";
 import type { Json } from "@/lib/supabase/types";
@@ -171,9 +178,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
       })
     : null;
   const publicPageUrl =
-    event?.status === "published" && event?.published_at
-      ? (publicLinkSet?.openUrl ?? null)
-      : null;
+    event?.status === "published" && event?.published_at ? (publicLinkSet?.openUrl ?? null) : null;
   const [guestbookMessages, customWebsitePreview] = await Promise.all([
     event?.id && clientId
       ? listApprovedGuestbookMessages({

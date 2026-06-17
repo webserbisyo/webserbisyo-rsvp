@@ -38,9 +38,7 @@ export function WebsiteAccessControls({
       }
 
       toast.success(
-        publishState === "published"
-          ? "Published snapshot updated."
-          : "Event Website published.",
+        publishState === "published" ? "Published snapshot updated." : "Event Website published.",
       );
       emitDashboardSyncEvent({
         eventId,
@@ -87,7 +85,7 @@ export function WebsiteAccessControls({
         ) : null}
       </div>
 
-      <p className="text-sm text-muted-foreground">{workflowStatus.description}</p>
+      <p className="text-muted-foreground text-sm">{workflowStatus.description}</p>
     </div>
   );
 }

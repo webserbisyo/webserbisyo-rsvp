@@ -77,15 +77,16 @@ export function EventWebsiteLeftPane({
   const allSectionsByKey = useMemo(
     () =>
       new Map(
-        [...websiteFlowSections, ...futureDevelopmentSections].map((section) => [section.key, section]),
+        [...websiteFlowSections, ...futureDevelopmentSections].map((section) => [
+          section.key,
+          section,
+        ]),
       ),
     [futureDevelopmentSections, websiteFlowSections],
   );
 
   const selectedSectionLabel =
-    allSectionsByKey.get(selectedSection)?.label ??
-    websiteFlowSections[0]?.label ??
-    "Host Info";
+    allSectionsByKey.get(selectedSection)?.label ?? websiteFlowSections[0]?.label ?? "Host Info";
 
   // Dirty detection: compare current order keys to default order keys
   const isOrderDirty =
@@ -118,7 +119,10 @@ export function EventWebsiteLeftPane({
   }, [selectedSectionLabel]);
 
   return (
-    <section className={cn("event-website-pane", className)} aria-label="Event Website setup sections">
+    <section
+      className={cn("event-website-pane", className)}
+      aria-label="Event Website setup sections"
+    >
       {showStatusCard ? (
         <EventWebsiteStatusCard
           autoSaveEnabled={autoSaveEnabled}
@@ -189,7 +193,10 @@ export function EventWebsiteLeftPane({
         ) : (
           <div className="event-section-list event-section-list--touch">
             {websiteFlowSections.map((section, index) => (
-              <div key={section.key} className="event-section-row-reorder-wrapper event-section-row-reorder-wrapper--touch">
+              <div
+                key={section.key}
+                className="event-section-row-reorder-wrapper event-section-row-reorder-wrapper--touch"
+              >
                 <EventSectionRow
                   canMoveDown={index < websiteFlowSections.length - 1}
                   canMoveUp={index > 0}

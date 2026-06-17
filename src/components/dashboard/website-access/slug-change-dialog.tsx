@@ -73,23 +73,25 @@ export function SlugChangeDialog({
 
           {/* Subtitle */}
           <DialogDescription className="mt-3 text-sm leading-relaxed text-[#A38376]">
-            Use this only for a typo, wrong name, or test link before guests receive the final website.
+            Use this only for a typo, wrong name, or test link before guests receive the final
+            website.
           </DialogDescription>
         </DialogHeader>
 
         {/* Body */}
         <div className="space-y-6 px-6 pt-3 pb-2">
-
           {/* Current URL section */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-[#A38376]">
+            <label className="text-xs font-semibold tracking-[0.14em] text-[#A38376] uppercase">
               Current RSVP subdomain
             </label>
             <div className="flex h-11 items-center gap-2 rounded-xl border border-[#e9dcd2] bg-[#FBF4EF]/50 px-3.5 opacity-80">
               <Lock className="h-4 w-4 shrink-0 text-[#B49B90]" aria-hidden="true" />
               {currentSlug ? (
                 <>
-                  <span className="font-mono text-sm font-semibold text-[#8C766C]">{currentSlug}</span>
+                  <span className="font-mono text-sm font-semibold text-[#8C766C]">
+                    {currentSlug}
+                  </span>
                   <span className="text-xs text-[#A38376]">.{suffix}</span>
                 </>
               ) : (
@@ -102,28 +104,20 @@ export function SlugChangeDialog({
           <div className="space-y-2">
             <label
               htmlFor="website-access-slug-dialog"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-[#A38376]"
+              className="text-xs font-semibold tracking-[0.14em] text-[#A38376] uppercase"
             >
               New RSVP subdomain
             </label>
             <div
               className={cn(
                 "flex h-11 items-center gap-2 rounded-xl border px-3.5 transition-shadow focus-within:shadow-[0_0_0_3px_rgba(201,112,75,0.1)]",
-                errorMessage
-                  ? "border-amber-300 bg-amber-50/50"
-                  : "border-[#eacdbf] bg-[#FBF4EF]",
+                errorMessage ? "border-amber-300 bg-amber-50/50" : "border-[#eacdbf] bg-[#FBF4EF]",
               )}
             >
               {errorMessage ? (
-                <AlertTriangle
-                  className="h-4 w-4 shrink-0 text-[#A86F2A]"
-                  aria-hidden="true"
-                />
+                <AlertTriangle className="h-4 w-4 shrink-0 text-[#A86F2A]" aria-hidden="true" />
               ) : (
-                <CheckCircle2
-                  className="h-4 w-4 shrink-0 text-[#4E8366]"
-                  aria-hidden="true"
-                />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#4E8366]" aria-hidden="true" />
               )}
               <Input
                 id="website-access-slug-dialog"
@@ -139,16 +133,15 @@ export function SlugChangeDialog({
               <p className="text-sm text-[#A86F2A]">{errorMessage}</p>
             ) : (
               <p className="text-sm text-[#A38376]">
-                Lowercase letters, numbers, and hyphens only. The final live subdomain applies on publish.
+                Lowercase letters, numbers, and hyphens only. The final live subdomain applies on
+                publish.
               </p>
             )}
           </div>
 
           {/* Soft notice card */}
           <div className="rounded-2xl border border-[#e9dcd2] bg-[#FEFAF7] px-5 py-4">
-            <p className="mb-2.5 text-sm font-semibold text-[#2D1F1A]">
-              Before confirming
-            </p>
+            <p className="mb-2.5 text-sm font-semibold text-[#2D1F1A]">Before confirming</p>
             <ul className="space-y-1.5 text-sm leading-relaxed text-[#A38376]">
               <li className="flex gap-2">
                 <span className="shrink-0 text-[#c96f4c]">•</span>
@@ -156,13 +149,11 @@ export function SlugChangeDialog({
               </li>
               <li className="flex gap-2">
                 <span className="shrink-0 text-[#c96f4c]">•</span>
-                The live website keeps using the current URL until you publish
-                latest changes.
+                The live website keeps using the current URL until you publish latest changes.
               </li>
               <li className="flex gap-2">
                 <span className="shrink-0 text-[#c96f4c]">•</span>
-                Guests should only receive the final link after this is
-                confirmed.
+                Guests should only receive the final link after this is confirmed.
               </li>
             </ul>
           </div>

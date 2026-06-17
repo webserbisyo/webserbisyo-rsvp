@@ -25,10 +25,7 @@ import {
   getPublicAppUrl,
   resolvePublicRsvpLinkSet,
 } from "@/lib/public-rsvp-url";
-import {
-  emitDashboardSyncEvent,
-  useDashboardRefresh,
-} from "@/lib/dashboard/dashboard-sync";
+import { emitDashboardSyncEvent, useDashboardRefresh } from "@/lib/dashboard/dashboard-sync";
 import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import { useEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import {
@@ -62,8 +59,7 @@ function resolveLiveWebsiteLinks(state: WebsiteAccessInitialData) {
     subdomain: state.subdomainFieldsInstalled ? state.publishedSubdomain : null,
     wildcardBaseDomain: state.wildcardBaseDomain,
   });
-  const fallbackPublicUrl =
-    linkSet.fallbackPathUrl ?? buildOfficialPublicRsvpUrl(publishedSlug);
+  const fallbackPublicUrl = linkSet.fallbackPathUrl ?? buildOfficialPublicRsvpUrl(publishedSlug);
   const fallbackRsvpPublicUrl =
     linkSet.preferredProductionRsvpUrl ?? buildOfficialPublicRsvpStandaloneUrl(publishedSlug);
   const publicUrl = linkSet.preferredProductionUrl ?? null;
@@ -89,7 +85,9 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const queryClient = useQueryClient();
   const [serverState, setServerState] = useState(initialData);
   const isDraftSavePending = useEventWebsiteDraftSavePending(serverState.eventId);
-  const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(initialData.draftVisibility);
+  const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(
+    initialData.draftVisibility,
+  );
   const [draftSubdomain, setDraftSubdomain] = useState(initialData.draftSubdomain ?? "");
   const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
   const [slugModalOpen, setSlugModalOpen] = useState(false);
@@ -124,10 +122,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const hasVisibilityDraft = draftVisibility !== publishedVisibility;
   const hasContentPendingChanges = serverState.hasContentPendingChanges;
   const hasPendingChanges =
-    hasVisibilityDraft ||
-    hasSlugChange ||
-    hasSubdomainChange ||
-    hasContentPendingChanges;
+    hasVisibilityDraft || hasSlugChange || hasSubdomainChange || hasContentPendingChanges;
   const publishStatusState = getPublishStatusState(isPublished, hasPendingChanges);
   const activePrivateAccessToken =
     isPublished && publishedVisibility === "private" ? serverState.privateAccessToken : null;
@@ -138,50 +133,53 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         activePrivateAccessToken,
       ) ?? "")
     : "";
-  const websiteUrlPublished =
-    isPrivateLinkReady
-      ? (appendPrivateAccessToken(liveWebsiteLinks.publicUrl ?? "", activePrivateAccessToken) ?? "")
-      : "";
-  const websiteUrlCopy =
-    isPrivateLinkReady
-      ? (appendPrivateAccessToken(
-          liveWebsiteLinks.copyPublicUrl ?? websiteUrlPublished,
-          activePrivateAccessToken,
-        ) ?? "")
-      : "";
-  const websiteUrlProduction =
-    isPrivateLinkReady
-      ? (appendPrivateAccessToken(liveWebsiteLinks.productionPublicUrl ?? "", activePrivateAccessToken) ?? "")
-      : "";
-  const websiteUrlQr =
-    isPrivateLinkReady
-      ? (appendPrivateAccessToken(
-          liveWebsiteLinks.qrPublicUrl ?? websiteUrlPublished ?? liveWebsiteLinks.fallbackPublicUrl ?? "",
-          activePrivateAccessToken,
-        ) ?? "")
-      : "";
-  const rsvpUrlQr =
-    isPrivateLinkReady
-      ? (appendPrivateAccessToken(
-          liveWebsiteLinks.rsvpQrPublicUrl ??
-            liveWebsiteLinks.publicRsvpUrl ??
-            liveWebsiteLinks.fallbackRsvpPublicUrl ??
-            "",
-          activePrivateAccessToken,
-        ) ?? "")
-      : "";
-  const websiteUrlFallback =
-    isPrivateLinkReady
-      ? (appendPrivateAccessToken(liveWebsiteLinks.fallbackPublicUrl ?? "", activePrivateAccessToken) ?? "")
-      : "";
+  const websiteUrlPublished = isPrivateLinkReady
+    ? (appendPrivateAccessToken(liveWebsiteLinks.publicUrl ?? "", activePrivateAccessToken) ?? "")
+    : "";
+  const websiteUrlCopy = isPrivateLinkReady
+    ? (appendPrivateAccessToken(
+        liveWebsiteLinks.copyPublicUrl ?? websiteUrlPublished,
+        activePrivateAccessToken,
+      ) ?? "")
+    : "";
+  const websiteUrlProduction = isPrivateLinkReady
+    ? (appendPrivateAccessToken(
+        liveWebsiteLinks.productionPublicUrl ?? "",
+        activePrivateAccessToken,
+      ) ?? "")
+    : "";
+  const websiteUrlQr = isPrivateLinkReady
+    ? (appendPrivateAccessToken(
+        liveWebsiteLinks.qrPublicUrl ??
+          websiteUrlPublished ??
+          liveWebsiteLinks.fallbackPublicUrl ??
+          "",
+        activePrivateAccessToken,
+      ) ?? "")
+    : "";
+  const rsvpUrlQr = isPrivateLinkReady
+    ? (appendPrivateAccessToken(
+        liveWebsiteLinks.rsvpQrPublicUrl ??
+          liveWebsiteLinks.publicRsvpUrl ??
+          liveWebsiteLinks.fallbackRsvpPublicUrl ??
+          "",
+        activePrivateAccessToken,
+      ) ?? "")
+    : "";
+  const websiteUrlFallback = isPrivateLinkReady
+    ? (appendPrivateAccessToken(
+        liveWebsiteLinks.fallbackPublicUrl ?? "",
+        activePrivateAccessToken,
+      ) ?? "")
+    : "";
   const websiteUrlDraft = draftSubdomain
     ? (buildWildcardRsvpPreviewUrl({
         baseDomain: serverState.wildcardBaseDomain,
         subdomain: draftSubdomain,
       }) ?? "")
-    : (serverState.draftSlug && publicBaseUrl
-        ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: serverState.draftSlug }) ?? "")
-        : "");
+    : serverState.draftSlug && publicBaseUrl
+      ? (buildPublicRsvpUrl({ baseUrl: publicBaseUrl, slug: serverState.draftSlug }) ?? "")
+      : "";
   const changesSummary = buildChangeSummary({
     hasAccessPendingChanges: hasVisibilityDraft,
     hasContentPendingChanges,
@@ -264,7 +262,13 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [draftSubdomain, isSubdomainLocked, serverState.eventId, startTransition, subdomainDraftError]);
+  }, [
+    draftSubdomain,
+    isSubdomainLocked,
+    serverState.eventId,
+    startTransition,
+    subdomainDraftError,
+  ]);
 
   function updateLocalTimestamp(updatedAt: string | null) {
     setServerState((current) => ({

@@ -97,13 +97,10 @@ export function DashboardRealtimeNotifications({
 
       if (error) {
         if (process.env.NODE_ENV === "development") {
-          console.warn(
-            "[dashboard-realtime] Falling back to default notification preferences",
-            {
-              code: error.code,
-              message: error.message,
-            },
-          );
+          console.warn("[dashboard-realtime] Falling back to default notification preferences", {
+            code: error.code,
+            message: error.message,
+          });
         }
       } else {
         preferencesRef.current = {
@@ -227,7 +224,8 @@ export function DashboardRealtimeNotifications({
       const statusChange = getBillingStatusChange(payload);
 
       if (!statusChange) return;
-      if (!markEventShown(`billing_update:${payload.eventType}:${paymentId}:${statusChange}`)) return;
+      if (!markEventShown(`billing_update:${payload.eventType}:${paymentId}:${statusChange}`))
+        return;
 
       showDashboardToast({
         body: "Your payment status was updated.",
@@ -284,9 +282,7 @@ export function DashboardRealtimeNotifications({
 
       const messageNode = input.guestName ? (
         <div className="flex min-w-0 items-center gap-1 text-sm font-medium text-[#191311]">
-          <span className="shrink-0">
-            {isMessage ? "New message from" : "New RSVP from"}
-          </span>
+          <span className="shrink-0">{isMessage ? "New message from" : "New RSVP from"}</span>
           <span className="inline-block max-w-[150px] truncate align-bottom font-semibold">
             {input.guestName}
           </span>
@@ -322,8 +318,7 @@ export function DashboardRealtimeNotifications({
 
 function isNotificationEventType(value: unknown): value is NotificationEventType {
   return (
-    typeof value === "string" &&
-    NOTIFICATION_EVENT_TYPES.includes(value as NotificationEventType)
+    typeof value === "string" && NOTIFICATION_EVENT_TYPES.includes(value as NotificationEventType)
   );
 }
 

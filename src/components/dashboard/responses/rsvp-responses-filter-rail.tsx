@@ -78,7 +78,10 @@ export function RsvpResponsesFilterRail({
   return (
     <>
       <div className="hidden xl:block">
-        <Tabs value={activeTab} onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}
+        >
           <TabsList className="flex h-auto w-auto justify-start rounded-2xl bg-[#fbf7f3] p-1">
             {RSVP_RESPONSE_FILTERS.map((filter) => (
               <TabsTrigger
@@ -105,7 +108,10 @@ export function RsvpResponsesFilterRail({
           </button>
         ) : null}
 
-        <Tabs value={activeTab} onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => onActiveTabChange(value as RsvpResponsesTab)}
+        >
           <div
             ref={viewportRef}
             className="w-full max-w-full overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

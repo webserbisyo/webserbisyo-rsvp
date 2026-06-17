@@ -65,7 +65,9 @@ export function RsvpResponsesStats({
                 <p className="text-2xl font-bold tracking-tight text-[#2b2521]">{stat.value}</p>
                 <p className="mt-1 text-sm font-medium text-[#8a7c72]">{stat.label}</p>
               </div>
-              <div className={cn("grid h-10 w-10 place-items-center rounded-2xl", tones[stat.tone])}>
+              <div
+                className={cn("grid h-10 w-10 place-items-center rounded-2xl", tones[stat.tone])}
+              >
                 <Icon className="h-5 w-5" />
               </div>
             </div>

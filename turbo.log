@@ -1,0 +1,14 @@
+⚠ Port 3000 is in use by process 37012, using available port 3001 instead.
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.68.104:3001
+- Environments: .env.local
+✓ Ready in 5.5s
+○ Compiling proxy ...
+- Experiments (use with caution):
+  · serverActions
+
+○ Compiling /apply ...
+ GET /apply 200 in 38.3s (next.js: 28.1s, proxy.ts: 1756ms, application-code: 8.4s)
+ GET / 200 in 27.6s (next.js: 24.1s, proxy.ts: 189ms, application-code: 3.3s)
+✓ Finished writing to filesystem cache in 15.1s

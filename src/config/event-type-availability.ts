@@ -157,7 +157,9 @@ export function isPublicRenderingEventTypeEnabled(eventType: string | null | und
 }
 
 export function getAvailableApplicationEventTypes(): EventType[] {
-  return EVENT_TYPE_VALUES.filter((eventType) => eventTypeAvailabilityMap[eventType].applicationEnabled);
+  return EVENT_TYPE_VALUES.filter(
+    (eventType) => eventTypeAvailabilityMap[eventType].applicationEnabled,
+  );
 }
 
 export function getApplicationEventTypeOptions() {

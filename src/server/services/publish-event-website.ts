@@ -6,7 +6,10 @@ import {
   isDashboardBuilderEventTypeEnabled,
   unsupportedBuilderMessage,
 } from "@/config/event-type-availability";
-import { mergeEventWebsiteContent, normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
+import {
+  mergeEventWebsiteContent,
+  normalizeEventWebsiteContentForSave,
+} from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesUpdate } from "@/lib/supabase/types";
 import { ensurePrivateAccessToken, rotatePrivateAccessToken } from "./private-access-token";
@@ -341,8 +344,12 @@ export async function publishEventWebsite(
   const previousPublishedSlug = eventRecord.published_at ? eventRecord.event_slug : null;
   const previousPublishedSubdomain =
     eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? (eventRecord.published_at ? eventRecord.subdomain_slug : null)
-      : (eventRecord.published_at ? eventRecord.event_slug : null);
+      ? eventRecord.published_at
+        ? eventRecord.subdomain_slug
+        : null
+      : eventRecord.published_at
+        ? eventRecord.event_slug
+        : null;
   const previousVisibility = eventRecord.visibility;
   const contentRow: TablesUpdate<"event_content"> = {
     published_at: publishedAt,
@@ -413,9 +420,9 @@ export async function publishEventWebsite(
   };
   const publishedSubdomainValue =
     eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? (typeof normalizedPublishedEvent.subdomain_slug === "string"
-          ? normalizedPublishedEvent.subdomain_slug
-          : null)
+      ? typeof normalizedPublishedEvent.subdomain_slug === "string"
+        ? normalizedPublishedEvent.subdomain_slug
+        : null
       : normalizedPublishedEvent.event_slug;
 
   await writeAuditLog({
@@ -462,8 +469,8 @@ export async function unpublishEventWebsite(
   const previousPublishedSlug = eventRecord.event_slug ?? null;
   const previousPublishedSubdomain =
     eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? eventRecord.subdomain_slug ?? null
-      : eventRecord.event_slug ?? null;
+      ? (eventRecord.subdomain_slug ?? null)
+      : (eventRecord.event_slug ?? null);
 
   const { data: eventUpdate, error: eventError } = await supabase
     .from("rsvp_events")
@@ -746,8 +753,14 @@ async function getDraftSchemaFallbackRecord(
 
   const legacyEventQuery = supabase.from("rsvp_events") as ReturnType<typeof supabase.from> & {
     select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        eq: (column: string, value: string) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
+        eq: (
+          column: string,
+          value: string,
+        ) => {
           single: () => Promise<{ data: unknown; error: PostgrestError | null }>;
         };
       };
@@ -865,7 +878,10 @@ async function assertSubdomainIsAvailable(
 }
 
 function assertWebsiteAccessDraftSchema(eventRecord: EventWebsiteRecord) {
-  if (eventRecord.websiteAccessSchemaMode === "draft_live" || eventRecord.websiteAccessSchemaMode === "slug_only") {
+  if (
+    eventRecord.websiteAccessSchemaMode === "draft_live" ||
+    eventRecord.websiteAccessSchemaMode === "slug_only"
+  ) {
     return;
   }
 

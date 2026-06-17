@@ -1,7 +1,10 @@
 import "server-only";
 
 import { cache } from "react";
-import { PUBLIC_EVENT_RENDER_VISIBILITIES, PublicEventSlugSchema } from "@/lib/event-website/public-event";
+import {
+  PUBLIC_EVENT_RENDER_VISIBILITIES,
+  PublicEventSlugSchema,
+} from "@/lib/event-website/public-event";
 import { hasPublishedPrivateAccess, normalizePrivateAccessToken } from "@/lib/private-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CustomWebsiteHealthStatus } from "./types";

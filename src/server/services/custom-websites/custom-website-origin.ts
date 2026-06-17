@@ -68,7 +68,9 @@ export async function assertSafeCustomFrontendOriginForFetch(origin: string) {
 
   if (net.isIP(hostname)) {
     if (isPrivateIp(hostname)) {
-      throw new ServiceError("Custom frontend origins cannot use private or reserved IP addresses.");
+      throw new ServiceError(
+        "Custom frontend origins cannot use private or reserved IP addresses.",
+      );
     }
 
     return normalizedOrigin;
@@ -90,7 +92,11 @@ export async function assertSafeCustomFrontendOriginForFetch(origin: string) {
 }
 
 function normalizeHostname(value: string) {
-  return value.trim().toLowerCase().replace(/^\[|\]$/g, "").replace(/\.+$/, "");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .replace(/\.+$/, "");
 }
 
 function isLocalhostName(value: string) {

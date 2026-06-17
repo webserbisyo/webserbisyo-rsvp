@@ -6,7 +6,10 @@ import {
   mapDbVisibilityToApp,
 } from "@/components/dashboard/website-access/website-access-utils";
 import type { WebsiteAccessInitialData } from "@/components/dashboard/website-access/website-access-types";
-import { mergeEventWebsiteContent, parseEventWebsiteContentJson } from "@/lib/event-website/hydration";
+import {
+  mergeEventWebsiteContent,
+  parseEventWebsiteContentJson,
+} from "@/lib/event-website/hydration";
 import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { getEventWebsiteSavedAt } from "@/lib/event-website/readiness";
 import { requireTenantMember } from "@/lib/permissions";
@@ -186,9 +189,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       : null;
   const fallbackPublicUrl =
     linkSet?.fallbackPathUrl ??
-    (linkSet && publishedSlug
-      ? buildOfficialPublicRsvpUrl(publishedSlug)
-      : null);
+    (linkSet && publishedSlug ? buildOfficialPublicRsvpUrl(publishedSlug) : null);
   const publicUrl = linkSet?.preferredProductionUrl ?? null;
   const fallbackRsvpPublicUrl =
     linkSet?.preferredProductionRsvpUrl ??

@@ -66,7 +66,10 @@ export function BillingStatusBadge({
       )}
     >
       {size === "lg" && (
-        <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", DOT_STYLES[status])} aria-hidden="true" />
+        <span
+          className={cn("h-1.5 w-1.5 shrink-0 rounded-full", DOT_STYLES[status])}
+          aria-hidden="true"
+        />
       )}
       {children ?? STATUS_LABELS[status]}
     </Badge>

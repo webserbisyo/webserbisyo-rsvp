@@ -4,8 +4,7 @@ export const NOTIFICATION_EVENT_TYPES = [
   "billing_update",
 ] as const;
 
-export const DASHBOARD_NOTIFICATION_PREFERENCE_EVENT =
-  "dashboard-notification-preference-change";
+export const DASHBOARD_NOTIFICATION_PREFERENCE_EVENT = "dashboard-notification-preference-change";
 
 export type NotificationEventType = (typeof NOTIFICATION_EVENT_TYPES)[number];
 
@@ -20,12 +19,7 @@ export type SettingsNotificationPreference = {
 
 export type PushPermissionState = "blocked" | "default" | "granted" | "unsupported";
 
-export type PushSubscriptionStatus =
-  | "blocked"
-  | "not_configured"
-  | "off"
-  | "on"
-  | "unsupported";
+export type PushSubscriptionStatus = "blocked" | "not_configured" | "off" | "on" | "unsupported";
 
 export type PushSubscriptionRecord = {
   auth: string;

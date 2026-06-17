@@ -40,6 +40,8 @@ export async function submitApplication(input: ApplicationInput) {
       event_date: payload.eventDate ?? null,
       event_location: payload.eventLocation ?? null,
       event_type: payload.eventType,
+      fb_fbc: payload.fbFbc ?? null,
+      fb_fbp: payload.fbFbp ?? null,
       full_name: payload.fullName,
       message: payload.message ?? null,
       phone: payload.phone ?? null,

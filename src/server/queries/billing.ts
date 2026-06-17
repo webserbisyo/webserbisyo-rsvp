@@ -88,26 +88,24 @@ export async function getBillingPageData(): Promise<BillingPageData> {
   const supabase = await createServerSupabaseClient();
   const adminSupabase = createAdminClient();
 
-  const [
-    { data: client, error: clientError },
-    { data: paymentRows, error: paymentError },
-  ] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("id, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at")
-      .eq("id", clientId)
-      .maybeSingle(),
-    supabase
-      .from("payments")
-      .select(
-        "id, plan_type, amount_due, amount_paid, currency, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, updated_at, created_at",
-      )
-      .eq("client_id", clientId)
-      .order("updated_at", { ascending: false })
-      .order("paid_at", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(1),
-  ]);
+  const [{ data: client, error: clientError }, { data: paymentRows, error: paymentError }] =
+    await Promise.all([
+      supabase
+        .from("clients")
+        .select("id, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at")
+        .eq("id", clientId)
+        .maybeSingle(),
+      supabase
+        .from("payments")
+        .select(
+          "id, plan_type, amount_due, amount_paid, currency, payment_status, payment_method, reference_number, paid_at, hosting_starts_at, hosting_ends_at, renewal_required_at, updated_at, created_at",
+        )
+        .eq("client_id", clientId)
+        .order("updated_at", { ascending: false })
+        .order("paid_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1),
+    ]);
 
   if (clientError) {
     throw clientError;
@@ -133,7 +131,9 @@ export async function getBillingPageData(): Promise<BillingPageData> {
 
   const refundTotal = refunds.reduce((sum, refund) => sum + (refund.amount ?? 0), 0);
   const totalPackageAmount = latestPayment?.amount_due ?? packageSettings?.default_amount ?? null;
-  const amountPaid = latestPayment ? Math.max((latestPayment.amount_paid ?? 0) - refundTotal, 0) : 0;
+  const amountPaid = latestPayment
+    ? Math.max((latestPayment.amount_paid ?? 0) - refundTotal, 0)
+    : 0;
   const remainingBalance =
     totalPackageAmount === null ? null : Math.max(totalPackageAmount - amountPaid, 0);
   const paymentStatus = deriveBillingPaymentStatus({
@@ -278,7 +278,10 @@ function deriveServiceState(input: {
     return "refunded";
   }
 
-  if (!input.latestPayment || ["pending", "failed", "cancelled"].includes(input.latestPayment.payment_status)) {
+  if (
+    !input.latestPayment ||
+    ["pending", "failed", "cancelled"].includes(input.latestPayment.payment_status)
+  ) {
     return "unpaid";
   }
 

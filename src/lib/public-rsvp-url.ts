@@ -169,10 +169,7 @@ export function getPublicAppUrl(options?: {
   if (environment === "preview") {
     return (
       getPreviewDeploymentAppUrl(options) ??
-      resolveConfiguredPublicAppUrl(
-        options?.baseUrl,
-        getConfiguredProductionAppUrl(),
-      )
+      resolveConfiguredPublicAppUrl(options?.baseUrl, getConfiguredProductionAppUrl())
     );
   }
 
@@ -195,10 +192,7 @@ export function buildPublicRsvpFormAnchorPath(slug: string) {
   return `${buildPublicRsvpPath(slug)}#rsvp-form`;
 }
 
-export function buildPublicRsvpUrl(input: {
-  baseUrl?: string | null;
-  slug: string;
-}) {
+export function buildPublicRsvpUrl(input: { baseUrl?: string | null; slug: string }) {
   const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
 
   if (!baseUrl) {
@@ -212,10 +206,7 @@ export function buildOfficialPublicRsvpUrl(slug: string) {
   return `${getOfficialPublicAppUrl()}${buildPublicRsvpPath(slug)}`;
 }
 
-export function buildPublicRsvpStandaloneUrl(input: {
-  baseUrl?: string | null;
-  slug: string;
-}) {
+export function buildPublicRsvpStandaloneUrl(input: { baseUrl?: string | null; slug: string }) {
   const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
 
   if (!baseUrl) {
@@ -229,10 +220,7 @@ export function buildOfficialPublicRsvpStandaloneUrl(slug: string) {
   return `${getOfficialPublicAppUrl()}${buildPublicRsvpStandalonePath(slug)}`;
 }
 
-export function buildPublicRsvpFormAnchorUrl(input: {
-  baseUrl?: string | null;
-  slug: string;
-}) {
+export function buildPublicRsvpFormAnchorUrl(input: { baseUrl?: string | null; slug: string }) {
   const baseUrl = getPublicAppUrl({ baseUrl: input.baseUrl });
 
   if (!baseUrl) {
@@ -263,10 +251,7 @@ export function getRsvpPreviewBaseDomain(baseDomain?: string | null) {
   );
 }
 
-export function buildWildcardRsvpUrl(input: {
-  baseDomain?: string | null;
-  subdomain: string;
-}) {
+export function buildWildcardRsvpUrl(input: { baseDomain?: string | null; subdomain: string }) {
   const hostname = getRsvpBaseDomain(input.baseDomain);
 
   if (!hostname) {
@@ -430,13 +415,12 @@ export function resolvePublicRsvpLinkSet(input: {
   const localDevelopmentAppUrl = getLocalDevelopmentAppUrl();
   const localDevelopmentUrl =
     slug && localDevelopmentAppUrl
-    ? buildPublicRsvpUrl({
-        baseUrl: localDevelopmentAppUrl,
-        slug,
-      })
-    : null;
-  const useLocalSafeUrls =
-    environment === "development" && !isLocalWildcardSimulationEnabled();
+      ? buildPublicRsvpUrl({
+          baseUrl: localDevelopmentAppUrl,
+          slug,
+        })
+      : null;
+  const useLocalSafeUrls = environment === "development" && !isLocalWildcardSimulationEnabled();
   const baseDisplayUrl = useLocalSafeUrls
     ? (localDevelopmentUrl ?? fallbackPathUrl ?? preferredProductionUrl)
     : environment === "preview"
