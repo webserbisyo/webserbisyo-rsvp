@@ -8,6 +8,13 @@ type MetaPixelEventName =
   | "RSVPSubmitted"
   | "ViewContent";
 
+const META_STANDARD_EVENTS = new Set<MetaPixelEventName>([
+  "CompleteRegistration",
+  "InitiateCheckout",
+  "Lead",
+  "ViewContent",
+]);
+
 type PublicMetaPixelScriptsProps = {
   eventName?: MetaPixelEventName | MetaPixelEventName[];
   pixels: PublicMetaPixelConfig[];
@@ -65,12 +72,16 @@ function buildInitScript(
   const names = eventName ? (Array.isArray(eventName) ? eventName : [eventName]) : [];
 
   for (const name of names) {
-    const method = name === "RSVPSubmitted" ? "trackCustom" : "track";
-
-    eventLines.push(`fbq('${method}', ${JSON.stringify(name)});`);
+    eventLines.push(buildEventLine(name));
   }
 
   return [...initLines, ...eventLines].join("\n");
+}
+
+function buildEventLine(name: MetaPixelEventName) {
+  const method = META_STANDARD_EVENTS.has(name) ? "track" : "trackCustom";
+
+  return `fbq('${method}', ${JSON.stringify(name)});`;
 }
 
 function isNumericPixelId(pixelId: string) {

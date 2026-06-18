@@ -4,11 +4,12 @@ import { createHash } from "node:crypto";
 
 export type MetaCapiEventInput = {
   amount: number;
+  clientIpAddress?: string | null;
   clientUserAgent?: string | null;
   currency: "PHP";
   email?: string | null;
   eventId: string;
-  eventName?: "PaidConfirmed" | "Purchase";
+  eventName?: "Purchase";
   externalId?: string | null;
   fbc?: string | null;
   fbp?: string | null;
@@ -59,7 +60,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
         user_data: userData,
       },
     ],
-    test_event_code: input.testEventCode ?? process.env.META_CAPI_TEST_EVENT_CODE ?? undefined,
+    test_event_code: getTestEventCode(input.testEventCode),
   };
 
   try {
@@ -95,10 +96,23 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
   }
 }
 
+type MetaCapiUserData = Partial<{
+  client_ip_address: string;
+  client_user_agent: string;
+  em: string[];
+  external_id: string[];
+  fbc: string;
+  fbp: string;
+  fn: string[];
+  ln: string[];
+  ph: string[];
+}>;
+
 function buildUserData(input: MetaCapiEventInput) {
-  const userData: Record<string, string | string[]> = {};
+  const userData: MetaCapiUserData = {};
   const email = normalizeEmail(input.email);
   const phone = normalizePhone(input.phone);
+  const externalId = normalizeHashable(input.externalId);
 
   if (email) {
     userData.em = [sha256(email)];
@@ -120,23 +134,31 @@ function buildUserData(input: MetaCapiEventInput) {
   }
 
   // External ID (hashed)
-  if (input.externalId) {
-    userData.external_id = [sha256(input.externalId)];
+  if (externalId) {
+    userData.external_id = [sha256(externalId)];
   }
 
   // Browser ID (fbp) — raw, not hashed per Meta spec
-  if (input.fbp) {
-    userData.fbp = input.fbp;
+  const fbp = input.fbp?.trim();
+  if (fbp) {
+    userData.fbp = fbp;
   }
 
   // Click ID (fbc) — raw, not hashed per Meta spec
-  if (input.fbc) {
-    userData.fbc = input.fbc;
+  const fbc = input.fbc?.trim();
+  if (fbc) {
+    userData.fbc = fbc;
+  }
+
+  const clientIpAddress = input.clientIpAddress?.trim();
+  if (clientIpAddress) {
+    userData.client_ip_address = clientIpAddress;
   }
 
   // Client user agent
-  if (input.clientUserAgent) {
-    userData.client_user_agent = input.clientUserAgent;
+  const clientUserAgent = input.clientUserAgent?.trim();
+  if (clientUserAgent) {
+    userData.client_user_agent = clientUserAgent;
   }
 
   return userData;
@@ -150,8 +172,18 @@ function normalizePhone(value: string | null | undefined) {
   return value?.replaceAll(/\D/g, "") || null;
 }
 
+function normalizeHashable(value: string | null | undefined) {
+  return value?.trim().toLowerCase() || null;
+}
+
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function getTestEventCode(inputValue: string | null | undefined) {
+  const value = inputValue ?? process.env.META_CAPI_TEST_EVENT_CODE;
+
+  return value?.trim() || undefined;
 }
 
 function sanitizeMetaResponse(response: unknown) {
