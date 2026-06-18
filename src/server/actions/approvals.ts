@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/permissions";
 import { ApprovalSchema, ReviewApplicationSchema } from "@/lib/validations/approval.schema";
@@ -11,7 +12,13 @@ export async function approveApplicationAction(input: unknown) {
   try {
     const admin = await requireAdmin();
     const payload = parseActionInput(ApprovalSchema, input);
-    const result = await approveApplication(payload, admin.id);
+    const requestHeaders = await headers();
+    const clientIpAddress =
+      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      requestHeaders.get("x-real-ip") ??
+      null;
+    const clientUserAgent = requestHeaders.get("user-agent") ?? null;
+    const result = await approveApplication(payload, admin.id, { clientIpAddress, clientUserAgent });
 
     revalidatePath("/admin");
     revalidatePath("/admin/clients");

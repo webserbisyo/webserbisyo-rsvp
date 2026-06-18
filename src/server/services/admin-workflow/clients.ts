@@ -134,6 +134,7 @@ export async function archiveClient(input: ArchiveClientInput, actorUserId: stri
 export async function markClientAsPaid(
   input: MarkClientPaidInput,
   actorUserId: string,
+  context?: { clientIpAddress?: string | null; clientUserAgent?: string | null },
 ): Promise<ClientActionResult<ClientPaymentResult>> {
   const supabase = createAdminClient();
   const warnings: string[] = [];
@@ -269,6 +270,8 @@ export async function markClientAsPaid(
     actorUserId,
     amount: payment.amount_paid,
     clientId: client.id,
+    clientIpAddress: context?.clientIpAddress ?? null,
+    clientUserAgent: context?.clientUserAgent ?? null,
     customerEmail: application.email,
     customerFullName: application.full_name,
     customerPhone: application.phone,

@@ -12,7 +12,11 @@ import { sendOnboardingEmail } from "./send-onboarding-email";
 import { assertServiceData, assertServiceSuccess } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
-export async function approveApplication(input: ApprovalInput, actorUserId: string) {
+export async function approveApplication(
+  input: ApprovalInput,
+  actorUserId: string,
+  context?: { clientIpAddress?: string | null; clientUserAgent?: string | null },
+) {
   const payload = ApprovalSchema.parse(input);
   const supabase = createAdminClient();
 
@@ -107,6 +111,8 @@ export async function approveApplication(input: ApprovalInput, actorUserId: stri
     actorUserId,
     amount: payment.amount_paid,
     clientId: client.id,
+    clientIpAddress: context?.clientIpAddress ?? null,
+    clientUserAgent: context?.clientUserAgent ?? null,
     customerEmail: application.email,
     customerFullName: application.full_name,
     customerPhone: application.phone,

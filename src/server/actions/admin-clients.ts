@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/permissions";
 import {
@@ -63,7 +64,13 @@ export async function markClientPaidAction(input: unknown) {
   try {
     const admin = await requireAdmin();
     const payload = parseActionInput(MarkClientPaidSchema, input);
-    const result = await markClientAsPaid(payload, admin.id);
+    const requestHeaders = await headers();
+    const clientIpAddress =
+      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      requestHeaders.get("x-real-ip") ??
+      null;
+    const clientUserAgent = requestHeaders.get("user-agent") ?? null;
+    const result = await markClientAsPaid(payload, admin.id, { clientIpAddress, clientUserAgent });
 
     revalidateClientRoutes(result.data.clientId);
 
