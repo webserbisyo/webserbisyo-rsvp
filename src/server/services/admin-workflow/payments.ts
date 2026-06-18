@@ -10,6 +10,7 @@ import {
   assertServiceData,
   assertServiceSuccess,
 } from "@/server/services/service-error";
+import { sendMetaCapiPurchase } from "@/server/services/send-meta-capi-purchase";
 import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import { calculateHostingCoverage } from "./hosting";
@@ -20,7 +21,11 @@ import {
   ensureOwnerProfileForClient,
 } from "./provisioning";
 
-export async function confirmManualPayment(input: ConfirmManualPaymentInput, actorUserId: string) {
+export async function confirmManualPayment(
+  input: ConfirmManualPaymentInput,
+  actorUserId: string,
+  context?: { clientIpAddress?: string | null; clientUserAgent?: string | null },
+) {
   const supabase = createAdminClient();
   const payment = await getPaymentForMutation(input.paymentId);
   const application = await getApplicationForPayment(payment.application_id);
@@ -169,6 +174,33 @@ export async function confirmManualPayment(input: ConfirmManualPaymentInput, act
     });
   }
 
+  // DELIBERATE BEHAVIORAL CHANGE: Fire CAPI Purchase event to match markClientAsPaid path.
+  // confirmManualPayment is the canonical /admin/sales confirmation flow; previously it did not
+  // send CAPI events, creating an inconsistency. Both paths now fire Purchase.
+  if (shouldWriteConfirmationAudit) {
+    const capiSourceUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://webserbisyo-rsvp.vercel.app"}/apply/success`;
+    try {
+      await sendMetaCapiPurchase({
+        actorUserId,
+        amount: updatedPayment.amount_paid,
+        clientId: client.id,
+        clientIpAddress: context?.clientIpAddress ?? null,
+        clientUserAgent: context?.clientUserAgent ?? null,
+        customerEmail: application.email,
+        customerFullName: application.full_name,
+        customerPhone: application.phone,
+        eventId: eventBundle.event.id,
+        externalId: application.reference_code,
+        fbc: application.fb_fbc,
+        fbp: application.fb_fbp,
+        paymentId: updatedPayment.id,
+        sourceUrl: capiSourceUrl,
+      });
+    } catch {
+      // CAPI telemetry must never fail the payment confirmation.
+    }
+  }
+
   return {
     client,
     event: eventBundle.event,
@@ -270,7 +302,7 @@ async function getApplicationForPayment(applicationId: string) {
   const { data, error } = await supabase
     .from("rsvp_applications")
     .select(
-      "id, approved_at, approved_client_id, approved_event_id, email, estimated_guest_count, event_date, event_location, event_type, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, review_notes, reviewed_at, status",
+      "id, approved_at, approved_client_id, approved_event_id, email, estimated_guest_count, event_date, event_location, event_type, fb_fbc, fb_fbp, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, review_notes, reviewed_at, status",
     )
     .eq("id", applicationId)
     .single();
