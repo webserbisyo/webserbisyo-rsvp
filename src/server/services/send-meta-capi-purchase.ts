@@ -9,6 +9,8 @@ export type SendMetaCapiPurchaseInput = {
   actorUserId: string;
   amount: number;
   clientId: string;
+  clientIpAddress?: string | null;
+  clientUserAgent?: string | null;
   customerEmail?: string | null;
   customerFullName?: string | null;
   customerPhone?: string | null;
@@ -25,6 +27,8 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
   const eventId = `Purchase:${input.paymentId}`;
   const result = await sendMetaCapiEvent({
     amount: input.amount,
+    clientIpAddress: input.clientIpAddress,
+    clientUserAgent: input.clientUserAgent,
     currency: "PHP",
     email: input.customerEmail,
     eventId,
