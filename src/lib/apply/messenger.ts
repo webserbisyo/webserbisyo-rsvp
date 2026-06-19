@@ -8,7 +8,9 @@ type MessengerFollowupInput = {
   eventDate?: string | null;
   eventLocation?: string | null;
   eventType?: string | null;
+  firstName?: string | null;
   fullName?: string | null;
+  lastName?: string | null;
   message?: string | null;
   phone?: string | null;
   preferredManualPaymentOption?: string | null;
