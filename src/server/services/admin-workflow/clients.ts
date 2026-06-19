@@ -273,12 +273,13 @@ export async function markClientAsPaid(
     clientIpAddress: context?.clientIpAddress ?? null,
     clientUserAgent: context?.clientUserAgent ?? null,
     customerEmail: application.email,
-    customerFullName: application.full_name,
     customerPhone: application.phone,
     eventId: event.id,
     externalId: application.reference_code,
     fbc: application.fb_fbc,
     fbp: application.fb_fbp,
+    firstName: application.first_name,
+    lastName: application.last_name,
     paymentId: payment.id,
     sourceUrl: capiSourceUrl,
   });
@@ -1229,7 +1230,7 @@ async function getApprovedApplicationForClient(clientId: string) {
   const { data, error } = await supabase
     .from("rsvp_applications")
     .select(
-      "id, approved_at, email, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, fb_fbp, fb_fbc",
+      "id, approved_at, email, first_name, full_name, last_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, fb_fbp, fb_fbc",
     )
     .eq("approved_client_id", clientId)
     .order("approved_at", { ascending: false, nullsFirst: false })

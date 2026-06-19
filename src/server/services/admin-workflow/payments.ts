@@ -187,12 +187,13 @@ export async function confirmManualPayment(
         clientIpAddress: context?.clientIpAddress ?? null,
         clientUserAgent: context?.clientUserAgent ?? null,
         customerEmail: application.email,
-        customerFullName: application.full_name,
         customerPhone: application.phone,
         eventId: eventBundle.event.id,
         externalId: application.reference_code,
         fbc: application.fb_fbc,
         fbp: application.fb_fbp,
+        firstName: application.first_name,
+        lastName: application.last_name,
         paymentId: updatedPayment.id,
         sourceUrl: capiSourceUrl,
       });
@@ -302,7 +303,7 @@ async function getApplicationForPayment(applicationId: string) {
   const { data, error } = await supabase
     .from("rsvp_applications")
     .select(
-      "id, approved_at, approved_client_id, approved_event_id, email, estimated_guest_count, event_date, event_location, event_type, fb_fbc, fb_fbp, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, review_notes, reviewed_at, status",
+      "id, approved_at, approved_client_id, approved_event_id, email, estimated_guest_count, event_date, event_location, event_type, fb_fbc, fb_fbp, first_name, full_name, last_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, review_notes, reviewed_at, status",
     )
     .eq("id", applicationId)
     .single();
