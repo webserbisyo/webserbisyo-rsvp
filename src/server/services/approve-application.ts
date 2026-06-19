@@ -29,18 +29,14 @@ export async function approveApplication(
   assertServiceSuccess(applicationError, "Failed to load RSVP application for approval.");
   assertServiceData(application, "RSVP application does not exist.");
 
-  const individualName = application.first_name && application.last_name
-    ? `${application.first_name} ${application.last_name}`
-    : application.full_name;
-
   const client =
     application.approved_client_id !== null
       ? await getClient(application.approved_client_id)
       : await provisionClient({
           contactEmail: application.email,
-          contactName: payload.contactName ?? individualName,
+          contactName: payload.contactName ?? application.full_name,
           contactPhone: payload.contactPhone ?? application.phone,
-          name: payload.contactName ?? individualName,
+          name: payload.contactName ?? application.full_name,
           planType: payload.planType,
         });
 
@@ -48,7 +44,7 @@ export async function approveApplication(
     accessMode: "temporary_password",
     clientId: client.id,
     email: application.email,
-    fullName: payload.contactName ?? individualName,
+    fullName: payload.contactName ?? application.full_name,
   });
 
   const eventBundle =
@@ -105,7 +101,7 @@ export async function approveApplication(
       clientId: client.id,
       eventId: eventBundle.event.id,
       recipientEmail: application.email,
-      recipientName: application.first_name ?? payload.contactName ?? individualName,
+      recipientName: payload.contactName ?? application.full_name,
       temporaryPassword: ownerSetup.temporaryPassword,
     });
   }
@@ -118,8 +114,7 @@ export async function approveApplication(
     clientIpAddress: context?.clientIpAddress ?? null,
     clientUserAgent: context?.clientUserAgent ?? null,
     customerEmail: application.email,
-    firstName: application.first_name,
-    lastName: application.last_name,
+    customerFullName: application.full_name,
     customerPhone: application.phone,
     eventId: eventBundle.event.id,
     externalId: application.reference_code,

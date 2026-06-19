@@ -107,9 +107,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
       eventDate: undefined,
       eventLocation: "",
       eventType: "wedding",
-      firstName: "",
       fullName: "",
-      lastName: "",
       message: "",
       phone: "",
       preferredManualPaymentOption: config.paymentOptions[0]?.provider,
@@ -135,8 +133,6 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 
   async function handleContinueToReview() {
     const valid = await trigger([
-      "firstName",
-      "lastName",
       "fullName",
       "email",
       "phone",
@@ -179,9 +175,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
         eventDate: values.eventDate ?? null,
         eventLocation: values.eventLocation ?? null,
         eventType: values.eventType,
-        firstName: values.firstName,
         fullName: values.fullName,
-        lastName: values.lastName,
         message: values.message ?? null,
         phone: values.phone,
         preferredManualPaymentOption: result.data.preferredManualPaymentOption ?? null,
@@ -254,35 +248,9 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
               </div>
 
               <div className="af-fields-grid">
-                {/* First Name */}
+                {/* Full Name */}
                 <div className="af-field">
-                  <Label htmlFor="firstName" className="af-label">First Name <span className="af-required">*</span></Label>
-                  <Input
-                    id="firstName"
-                    placeholder="e.g. Maria"
-                    className="af-input"
-                    {...register("firstName")}
-                    disabled={isPending}
-                  />
-                  {errors.firstName?.message && <p className="af-field-error">{errors.firstName.message}</p>}
-                </div>
-
-                {/* Last Name */}
-                <div className="af-field">
-                  <Label htmlFor="lastName" className="af-label">Last Name <span className="af-required">*</span></Label>
-                  <Input
-                    id="lastName"
-                    placeholder="e.g. Santos"
-                    className="af-input"
-                    {...register("lastName")}
-                    disabled={isPending}
-                  />
-                  {errors.lastName?.message && <p className="af-field-error">{errors.lastName.message}</p>}
-                </div>
-
-                {/* Couple / Event Name */}
-                <div className="af-field">
-                  <Label htmlFor="fullName" className="af-label">Couple / Event Name <span className="af-required">*</span></Label>
+                  <Label htmlFor="fullName" className="af-label">Full Name <span className="af-required">*</span></Label>
                   <Input
                     id="fullName"
                     placeholder="e.g. Maria & Juan Santos"

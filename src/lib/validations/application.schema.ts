@@ -161,22 +161,6 @@ const EstimatedGuestCountSchema = z
     return parsed;
   });
 
-const FirstNameSchema = z
-  .string()
-  .trim()
-  .min(1, "First name is required.")
-  .min(2, "First name must be at least 2 characters.")
-  .max(120, "Enter a valid first name.")
-  .refine((value) => isAllowedNameCharacter(value) && hasLetter(value), "Enter a valid first name.");
-
-const LastNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Last name is required.")
-  .min(2, "Last name must be at least 2 characters.")
-  .max(120, "Enter a valid last name.")
-  .refine((value) => isAllowedNameCharacter(value) && hasLetter(value), "Enter a valid last name.");
-
 export function createApplicationSchema(options?: { requireManualPaymentOption?: boolean }) {
   const requireManualPaymentOption = options?.requireManualPaymentOption ?? false;
 
@@ -188,9 +172,7 @@ export function createApplicationSchema(options?: { requireManualPaymentOption?:
     eventType: ApplicationEnabledEventTypeSchema,
     fbFbc: z.string().max(500).optional(),
     fbFbp: z.string().max(500).optional(),
-    firstName: FirstNameSchema,
     fullName: FullNameSchema,
-    lastName: LastNameSchema,
     message: optionalText(1000, "Message is too long."),
     phone: PhoneSchema,
     preferredManualPaymentOption: requireManualPaymentOption

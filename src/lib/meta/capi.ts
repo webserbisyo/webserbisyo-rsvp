@@ -13,9 +13,7 @@ export type MetaCapiEventInput = {
   externalId?: string | null;
   fbc?: string | null;
   fbp?: string | null;
-  firstName?: string | null;
   fullName?: string | null;
-  lastName?: string | null;
   phone?: string | null;
   pixelId?: string | null;
   sourceUrl?: string | null;
@@ -124,12 +122,15 @@ function buildUserData(input: MetaCapiEventInput) {
     userData.ph = [sha256(phone)];
   }
 
-  if (input.firstName) {
-    userData.fn = [sha256(input.firstName.trim().toLowerCase())];
-  }
+  // First name / last name from fullName
+  const nameParts = input.fullName?.trim().split(/\s+/) ?? [];
 
-  if (input.lastName) {
-    userData.ln = [sha256(input.lastName.trim().toLowerCase())];
+  if (nameParts.length > 0 && nameParts[0]) {
+    userData.fn = [sha256(nameParts[0].toLowerCase())];
+
+    if (nameParts.length > 1) {
+      userData.ln = [sha256(nameParts.slice(1).join(" ").toLowerCase())];
+    }
   }
 
   // External ID (hashed)

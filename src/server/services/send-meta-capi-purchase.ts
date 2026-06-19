@@ -12,13 +12,12 @@ export type SendMetaCapiPurchaseInput = {
   clientIpAddress?: string | null;
   clientUserAgent?: string | null;
   customerEmail?: string | null;
+  customerFullName?: string | null;
   customerPhone?: string | null;
   eventId: string;
   externalId?: string | null;
   fbc?: string | null;
   fbp?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
   paymentId: string;
   sourceUrl?: string | null;
 };
@@ -37,8 +36,7 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     externalId: input.externalId,
     fbc: input.fbc,
     fbp: input.fbp,
-    firstName: input.firstName,
-    lastName: input.lastName,
+    fullName: input.customerFullName,
     phone: input.customerPhone,
     pixelId,
     sourceUrl: input.sourceUrl,
