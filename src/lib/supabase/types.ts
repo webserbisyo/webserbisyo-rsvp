@@ -945,8 +945,10 @@ export type Database = {
           event_type: string;
           fb_fbc: string | null;
           fb_fbp: string | null;
+          first_name: string | null;
           full_name: string;
           id: string;
+          last_name: string | null;
           message: string | null;
           phone: string | null;
           preferred_manual_payment_option: string | null;
@@ -971,8 +973,10 @@ export type Database = {
           event_type: string;
           fb_fbc?: string | null;
           fb_fbp?: string | null;
+          first_name?: string | null;
           full_name: string;
           id?: string;
+          last_name?: string | null;
           message?: string | null;
           phone?: string | null;
           preferred_manual_payment_option?: string | null;
@@ -997,8 +1001,10 @@ export type Database = {
           event_type?: string;
           fb_fbc?: string | null;
           fb_fbp?: string | null;
+          first_name?: string | null;
           full_name?: string;
           id?: string;
+          last_name?: string | null;
           message?: string | null;
           phone?: string | null;
           preferred_manual_payment_option?: string | null;
