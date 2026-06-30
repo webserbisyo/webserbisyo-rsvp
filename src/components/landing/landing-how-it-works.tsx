@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
@@ -13,7 +13,20 @@ import applyImg from "../../../public/images/landing/how-it-works/apply.webp";
 import buildFirstImg from "../../../public/images/landing/how-it-works/build-first.webp";
 import confirmGoLiveImg from "../../../public/images/landing/how-it-works/confirm-go-live.webp";
 
-const steps = [
+type StepType = {
+  number: string;
+  title: string;
+  description: string;
+  microcopy: string;
+  imageSrc: StaticImageData;
+  alt: string;
+  imageWidthClass: string;
+  priority: boolean;
+  loading?: "eager" | "lazy";
+  fetchPriority?: "high" | "low" | "auto";
+};
+
+const steps: StepType[] = [
   {
     number: "01",
     title: "Apply",
@@ -21,7 +34,7 @@ const steps = [
     microcopy: "Names, event date, venue, attire motif, and event theme.",
     imageSrc: applyImg,
     alt: "Apply step illustration",
-    imageWidthClass: "w-[70%] sm:w-[66%] lg:w-[66%]",
+    imageWidthClass: "w-[82%] sm:w-[78%] lg:w-[78%]",
     priority: true,
   },
   {
@@ -31,8 +44,10 @@ const steps = [
     microcopy: "We prepare your RSVP form, event details, gallery, and preview link.",
     imageSrc: buildFirstImg,
     alt: "Website build step illustration",
-    imageWidthClass: "w-[78%] sm:w-[74%] lg:w-[74%]",
+    imageWidthClass: "w-[92%] sm:w-[88%] lg:w-[88%]",
     priority: false,
+    loading: "eager",
+    fetchPriority: "high",
   },
   {
     number: "03",
@@ -41,8 +56,9 @@ const steps = [
     microcopy: "Request small edits, approve the final website, then share your link.",
     imageSrc: confirmGoLiveImg,
     alt: "Confirm and go live step illustration",
-    imageWidthClass: "w-[64%] sm:w-[60%] lg:w-[60%]",
+    imageWidthClass: "w-[78%] sm:w-[74%] lg:w-[74%]",
     priority: false,
+    loading: "lazy",
   },
 ];
 
@@ -77,7 +93,7 @@ const textVariants = (isLeft: boolean): Variants => ({
   },
 });
 
-function StepImage({ step, index }: { step: typeof steps[0]; index: number }) {
+function StepImage({ step, index }: { step: StepType; index: number }) {
   const shouldReduceMotion = useReducedMotion();
   const [loaded, setLoaded] = useState(false);
 
@@ -95,11 +111,13 @@ function StepImage({ step, index }: { step: typeof steps[0]; index: number }) {
         src={step.imageSrc}
         alt={step.alt}
         priority={step.priority}
+        loading={step.loading}
+        fetchPriority={step.fetchPriority}
         placeholder="empty"
         onLoad={() => setLoaded(true)}
         className={cn(
           "h-auto w-full object-contain transition-opacity duration-700 ease-out",
-          loaded || step.priority ? "opacity-100" : "opacity-0"
+          loaded || step.priority || step.loading === "eager" ? "opacity-100" : "opacity-0"
         )}
       />
     </motion.div>

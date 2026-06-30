@@ -9,6 +9,7 @@ import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
 import { LandingTrustBar } from "@/components/landing/landing-trust-bar";
 import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
+import { LandingFeatures } from "@/components/landing/landing-features";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
@@ -75,6 +76,7 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
         <LandingVisualHero />
         <LandingTrustBar />
         <LandingHowItWorks messengerPageUrl={applyConfig.messengerPageUrl} />
+        <LandingFeatures messengerPageUrl={applyConfig.messengerPageUrl} />
       </main>
       <PublicMetaPixelScripts eventName="ViewContent" pixels={landingPixels} />
     </>
