@@ -11,7 +11,9 @@ import { LandingTrustBar } from "@/components/landing/landing-trust-bar";
 import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
 import { LandingFeatures } from "@/components/landing/landing-features";
 import { LandingTrustPromise } from "@/components/landing/landing-trust-promise";
+import { LandingPricing } from "@/components/landing/landing-pricing";
 import { LandingFAQ } from "@/components/landing/landing-faq";
+import { LandingFooter } from "@/components/landing/landing-footer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
@@ -80,8 +82,10 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
         <LandingHowItWorks messengerPageUrl={applyConfig.messengerPageUrl} />
         <LandingFeatures messengerPageUrl={applyConfig.messengerPageUrl} />
         <LandingTrustPromise />
+        <LandingPricing />
         <LandingFAQ messengerPageUrl={applyConfig.messengerPageUrl} />
       </main>
+      <LandingFooter messengerPageUrl={applyConfig.messengerPageUrl} />
       <PublicMetaPixelScripts eventName="ViewContent" pixels={landingPixels} />
     </>
   );
