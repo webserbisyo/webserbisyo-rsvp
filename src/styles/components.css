@@ -1764,6 +1764,17 @@
   caret-color: #0f172a;
 }
 
+/* Dark Premium Autofill Fix */
+.cn-dark-autofill:-webkit-autofill,
+.cn-dark-autofill:-webkit-autofill:hover,
+.cn-dark-autofill:-webkit-autofill:focus,
+.cn-dark-autofill:-webkit-autofill:active {
+  transition: background-color 9999s ease-in-out 0s;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px #121212 inset !important;
+}
+
 .rsvp-shell {
   background:
     radial-gradient(
@@ -8221,4 +8232,16 @@
 .landing-theme-dark .landing-login-link:focus-visible {
   outline: 2px solid var(--landing-border-strong);
   outline-offset: 2px;
+}
+
+/* Dark Autofill Override for Chrome/Safari/Edge */
+.landing-theme-dark input:-webkit-autofill,
+.landing-theme-dark input:-webkit-autofill:hover,
+.landing-theme-dark input:-webkit-autofill:focus,
+.landing-theme-dark textarea:-webkit-autofill,
+.landing-theme-dark textarea:-webkit-autofill:hover,
+.landing-theme-dark textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #0f0f0f inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

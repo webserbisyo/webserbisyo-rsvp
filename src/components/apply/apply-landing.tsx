@@ -213,7 +213,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
           <div className="relative pt-6 h-full flex flex-col">
             {/* Top Floating Badge */}
             <div className="absolute top-0 left-0 right-0 flex justify-center z-10">
-              <span className="inline-block bg-gradient-to-r from-[#ff8a5c] to-amber-500 text-black text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase shadow-md shadow-orange-950/20">
+              <span className="inline-block bg-gradient-to-r from-[#ff8a5c] to-amber-500 text-white text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase shadow-md shadow-orange-950/20">
                 MOST MEMORABLE EXPERIENCE
               </span>
             </div>

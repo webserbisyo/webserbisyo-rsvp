@@ -61,7 +61,7 @@ export async function submitApplication(input: ApplicationInput) {
         code: ZodIssueCode.custom,
         path: ["email"],
         message:
-          "An account is already registered with this email. Please log in or use a different email address.",
+          "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.",
       },
     ]);
   }

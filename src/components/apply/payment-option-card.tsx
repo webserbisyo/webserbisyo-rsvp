@@ -12,41 +12,48 @@ type PaymentOptionCardProps = {
 
 export function PaymentOptionCard({ isSelected, onCopyNumber, option }: PaymentOptionCardProps) {
   return (
-    <div className={`poc-card ${isSelected ? "poc-card--selected" : ""}`}>
+    <div className={`flex flex-col items-center gap-4 bg-white/[0.01] border border-white/[0.04] rounded-xl p-4 w-full transition-all duration-300 ${isSelected ? "border-white/[0.08]" : ""}`}>
       {/* QR code — centered, large */}
       {option.qrImageUrl ? (
-        <div className="poc-qr-wrap">
+        <div className="flex justify-center w-full">
           <Image
             src={option.qrImageUrl}
             alt={`${option.label} QR code`}
-            width={220}
-            height={220}
-            className="poc-qr-img"
+            width={200}
+            height={200}
+            className="w-[200px] h-[200px] object-contain rounded-lg border border-white/[0.08] bg-white p-1"
           />
         </div>
       ) : (
-        <div className="poc-qr-placeholder">
-          <QrCode className="poc-qr-placeholder-icon" />
-          <p className="poc-qr-placeholder-text">QR image not configured yet.</p>
+        <div className="w-[200px] h-[200px] border border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center gap-2 text-white/40 bg-white/[0.01]">
+          <QrCode className="size-6 text-white/20" />
+          <p className="text-[11px] text-center">QR image not configured yet.</p>
         </div>
       )}
 
       {/* Account info — stacked below QR, centered */}
-      <div className="poc-account-info">
-        <div className="poc-account-row">
-          <p className="poc-account-label">ACCOUNT NAME</p>
-          <p className="poc-account-value">{option.accountName || "To be confirmed"}</p>
+      <div className="flex flex-col items-center gap-3 text-center w-full mt-2">
+        <div className="flex flex-col items-center gap-0.5">
+          <p className="text-[9px] font-bold tracking-widest text-white/40 uppercase">ACCOUNT NAME</p>
+          <p className="text-sm font-semibold text-white">{option.accountName || "To be confirmed"}</p>
         </div>
-        <div className="poc-account-row">
-          <p className="poc-account-label">ACCOUNT NUMBER</p>
-          <p className="poc-account-number">{option.accountNumber || "To be confirmed"}</p>
+        <div className="flex flex-col items-center gap-0.5">
+          <p className="text-[9px] font-bold tracking-widest text-white/40 uppercase">ACCOUNT NUMBER</p>
+          <p className="text-base font-extrabold text-white tracking-wider font-mono">{option.accountNumber || "To be confirmed"}</p>
         </div>
       </div>
 
       {/* Copy number button — centered */}
       {option.accountNumber ? (
-        <button type="button" className="poc-copy-btn" onClick={onCopyNumber}>
-          <Copy className="poc-copy-icon" />
+        <button 
+          type="button" 
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] px-3.5 py-1.5 text-xs font-semibold text-white/80 transition-all duration-200 cursor-pointer" 
+          onClick={(e) => {
+            e.stopPropagation(); // Avoid triggering card selection again on click
+            if (onCopyNumber) onCopyNumber();
+          }}
+        >
+          <Copy className="size-3.5" />
           Copy number
         </button>
       ) : null}

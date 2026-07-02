@@ -20,14 +20,18 @@ export function PaymentOptionPicker({
   value,
 }: PaymentOptionPickerProps) {
   return (
-    <div className="pop-wrap">
-      <div className="pop-grid">
+    <div className="flex flex-col gap-3 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {options.map((option) => (
           <div
             key={option.provider}
             role="button"
             tabIndex={0}
-            className={`pop-option-btn ${value === option.provider ? "pop-option-btn--selected" : ""}`}
+            className={`bg-[#050505]/40 border rounded-2xl p-4 flex flex-col gap-0 cursor-pointer text-left transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 ${
+              value === option.provider 
+                ? "border-[#ff8a5c] shadow-lg shadow-orange-950/10 ring-1 ring-[#ff8a5c]/25" 
+                : "border-white/[0.08] hover:border-white/15"
+            }`}
             onClick={() => onValueChange(option.provider as "gcash" | "maya")}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -37,13 +41,13 @@ export function PaymentOptionPicker({
             }}
           >
             {/* Header row */}
-            <div className="pop-option-header">
-              <span className="pop-option-name">{option.label}</span>
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06]">
+              <span className="text-sm font-bold text-white tracking-wide">{option.label}</span>
               {value === option.provider && (
-                <span className="pop-selected-badge">Selected ✓</span>
+                <span className="bg-[#ff8a5c]/10 border border-[#ff8a5c]/25 text-[#ff8a5c] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">Selected ✓</span>
               )}
               {value !== option.provider && (
-                <span className="pop-radio-circle" />
+                <span className="size-4 rounded-full border border-white/20 bg-white/[0.01]" />
               )}
             </div>
 
@@ -68,7 +72,7 @@ export function PaymentOptionPicker({
         ))}
       </div>
 
-      {error?.message ? <p className="pop-error">{error.message}</p> : null}
+      {error?.message ? <p className="text-xs text-red-400 font-medium mt-1">{error.message}</p> : null}
     </div>
   );
 }
