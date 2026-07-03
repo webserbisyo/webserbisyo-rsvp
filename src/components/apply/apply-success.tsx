@@ -9,6 +9,7 @@ import {
   buildMessengerContinueUrl,
   formatPlanLabel,
 } from "@/lib/apply/messenger";
+import { trackMetaPixelEvent } from "@/lib/meta/browser-events";
 import { getPaymentOptionLabel } from "@/lib/apply/public-payment-option-dto";
 
 type ApplySuccessProps = {
@@ -113,6 +114,11 @@ export function ApplySuccess({
   }
 
   async function handleContinueOnMessenger() {
+    trackMetaPixelEvent("Contact", {
+      contact_method: "messenger",
+      source: "success",
+    });
+
     // Auto-copy the full followup message to clipboard first
     try {
       await navigator.clipboard.writeText(followupMessage);

@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Image, { type StaticImageData } from "next/image";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { cn } from "@/lib/utils";
 import { buildMessengerContinueUrl } from "@/lib/apply/messenger";
+import { TrackedAnchor, TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { MessengerIcon } from "@/components/ui/icons/messenger-icon";
 
 import applyImg from "../../../public/images/landing/how-it-works/apply.webp";
@@ -46,8 +46,8 @@ const steps: StepType[] = [
     alt: "Website build step illustration",
     imageWidthClass: "w-[92%] sm:w-[88%] lg:w-[88%]",
     priority: false,
-    loading: "eager",
-    fetchPriority: "high",
+    loading: "lazy",
+    fetchPriority: "low",
   },
   {
     number: "03",
@@ -219,26 +219,37 @@ export function LandingHowItWorks({ messengerPageUrl }: LandingHowItWorksProps) 
 
                   {/* Apply CTA (Step 1) */}
                   {step.number === "01" && (
-                    <Link
+                    <TrackedLink
                       href="/apply"
                       className="landing-cta-button group/how-cta mt-8 h-12 w-full px-6 text-sm sm:w-auto self-start gap-2"
+                      trackingEvent="StartApplicationClick"
+                      trackingParams={{
+                        content_category: "RSVP Website Application",
+                        destination: "/apply",
+                        source: "landing_how_it_works",
+                      }}
                     >
                       Apply
                       <ArrowRight className="size-4 transition-transform duration-200 group-hover/how-cta:translate-x-0.5" />
-                    </Link>
+                    </TrackedLink>
                   )}
 
                   {/* Messenger CTA (Step 3) */}
                   {step.number === "03" && messengerUrl && (
-                    <a
+                    <TrackedAnchor
                       href={messengerUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="group/messenger mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 text-sm font-medium text-[var(--landing-text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:border-[#0084FF]/50 hover:bg-white/10 sm:w-auto self-start"
+                      trackingEvent="Contact"
+                      trackingParams={{
+                        contact_method: "messenger",
+                        source: "landing_how_it_works",
+                      }}
                     >
                       <MessengerIcon className="size-5 text-[#0084FF]" />
                       Continue on Messenger
-                    </a>
+                    </TrackedAnchor>
                   )}
                 </motion.div>
               </motion.div>

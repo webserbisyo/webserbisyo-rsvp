@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight, MessageSquareCode } from "lucide-react";
+import { TrackedAnchor, TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { buildMessengerContinueUrl } from "@/lib/apply/messenger";
 
 type LandingFooterProps = {
@@ -24,24 +24,35 @@ export function LandingFooter({ messengerPageUrl }: LandingFooterProps) {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-            <Link
+            <TrackedLink
               href="/apply"
               className="landing-cta-button group inline-flex h-11 items-center justify-center gap-1.5 rounded-full px-6 text-sm font-bold text-white shadow-lg shadow-orange-950/20 w-full sm:w-auto"
+              trackingEvent="StartApplicationClick"
+              trackingParams={{
+                content_category: "RSVP Website Application",
+                destination: "/apply",
+                source: "footer",
+              }}
             >
               Get started
               <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
+            </TrackedLink>
             
             {messengerUrl && (
-              <a
+              <TrackedAnchor
                 href={messengerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] px-6 text-sm font-semibold text-white transition-all w-full sm:w-auto"
+                trackingEvent="Contact"
+                trackingParams={{
+                  contact_method: "messenger",
+                  source: "footer",
+                }}
               >
                 <MessageSquareCode className="size-4 text-[#ff8a5c]" />
                 Message us
-              </a>
+              </TrackedAnchor>
             )}
           </div>
         </div>

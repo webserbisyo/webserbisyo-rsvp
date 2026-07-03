@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { cn } from "@/lib/utils/index";
 
 const NAV_LINKS = [
@@ -139,13 +140,19 @@ export function LandingNavbar() {
             >
               Log in
             </Link>
-            <Link
+            <TrackedLink
               href="/apply"
               className="landing-cta-button group/nav-cta h-8 px-4 text-sm gap-1.5"
+              trackingEvent="StartApplicationClick"
+              trackingParams={{
+                content_category: "RSVP Website Application",
+                destination: "/apply",
+                source: "navbar",
+              }}
             >
               Get started
               <ArrowRight className="size-3.5 transition-transform duration-200 group-hover/nav-cta:translate-x-0.5" />
-            </Link>
+            </TrackedLink>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -229,13 +236,19 @@ export function LandingNavbar() {
               >
                 Log in
               </Link>
-              <Link
+              <TrackedLink
                 href="/apply"
                 className="landing-cta-button justify-center h-12 text-base"
                 onClick={() => setIsMobileMenuOpen(false)}
+                trackingEvent="StartApplicationClick"
+                trackingParams={{
+                  content_category: "RSVP Website Application",
+                  destination: "/apply",
+                  source: "navbar",
+                }}
               >
                 Get started
-              </Link>
+              </TrackedLink>
             </div>
           </div>
         </div>

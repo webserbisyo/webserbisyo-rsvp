@@ -14,11 +14,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://rsvp.webserbisyo.com"),
   title: {
     default: "WebSerbisyo RSVP",
     template: "%s | WebSerbisyo RSVP",
   },
-  description: "Manage your WebSerbisyo RSVP dashboard.",
+  description:
+    "Premium digital RSVP websites for Filipino couples. Preview your wedding website first before paying.",
+  applicationName: "WebSerbisyo RSVP",
+  creator: "WebSerbisyo",
+  publisher: "WebSerbisyo",
+  openGraph: {
+    description:
+      "Premium digital RSVP websites for Filipino couples. Preview your wedding website first before paying.",
+    images: [
+      {
+        alt: "WebSerbisyo RSVP premium digital RSVP websites",
+        height: 630,
+        url: "/opengraph-image",
+        width: 1200,
+      },
+    ],
+    locale: "en_PH",
+    siteName: "WebSerbisyo RSVP",
+    title: "WebSerbisyo RSVP",
+    type: "website",
+    url: "https://rsvp.webserbisyo.com",
+  },
+  twitter: {
+    card: "summary_large_image",
+    description:
+      "Premium digital RSVP websites for Filipino couples. Preview your wedding website first before paying.",
+    images: ["/opengraph-image"],
+    title: "WebSerbisyo RSVP",
+  },
   icons: {
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
     icon: [

@@ -18,14 +18,47 @@ import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pix
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
+import { getMarketingJsonLd } from "@/lib/seo/json-ld";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { resolvePublicEventWebsiteBySubdomain } from "@/server/services/resolve-public-event-website";
 
 const landingMetadata: Metadata = {
-  title: "WebSerbisyo RSVP — Digital RSVP websites for Filipino celebrations",
+  alternates: {
+    canonical: "https://rsvp.webserbisyo.com",
+  },
   description:
-    "Launch a polished RSVP page for your event. Collect guest responses and manage your guestbook from one organized dashboard.",
+    "Create a beautiful digital wedding RSVP website with guest management, hosting, support, and a preview-first process. Website muna, bago bayad.",
+  openGraph: {
+    description:
+      "Create a beautiful digital wedding RSVP website with guest management, hosting, support, and a preview-first process. Website muna, bago bayad.",
+    images: [
+      {
+        alt: "WebSerbisyo RSVP premium digital RSVP websites",
+        height: 630,
+        url: "/opengraph-image",
+        width: 1200,
+      },
+    ],
+    siteName: "WebSerbisyo RSVP",
+    title: "WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples",
+    type: "website",
+    url: "https://rsvp.webserbisyo.com",
+  },
+  robots: {
+    follow: true,
+    index: true,
+  },
+  title: {
+    absolute: "WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples",
+  },
+  twitter: {
+    card: "summary_large_image",
+    description:
+      "Create a beautiful digital wedding RSVP website with guest management, hosting, support, and a preview-first process. Website muna, bago bayad.",
+    images: ["/opengraph-image"],
+    title: "WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples",
+  },
 };
 
 type PublicLandingPageProps = {
@@ -86,7 +119,20 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
         <LandingFAQ messengerPageUrl={applyConfig.messengerPageUrl} />
       </main>
       <LandingFooter messengerPageUrl={applyConfig.messengerPageUrl} />
-      <PublicMetaPixelScripts eventName="ViewContent" pixels={landingPixels} />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(getMarketingJsonLd()) }}
+      />
+      <PublicMetaPixelScripts
+        eventName="ViewContent"
+        eventParams={{
+          content_category: "RSVP Website Service",
+          content_name: "WebSerbisyo RSVP Landing Page",
+          source_route: "/",
+        }}
+        pixels={landingPixels}
+      />
     </>
   );
 }

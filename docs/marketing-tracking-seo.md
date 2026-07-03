@@ -1,0 +1,141 @@
+# WebSerbisyo RSVP Marketing Tracking and SEO
+
+This document covers the public marketing funnel for `https://rsvp.webserbisyo.com`.
+
+## Public Route Map
+
+| Route | Purpose | Indexing |
+| --- | --- | --- |
+| `/` | Main marketing landing page | `index, follow` |
+| `/apply` | Public pricing and plan selection | `index, follow` |
+| `/apply/start` | Application form step | `noindex, follow` |
+| `/apply/success` | Submitted application state | `noindex, nofollow` |
+
+Query variants such as `/apply/start?plan=pro` and `/apply/start?plan=max` canonicalize to `/apply/start`. Hash URLs such as `/#pricing`, `/#features`, and `/#faq` are section anchors, not separate canonical pages.
+
+## SEO Metadata Map
+
+| Route | Title | Canonical | Robots |
+| --- | --- | --- | --- |
+| `/` | `WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples` | `https://rsvp.webserbisyo.com` | `index, follow` |
+| `/apply` | `Pricing Plans \| WebSerbisyo RSVP` | `https://rsvp.webserbisyo.com/apply` | `index, follow` |
+| `/apply/start` | `Start Your RSVP Website Application \| WebSerbisyo RSVP` | `https://rsvp.webserbisyo.com/apply/start` | `noindex, follow` |
+| `/apply/success` | `Application Received \| WebSerbisyo RSVP` | `https://rsvp.webserbisyo.com/apply/success` | `noindex, nofollow` |
+
+## robots.txt and Sitemap
+
+`/robots.txt` allows normal crawling and disallows private or system routes:
+
+- `/admin/`
+- `/dashboard/`
+- `/api/`
+- `/callback`
+- `/reset-password`
+
+`/sitemap.xml` includes only indexable public marketing URLs:
+
+- `https://rsvp.webserbisyo.com`
+- `https://rsvp.webserbisyo.com/apply`
+
+The form and success routes are excluded from the sitemap and use page-level noindex metadata.
+
+## Open Graph Image Strategy
+
+The app uses a generated Next.js Open Graph image route at `/opengraph-image`.
+
+Requirements preserved in the generated image:
+
+- 1200 x 630 PNG
+- dark premium WebSerbisyo RSVP theme
+- no remote assets
+- no external fonts
+- no copyrighted third-party image dependencies
+- core copy: `Website muna, bago bayad.`
+
+Twitter uses `summary_large_image` and shares the same image.
+
+## JSON-LD Schema Map
+
+The landing page renders a conservative JSON-LD graph:
+
+- `Organization`: `WebSerbisyo`
+- `WebSite`: `WebSerbisyo RSVP`
+- `Service`: `WebSerbisyo RSVP Website Service`
+- `Offer`: PRO Plan, PHP 1599
+- `Offer`: MAX Plan, PHP 3599
+
+No reviews, ratings, aggregate ratings, or unsupported FAQ schema are included. FAQ schema should only be added if the structured data exactly matches visible FAQ content.
+
+## Meta Pixel Browser Event Map
+
+| Route or action | Event | Type | Parameters |
+| --- | --- | --- | --- |
+| `/` | `ViewContent` | Standard | content name/category and source route |
+| `/apply` | `ViewContent` | Standard | content name/category and source route |
+| `/apply/start?plan=pro` | `InitiateCheckout` | Standard | value `1599`, currency `PHP`, plan `pro` |
+| `/apply/start?plan=max` | `InitiateCheckout` | Standard | value `3599`, currency `PHP`, plan `max` |
+| `/apply/success` | `Lead` | Standard | lead category, source route, plan/value when available |
+| `/apply/success` | `CompleteRegistration` | Standard | lead category, source route, plan/value when available |
+
+Pixel initialization, PageView behavior, numeric pixel ID filtering, and pixel ID de-duplication remain unchanged.
+
+## CTA Tracking Event Map
+
+| CTA | Event | Notes |
+| --- | --- | --- |
+| Hero create website | `StartApplicationClick` | source `hero`, destination `/apply` |
+| Navbar get started | `StartApplicationClick` | source `navbar`, destination `/apply` |
+| Footer get started | `StartApplicationClick` | source `footer`, destination `/apply` |
+| Landing pricing PRO | `SelectPlan` | source `landing_pricing`, plan `pro`, value `1599` |
+| Landing pricing MAX | `SelectPlan` | source `landing_pricing`, plan `max`, value `3599` |
+| Apply pricing PRO | `SelectPlan` | source `apply_pricing`, plan `pro`, value `1599` |
+| Apply pricing MAX | `SelectPlan` | source `apply_pricing`, plan `max`, value `3599` |
+| Messenger links/buttons | `Contact` | contact method `messenger`, source-specific |
+
+The app intentionally does not track hovers, accordion opens, scroll depth, decorative motion, countdown views, or every navigation link.
+
+## CAPI Status
+
+Server-side Purchase CAPI is preserved and untouched by this marketing foundation work.
+
+Server-side Lead and CompleteRegistration CAPI are intentionally deferred. Before implementing them, the app needs a browser/server deduplication design where the browser `eventID` equals the server `event_id`. The design should define where the event ID is generated, whether it is stored on the application record, and how CAPI result logging should work without blocking the user flow.
+
+## Environment Variables
+
+Relevant environment variable names:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_APP_URL`
+- `SITE_URL`
+- `APP_BASE_URL`
+- `META_PIXEL_ID`
+- `META_CAPI_ACCESS_TOKEN`
+- `META_CAPI_API_VERSION`
+- `META_CAPI_TEST_EVENT_CODE`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RSVP_WILDCARD_DOMAIN`
+
+Secret values must never be printed in logs, docs, screenshots, issue comments, or pull request descriptions.
+
+## Manual QA Checklist
+
+- `/` loads the finalized landing page.
+- `/apply` loads pricing and displays PRO `₱1,599 / ₱3,200` and MAX `₱3,599 / ₱7,200`.
+- `/apply/start?plan=pro` renders the application form and PRO review pricing.
+- `/apply/start?plan=max` renders the application form and MAX review pricing.
+- `/apply/success?ref=RSVP-20260703-TEST` renders without a production submission.
+- `/robots.txt` loads and includes the sitemap.
+- `/sitemap.xml` lists only `/` and `/apply`.
+- `/opengraph-image` returns a PNG image.
+- `/apply/start` contains `noindex, follow`.
+- `/apply/success` contains `noindex, nofollow`.
+- Pixel scripts render without console errors.
+- CTA tracking does not block navigation or Messenger opening.
+- `/admin` and `/dashboard` redirect unauthenticated users to login.
+
+## Vercel Deployment Notes
+
+This branch is intended for normal PR and Preview deployment review. Do not manually deploy, promote, rollback, or change Vercel settings as part of SEO/tracking work unless a later approved task explicitly requires it.
