@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ApplySuccess } from "@/components/apply/apply-success";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { isApplicationReferenceCode } from "@/lib/apply/reference";
@@ -9,11 +10,54 @@ import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "https://rsvp.webserbisyo.com/apply/success",
+  },
+  description:
+    "Your WebSerbisyo RSVP application has been received. Save your reference code and continue through Messenger for the next steps.",
+  robots: {
+    follow: false,
+    index: false,
+  },
+  title: {
+    absolute: "Application Received | WebSerbisyo RSVP",
+  },
+};
+
 type ApplySuccessPageProps = {
   searchParams: Promise<{
     ref?: string;
   }>;
 };
+
+function getSuccessEventParams(plan: string | null | undefined) {
+  const baseParams = {
+    content_category: "RSVP Website Lead",
+    content_name: "WebSerbisyo RSVP Application Submitted",
+    source_route: "/apply/success",
+  };
+
+  if (plan === "max") {
+    return {
+      ...baseParams,
+      currency: "PHP",
+      plan: "max",
+      value: 3599,
+    };
+  }
+
+  if (plan === "pro") {
+    return {
+      ...baseParams,
+      currency: "PHP",
+      plan: "pro",
+      value: 1599,
+    };
+  }
+
+  return baseParams;
+}
 
 export default async function ApplySuccessPage({ searchParams }: ApplySuccessPageProps) {
   const params = await searchParams;
@@ -57,7 +101,11 @@ export default async function ApplySuccessPage({ searchParams }: ApplySuccessPag
           referenceCode={referenceCode}
         />
       </div>
-      <PublicMetaPixelScripts eventName={["Lead", "CompleteRegistration"]} pixels={pixels} />
+      <PublicMetaPixelScripts
+        eventName={["Lead", "CompleteRegistration"]}
+        eventParams={getSuccessEventParams(summary?.preferred_plan)}
+        pixels={pixels}
+      />
     </main>
   );
 }

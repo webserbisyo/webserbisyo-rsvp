@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { 
   Smartphone, 
   Server, 
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { buildMessengerContinueUrl } from "@/lib/apply/messenger";
+import { TrackedAnchor, TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { MessengerIcon } from "@/components/ui/icons/messenger-icon";
 
 const features = [
@@ -101,24 +101,35 @@ export function LandingFeatures({ messengerPageUrl }: LandingFeaturesProps) {
             transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
             className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
           >
-            <Link
+            <TrackedLink
               href="/apply"
               className="landing-cta-button group/feature-cta h-12 px-6 text-sm gap-2"
+              trackingEvent="StartApplicationClick"
+              trackingParams={{
+                content_category: "RSVP Website Application",
+                destination: "/apply",
+                source: "landing_features",
+              }}
             >
               Create my wedding website
               <ArrowRight className="size-4 transition-transform duration-200 group-hover/feature-cta:translate-x-0.5" />
-            </Link>
+            </TrackedLink>
             
             {messengerUrl && (
-              <a
+              <TrackedAnchor
                 href={messengerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group/messenger flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 text-sm font-medium text-[var(--landing-text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:border-[#0084FF]/50 hover:bg-white/10 w-full sm:w-auto"
+                trackingEvent="Contact"
+                trackingParams={{
+                  contact_method: "messenger",
+                  source: "landing_features",
+                }}
               >
                 <MessengerIcon className="size-5 text-[#0084FF]" />
                 Message us
-              </a>
+              </TrackedAnchor>
             )}
           </motion.div>
         </div>

@@ -1,9 +1,25 @@
+import type { Metadata } from "next";
 import { ApplyForm } from "@/components/apply/apply-form";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "https://rsvp.webserbisyo.com/apply/start",
+  },
+  description:
+    "Tell WebSerbisyo about your wedding date, venue, guest count, and theme so the team can prepare your RSVP website preview.",
+  robots: {
+    follow: true,
+    index: false,
+  },
+  title: {
+    absolute: "Start Your RSVP Website Application | WebSerbisyo RSVP",
+  },
+};
 
 type ApplyStartPageProps = {
   searchParams: Promise<{
@@ -13,6 +29,28 @@ type ApplyStartPageProps = {
 
 function normalizePlan(plan: string | undefined): "pro" | "max" {
   return plan === "max" ? "max" : "pro";
+}
+
+function getCheckoutEventParams(plan: "pro" | "max") {
+  if (plan === "max") {
+    return {
+      content_category: "RSVP Website Setup",
+      content_name: "MAX Plan",
+      currency: "PHP",
+      plan: "max",
+      source_route: "/apply/start",
+      value: 3599,
+    };
+  }
+
+  return {
+    content_category: "RSVP Website Setup",
+    content_name: "PRO Plan",
+    currency: "PHP",
+    plan: "pro",
+    source_route: "/apply/start",
+    value: 1599,
+  };
 }
 
 export default async function ApplyStartPage({ searchParams }: ApplyStartPageProps) {
@@ -50,7 +88,11 @@ export default async function ApplyStartPage({ searchParams }: ApplyStartPagePro
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <ApplyForm config={config} initialPlan={initialPlan} />
       </div>
-      <PublicMetaPixelScripts eventName="InitiateCheckout" pixels={pixels} />
+      <PublicMetaPixelScripts
+        eventName="InitiateCheckout"
+        eventParams={getCheckoutEventParams(initialPlan)}
+        pixels={pixels}
+      />
     </main>
   );
 }

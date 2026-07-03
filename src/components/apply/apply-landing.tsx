@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { ArrowRight, Crown, Gem, Check } from "lucide-react";
+import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 
 type ApplyLandingProps = {
@@ -195,12 +195,19 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
 
                 {/* Footer Block */}
                 <div className="mt-auto">
-                  <Link
+                  <TrackedLink
                     href="/apply/start?plan=pro"
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/20 hover:text-white border border-white/5 hover:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                    trackingEvent="SelectPlan"
+                    trackingParams={{
+                      currency: "PHP",
+                      plan: "pro",
+                      source: "apply_pricing",
+                      value: 1599,
+                    }}
                   >
                     Select PRO <ArrowRight className="size-4" />
-                  </Link>
+                  </TrackedLink>
                   <p className="text-xs text-white/45 text-center mt-3 font-medium">
                     Perfect for most couples.
                   </p>
@@ -261,12 +268,19 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
 
                 {/* Footer Block */}
                 <div className="mt-auto">
-                  <Link
+                  <TrackedLink
                     href="/apply/start?plan=max"
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 hover:shadow-orange-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50"
+                    trackingEvent="SelectPlan"
+                    trackingParams={{
+                      currency: "PHP",
+                      plan: "max",
+                      source: "apply_pricing",
+                      value: 3599,
+                    }}
                   >
                     Select MAX <ArrowRight className="size-4" />
-                  </Link>
+                  </TrackedLink>
                   <p className="text-xs text-white/45 text-center mt-3 font-medium">
                     Designed to impress your guests.
                   </p>

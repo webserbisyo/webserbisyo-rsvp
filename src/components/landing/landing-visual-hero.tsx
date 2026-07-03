@@ -1,6 +1,6 @@
-import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
+import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import SideRays from "./effects/SideRays";
 
 export function LandingVisualHero() {
@@ -49,13 +49,19 @@ export function LandingVisualHero() {
 
             {/* CTA */}
             <div className="mt-10">
-              <Link
+              <TrackedLink
                 href="/apply"
                 className="landing-cta-button group/hero-cta h-14 px-8 text-base gap-2"
+                trackingEvent="StartApplicationClick"
+                trackingParams={{
+                  content_category: "RSVP Website Application",
+                  destination: "/apply",
+                  source: "hero",
+                }}
               >
                 Create my wedding website
                 <ArrowRight className="size-4 transition-transform duration-200 group-hover/hero-cta:translate-x-0.5" />
-              </Link>
+              </TrackedLink>
             </div>
 
             {/* Trust line */}

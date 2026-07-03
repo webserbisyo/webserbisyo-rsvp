@@ -3,6 +3,7 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { Accordion as AccordionPrimitive } from "radix-ui";
 import { Plus, Minus, ArrowRight } from "lucide-react";
+import { TrackedAnchor } from "@/components/meta-pixels/tracked-link";
 import { buildMessengerContinueUrl } from "@/lib/apply/messenger";
 
 type FAQItem = {
@@ -124,14 +125,19 @@ export function LandingFAQ({ messengerPageUrl }: LandingFAQProps) {
             </motion.p>
             {messengerUrl && (
               <motion.div variants={itemVariants} className="mt-4">
-                <a
+                <TrackedAnchor
                   href={messengerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#ff8a5c] transition-colors hover:text-[#ff742f]"
+                  trackingEvent="Contact"
+                  trackingParams={{
+                    contact_method: "messenger",
+                    source: "landing_faq",
+                  }}
                 >
                   Still unsure? Message us <ArrowRight className="size-4" />
-                </a>
+                </TrackedAnchor>
               </motion.div>
             )}
           </div>
