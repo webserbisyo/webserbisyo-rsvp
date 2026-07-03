@@ -18,9 +18,12 @@ const META_STANDARD_EVENTS = new Set<MetaPixelEventName>([
 ]);
 
 export type MetaPixelEventParams = Record<string, unknown>;
+export type MetaPixelEventOptions = Record<string, unknown>;
 
 type PublicMetaPixelScriptsProps = {
   eventName?: MetaPixelEventName | MetaPixelEventName[];
+  eventOptions?: MetaPixelEventOptions;
+  eventOptionsByName?: Partial<Record<MetaPixelEventName, MetaPixelEventOptions>>;
   eventParams?: MetaPixelEventParams;
   eventParamsByName?: Partial<Record<MetaPixelEventName, MetaPixelEventParams>>;
   pixels: PublicMetaPixelConfig[];
@@ -28,6 +31,8 @@ type PublicMetaPixelScriptsProps = {
 
 export function PublicMetaPixelScripts({
   eventName,
+  eventOptions,
+  eventOptionsByName,
   eventParams,
   eventParamsByName,
   pixels,
@@ -55,7 +60,14 @@ export function PublicMetaPixelScripts({
         `}
       </Script>
       <Script id={`meta-pixel-init-${uniquePixelIds.join("-")}`} strategy="afterInteractive">
-        {buildInitScript(uniquePixelIds, eventName, eventParams, eventParamsByName)}
+        {buildInitScript(
+          uniquePixelIds,
+          eventName,
+          eventParams,
+          eventParamsByName,
+          eventOptions,
+          eventOptionsByName,
+        )}
       </Script>
       <noscript>
         {uniquePixelIds.map((pixelId) => (
@@ -79,21 +91,40 @@ function buildInitScript(
   eventName: PublicMetaPixelScriptsProps["eventName"],
   eventParams: PublicMetaPixelScriptsProps["eventParams"],
   eventParamsByName: PublicMetaPixelScriptsProps["eventParamsByName"],
+  eventOptions: PublicMetaPixelScriptsProps["eventOptions"],
+  eventOptionsByName: PublicMetaPixelScriptsProps["eventOptionsByName"],
 ) {
   const initLines = pixelIds.map((pixelId) => `fbq('init', ${JSON.stringify(pixelId)});`);
   const eventLines = [`fbq('track', 'PageView');`];
   const names = eventName ? (Array.isArray(eventName) ? eventName : [eventName]) : [];
 
   for (const name of names) {
-    eventLines.push(buildEventLine(name, eventParamsByName?.[name] ?? eventParams));
+    eventLines.push(
+      buildEventLine(
+        name,
+        eventParamsByName?.[name] ?? eventParams,
+        eventOptionsByName?.[name] ?? eventOptions,
+      ),
+    );
   }
 
   return [...initLines, ...eventLines].join("\n");
 }
 
-function buildEventLine(name: MetaPixelEventName, eventParams?: MetaPixelEventParams) {
+function buildEventLine(
+  name: MetaPixelEventName,
+  eventParams?: MetaPixelEventParams,
+  eventOptions?: MetaPixelEventOptions,
+) {
   const method = META_STANDARD_EVENTS.has(name) ? "track" : "trackCustom";
   const sanitizedParams = sanitizeEventParams(eventParams);
+  const sanitizedOptions = sanitizeEventOptions(eventOptions);
+
+  if (sanitizedOptions) {
+    return `fbq('${method}', ${JSON.stringify(name)}, ${JSON.stringify(
+      sanitizedParams ?? {},
+    )}, ${JSON.stringify(sanitizedOptions)});`;
+  }
 
   if (sanitizedParams) {
     return `fbq('${method}', ${JSON.stringify(name)}, ${JSON.stringify(sanitizedParams)});`;
@@ -122,6 +153,10 @@ function sanitizeEventParams(eventParams?: MetaPixelEventParams) {
   });
 
   return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
+function sanitizeEventOptions(eventOptions?: MetaPixelEventOptions) {
+  return sanitizeEventParams(eventOptions);
 }
 
 function isNumericPixelId(pixelId: string) {

@@ -62,6 +62,7 @@ function getSuccessEventParams(plan: string | null | undefined) {
 export default async function ApplySuccessPage({ searchParams }: ApplySuccessPageProps) {
   const params = await searchParams;
   const referenceCode = isApplicationReferenceCode(params.ref) ? params.ref : null;
+  const leadEventId = referenceCode ? `Lead:${referenceCode}` : null;
 
   const [config, summary, pixels] = await Promise.all([
     getPublicApplyConfig(),
@@ -103,6 +104,7 @@ export default async function ApplySuccessPage({ searchParams }: ApplySuccessPag
       </div>
       <PublicMetaPixelScripts
         eventName={["Lead", "CompleteRegistration"]}
+        eventOptionsByName={leadEventId ? { Lead: { eventID: leadEventId } } : undefined}
         eventParams={getSuccessEventParams(summary?.preferred_plan)}
         pixels={pixels}
       />

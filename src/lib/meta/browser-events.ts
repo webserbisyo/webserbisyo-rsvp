@@ -1,6 +1,7 @@
 "use client";
 
 export type MetaPixelEventParams = Record<string, string | number | boolean | null | undefined>;
+export type MetaPixelEventOptions = Record<string, string | number | boolean | null | undefined>;
 
 export type MetaPixelBrowserEventName =
   | "CompleteRegistration"
@@ -17,6 +18,7 @@ type MetaPixelFbq = (
   method: "track" | "trackCustom",
   eventName: string,
   params?: Record<string, string | number | boolean | null>,
+  options?: Record<string, string | number | boolean | null>,
 ) => void;
 
 declare global {
@@ -36,6 +38,7 @@ const META_STANDARD_EVENTS = new Set<MetaPixelBrowserEventName>([
 export function trackMetaPixelEvent(
   eventName: MetaPixelBrowserEventName,
   params?: MetaPixelEventParams,
+  options?: MetaPixelEventOptions,
 ) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") {
     return;
@@ -44,6 +47,12 @@ export function trackMetaPixelEvent(
   try {
     const method = META_STANDARD_EVENTS.has(eventName) ? "track" : "trackCustom";
     const sanitizedParams = sanitizeMetaPixelParams(params);
+    const sanitizedOptions = sanitizeMetaPixelParams(options);
+
+    if (sanitizedOptions) {
+      window.fbq(method, eventName, sanitizedParams ?? {}, sanitizedOptions);
+      return;
+    }
 
     if (sanitizedParams) {
       window.fbq(method, eventName, sanitizedParams);

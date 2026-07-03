@@ -8,8 +8,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import type { ApplicationInput } from "@/lib/validations/application.schema";
 import { ApplicationSchema } from "@/lib/validations/application.schema";
+import { sendMetaCapiLead } from "./send-meta-capi-lead";
 import { assertServiceData, assertServiceSuccess } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
+
+type SubmitApplicationContext = {
+  clientIpAddress?: string | null;
+  clientUserAgent?: string | null;
+  eventSourceUrl?: string | null;
+};
 
 type SafeSupabaseError = {
   code?: string;
@@ -30,7 +37,10 @@ function isReferenceCodeConflict(error: unknown): error is SafeSupabaseError {
   );
 }
 
-export async function submitApplication(input: ApplicationInput) {
+export async function submitApplication(
+  input: ApplicationInput,
+  context?: SubmitApplicationContext,
+) {
   const payload = ApplicationSchema.parse(input);
   assertApplicationEventTypeEnabled(payload.eventType);
 
@@ -108,6 +118,20 @@ export async function submitApplication(input: ApplicationInput) {
       preferred_plan: application.preferred_plan,
       reference_code: application.reference_code,
     },
+  });
+
+  await sendMetaCapiLead({
+    applicationId: application.id,
+    clientIpAddress: context?.clientIpAddress ?? null,
+    clientUserAgent: context?.clientUserAgent ?? null,
+    email: application.email,
+    eventSourceUrl: context?.eventSourceUrl ?? null,
+    fbc: application.fb_fbc,
+    fbp: application.fb_fbp,
+    fullName: application.full_name,
+    phone: application.phone,
+    preferredPlan: application.preferred_plan,
+    referenceCode: application.reference_code,
   });
 
   return application;

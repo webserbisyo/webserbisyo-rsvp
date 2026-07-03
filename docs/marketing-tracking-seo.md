@@ -98,7 +98,45 @@ The app intentionally does not track hovers, accordion opens, scroll depth, deco
 
 Server-side Purchase CAPI is preserved and untouched by this marketing foundation work.
 
-Server-side Lead and CompleteRegistration CAPI are intentionally deferred. Before implementing them, the app needs a browser/server deduplication design where the browser `eventID` equals the server `event_id`. The design should define where the event ID is generated, whether it is stored on the application record, and how CAPI result logging should work without blocking the user flow.
+Server-side Lead CAPI is implemented behind the server-only `META_CAPI_LEAD_ENABLED`
+feature flag. If the flag is missing or is not exactly `true`, server Lead CAPI is skipped
+safely and the browser Pixel Lead remains active.
+
+Lead browser/server deduplication uses the existing public application reference code:
+
+- Browser event name: `Lead`
+- Browser Pixel event option: `eventID = Lead:${reference_code}`
+- Server CAPI event name: `Lead`
+- Server CAPI event ID: `event_id = Lead:${reference_code}`
+
+`/apply/success?ref=RSVP-...` reuses the same deterministic Lead event ID on refresh. If the
+reference code is missing or invalid, the browser events keep their existing params-only behavior
+and no random deduplication ID is generated.
+
+Server-side CompleteRegistration CAPI is intentionally not implemented yet. The existing browser
+CompleteRegistration event remains browser-only.
+
+Lead CAPI writes sanitized audit log actions without blocking application submission:
+
+- `meta_capi_lead_sent`
+- `meta_capi_lead_skipped`
+- `meta_capi_lead_failed`
+
+Audit metadata includes safe delivery context such as provider, event name, event ID, status,
+pixel source, reference code, HTTP status, and a sanitized response summary. It must not include
+raw email, phone, full name, IP address, user agent, access tokens, test event codes, or full
+request payloads.
+
+No Supabase migration is used for Lead CAPI. The application `reference_code` supplies the stable
+deduplication ID, and `audit_logs.metadata` stores sanitized delivery status.
+
+To test in Meta Events Manager, enable `META_CAPI_LEAD_ENABLED=true` in the target environment and
+use `META_CAPI_TEST_EVENT_CODE` only during a safe test window. Confirm that browser Lead and
+server Lead arrive with the same event ID and are deduplicated. Confirm that Purchase CAPI still
+works independently.
+
+Rollback is operational: set `META_CAPI_LEAD_ENABLED=false` and redeploy. Browser Pixel Lead,
+browser CompleteRegistration, and server Purchase CAPI remain unchanged.
 
 ## Environment Variables
 
@@ -111,6 +149,7 @@ Relevant environment variable names:
 - `SITE_URL`
 - `APP_BASE_URL`
 - `META_PIXEL_ID`
+- `META_CAPI_LEAD_ENABLED`
 - `META_CAPI_ACCESS_TOKEN`
 - `META_CAPI_API_VERSION`
 - `META_CAPI_TEST_EVENT_CODE`
