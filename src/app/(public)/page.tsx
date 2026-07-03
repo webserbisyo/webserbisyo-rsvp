@@ -7,11 +7,19 @@ import {
 } from "@/components/event-website/public-event-page-content";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
+import { LandingTrustBar } from "@/components/landing/landing-trust-bar";
+import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
+import { LandingFeatures } from "@/components/landing/landing-features";
+import { LandingTrustPromise } from "@/components/landing/landing-trust-promise";
+import { LandingPricing } from "@/components/landing/landing-pricing";
+import { LandingFAQ } from "@/components/landing/landing-faq";
+import { LandingFooter } from "@/components/landing/landing-footer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
+import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { resolvePublicEventWebsiteBySubdomain } from "@/server/services/resolve-public-event-website";
 
 const landingMetadata: Metadata = {
@@ -60,14 +68,24 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
     notFound();
   }
 
-  const landingPixels = await getPublicMetaPixelsForRoute({ route: "application" });
+  const [landingPixels, applyConfig] = await Promise.all([
+    getPublicMetaPixelsForRoute({ route: "application" }),
+    getPublicApplyConfig(),
+  ]);
 
   return (
     <>
       <LandingNavbar />
       <main>
         <LandingVisualHero />
+        <LandingTrustBar />
+        <LandingHowItWorks messengerPageUrl={applyConfig.messengerPageUrl} />
+        <LandingFeatures messengerPageUrl={applyConfig.messengerPageUrl} />
+        <LandingTrustPromise />
+        <LandingPricing />
+        <LandingFAQ messengerPageUrl={applyConfig.messengerPageUrl} />
       </main>
+      <LandingFooter messengerPageUrl={applyConfig.messengerPageUrl} />
       <PublicMetaPixelScripts eventName="ViewContent" pixels={landingPixels} />
     </>
   );

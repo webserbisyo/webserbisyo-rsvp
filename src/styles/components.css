@@ -1764,6 +1764,17 @@
   caret-color: #0f172a;
 }
 
+/* Dark Premium Autofill Fix */
+.cn-dark-autofill:-webkit-autofill,
+.cn-dark-autofill:-webkit-autofill:hover,
+.cn-dark-autofill:-webkit-autofill:focus,
+.cn-dark-autofill:-webkit-autofill:active {
+  transition: background-color 9999s ease-in-out 0s;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px #121212 inset !important;
+}
+
 .rsvp-shell {
   background:
     radial-gradient(
@@ -8149,4 +8160,88 @@
   color: #fffdf9 !important;
   border-radius: 0.65rem !important;
   box-shadow: none !important;
+}
+
+/* Landing Page Scoped Variables */
+.landing-theme-dark {
+  --landing-bg: #050505;
+  --landing-panel: rgba(12, 12, 12, 0.72);
+  --landing-panel-strong: rgba(18, 18, 18, 0.9);
+
+  --landing-text: #f8f8f8;
+  --landing-muted: rgba(248, 248, 248, 0.68);
+  --landing-subtle: rgba(248, 248, 248, 0.48);
+  --landing-border: rgba(255, 255, 255, 0.14);
+  --landing-border-strong: rgba(255, 255, 255, 0.22);
+
+  --landing-cta: #ff5a1f;
+  --landing-cta-hover: #ff742f;
+  --landing-cta-active: #ff8a4a;
+  --landing-cta-fg: #ffffff;
+  --landing-cta-glow: rgba(255, 90, 31, 0.42);
+
+  --landing-gold: #eab308;
+  --landing-blue-ray: #96c8ff;
+}
+
+/* Landing CTA Button — scoped, no Button component dependency */
+.landing-theme-dark .landing-cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--landing-cta);
+  color: var(--landing-cta-fg);
+  font-weight: 600;
+  box-shadow: 0 0 0 transparent;
+  transition: background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.landing-theme-dark .landing-cta-button:hover {
+  background-color: var(--landing-cta-hover);
+  box-shadow: 0 0 32px var(--landing-cta-glow);
+  transform: translateY(-1px);
+}
+
+.landing-theme-dark .landing-cta-button:active {
+  background-color: var(--landing-cta-active);
+  transform: translateY(0);
+  box-shadow: 0 0 16px var(--landing-cta-glow);
+}
+
+/* Landing Login Link — text-only, no hover background blob */
+.landing-theme-dark .landing-login-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--landing-muted);
+  background: transparent;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 200ms ease;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+}
+
+.landing-theme-dark .landing-login-link:hover {
+  color: var(--landing-text);
+  background: transparent;
+}
+
+.landing-theme-dark .landing-login-link:focus-visible {
+  outline: 2px solid var(--landing-border-strong);
+  outline-offset: 2px;
+}
+
+/* Dark Autofill Override for Chrome/Safari/Edge */
+.landing-theme-dark input:-webkit-autofill,
+.landing-theme-dark input:-webkit-autofill:hover,
+.landing-theme-dark input:-webkit-autofill:focus,
+.landing-theme-dark textarea:-webkit-autofill,
+.landing-theme-dark textarea:-webkit-autofill:hover,
+.landing-theme-dark textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #0f0f0f inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

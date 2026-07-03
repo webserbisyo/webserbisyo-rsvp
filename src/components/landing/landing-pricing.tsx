@@ -5,12 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Crown, Gem, Check } from "lucide-react";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 
-type ApplyLandingProps = {
-  config: {
-    messengerPageUrl?: string | null;
-  };
-};
-
 const PRO_FEATURES = [
   "Premium mobile-friendly RSVP website",
   "Event details and schedule sections",
@@ -70,7 +64,7 @@ function useCountdown() {
   return timeLeft;
 }
 
-export function ApplyLanding({ config }: ApplyLandingProps) {
+export function LandingPricing() {
   const [isMounted, setIsMounted] = useState(false);
   const timeLeft = useCountdown();
 
@@ -87,25 +81,11 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
   const seconds = isMounted ? String(timeLeft.seconds).padStart(2, "0") : "--";
 
   return (
-    <main
-      data-config-ready={!!config.messengerPageUrl}
-      className="landing-theme-dark relative isolate min-h-screen w-full bg-[var(--landing-bg)] overflow-x-hidden pb-20 pt-12"
+    <section
+      id="pricing"
+      className="landing-theme-dark relative isolate w-full scroll-mt-28 bg-[var(--landing-bg)] overflow-hidden py-24 sm:py-32"
     >
-      {/* Sticky Top Promo Countdown Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 w-full border-b border-[#ff8a5c]/15 bg-[#050505]/75 backdrop-blur-md shadow-[0_4px_20px_rgba(255,138,92,0.08)]">
-        <div className="mx-auto max-w-7xl px-4 py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-center text-sm sm:text-base font-sans font-medium tracking-wide text-white">
-          <span className="text-[#ff8a5c] font-bold">50% OFF DISCOUNT</span>
-          <span className="hidden sm:inline text-white/40">·</span>
-          <span className="text-white/95">
-            Ends in{" "}
-            <span className="font-mono font-bold text-[#ff8a5c]">
-              {days}d {hours}h {minutes}m {seconds}s
-            </span>
-          </span>
-        </div>
-      </div>
-
-      {/* Background Dashed Grid with Fade (seamlessly continues Features/FAQ visual styling) */}
+      {/* Background Dashed Grid with Fade */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
@@ -127,22 +107,36 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto max-w-7xl flex flex-col items-center py-20 px-4 sm:px-6 lg:px-8">
-        {/* Hero Header */}
-        <div className="text-center mb-16 flex flex-col items-center gap-4">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight sm:leading-none">
+      <div className="relative z-10 mx-auto max-w-7xl flex flex-col items-center px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-6 flex flex-col items-center gap-4">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight sm:leading-none">
             Choose Your Plan —<br />
             <span className="bg-gradient-to-r from-[#ff8a5c] via-[#ff6b3b] to-yellow-500 bg-clip-text text-transparent">
               Launch Your RSVP Website Faster
             </span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-white/70 max-w-2xl">
+          </h2>
+          <p className="text-sm sm:text-base md:text-lg text-white/70 max-w-2xl mt-4">
             Start with the complete PRO website, or upgrade to MAX for a more premium animated guest experience.
           </p>
         </div>
 
+        {/* Highlighted Countdown Badge */}
+        <div className="mb-14 inline-flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl border border-[#ff8a5c]/20 bg-white/[0.02] px-6 py-3 shadow-lg shadow-orange-950/5 backdrop-blur-md">
+          <span className="bg-gradient-to-r from-[#ff8a5c] to-amber-500 bg-clip-text text-transparent text-xs font-black tracking-widest uppercase">
+            50% OFF DISCOUNT
+          </span>
+          <span className="hidden sm:inline text-white/20">|</span>
+          <span className="text-xs sm:text-sm font-medium tracking-wide text-white/90">
+            Ends in{" "}
+            <span className="font-mono font-bold text-[#ff8a5c]">
+              {days}d {hours}h {minutes}m {seconds}s
+            </span>
+          </span>
+        </div>
+
         {/* Pricing Cards Grid */}
-        <div id="pricing-plans" className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl items-stretch px-2 sm:px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl items-stretch px-2 sm:px-4">
           {/* PRO Card */}
           <div className="relative pt-6 h-full flex flex-col">
             {/* Top Floating Badge */}
@@ -161,7 +155,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                     <div className="size-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#ff8a5c]">
                       <Gem className="size-5" />
                     </div>
-                    <h2 className="text-2xl font-extrabold text-white tracking-wide">PRO</h2>
+                    <h3 className="text-2xl font-extrabold text-white tracking-wide">PRO</h3>
                   </div>
 
                   {/* Description */}
@@ -227,7 +221,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                     <div className="size-10 rounded-xl bg-[#ff8a5c]/10 border border-[#ff8a5c]/35 flex items-center justify-center text-[#ff8a5c]">
                       <Crown className="size-5" />
                     </div>
-                    <h2 className="text-2xl font-extrabold text-white tracking-wide">MAX</h2>
+                    <h3 className="text-2xl font-extrabold text-white tracking-wide">MAX</h3>
                   </div>
 
                   {/* Description */}
@@ -277,10 +271,10 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
         </div>
 
         {/* Pricing disclaimer */}
-        <p className="apply-landing-disclaimer text-center text-xs text-white/40 mt-12 max-w-md">
+        <p className="text-center text-xs text-white/40 mt-12 max-w-md">
           Limited introductory pricing. Prices may increase in future releases.
         </p>
       </div>
-    </main>
+    </section>
   );
 }

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { ZodError, ZodIssueCode } from "zod";
+
 import { generateApplicationReferenceCode } from "@/lib/apply/reference";
 import { assertApplicationEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -31,6 +33,39 @@ function isReferenceCodeConflict(error: unknown): error is SafeSupabaseError {
 export async function submitApplication(input: ApplicationInput) {
   const payload = ApplicationSchema.parse(input);
   assertApplicationEventTypeEnabled(payload.eventType);
+
+  const normalizedEmail = payload.email.trim().toLowerCase();
+  const supabase = createAdminClient();
+
+  const [
+    { count: clientCount, error: clientCountError },
+    { count: appCount, error: appCountError },
+  ] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true })
+      .eq("contact_email", normalizedEmail),
+    supabase
+      .from("rsvp_applications")
+      .select("*", { count: "exact", head: true })
+      .eq("email", normalizedEmail)
+      .in("status", ["submitted", "reviewing"]),
+  ]);
+
+  assertServiceSuccess(clientCountError, "Failed to verify email availability.");
+  assertServiceSuccess(appCountError, "Failed to verify email availability.");
+
+  if ((clientCount && clientCount > 0) || (appCount && appCount > 0)) {
+    throw new ZodError([
+      {
+        code: ZodIssueCode.custom,
+        path: ["email"],
+        message:
+          "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.",
+      },
+    ]);
+  }
+
   let application: Tables<"rsvp_applications"> | null = null;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {

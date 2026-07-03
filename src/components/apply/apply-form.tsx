@@ -48,33 +48,36 @@ const applicationEventTypeOptions = getApplicationEventTypeOptions();
 const PLAN_DETAILS = {
   pro: {
     label: "PRO Plan",
-    price: "₱1,899",
-    originalPrice: "₱3,800",
-    description: "Everything you need for a beautiful wedding website.",
+    price: "₱1,599",
+    originalPrice: "₱3,200",
+    description: "Everything you need for a beautiful RSVP website.",
     features: [
-      "Lifetime Wedding Website",
-      "Online RSVP Management",
-      "Unlimited RSVP Responses",
-      "Free WebSerbisyo Subdomain",
-      "Mobile-Friendly Design",
-      "Hosting Included",
-      "Website Access Controls",
-      "RSVP Dashboard",
+      "Premium mobile-friendly RSVP website",
+      "Event details and schedule sections",
+      "RSVP form and guest tracking",
+      "Gallery and story sections",
+      "Unlimited RSVP responses",
+      "Guest response export",
+      "Hosting included",
+      "Website access controls",
+      "1-year support and maintenance",
     ],
     icon: Sparkles,
   },
   max: {
     label: "MAX Plan",
     price: "₱3,599",
-    originalPrice: "₱7,500",
-    description: "A premium, unforgettable wedding website experience.",
+    originalPrice: "₱7,200",
+    description: "A premium, unforgettable RSVP website experience.",
     features: [
       "Everything in PRO",
-      "Advanced UI & UX",
-      "Premium Motion Experience",
-      "Enhanced Visual Storytelling",
-      "Higher Design Polish",
-      "Priority Support",
+      "Advanced custom animations",
+      "Premium motion and interaction polish",
+      "Enhanced visual personalization",
+      "More immersive section transitions",
+      "Couple Alignment Kit included",
+      "Priority creative refinement",
+      "Priority setup",
     ],
     icon: Crown,
   },
@@ -84,6 +87,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState<1 | 2>(1);
+
   const hasPaymentOptions = config.paymentOptions.length > 0;
   const validationSchema = useMemo(
     () => createApplicationSchema({ requireManualPaymentOption: hasPaymentOptions }),
@@ -118,6 +122,10 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const selectedPaymentOption = useWatch({ control, name: "preferredManualPaymentOption" });
   const selectedPlan = useWatch({ control, name: "preferredPlan" });
   const selectedEventType = useWatch({ control, name: "eventType" });
+  const watchedLocation = useWatch({ control, name: "eventLocation" }) ?? "";
+  const watchedMessage = useWatch({ control, name: "message" }) ?? "";
+
+
 
   const planKey = (selectedPlan ?? initialPlan) as keyof typeof PLAN_DETAILS;
   const planDetails = PLAN_DETAILS[planKey] ?? PLAN_DETAILS.pro;
@@ -127,7 +135,14 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
     if (!fieldErrors) return;
     Object.entries(fieldErrors).forEach(([field, messages]) => {
       if (!messages?.[0]) return;
-      setError(field as keyof ApplicationFormInput, { message: messages[0], type: "server" });
+      let msg = messages[0];
+      if (
+        field === "email" &&
+        (msg.includes("already registered") || msg.includes("already linked"))
+      ) {
+        msg = "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.";
+      }
+      setError(field as keyof ApplicationFormInput, { message: msg, type: "server" });
     });
   }
 
@@ -143,7 +158,35 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
       "message",
       "preferredPlan",
     ]);
-    if (valid) setStep(2);
+    if (valid) {
+      setStep(2);
+    } else {
+      setTimeout(() => {
+        const errorFields = [
+          "fullName",
+          "email",
+          "phone",
+          "eventType",
+          "eventDate",
+          "eventLocation",
+          "estimatedGuestCount",
+          "message",
+        ] as const;
+
+        const firstError = errorFields.find((field) => {
+          const input = document.getElementById(field);
+          return input?.getAttribute("aria-invalid") === "true" || input?.parentElement?.querySelector(".text-red-400");
+        });
+
+        if (firstError) {
+          const element = document.getElementById(firstError);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.focus({ preventScroll: true });
+          }
+        }
+      }, 50);
+    }
   }
 
   const submit = handleSubmit((values) => {
@@ -161,11 +204,60 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 
       if (!result.ok) {
         assignServerFieldErrors(result.fieldErrors);
-        toast.error(
-          result.error === "The request could not be completed."
-            ? "Could not submit your application."
-            : result.error,
-        );
+
+        const hasFieldErrors = result.fieldErrors && Object.keys(result.fieldErrors).length > 0;
+        if (!hasFieldErrors) {
+          toast.error(
+            result.error === "The request could not be completed."
+              ? "Could not submit your application."
+              : result.error,
+          );
+        }
+
+        if (hasFieldErrors) {
+          const step1Fields = [
+            "fullName",
+            "email",
+            "phone",
+            "eventType",
+            "eventDate",
+            "eventLocation",
+            "estimatedGuestCount",
+            "message",
+          ] as const;
+
+          const hasStep1Error = Object.keys(result.fieldErrors!).some((field) =>
+            step1Fields.includes(field as typeof step1Fields[number])
+          );
+
+          if (hasStep1Error) {
+            setStep(1);
+          }
+
+          // Focus or scroll to the first invalid field
+          setTimeout(() => {
+            const allFields = [
+              "fullName",
+              "email",
+              "phone",
+              "eventType",
+              "eventDate",
+              "eventLocation",
+              "estimatedGuestCount",
+              "message",
+              "preferredManualPaymentOption",
+            ] as const;
+
+            const firstErrorField = allFields.find((field) => result.fieldErrors?.[field]);
+            if (firstErrorField) {
+              const element = document.getElementById(firstErrorField);
+              if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "center" });
+                element.focus({ preventScroll: true });
+              }
+            }
+          }, 100);
+        }
         return;
       }
 
@@ -199,103 +291,154 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   });
 
   return (
-    <div className="af-shell">
+    <div className="w-full">
       {/* ── Top navbar ── */}
-      <header className="af-topbar">
-        <span className="af-topbar-wordmark">
-          WEBSERBISYO <span className="af-topbar-rsvp">RSVP</span>
+      <header className="flex w-full items-center justify-between gap-4 pb-6 pt-4">
+        <span className="text-[11px] font-bold tracking-[0.2em] text-[#ff8a5c]">
+          WEBSERBISYO <span className="text-white/40 font-medium">RSVP</span>
         </span>
-        <div className="af-plan-pill">
-          <PlanIcon className="af-plan-pill-icon" />
-          <span className="af-plan-pill-label">
-            {planDetails.label} — {planDetails.price}
+        <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] border border-white/[0.08] px-3.5 py-1.5 text-xs font-semibold backdrop-blur-md shadow-md">
+          <PlanIcon className="size-3.5 text-[#ff8a5c] shrink-0" />
+          <span className="text-white font-medium">
+            {planDetails.label} · <span className="text-[#ff8a5c] font-bold">{planDetails.price}</span>
           </span>
-          <span className="af-plan-pill-original">{planDetails.originalPrice}</span>
+          <span className="text-white/40 line-through text-[10px] ml-1">{planDetails.originalPrice}</span>
         </div>
       </header>
 
       {/* ── 3-step stepper ── */}
-      <div className="af-stepper">
-        <div className={`af-step ${step >= 1 ? "af-step--active" : ""} ${step > 1 ? "af-step--done" : ""}`}>
-          <div className="af-step-circle">
-            {step > 1 ? <span className="af-step-check">✓</span> : <span>1</span>}
+      <div className="flex items-center justify-between w-full max-w-xl mx-auto my-6 px-2">
+        {/* Step 1 */}
+        <div className="flex flex-col items-center gap-2 z-10">
+          <div className={`size-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+            step > 1 
+              ? "bg-[#ff8a5c] text-white" 
+              : "bg-gradient-to-r from-[#ff8a5c] to-amber-500 text-white shadow-lg shadow-orange-950/20"
+          }`}>
+            {step > 1 ? "✓" : "1"}
           </div>
-          <span className="af-step-label">Your Details</span>
+          <span className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
+            step >= 1 ? "text-white/90" : "text-white/40"
+          }`}>
+            Your Details
+          </span>
         </div>
-        <div className={`af-step-line ${step > 1 ? "af-step-line--done" : ""}`} />
-        <div className={`af-step ${step >= 2 ? "af-step--active" : ""}`}>
-          <div className="af-step-circle">2</div>
-          <span className="af-step-label">Review &amp; Pay</span>
+
+        {/* Line 1 -> 2 */}
+        <div className="flex-1 h-[2px] mx-4 -mt-6 bg-white/10 relative">
+          <div 
+            className="absolute inset-0 bg-gradient-to-r from-[#ff8a5c] to-amber-500 transition-all duration-500" 
+            style={{ width: step > 1 ? "100%" : "0%" }} 
+          />
         </div>
-        <div className="af-step-line" />
-        <div className="af-step">
-          <div className="af-step-circle">3</div>
-          <span className="af-step-label">Confirmed</span>
+
+        {/* Step 2 */}
+        <div className="flex flex-col items-center gap-2 z-10">
+          <div className={`size-8 rounded-full border flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+            step === 2
+              ? "bg-gradient-to-r from-[#ff8a5c] to-amber-500 border-none text-white shadow-lg shadow-orange-950/20"
+              : step > 2
+                ? "bg-[#ff8a5c] text-white"
+                : "border-white/10 bg-white/[0.02] text-white/40"
+          }`}>
+            2
+          </div>
+          <span className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
+            step >= 2 ? "text-white/90" : "text-white/40"
+          }`}>
+            Review &amp; Pay
+          </span>
+        </div>
+
+        {/* Line 2 -> 3 */}
+        <div className="flex-1 h-[2px] mx-4 -mt-6 bg-white/10 relative">
+          <div 
+            className="absolute inset-0 bg-gradient-to-r from-[#ff8a5c] to-amber-500 transition-all duration-500" 
+            style={{ width: step > 2 ? "100%" : "0%" }} 
+          />
+        </div>
+
+        {/* Step 3 */}
+        <div className="flex flex-col items-center gap-2 z-10">
+          <div className="size-8 rounded-full border border-white/10 bg-white/[0.02] text-white/40 flex items-center justify-center text-xs font-bold">
+            3
+          </div>
+          <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">
+            Confirmed
+          </span>
         </div>
       </div>
 
       {/* ── Form card ── */}
-      <div className="af-card">
+      <div className="w-full bg-white/[0.02] border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/40">
         <form onSubmit={submit}>
           {/* ══ STEP 1: Your Details ══ */}
           {step === 1 && (
             <>
-              <div className="af-card-header">
-                <h1 className="af-card-title">Tell us about your wedding</h1>
-                <p className="af-card-subtitle">
-                  We&apos;ll use these details to personalise and set up your website.
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide mb-2">
+                  Tell us about your wedding
+                </h1>
+                <p className="text-sm text-white/60 leading-relaxed">
+                  We&apos;ll use these details to personalize your RSVP website preview.
                 </p>
               </div>
 
-              <div className="af-fields-grid">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Full Name */}
-                <div className="af-field">
-                  <Label htmlFor="fullName" className="af-label">Full Name <span className="af-required">*</span></Label>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="fullName" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
+                    Full Name <span className="text-[#ff8a5c] font-black">*</span>
+                  </Label>
                   <Input
                     id="fullName"
                     placeholder="e.g. Maria & Juan Santos"
-                    className="af-input"
+                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
                     {...register("fullName")}
                     disabled={isPending}
                   />
-                  {errors.fullName?.message && <p className="af-field-error">{errors.fullName.message}</p>}
+                  {errors.fullName?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.fullName.message}</p>}
                 </div>
 
                 {/* Email */}
-                <div className="af-field">
-                  <Label htmlFor="email" className="af-label">Email Address <span className="af-required">*</span></Label>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="email" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
+                    Email Address <span className="text-[#ff8a5c] font-black">*</span>
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="you@example.com"
                     autoComplete="email"
                     inputMode="email"
-                    className="af-input"
+                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
                     {...register("email")}
                     disabled={isPending}
                   />
-                  {errors.email?.message && <p className="af-field-error">{errors.email.message}</p>}
+                  {errors.email?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.email.message}</p>}
                 </div>
 
                 {/* Phone */}
-                <div className="af-field">
-                  <Label htmlFor="phone" className="af-label">Phone Number <span className="af-required">*</span></Label>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="phone" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
+                    Phone Number <span className="text-[#ff8a5c] font-black">*</span>
+                  </Label>
                   <Input
                     id="phone"
                     autoComplete="tel"
                     inputMode="tel"
                     placeholder="09171234567"
-                    className="af-input"
+                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
                     {...register("phone")}
                     disabled={isPending}
                   />
-                  {errors.phone?.message && <p className="af-field-error">{errors.phone.message}</p>}
+                  {errors.phone?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.phone.message}</p>}
                 </div>
 
                 {/* Event Type */}
-                <div className="af-field">
-                  <Label htmlFor="eventType" className="af-label">Event Type</Label>
-                  <div className="af-event-type-wrap">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="eventType" className="text-[10px] font-bold tracking-wider uppercase text-white/70">Event Type</Label>
+                  <div className="flex items-center gap-3">
                     <Select
                       value={selectedEventType}
                       onValueChange={(value) =>
@@ -306,16 +449,19 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                       }
                       disabled={isPending}
                     >
-                      <SelectTrigger id="eventType" className="af-input af-input--select">
-                        <span className="af-event-type-dot" />
-                        <SelectValue placeholder="Select event type" />
+                      <SelectTrigger id="eventType" className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white focus:ring-2 focus:ring-[#ff8a5c]/50 flex items-center justify-between w-full px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                          <SelectValue placeholder="Select event type" />
+                        </div>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-[#0b0b0b] border border-white/10 text-white">
                         {applicationEventTypeOptions.map((eventType) => (
                           <SelectItem
                             key={eventType.eventType}
                             value={eventType.eventType}
                             disabled={eventType.disabled}
+                            className="focus:bg-white/10 focus:text-white"
                           >
                             {eventType.statusLabel
                               ? `${eventType.label} (${eventType.statusLabel})`
@@ -324,51 +470,59 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <span className="af-available-badge">Available</span>
+                    <span className="bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">Available</span>
                   </div>
-                  <p className="af-field-hint">
+                  <p className="text-[11px] text-white/40 mt-0.5">
                     Wedding is available now. More types coming soon.
                   </p>
-                  {errors.eventType?.message && <p className="af-field-error">{errors.eventType.message}</p>}
+                  {errors.eventType?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.eventType.message}</p>}
                 </div>
 
                 {/* Wedding Date */}
-                <div className="af-field">
-                  <Label htmlFor="eventDate" className="af-label">
-                    <CalendarDays className="af-label-icon" />
-                    Wedding Date <span className="af-required">*</span>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="eventDate" className="text-[10px] font-bold tracking-wider uppercase text-white/70 flex items-center gap-1.5">
+                    <CalendarDays className="size-3.5 text-white/50" />
+                    Wedding Date <span className="text-[#ff8a5c] font-black">*</span>
                   </Label>
                   <Input
                     id="eventDate"
                     type="date"
-                    className="af-input"
+                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 [color-scheme:dark]"
                     {...register("eventDate")}
                     disabled={isPending}
                   />
-                  {errors.eventDate?.message && <p className="af-field-error">{errors.eventDate.message}</p>}
+                  {errors.eventDate?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.eventDate.message}</p>}
                 </div>
 
                 {/* Venue / Location */}
-                <div className="af-field">
-                  <Label htmlFor="eventLocation" className="af-label">
-                    <MapPin className="af-label-icon" />
-                    Venue / Location <span className="af-required">*</span>
-                  </Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="eventLocation" className="text-[10px] font-bold tracking-wider uppercase text-white/70 flex items-center gap-1.5">
+                      <MapPin className="size-3.5 text-white/50" />
+                      Venue / Location <span className="text-[#ff8a5c] font-black">*</span>
+                    </Label>
+                    <span className={`text-[10px] font-semibold ${
+                      watchedLocation.length >= 300 ? "text-red-400 font-bold" : "text-white/40"
+                    }`}>
+                      {watchedLocation.length}/300
+                    </span>
+                  </div>
                   <Input
                     id="eventLocation"
                     placeholder="e.g. Batangas, Philippines"
-                    className="af-input"
+                    maxLength={300}
+                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
                     {...register("eventLocation")}
                     disabled={isPending}
                   />
-                  {errors.eventLocation?.message && <p className="af-field-error">{errors.eventLocation.message}</p>}
+                  {errors.eventLocation?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.eventLocation.message}</p>}
                 </div>
 
                 {/* Estimated Guest Count */}
-                <div className="af-field af-field--full">
-                  <Label htmlFor="estimatedGuestCount" className="af-label">
-                    <Users className="af-label-icon" />
-                    Estimated Guest Count <span className="af-required">*</span>
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <Label htmlFor="estimatedGuestCount" className="text-[10px] font-bold tracking-wider uppercase text-white/70 flex items-center gap-1.5">
+                    <Users className="size-3.5 text-white/50" />
+                    Estimated Guest Count <span className="text-[#ff8a5c] font-black">*</span>
                   </Label>
                   <Input
                     id="estimatedGuestCount"
@@ -377,46 +531,58 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     max={1000}
                     step={1}
                     placeholder="e.g. 150"
-                    className="af-input af-input--half"
+                    className="h-11 max-w-[200px] rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
                     {...register("estimatedGuestCount")}
                     disabled={isPending}
                   />
                   {errors.estimatedGuestCount?.message && (
-                    <p className="af-field-error">{errors.estimatedGuestCount.message}</p>
+                    <p className="text-xs text-red-400 mt-1 font-medium">{errors.estimatedGuestCount.message}</p>
                   )}
                 </div>
 
                 {/* Message */}
-                <div className="af-field af-field--full">
-                  <Label htmlFor="message" className="af-label">Message</Label>
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="message" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
+                      Message / theme inspiration <span className="text-[#ff8a5c] font-black">*</span>
+                    </Label>
+                    <span className={`text-[10px] font-semibold ${
+                      watchedMessage.length >= 500 ? "text-red-400 font-bold" : "text-white/40"
+                    }`}>
+                      {watchedMessage.length}/500
+                    </span>
+                  </div>
                   <Textarea
                     id="message"
                     rows={4}
-                    placeholder="Tell WebSerbisyo about your event..."
-                    className="af-input af-input--textarea"
+                    placeholder="e.g. Romantic garden theme, champagne and gold motif, minimalist layout, timing notes, or special requests..."
+                    maxLength={500}
+                    className="rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent resize-y"
                     {...register("message")}
                     disabled={isPending}
                   />
-                  <p className="af-field-hint">Special requests, timing, or anything we should know.</p>
-                  {errors.message?.message && <p className="af-field-error">{errors.message.message}</p>}
+                  <p className="text-[11px] text-white/40 mt-0.5">
+                    Special requests, timing, theme, motif, design inspiration, or anything we should know.
+                  </p>
+                  {errors.message?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.message.message}</p>}
                 </div>
               </div>
 
               {/* Continue button */}
-              <div className="af-actions">
+              <div className="flex justify-end mt-8">
                 <button
                   type="button"
-                  className="af-btn-primary"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => void handleContinueToReview()}
                   disabled={isPending}
                 >
-                  Continue to Review <ArrowRight className="af-btn-arrow" />
+                  Continue to Review <ArrowRight className="size-4" />
                 </button>
               </div>
 
-              <div className="af-back-link-wrap">
-                <Link href="/apply" className="af-back-link">
-                  ← Back to overview
+              <div className="text-center mt-6">
+                <Link href="/apply" className="text-xs font-semibold text-[#ff8a5c] hover:underline transition-all">
+                  ← Back to packages
                 </Link>
               </div>
             </>
@@ -425,32 +591,34 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
           {/* ══ STEP 2: Review & Pay ══ */}
           {step === 2 && (
             <>
-              <div className="af-card-header">
-                <h1 className="af-card-title">Review &amp; Payment</h1>
-                <p className="af-card-subtitle">
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide mb-2">Review &amp; Payment</h1>
+                <p className="text-sm text-white/60 leading-relaxed">
                   Confirm your plan and choose your preferred payment method.
                 </p>
               </div>
 
               {/* Selected plan summary card */}
-              <div className="af-plan-summary">
-                <div className="af-plan-summary-header">
-                  <div className="af-plan-summary-left">
-                    <PlanIcon className="af-plan-summary-icon" />
+              <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 mb-8 shadow-inner shadow-black/20">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="size-10 rounded-xl bg-[#ff8a5c]/10 border border-[#ff8a5c]/35 flex items-center justify-center text-[#ff8a5c] shrink-0">
+                      <PlanIcon className="size-5" />
+                    </div>
                     <div>
-                      <p className="af-plan-summary-name">{planDetails.label.toUpperCase()}</p>
-                      <p className="af-plan-summary-desc">{planDetails.description}</p>
+                      <p className="text-xs font-black tracking-widest text-[#ff8a5c] uppercase">{planDetails.label}</p>
+                      <p className="text-sm text-white/70 mt-0.5">{planDetails.description}</p>
                     </div>
                   </div>
-                  <div className="af-plan-summary-price-wrap">
-                    <span className="af-plan-summary-price">{planDetails.price}</span>
-                    <span className="af-plan-summary-original">{planDetails.originalPrice}</span>
+                  <div className="sm:text-right flex items-baseline sm:flex-col gap-2 sm:gap-0 shrink-0">
+                    <span className="text-2xl font-extrabold text-white">{planDetails.price}</span>
+                    <span className="text-sm text-white/40 line-through">{planDetails.originalPrice}</span>
                   </div>
                 </div>
-                <div className="af-plan-summary-features">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {planDetails.features.map((f: string) => (
-                    <div key={f} className="af-plan-summary-feature">
-                      <span className="af-plan-summary-check">✓</span>
+                    <div key={f} className="flex items-center gap-2 text-xs text-white/70">
+                      <span className="text-[#ff8a5c] font-bold">✓</span>
                       <span>{f}</span>
                     </div>
                   ))}
@@ -459,9 +627,9 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 
               {/* Payment method */}
               {hasPaymentOptions ? (
-                <div className="af-payment-section">
-                  <p className="af-payment-label">PAYMENT METHOD</p>
-                  <p className="af-payment-hint">
+                <div className="mb-8">
+                  <p className="text-[10px] font-bold tracking-wider uppercase text-white/70 mb-1.5">PAYMENT METHOD</p>
+                  <p className="text-xs text-white/50 leading-relaxed mb-4">
                     We&apos;ll confirm the final payment details on Messenger. Choose your preferred option below.
                   </p>
                   <PaymentOptionPicker
@@ -477,39 +645,39 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                   />
                 </div>
               ) : (
-                <div className="af-payment-section">
-                  <p className="af-payment-label">PAYMENT METHOD</p>
-                  <p className="af-payment-hint">
+                <div className="mb-8">
+                  <p className="text-[10px] font-bold tracking-wider uppercase text-white/70 mb-1.5">PAYMENT METHOD</p>
+                  <p className="text-xs text-white/50 leading-relaxed mb-4">
                     No payment required now — we&apos;ll reach out on Messenger to confirm your slot and send payment instructions.
                   </p>
                 </div>
               )}
 
               {/* Step 2 actions */}
-              <div className="af-actions af-actions--row">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
                 <button
                   type="button"
-                  className="af-btn-back"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3.5 text-sm font-semibold text-white/80 transition-all duration-200 hover:bg-white/[0.08] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setStep(1)}
                   disabled={isPending}
                 >
-                  <ArrowLeft className="af-btn-arrow" /> Back
+                  <ArrowLeft className="size-4" /> Back
                 </button>
                 <button
                   type="submit"
-                  className="af-btn-submit"
+                  className="inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed max-w-[280px]"
                   disabled={isPending}
                 >
                   {isPending ? (
-                    <Loader2 className="af-btn-arrow animate-spin" />
+                    <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <ArrowRight className="af-btn-arrow" />
+                    <ArrowRight className="size-4" />
                   )}
                   {isPending ? "Submitting..." : "Submit Application"}
                 </button>
               </div>
 
-              <p className="af-disclaimer">
+              <p className="text-center text-[11px] text-white/40 leading-relaxed mt-6">
                 No payment required now — we&apos;ll reach out on Messenger to confirm your slot and send payment instructions.
               </p>
             </>
@@ -518,7 +686,9 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
       </div>
 
       {/* Footer */}
-      <p className="af-footer">© 2024 WebSerbisyo RSVP · Made with love for Filipino couples</p>
+      <p className="text-center text-[10px] text-white/30 tracking-wider mt-12 pb-6">
+        © 2024 WebSerbisyo RSVP · Made with love for Filipino couples
+      </p>
     </div>
   );
 }

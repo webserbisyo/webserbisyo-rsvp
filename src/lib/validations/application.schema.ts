@@ -39,13 +39,7 @@ function isValidCalendarDate(value: string) {
   );
 }
 
-function optionalText(max: number, tooLongMessage: string) {
-  return z
-    .string()
-    .trim()
-    .transform((value) => (value ? value : undefined))
-    .refine((value) => value === undefined || value.length <= max, tooLongMessage);
-}
+
 
 function buildSelectionSchema<TValue extends string>(
   values: readonly TValue[],
@@ -110,50 +104,59 @@ const ApplicationEnabledEventTypeSchema = buildSelectionSchema(
   "This event type is coming soon. Wedding applications are available right now.",
 );
 
-const OptionalDateSchema = z
+const EventDateSchema = z
   .string()
   .trim()
-  .transform((value) => (value ? value : undefined))
-  .refine(
-    (value) => value === undefined || isValidCalendarDate(value),
-    "Enter a valid event date.",
-  );
+  .min(1, "Wedding date is required.")
+  .refine(isValidCalendarDate, "Wedding date is required.");
+
+const EventLocationSchema = z
+  .string()
+  .trim()
+  .min(1, "Venue or location is required.")
+  .max(300, "Venue or location must be 300 characters or fewer.");
+
+const MessageSchema = z
+  .string()
+  .trim()
+  .min(1, "Tell us your wedding theme, request, or design inspiration.")
+  .max(500, "Message must be 500 characters or fewer.");
 
 const EstimatedGuestCountSchema = z
   .union([z.string(), z.number(), z.undefined()])
   .transform((value, ctx) => {
     if (value === undefined) {
-      return undefined;
+      ctx.addIssue({
+        code: "custom",
+        message: "Estimated guest count is required.",
+      });
+      return z.NEVER;
     }
 
     const rawValue = typeof value === "number" ? String(value) : value.trim();
 
     if (!rawValue) {
-      return undefined;
+      ctx.addIssue({
+        code: "custom",
+        message: "Estimated guest count is required.",
+      });
+      return z.NEVER;
     }
 
     if (!/^\d+$/.test(rawValue)) {
       ctx.addIssue({
         code: "custom",
-        message: "Guest count must be a number.",
+        message: "Enter a guest count between 1 and 1000.",
       });
       return z.NEVER;
     }
 
     const parsed = Number(rawValue);
 
-    if (parsed < 1) {
+    if (parsed < 1 || parsed > 1000) {
       ctx.addIssue({
         code: "custom",
-        message: "Guest count must be at least 1.",
-      });
-      return z.NEVER;
-    }
-
-    if (parsed > 1000) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Guest count must be 1000 or less.",
+        message: "Enter a guest count between 1 and 1000.",
       });
       return z.NEVER;
     }
@@ -167,13 +170,13 @@ export function createApplicationSchema(options?: { requireManualPaymentOption?:
   return z.object({
     email: EmailSchema,
     estimatedGuestCount: EstimatedGuestCountSchema,
-    eventDate: OptionalDateSchema,
-    eventLocation: optionalText(180, "Event location is too long."),
+    eventDate: EventDateSchema,
+    eventLocation: EventLocationSchema,
     eventType: ApplicationEnabledEventTypeSchema,
     fbFbc: z.string().max(500).optional(),
     fbFbp: z.string().max(500).optional(),
     fullName: FullNameSchema,
-    message: optionalText(1000, "Message is too long."),
+    message: MessageSchema,
     phone: PhoneSchema,
     preferredManualPaymentOption: requireManualPaymentOption
       ? ManualPaymentOptionSchema
