@@ -124,21 +124,21 @@ export function deriveDeleteEligibility(input: DeleteEligibilityInput): DeleteEl
     };
   }
 
-  if (input.hasPaidNonRefundedPayment) {
-    return {
-      deleteEligible: false,
-      deleteEligibleAt: null,
-      reasonCode: "paid_non_refunded",
-      reason: "Paid clients must be refunded or retained before deletion.",
-    };
-  }
-
   if (hasActiveHostingOrAccess) {
     return {
       deleteEligible: false,
       deleteEligibleAt: null,
       reasonCode: "active_hosting",
       reason: "Active hosting/access must end before deletion.",
+    };
+  }
+
+  if (input.hasPaidNonRefundedPayment) {
+    return {
+      deleteEligible: false,
+      deleteEligibleAt: null,
+      reasonCode: "paid_non_refunded",
+      reason: "Paid clients must be refunded or retained before deletion.",
     };
   }
 

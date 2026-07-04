@@ -1500,14 +1500,6 @@ function resolveDeletePermission(
     };
   }
 
-  if (snapshot.eligibility.hasPaidNonRefundedPayment) {
-    return {
-      allowed: false,
-      reason:
-        "Paid non-refunded clients cannot be force deleted in v1. Refund test payments first or use a future test-data purge tool.",
-    };
-  }
-
   if (snapshot.eventResponseCount > 0) {
     return {
       allowed: false,
@@ -1515,7 +1507,14 @@ function resolveDeletePermission(
     };
   }
 
-  if (hasLiveRsvpDeleteBlocker(snapshot.events)) {
+  if (snapshot.eligibility.reasonCode === "paid_non_refunded") {
+    return {
+      allowed: false,
+      reason: "Paid non-refunded clients remain blocked in force delete v1.",
+    };
+  }
+
+  if (snapshot.eligibility.reasonCode === "live_rsvp") {
     return {
       allowed: false,
       reason: "Live public or unlisted RSVP records remain blocked in force delete v1.",
@@ -1547,34 +1546,12 @@ function isDeleteSkipReason(message: string) {
     "Active hosting/access must end before deletion.",
     "Client still has active onboarding or setup work to retain.",
     "Client has archive metadata but status is still Active. Re-archive or cancel the client before deleting.",
-    "Paid non-refunded clients cannot be force deleted in v1. Refund test payments first or use a future test-data purge tool.",
+    "Paid non-refunded clients remain blocked in force delete v1.",
     "Live public or unlisted RSVP records remain blocked in force delete v1.",
     "Clients with persisted RSVP responses or guest data remain blocked in force delete.",
     "Unpublish or disable the live RSVP website before deletion.",
     "Paid clients must be refunded or retained before deletion.",
   ].includes(message);
-}
-
-function hasLiveRsvpDeleteBlocker(
-  events: Array<{
-    custom_frontend_enabled: boolean;
-    custom_frontend_url: string | null;
-    published_at: string | null;
-    status: string | null;
-    visibility: string | null;
-  }>,
-) {
-  return events.some(
-    (event) =>
-      event.status === "published" ||
-      Boolean(
-        event.published_at &&
-          event.visibility &&
-          ["public", "unlisted"].includes(event.visibility),
-      ) ||
-      event.custom_frontend_enabled ||
-      Boolean(event.custom_frontend_url),
-  );
 }
 
 async function getEventResponseCountForClient(clientId: string) {
