@@ -15,7 +15,6 @@ type ClientsClientPageProps = {
   initialData: ClientListResult;
   initialFilters: AdminClientsSearchParams;
   initialListSearch: string;
-  isPlatformAdmin: boolean;
   packageDefaultAvailability: Record<"max" | "pro", boolean>;
 };
 
@@ -23,7 +22,6 @@ export function ClientsClientPage({
   initialData,
   initialFilters,
   initialListSearch,
-  isPlatformAdmin,
   packageDefaultAvailability,
 }: ClientsClientPageProps) {
   const { data, error, filters, isFetching, isPending } = useClientsQuery(
@@ -73,7 +71,6 @@ export function ClientsClientPage({
         <ClientsTable
           hasActiveFilters={hasActiveFilters}
           items={items}
-          isPlatformAdmin={isPlatformAdmin}
           packageDefaultAvailability={packageDefaultAvailability}
         />
         <ClientCardList hasActiveFilters={hasActiveFilters} items={items} />

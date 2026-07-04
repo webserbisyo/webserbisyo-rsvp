@@ -34,7 +34,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 type ClientBulkActionsProps = {
-  isPlatformAdmin: boolean;
   packageDefaultAvailability: Record<"max" | "pro", boolean>;
   selectedClients: ClientListItem[];
   onClearSelection: () => void;
@@ -42,17 +41,6 @@ type ClientBulkActionsProps = {
 
 type BulkDialog = "archive" | "cancel" | "delete" | "paid" | "refund" | null;
 type PaymentMethod = "gcash" | "maya" | "manual";
-type BulkDeleteResultData = {
-  failed: Array<{ clientId: string; error: string }>;
-  failedCount: number;
-  forceDeletedCount: number;
-  normalDeletedCount: number;
-  selectedCount: number;
-  skipped: Array<{ clientId: string; reason: string }>;
-  skippedCount: number;
-  succeeded: Array<{ clientId: string; mode?: "force" | "normal"; warnings: string[] }>;
-  total: number;
-};
 
 const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
   { label: "GCash", value: "gcash" },
@@ -61,7 +49,6 @@ const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
 ];
 
 export function ClientBulkActions({
-  isPlatformAdmin,
   packageDefaultAvailability,
   selectedClients,
   onClearSelection,
@@ -164,16 +151,15 @@ export function ClientBulkActions({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (force: boolean) =>
+    mutationFn: () =>
       bulkDeleteClientsAction({
         clientIds: selectedIds,
         confirmation: deleteConfirmation,
-        force,
         note: deleteNote || undefined,
       }),
     onSuccess: (result) => {
       setDeleteConfirmation("");
-      handleBulkDeleteResult(result);
+      handleBulkResult(result, "deleted");
     },
     onError: () => toast.error("Bulk Delete failed."),
   });
@@ -199,30 +185,6 @@ export function ClientBulkActions({
     }
 
     const message = buildBulkMessage(actionLabel, result.data);
-
-    if (result.data.succeeded.length === 0) {
-      toast.error(message);
-    } else if (result.data.failed.length > 0 || result.data.skipped.length > 0) {
-      toast(message);
-    } else {
-      toast.success(message);
-    }
-
-    if (result.data.succeeded.length > 0) {
-      onClearSelection();
-    }
-
-    setDialog(null);
-    router.refresh();
-  }
-
-  function handleBulkDeleteResult(result: Awaited<ReturnType<typeof bulkDeleteClientsAction>>) {
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-
-    const message = buildBulkDeleteMessage(result.data);
 
     if (result.data.succeeded.length === 0) {
       toast.error(message);
@@ -558,17 +520,16 @@ export function ClientBulkActions({
       </Dialog>
 
       <Dialog open={dialog === "delete"} onOpenChange={(open) => setDialog(open ? "delete" : null)}>
-        <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b px-6 py-4">
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
             <DialogTitle>Delete selected clients</DialogTitle>
             <DialogDescription>
-              Normal delete still follows the existing safety rules. Platform Admin force delete can
-              only override cleanup-safe blockers and still refuses paid clients, live RSVP records,
-              and persisted guest data.
+              {deleteEligible.length} eligible, {deleteSkipped.length} will be skipped. The same
+              server-side rules are re-checked for every client during execution.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+          <div className="space-y-4">
             <div className="grid gap-3 rounded-md border px-3 py-3 text-sm sm:grid-cols-3">
               <div>
                 <p className="text-muted-foreground text-xs font-medium">Selected</p>
@@ -583,13 +544,8 @@ export function ClientBulkActions({
                 <p className="font-medium">{deleteSkipped.length}</p>
               </div>
             </div>
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
-              Normal delete removes only clients that are already eligible under the current cleanup
-              rules. Typing <span className="font-semibold">DELETE</span> does not override blocked
-              clients by itself.
-            </div>
             <div className="space-y-2">
-              <Label>Normal delete</Label>
+              <Label>What will be deleted</Label>
               <div className="rounded-md border px-3 py-2 text-sm">
                 <ul className="list-disc space-y-1 pl-5">
                   <li>Eligible client records only</li>
@@ -602,18 +558,6 @@ export function ClientBulkActions({
                 </ul>
               </div>
             </div>
-            {isPlatformAdmin && deleteSkipped.length > 0 ? (
-              <div className="space-y-2">
-                <Label>Platform Admin force delete v1</Label>
-                <div className="rounded-md border border-destructive/25 px-3 py-2 text-sm">
-                  <ul className="list-disc space-y-1 pl-5">
-                    <li>Can override archive/cancel, active status, active hosting/access, and setup blockers</li>
-                    <li>Still blocks paid non-refunded clients, live RSVP records, and persisted guest data</li>
-                    <li>Tombstones and preserved history remain mandatory before final deletion</li>
-                  </ul>
-                </div>
-              </div>
-            ) : null}
             <div className="space-y-2">
               <Label>What will be preserved</Label>
               <div className="rounded-md border px-3 py-2 text-sm">
@@ -629,7 +573,7 @@ export function ClientBulkActions({
             </div>
             {deleteReasonGroups.length > 0 ? (
               <div className="space-y-2">
-                <Label>Blocked by normal delete rules</Label>
+                <Label>Skipped clients by reason</Label>
                 <div className="space-y-2 rounded-md border px-3 py-2 text-sm">
                   {deleteReasonGroups.map((group) => (
                     <div key={group.reason} className="space-y-1">
@@ -659,7 +603,7 @@ export function ClientBulkActions({
             </div>
           </div>
 
-          <DialogFooter className="shrink-0 rounded-none rounded-b-xl px-6 py-4">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialog(null)}>
               Back
             </Button>
@@ -670,22 +614,11 @@ export function ClientBulkActions({
                 deleteConfirmation !== "DELETE" ||
                 deleteEligible.length === 0
               }
-              onClick={() => deleteMutation.mutate(false)}
+              onClick={() => deleteMutation.mutate()}
             >
               {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Delete eligible
+              Delete selected
             </Button>
-            {isPlatformAdmin && deleteSkipped.length > 0 ? (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={deleteMutation.isPending || deleteConfirmation !== "DELETE"}
-                onClick={() => deleteMutation.mutate(true)}
-              >
-                {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                Force delete selected
-              </Button>
-            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -720,21 +653,6 @@ function buildBulkMessage(
     return `${base} ${warningCount} warning${warningCount === 1 ? "" : "s"}.`;
   }
 
-  return reasons ? `${base} ${reasons}.` : base;
-}
-
-function buildBulkDeleteMessage(result: BulkDeleteResultData) {
-  const reasons = Array.from(
-    new Set([
-      ...result.skipped.map((item) => item.reason),
-      ...result.failed.map((item) => item.error),
-    ]),
-  )
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("; ");
-
-  const base = `${result.normalDeletedCount + result.forceDeletedCount}/${result.selectedCount} clients deleted. ${result.normalDeletedCount} normal, ${result.forceDeletedCount} force, ${result.skippedCount} skipped, ${result.failedCount} failed.`;
   return reasons ? `${base} ${reasons}.` : base;
 }
 

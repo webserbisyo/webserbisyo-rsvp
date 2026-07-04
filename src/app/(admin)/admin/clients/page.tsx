@@ -45,7 +45,6 @@ export default async function AdminClientsPage({ searchParams }: AdminClientsPag
         initialData={result}
         initialFilters={filters}
         initialListSearch={initialListSearch}
-        isPlatformAdmin
         packageDefaultAvailability={packageDefaultAvailability}
       />
     </PageContainer>

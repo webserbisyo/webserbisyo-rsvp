@@ -131,7 +131,6 @@ export const BulkDeleteClientsSchema = z.object({
     .string()
     .trim()
     .refine((value) => value === "DELETE", "Type DELETE to confirm."),
-  force: z.boolean().optional().default(false),
   note: optionalText(2000),
 });
 

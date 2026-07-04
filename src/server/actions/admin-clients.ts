@@ -41,7 +41,6 @@ import {
   saveCustomFrontendOrigin,
 } from "@/server/services/admin-workflow/custom-websites";
 import { checkCustomWebsiteOriginHealth } from "@/server/services/custom-websites/custom-website-health";
-import { ServiceError } from "@/server/services/service-error";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 export async function archiveClientAction(input: unknown) {
@@ -166,11 +165,6 @@ export async function bulkDeleteClientsAction(input: unknown) {
   try {
     const admin = await requireAdmin();
     const payload = parseActionInput(BulkDeleteClientsSchema, input);
-
-    if (payload.force && admin.role !== "platform_admin") {
-      throw new ServiceError("Platform admin access is required for force delete.");
-    }
-
     const result = await bulkDeleteClients(payload, admin.id);
 
     revalidateBulkClientRoutes(payload.clientIds);
