@@ -24,12 +24,14 @@ import { useAdminWorkflowUiStore } from "@/stores/admin-workflow-ui-store";
 type ClientsTableProps = {
   hasActiveFilters: boolean;
   items: ClientListItem[];
+  isPlatformAdmin: boolean;
   packageDefaultAvailability: Record<"max" | "pro", boolean>;
 };
 
 export function ClientsTable({
   hasActiveFilters,
   items,
+  isPlatformAdmin,
   packageDefaultAvailability,
 }: ClientsTableProps) {
   "use no memo";
@@ -179,6 +181,7 @@ export function ClientsTable({
   return (
     <section className="hidden space-y-3 xl:block">
       <ClientBulkActions
+        isPlatformAdmin={isPlatformAdmin}
         packageDefaultAvailability={packageDefaultAvailability}
         selectedClients={selectedClients}
         onClearSelection={() => setRowSelection("clients", {})}

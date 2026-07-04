@@ -59,6 +59,7 @@ type ClientOnboardingResult = {
 type ClientDeleteResult = {
   clientId: string;
   deleted: boolean;
+  mode: DeleteExecutionMode;
   tombstoneId: string;
 };
 
@@ -80,17 +81,55 @@ type DeleteEligibilitySnapshot = {
   reason: string;
 };
 
+type DeleteExecutionMode = "normal" | "force";
+
 type BulkClientActionResultItem = {
   clientId: string;
+  mode?: DeleteExecutionMode;
   warnings: string[];
 };
 
 export type BulkClientActionResult = {
   failed: Array<{ clientId: string; error: string }>;
+  forceDeletedCount?: number;
+  failedCount?: number;
+  normalDeletedCount?: number;
+  selectedCount?: number;
+  skippedCount?: number;
   skipped: Array<{ clientId: string; reason: string }>;
   succeeded: BulkClientActionResultItem[];
   total: number;
 };
+
+type BulkDeleteClientActionResult = BulkClientActionResult & {
+  failedCount: number;
+  forceDeletedCount: number;
+  normalDeletedCount: number;
+  selectedCount: number;
+  skippedCount: number;
+};
+
+type ClientDeleteSnapshot = {
+  application: Awaited<ReturnType<typeof getApprovedApplicationForClient>>;
+  client: Awaited<ReturnType<typeof getClientForLifecycle>>;
+  eligibility: DeleteEligibilitySnapshot;
+  eventResponseCount: number;
+  events: Awaited<ReturnType<typeof getEventsForClient>>;
+  paymentStatus: ClientPaymentDisplayStatus;
+  payments: Awaited<ReturnType<typeof getPaymentsForClientOrApplication>>;
+  refunds: Awaited<ReturnType<typeof getRefundsForClient>>;
+};
+
+type DeletePermissionDecision =
+  | {
+      allowed: false;
+      reason: string;
+    }
+  | {
+      allowed: true;
+      mode: DeleteExecutionMode;
+      reasonCode: DeleteEligibilityReasonCode;
+    };
 
 export async function archiveClient(input: ArchiveClientInput, actorUserId: string) {
   const supabase = createAdminClient();
@@ -841,40 +880,65 @@ export async function deleteClient(
   input: DeleteClientInput,
   actorUserId: string,
 ): Promise<ClientActionResult<ClientDeleteResult>> {
+  return deleteClientWithMode(
+    {
+      clientId: input.clientId,
+      force: false,
+      note: input.note,
+    },
+    actorUserId,
+  );
+}
+
+async function deleteClientWithMode(
+  input: {
+    clientId: string;
+    force: boolean;
+    note?: string;
+  },
+  actorUserId: string,
+): Promise<ClientActionResult<ClientDeleteResult>> {
   const supabase = createAdminClient();
   const warnings: string[] = [];
-  const client = await getClientForLifecycle(input.clientId);
-  const [application, events, payments, refunds, eligibility, paymentStatus] = await Promise.all([
-    getApprovedApplicationForClient(client.id),
-    getEventsForClient(client.id),
-    getPaymentsForClientOrApplication(client.id, null),
-    getRefundsForClient(client.id),
-    getDeleteEligibilityForClient(client.id),
-    getLatestPaymentDisplayStatusForClient(client.id),
-  ]);
+  const snapshot = await loadClientDeleteSnapshot(input.clientId);
+  const decision = resolveDeletePermission(snapshot, input.force);
 
-  if (!eligibility.deleteEligible) {
-    throw new ServiceError(eligibility.reason);
+  if (!decision.allowed) {
+    throw new ServiceError(decision.reason);
   }
 
-  const primaryEvent = selectPrimaryEvent(events);
+  if (decision.mode === "force") {
+    const cleanupWarning = await disableClientAccessForForceDelete(snapshot.client.id, snapshot.events);
+
+    if (cleanupWarning) {
+      warnings.push(cleanupWarning);
+    }
+  }
+
+  const primaryEvent = selectPrimaryEvent(snapshot.events);
   const tombstonePayload: TablesInsert<"client_deletion_tombstones"> = {
-    client_email: client.contact_email,
-    client_name: client.name,
-    client_status: client.status,
+    client_email: snapshot.client.contact_email,
+    client_name: snapshot.client.name,
+    client_status: snapshot.client.status,
     deleted_by: actorUserId,
-    deleted_reason: input.note ?? "Client deleted from admin clients page.",
+    deleted_reason:
+      input.note ??
+      (decision.mode === "force"
+        ? "Client force-deleted from admin clients page."
+        : "Client deleted from admin clients page."),
     event_date: primaryEvent?.event_date ?? null,
     event_id: primaryEvent?.id ?? null,
     event_slug: primaryEvent?.event_slug ?? null,
     event_type: primaryEvent?.event_type ?? null,
     metadata: {
-      application_id: application?.id ?? null,
-      archived_at: client.archived_at,
-      cancelled_at: client.cancelled_at,
-      delete_eligible_at: eligibility.deleteEligibleAt,
-      delete_eligibility_reason_code: eligibility.reasonCode,
-      payments: payments.map((payment) => ({
+      application_id: snapshot.application?.id ?? null,
+      archived_at: snapshot.client.archived_at,
+      cancelled_at: snapshot.client.cancelled_at,
+      delete_eligible_at: snapshot.eligibility.deleteEligibleAt,
+      delete_eligibility_reason_code: snapshot.eligibility.reasonCode,
+      delete_execution_mode: decision.mode,
+      event_response_count: snapshot.eventResponseCount,
+      payments: snapshot.payments.map((payment) => ({
         amount_due: payment.amount_due,
         amount_paid: payment.amount_paid,
         hosting_ends_at: payment.hosting_ends_at,
@@ -885,7 +949,7 @@ export async function deleteClient(
         payment_status: payment.payment_status,
         reference_number: payment.reference_number,
       })),
-      refunds: refunds.map((refund) => ({
+      refunds: snapshot.refunds.map((refund) => ({
         amount: refund.amount,
         confirmed_at: refund.confirmed_at,
         id: refund.id,
@@ -895,13 +959,13 @@ export async function deleteClient(
         reference_number: refund.reference_number,
       })),
     },
-    original_client_id: client.id,
-    payment_status: paymentStatus,
+    original_client_id: snapshot.client.id,
+    payment_status: snapshot.paymentStatus,
     payment_summary: {
-      count: payments.length,
-      ids: payments.map((payment) => payment.id),
-      refunds_count: refunds.length,
-      statuses: payments.map((payment) => payment.payment_status),
+      count: snapshot.payments.length,
+      ids: snapshot.payments.map((payment) => payment.id),
+      refunds_count: snapshot.refunds.length,
+      statuses: snapshot.payments.map((payment) => payment.payment_status),
     },
   };
 
@@ -914,7 +978,7 @@ export async function deleteClient(
   assertServiceSuccess(tombstoneError, "Failed to write the client deletion tombstone.");
   assertServiceData(tombstone, "Deletion tombstone insert returned no row.");
 
-  const deletablePayments = payments.filter((payment) =>
+  const deletablePayments = snapshot.payments.filter((payment) =>
     ["pending", "cancelled", "failed", "refunded"].includes(payment.payment_status),
   );
   if (deletablePayments.length > 0) {
@@ -929,11 +993,11 @@ export async function deleteClient(
     assertServiceSuccess(paymentDeleteError, "Failed to delete linked non-paid payments.");
   }
 
-  const eventIds = events.map((event) => event.id);
+  const eventIds = snapshot.events.map((event) => event.id);
   const metaPixelFilter =
     eventIds.length > 0
-      ? `client_id.eq.${client.id},event_id.in.(${eventIds.join(",")})`
-      : `client_id.eq.${client.id}`;
+      ? `client_id.eq.${snapshot.client.id},event_id.in.(${eventIds.join(",")})`
+      : `client_id.eq.${snapshot.client.id}`;
   const { error: metaPixelDeleteError } = await supabase
     .from("meta_pixels")
     .delete()
@@ -941,16 +1005,19 @@ export async function deleteClient(
 
   assertServiceSuccess(metaPixelDeleteError, "Failed to delete linked Meta Pixel records.");
 
-  if (events.length > 0) {
+  if (snapshot.events.length > 0) {
     const { error: eventDeleteError } = await supabase
       .from("rsvp_events")
       .delete()
-      .eq("client_id", client.id);
+      .eq("client_id", snapshot.client.id);
 
     assertServiceSuccess(eventDeleteError, "Failed to delete linked draft RSVP events.");
   }
 
-  const { error: clientDeleteError } = await supabase.from("clients").delete().eq("id", client.id);
+  const { error: clientDeleteError } = await supabase
+    .from("clients")
+    .delete()
+    .eq("id", snapshot.client.id);
 
   assertServiceSuccess(clientDeleteError, "Failed to delete the client.");
 
@@ -962,7 +1029,8 @@ export async function deleteClient(
     entityType: "client_deletion_tombstones",
     eventId: null,
     metadata: {
-      deleted_client_id: client.id,
+      deleted_client_id: snapshot.client.id,
+      delete_mode: decision.mode,
       deleted_event_id: primaryEvent?.id ?? null,
       reason: input.note ?? null,
       tombstone_id: tombstone.id,
@@ -975,8 +1043,9 @@ export async function deleteClient(
 
   return {
     data: {
-      clientId: client.id,
+      clientId: snapshot.client.id,
       deleted: true,
+      mode: decision.mode,
       tombstoneId: tombstone.id,
     },
     warnings,
@@ -986,26 +1055,16 @@ export async function deleteClient(
 export async function bulkDeleteClients(
   input: BulkDeleteClientsInput,
   actorUserId: string,
-): Promise<BulkClientActionResult> {
+): Promise<BulkDeleteClientActionResult> {
   const clientIds = uniqueIds(input.clientIds);
-  const result = createBulkResult(clientIds.length);
+  const result = createBulkDeleteResult(clientIds.length);
 
   for (const clientId of clientIds) {
     try {
-      const eligibility = await getDeleteEligibilityForClient(clientId);
-
-      if (!eligibility.deleteEligible) {
-        result.skipped.push({
-          clientId,
-          reason: eligibility.reason,
-        });
-        continue;
-      }
-
-      const deleted = await deleteClient(
+      const deleted = await deleteClientWithMode(
         {
           clientId,
-          confirmation: input.confirmation,
+          force: input.force,
           note: input.note,
         },
         actorUserId,
@@ -1013,16 +1072,32 @@ export async function bulkDeleteClients(
 
       result.succeeded.push({
         clientId: deleted.data.clientId,
+        mode: deleted.data.mode,
         warnings: deleted.warnings,
       });
+      if (deleted.data.mode === "force") {
+        result.forceDeletedCount += 1;
+      } else {
+        result.normalDeletedCount += 1;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Bulk delete failed.";
-      result.failed.push({
-        clientId,
-        error: message,
-      });
+      if (isDeleteSkipReason(message)) {
+        result.skipped.push({
+          clientId,
+          reason: message,
+        });
+      } else {
+        result.failed.push({
+          clientId,
+          error: message,
+        });
+      }
     }
   }
+
+  result.failedCount = result.failed.length;
+  result.skippedCount = result.skipped.length;
 
   return result;
 }
@@ -1363,8 +1438,182 @@ function createBulkResult(total: number): BulkClientActionResult {
   };
 }
 
+function createBulkDeleteResult(total: number): BulkDeleteClientActionResult {
+  return {
+    failed: [],
+    failedCount: 0,
+    forceDeletedCount: 0,
+    normalDeletedCount: 0,
+    selectedCount: total,
+    skipped: [],
+    skippedCount: 0,
+    succeeded: [],
+    total,
+  };
+}
+
 function uniqueIds(clientIds: string[]) {
   return Array.from(new Set(clientIds));
+}
+
+async function loadClientDeleteSnapshot(clientId: string): Promise<ClientDeleteSnapshot> {
+  const client = await getClientForLifecycle(clientId);
+  const [application, events, payments, refunds, eligibility, paymentStatus, eventResponseCount] =
+    await Promise.all([
+      getApprovedApplicationForClient(client.id),
+      getEventsForClient(client.id),
+      getPaymentsForClientOrApplication(client.id, null),
+      getRefundsForClient(client.id),
+      getDeleteEligibilityForClient(client.id),
+      getLatestPaymentDisplayStatusForClient(client.id),
+      getEventResponseCountForClient(client.id),
+    ]);
+
+  return {
+    application,
+    client,
+    eligibility,
+    eventResponseCount,
+    events,
+    paymentStatus,
+    payments,
+    refunds,
+  };
+}
+
+function resolveDeletePermission(
+  snapshot: ClientDeleteSnapshot,
+  force: boolean,
+): DeletePermissionDecision {
+  if (!force) {
+    if (!snapshot.eligibility.deleteEligible) {
+      return {
+        allowed: false,
+        reason: snapshot.eligibility.reason,
+      };
+    }
+
+    return {
+      allowed: true,
+      mode: "normal",
+      reasonCode: snapshot.eligibility.reasonCode,
+    };
+  }
+
+  if (snapshot.eventResponseCount > 0) {
+    return {
+      allowed: false,
+      reason: "Clients with persisted RSVP responses or guest data remain blocked in force delete.",
+    };
+  }
+
+  if (snapshot.eligibility.reasonCode === "paid_non_refunded") {
+    return {
+      allowed: false,
+      reason: "Paid non-refunded clients remain blocked in force delete v1.",
+    };
+  }
+
+  if (snapshot.eligibility.reasonCode === "live_rsvp") {
+    return {
+      allowed: false,
+      reason: "Live public or unlisted RSVP records remain blocked in force delete v1.",
+    };
+  }
+
+  if (
+    snapshot.eligibility.deleteEligible ||
+    ["status_inconsistent", "status_not_closed", "active_hosting", "active_setup"].includes(
+      snapshot.eligibility.reasonCode,
+    )
+  ) {
+    return {
+      allowed: true,
+      mode: snapshot.eligibility.deleteEligible ? "normal" : "force",
+      reasonCode: snapshot.eligibility.reasonCode,
+    };
+  }
+
+  return {
+    allowed: false,
+    reason: snapshot.eligibility.reason,
+  };
+}
+
+function isDeleteSkipReason(message: string) {
+  return [
+    "Archive or cancel the client before deletion.",
+    "Active hosting/access must end before deletion.",
+    "Client still has active onboarding or setup work to retain.",
+    "Client has archive metadata but status is still Active. Re-archive or cancel the client before deleting.",
+    "Paid non-refunded clients remain blocked in force delete v1.",
+    "Live public or unlisted RSVP records remain blocked in force delete v1.",
+    "Clients with persisted RSVP responses or guest data remain blocked in force delete.",
+    "Unpublish or disable the live RSVP website before deletion.",
+    "Paid clients must be refunded or retained before deletion.",
+  ].includes(message);
+}
+
+async function getEventResponseCountForClient(clientId: string) {
+  const supabase = createAdminClient();
+  const { count, error } = await supabase
+    .from("rsvp_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", clientId);
+
+  assertServiceSuccess(error, "Failed to verify persisted RSVP responses.");
+
+  return count ?? 0;
+}
+
+async function disableClientAccessForForceDelete(clientId: string, events: Array<{ id: string }>) {
+  const supabase = createAdminClient();
+  const now = new Date().toISOString();
+
+  try {
+    const { error: customWebsiteError } = await supabase
+      .from("client_custom_websites")
+      .update({
+        custom_frontend_enabled: false,
+        disabled_at: now,
+        status: "disabled",
+      })
+      .eq("client_id", clientId);
+
+    assertServiceSuccess(customWebsiteError, "Failed to disable linked custom website access.");
+
+    const { error: clientError } = await supabase
+      .from("clients")
+      .update({
+        custom_frontend_status: "disabled",
+        custom_frontend_url: null,
+        hosting_ends_at: now,
+        hosting_starts_at: null,
+        renewal_required_at: null,
+      })
+      .eq("id", clientId);
+
+    assertServiceSuccess(clientError, "Failed to disable client hosting/access.");
+
+    if (events.length > 0) {
+      const eventIds = events.map((event) => event.id);
+      const { error: eventError } = await supabase
+        .from("rsvp_events")
+        .update({
+          custom_frontend_enabled: false,
+          custom_frontend_url: null,
+        })
+        .in("id", eventIds);
+
+      assertServiceSuccess(eventError, "Failed to unlink event website access.");
+    }
+
+    return null;
+  } catch (error) {
+    return error instanceof Error
+      ? `Access cleanup could not be fully recorded before force delete: ${error.message}`
+      : "Access cleanup could not be fully recorded before force delete.";
+  }
 }
 
 function buildBulkPaymentSkipReason(status: ClientPaymentDisplayStatus) {
