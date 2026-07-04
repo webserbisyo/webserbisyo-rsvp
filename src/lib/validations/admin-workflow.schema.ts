@@ -144,6 +144,17 @@ export const BulkPurgeTestClientsSchema = z.object({
   note: requiredText(2000, "A purge note is required."),
 });
 
+export const CompleteTestAccountPurgeSchema = z.object({
+  confirmation: z
+    .string()
+    .trim()
+    .refine((value) => value === "DELETE AUTH USER", "Type DELETE AUTH USER to confirm."),
+  emails: z
+    .array(z.email("Enter a valid email address."))
+    .min(1, "Enter at least one email address."),
+  note: requiredText(2000, "A complete purge note is required."),
+});
+
 export const RefundClientPaymentSchema = z.object({
   clientId: z.uuid(),
   confirmedAt: IsoDateTimeSchema.optional(),
@@ -270,5 +281,6 @@ export type EnableCustomWebsiteInput = z.infer<typeof EnableCustomWebsiteSchema>
 export type CheckCustomWebsiteOriginHealthInput = z.infer<
   typeof CheckCustomWebsiteOriginHealthSchema
 >;
+export type CompleteTestAccountPurgeInput = z.infer<typeof CompleteTestAccountPurgeSchema>;
 export type SaveCustomFrontendOriginInput = z.infer<typeof SaveCustomFrontendOriginSchema>;
 export type TransitionPaymentStatusInput = z.infer<typeof TransitionPaymentStatusSchema>;
