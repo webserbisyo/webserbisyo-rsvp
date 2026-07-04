@@ -60,9 +60,9 @@ function getRouteScopes(route: PublicMetaPixelRoute) {
     case "application":
       return ["global_public", "application"];
     case "event_page":
-      return ["global_public", "event_page"];
+      return ["event_page"];
     case "rsvp_submit":
-      return ["global_public", "rsvp_submit"];
+      return ["rsvp_submit"];
     default:
       return ["global_public"];
   }

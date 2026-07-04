@@ -4,23 +4,23 @@ This document covers the public marketing funnel for `https://rsvp.webserbisyo.c
 
 ## Public Route Map
 
-| Route | Purpose | Indexing |
-| --- | --- | --- |
-| `/` | Main marketing landing page | `index, follow` |
-| `/apply` | Public pricing and plan selection | `index, follow` |
-| `/apply/start` | Application form step | `noindex, follow` |
-| `/apply/success` | Submitted application state | `noindex, nofollow` |
+| Route            | Purpose                           | Indexing            |
+| ---------------- | --------------------------------- | ------------------- |
+| `/`              | Main marketing landing page       | `index, follow`     |
+| `/apply`         | Public pricing and plan selection | `index, follow`     |
+| `/apply/start`   | Application form step             | `noindex, follow`   |
+| `/apply/success` | Submitted application state       | `noindex, nofollow` |
 
 Query variants such as `/apply/start?plan=pro` and `/apply/start?plan=max` canonicalize to `/apply/start`. Hash URLs such as `/#pricing`, `/#features`, and `/#faq` are section anchors, not separate canonical pages.
 
 ## SEO Metadata Map
 
-| Route | Title | Canonical | Robots |
-| --- | --- | --- | --- |
-| `/` | `WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples` | `https://rsvp.webserbisyo.com` | `index, follow` |
-| `/apply` | `Pricing Plans \| WebSerbisyo RSVP` | `https://rsvp.webserbisyo.com/apply` | `index, follow` |
-| `/apply/start` | `Start Your RSVP Website Application \| WebSerbisyo RSVP` | `https://rsvp.webserbisyo.com/apply/start` | `noindex, follow` |
-| `/apply/success` | `Application Received \| WebSerbisyo RSVP` | `https://rsvp.webserbisyo.com/apply/success` | `noindex, nofollow` |
+| Route            | Title                                                                   | Canonical                                    | Robots              |
+| ---------------- | ----------------------------------------------------------------------- | -------------------------------------------- | ------------------- |
+| `/`              | `WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples` | `https://rsvp.webserbisyo.com`               | `index, follow`     |
+| `/apply`         | `Pricing Plans \| WebSerbisyo RSVP`                                     | `https://rsvp.webserbisyo.com/apply`         | `index, follow`     |
+| `/apply/start`   | `Start Your RSVP Website Application \| WebSerbisyo RSVP`               | `https://rsvp.webserbisyo.com/apply/start`   | `noindex, follow`   |
+| `/apply/success` | `Application Received \| WebSerbisyo RSVP`                              | `https://rsvp.webserbisyo.com/apply/success` | `noindex, nofollow` |
 
 ## robots.txt and Sitemap
 
@@ -68,29 +68,50 @@ No reviews, ratings, aggregate ratings, or unsupported FAQ schema are included. 
 
 ## Meta Pixel Browser Event Map
 
-| Route or action | Event | Type | Parameters |
-| --- | --- | --- | --- |
-| `/` | `ViewContent` | Standard | content name/category and source route |
-| `/apply` | `ViewContent` | Standard | content name/category and source route |
-| `/apply/start?plan=pro` | `InitiateCheckout` | Standard | value `1599`, currency `PHP`, plan `pro` |
-| `/apply/start?plan=max` | `InitiateCheckout` | Standard | value `3599`, currency `PHP`, plan `max` |
-| `/apply/success` | `Lead` | Standard | lead category, source route, plan/value when available |
-| `/apply/success` | `CompleteRegistration` | Standard | lead category, source route, plan/value when available |
+| Route or action         | Event                  | Type     | Parameters                                             |
+| ----------------------- | ---------------------- | -------- | ------------------------------------------------------ |
+| `/`                     | `ViewContent`          | Standard | content name/category and source route                 |
+| `/apply`                | `ViewContent`          | Standard | content name/category and source route                 |
+| `/apply/start?plan=pro` | `InitiateCheckout`     | Standard | value `1599`, currency `PHP`, plan `pro`               |
+| `/apply/start?plan=max` | `InitiateCheckout`     | Standard | value `3599`, currency `PHP`, plan `max`               |
+| `/apply/success`        | `Lead`                 | Standard | lead category, source route, plan/value when available |
+| `/apply/success`        | `CompleteRegistration` | Standard | lead category, source route, plan/value when available |
 
-Pixel initialization, PageView behavior, numeric pixel ID filtering, and pixel ID de-duplication remain unchanged.
+Pixel initialization is guarded per browser session and per pixel ID. Browser PageView and configured
+route events use deterministic execution keys so they fire on both hard loads and client-side App
+Router transitions, including `/apply/start` form submission redirects to `/apply/success?ref=...`.
+Numeric pixel ID filtering and pixel ID de-duplication remain active.
+
+## Meta Pixel Route Scope
+
+The WebSerbisyo marketing Pixel is scoped to the sales/application funnel only:
+
+| Route                            | Marketing Pixel                                                 |
+| -------------------------------- | --------------------------------------------------------------- |
+| `/`                              | Present                                                         |
+| `/apply`                         | Present                                                         |
+| `/apply/start`                   | Present                                                         |
+| `/apply/success`                 | Present                                                         |
+| `/r/[slug]`                      | Absent unless a route/event-specific client pixel is configured |
+| `/r/[slug]/rsvp`                 | Absent unless a route/event-specific client pixel is configured |
+| `/admin`, `/dashboard`, `/login` | Absent                                                          |
+
+The `global_public` tracking scope is intentionally treated as the WebSerbisyo public marketing
+scope. Client wedding websites should use route-specific or event-specific pixels instead of the
+WebSerbisyo sales Pixel.
 
 ## CTA Tracking Event Map
 
-| CTA | Event | Notes |
-| --- | --- | --- |
-| Hero create website | `StartApplicationClick` | source `hero`, destination `/apply` |
-| Navbar get started | `StartApplicationClick` | source `navbar`, destination `/apply` |
-| Footer get started | `StartApplicationClick` | source `footer`, destination `/apply` |
-| Landing pricing PRO | `SelectPlan` | source `landing_pricing`, plan `pro`, value `1599` |
-| Landing pricing MAX | `SelectPlan` | source `landing_pricing`, plan `max`, value `3599` |
-| Apply pricing PRO | `SelectPlan` | source `apply_pricing`, plan `pro`, value `1599` |
-| Apply pricing MAX | `SelectPlan` | source `apply_pricing`, plan `max`, value `3599` |
-| Messenger links/buttons | `Contact` | contact method `messenger`, source-specific |
+| CTA                     | Event                   | Notes                                              |
+| ----------------------- | ----------------------- | -------------------------------------------------- |
+| Hero create website     | `StartApplicationClick` | source `hero`, destination `/apply`                |
+| Navbar get started      | `StartApplicationClick` | source `navbar`, destination `/apply`              |
+| Footer get started      | `StartApplicationClick` | source `footer`, destination `/apply`              |
+| Landing pricing PRO     | `SelectPlan`            | source `landing_pricing`, plan `pro`, value `1599` |
+| Landing pricing MAX     | `SelectPlan`            | source `landing_pricing`, plan `max`, value `3599` |
+| Apply pricing PRO       | `SelectPlan`            | source `apply_pricing`, plan `pro`, value `1599`   |
+| Apply pricing MAX       | `SelectPlan`            | source `apply_pricing`, plan `max`, value `3599`   |
+| Messenger links/buttons | `Contact`               | contact method `messenger`, source-specific        |
 
 The app intentionally does not track hovers, accordion opens, scroll depth, decorative motion, countdown views, or every navigation link.
 
@@ -135,6 +156,10 @@ use `META_CAPI_TEST_EVENT_CODE` only during a safe test window. Confirm that bro
 server Lead arrive with the same event ID and are deduplicated. Confirm that Purchase CAPI still
 works independently.
 
+For DevTools verification, filter Network requests by `facebook.com/tr`. Browser Lead is present
+when the request includes `ev=Lead`; browser/server dedup is configured when the same request
+includes `eid=Lead%3ARSVP-...`.
+
 Rollback is operational: set `META_CAPI_LEAD_ENABLED=false` and redeploy. Browser Pixel Lead,
 browser CompleteRegistration, and server Purchase CAPI remain unchanged.
 
@@ -159,6 +184,18 @@ Relevant environment variable names:
 
 Secret values must never be printed in logs, docs, screenshots, issue comments, or pull request descriptions.
 
+Recommended production URL values for source URLs, auth redirects, onboarding links, and public
+absolute URLs:
+
+- `NEXT_PUBLIC_APP_URL=https://rsvp.webserbisyo.com`
+- `SITE_URL=https://rsvp.webserbisyo.com`
+- `APP_BASE_URL=https://rsvp.webserbisyo.com`
+- `NEXT_PUBLIC_SITE_URL=https://rsvp.webserbisyo.com` if configured
+
+Vercel environment changes require a redeploy. Server-side Lead CAPI now prefers non-Vercel
+configured origins and falls back to `https://rsvp.webserbisyo.com` in Vercel Production. Purchase
+CAPI remains untouched and should be verified separately after any URL environment cleanup.
+
 ## Manual QA Checklist
 
 - `/` loads the finalized landing page.
@@ -172,6 +209,12 @@ Secret values must never be printed in logs, docs, screenshots, issue comments, 
 - `/apply/start` contains `noindex, follow`.
 - `/apply/success` contains `noindex, nofollow`.
 - Pixel scripts render without console errors.
+- Submit one safe test application from `/apply/start` and confirm Browser Lead plus Server Lead
+  appear in Meta Events Manager with the same `Lead:${reference_code}` event ID.
+- On `/apply/success?ref=RSVP-20260704-TEST`, DevTools Network should show `facebook.com/tr` with
+  `ev=Lead` and `eid=Lead%3ARSVP-20260704-TEST`.
+- Official Meta Pixel Helper should not detect the WebSerbisyo marketing Pixel on client RSVP pages
+  such as `/r/[slug]` or `/r/[slug]/rsvp`.
 - CTA tracking does not block navigation or Messenger opening.
 - `/admin` and `/dashboard` redirect unauthenticated users to login.
 

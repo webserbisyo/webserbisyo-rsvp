@@ -39,10 +39,25 @@ async function getRequestContext() {
 }
 
 function getRequestOrigin(requestHeaders: Headers) {
-  const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const officialOrigin = getConfiguredOfficialOrigin(
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.SITE_URL,
+    process.env.APP_BASE_URL,
+  );
+
+  if (officialOrigin) {
+    return officialOrigin;
+  }
+
+  if (process.env.VERCEL_ENV === "production") {
+    return "https://rsvp.webserbisyo.com";
+  }
+
+  const configuredOrigin = normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL);
 
   if (configuredOrigin) {
-    return configuredOrigin.replace(/\/+$/, "");
+    return configuredOrigin;
   }
 
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
@@ -53,4 +68,40 @@ function getRequestOrigin(requestHeaders: Headers) {
   }
 
   return "https://rsvp.webserbisyo.com";
+}
+
+function getConfiguredOfficialOrigin(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const origin = normalizeOrigin(value);
+
+    if (origin && !isVercelOrigin(origin)) {
+      return origin;
+    }
+  }
+
+  return null;
+}
+
+function normalizeOrigin(value?: string | null) {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    return url.origin.replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function isVercelOrigin(value: string) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "vercel.app" || hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
 }

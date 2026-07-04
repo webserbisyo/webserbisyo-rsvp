@@ -26,6 +26,7 @@ type PublicMetaPixelScriptsProps = {
   eventOptionsByName?: Partial<Record<MetaPixelEventName, MetaPixelEventOptions>>;
   eventParams?: MetaPixelEventParams;
   eventParamsByName?: Partial<Record<MetaPixelEventName, MetaPixelEventParams>>;
+  executionKey?: string;
   pixels: PublicMetaPixelConfig[];
 };
 
@@ -35,6 +36,7 @@ export function PublicMetaPixelScripts({
   eventOptionsByName,
   eventParams,
   eventParamsByName,
+  executionKey,
   pixels,
 }: PublicMetaPixelScriptsProps) {
   const uniquePixelIds = Array.from(new Set(pixels.map((pixel) => pixel.pixelId))).filter(
@@ -45,29 +47,23 @@ export function PublicMetaPixelScripts({
     return null;
   }
 
+  const eventScript = buildEventScript(
+    uniquePixelIds,
+    eventName,
+    eventParams,
+    eventParamsByName,
+    eventOptions,
+    eventOptionsByName,
+  );
+  const eventScriptId = buildEventScriptId(uniquePixelIds, eventScript, executionKey);
+
   return (
     <>
       <Script id="meta-pixel-base" strategy="afterInteractive">
-        {`
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-        `}
+        {buildBootstrapScript()}
       </Script>
-      <Script id={`meta-pixel-init-${uniquePixelIds.join("-")}`} strategy="afterInteractive">
-        {buildInitScript(
-          uniquePixelIds,
-          eventName,
-          eventParams,
-          eventParamsByName,
-          eventOptions,
-          eventOptionsByName,
-        )}
+      <Script id={eventScriptId} strategy="afterInteractive">
+        {eventScript}
       </Script>
       <noscript>
         {uniquePixelIds.map((pixelId) => (
@@ -86,7 +82,7 @@ export function PublicMetaPixelScripts({
   );
 }
 
-function buildInitScript(
+function buildEventScript(
   pixelIds: string[],
   eventName: PublicMetaPixelScriptsProps["eventName"],
   eventParams: PublicMetaPixelScriptsProps["eventParams"],
@@ -94,7 +90,14 @@ function buildInitScript(
   eventOptions: PublicMetaPixelScriptsProps["eventOptions"],
   eventOptionsByName: PublicMetaPixelScriptsProps["eventOptionsByName"],
 ) {
-  const initLines = pixelIds.map((pixelId) => `fbq('init', ${JSON.stringify(pixelId)});`);
+  const initLines = [
+    buildBootstrapScript(),
+    `window.__wsMetaPixelInitialized = window.__wsMetaPixelInitialized || {};`,
+    ...pixelIds.map((pixelId) => {
+      const id = JSON.stringify(pixelId);
+      return `if (!window.__wsMetaPixelInitialized[${id}]) { fbq('init', ${id}); window.__wsMetaPixelInitialized[${id}] = true; }`;
+    }),
+  ];
   const eventLines = [`fbq('track', 'PageView');`];
   const names = eventName ? (Array.isArray(eventName) ? eventName : [eventName]) : [];
 
@@ -109,6 +112,24 @@ function buildInitScript(
   }
 
   return [...initLines, ...eventLines].join("\n");
+}
+
+function buildBootstrapScript() {
+  return `
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+  `;
+}
+
+function buildEventScriptId(pixelIds: string[], eventScript: string, executionKey?: string) {
+  const key = sanitizeScriptKey(executionKey) ?? hashString(eventScript);
+  return `meta-pixel-events-${pixelIds.join("-")}-${key}`;
 }
 
 function buildEventLine(
@@ -138,19 +159,18 @@ function sanitizeEventParams(eventParams?: MetaPixelEventParams) {
     return null;
   }
 
-  const entries = Object.entries(eventParams).filter((entry): entry is [
-    string,
-    string | number | boolean | null,
-  ] => {
-    const value = entry[1];
+  const entries = Object.entries(eventParams).filter(
+    (entry): entry is [string, string | number | boolean | null] => {
+      const value = entry[1];
 
-    return (
-      value === null ||
-      typeof value === "string" ||
-      typeof value === "boolean" ||
-      (typeof value === "number" && Number.isFinite(value))
-    );
-  });
+      return (
+        value === null ||
+        typeof value === "string" ||
+        typeof value === "boolean" ||
+        (typeof value === "number" && Number.isFinite(value))
+      );
+    },
+  );
 
   return entries.length > 0 ? Object.fromEntries(entries) : null;
 }
@@ -161,4 +181,23 @@ function sanitizeEventOptions(eventOptions?: MetaPixelEventOptions) {
 
 function isNumericPixelId(pixelId: string) {
   return /^\d{5,30}$/.test(pixelId);
+}
+
+function sanitizeScriptKey(value?: string) {
+  const sanitized = value
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return sanitized || null;
+}
+
+function hashString(value: string) {
+  let hash = 5381;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(index);
+  }
+
+  return (hash >>> 0).toString(36);
 }

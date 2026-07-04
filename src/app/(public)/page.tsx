@@ -131,6 +131,7 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
           content_name: "WebSerbisyo RSVP Landing Page",
           source_route: "/",
         }}
+        executionKey="landing"
         pixels={landingPixels}
       />
     </>
