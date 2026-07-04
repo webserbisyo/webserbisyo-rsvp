@@ -9,6 +9,7 @@ import {
   BulkCancelClientsSchema,
   BulkDeleteClientsSchema,
   BulkMarkClientsPaidSchema,
+  BulkPurgeTestClientsSchema,
   BulkRefundClientsSchema,
   CancelClientSchema,
   CheckCustomWebsiteOriginHealthSchema,
@@ -35,6 +36,7 @@ import {
   resendClientOnboarding,
   restoreClient,
 } from "@/server/services/admin-workflow/clients";
+import { bulkPurgeTestData } from "@/server/services/admin-workflow/client-purge";
 import {
   disableCustomWebsite,
   enableCustomWebsite,
@@ -172,6 +174,25 @@ export async function bulkDeleteClientsAction(input: unknown) {
     }
 
     const result = await bulkDeleteClients(payload, admin.id);
+
+    revalidateBulkClientRoutes(payload.clientIds);
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function bulkPurgeTestDataAction(input: unknown) {
+  try {
+    const admin = await requireAdmin();
+    const payload = parseActionInput(BulkPurgeTestClientsSchema, input);
+
+    if (admin.role !== "platform_admin") {
+      throw new ServiceError("Platform admin access is required for purge test data.");
+    }
+
+    const result = await bulkPurgeTestData(payload, admin.id);
 
     revalidateBulkClientRoutes(payload.clientIds);
 

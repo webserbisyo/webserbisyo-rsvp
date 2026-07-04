@@ -135,6 +135,15 @@ export const BulkDeleteClientsSchema = z.object({
   note: optionalText(2000),
 });
 
+export const BulkPurgeTestClientsSchema = z.object({
+  clientIds: z.array(z.uuid()).min(1, "Select at least one client."),
+  confirmation: z
+    .string()
+    .trim()
+    .refine((value) => value === "DELETE TEST DATA", "Type DELETE TEST DATA to confirm."),
+  note: requiredText(2000, "A purge note is required."),
+});
+
 export const RefundClientPaymentSchema = z.object({
   clientId: z.uuid(),
   confirmedAt: IsoDateTimeSchema.optional(),
@@ -239,6 +248,7 @@ export type BulkArchiveClientsInput = z.infer<typeof BulkArchiveClientsSchema>;
 export type BulkCancelClientsInput = z.infer<typeof BulkCancelClientsSchema>;
 export type BulkDeleteClientsInput = z.infer<typeof BulkDeleteClientsSchema>;
 export type BulkMarkClientsPaidInput = z.infer<typeof BulkMarkClientsPaidSchema>;
+export type BulkPurgeTestClientsInput = z.infer<typeof BulkPurgeTestClientsSchema>;
 export type BulkRefundClientsInput = z.infer<typeof BulkRefundClientsSchema>;
 export type BulkRejectAndDeleteApplicationsInput = z.infer<
   typeof BulkRejectAndDeleteApplicationsSchema
