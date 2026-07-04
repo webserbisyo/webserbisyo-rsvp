@@ -1,7 +1,6 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { ClientAccountPurgeTool } from "@/components/clients/client-account-purge-tool";
 import { ClientCardList } from "@/components/clients/client-card-list";
 import { ClientsFilterBar } from "@/components/clients/clients-filter-bar";
 import { ClientsPagination } from "@/components/clients/clients-pagination";
@@ -56,8 +55,6 @@ export function ClientsClientPage({
           description="Refresh the page or try again."
         />
       ) : null}
-
-      {isPlatformAdmin ? <ClientAccountPurgeTool /> : null}
 
       <div className="relative space-y-4">
         {isPending ? (
