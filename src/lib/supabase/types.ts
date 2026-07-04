@@ -1255,15 +1255,6 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      admin_purge_test_clients: {
-        Args: {
-          p_actor_user_id: string;
-          p_client_ids: string[];
-          p_confirmation: string;
-          p_note: string;
-        };
-        Returns: Json;
-      };
       approve_rsvp_response_with_capacity_check: {
         Args: {
           p_client_id: string;

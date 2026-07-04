@@ -11,7 +11,6 @@ import {
   bulkCancelClientsAction,
   bulkDeleteClientsAction,
   bulkMarkClientsPaidAction,
-  bulkPurgeTestDataAction,
   bulkRefundClientPaymentsAction,
 } from "@/server/actions/admin-clients";
 import { Button } from "@/components/ui/button";
@@ -55,29 +54,6 @@ type BulkDeleteResultData = {
   total: number;
 };
 
-type BulkPurgeResultData = {
-  blockedCount: number;
-  failedCount: number;
-  purgedCount: number;
-  results: Array<{
-    clientId: string;
-    clientName: string | null;
-    counts: {
-      eventContentDeleted: number;
-      events: number;
-      hostingRowsDisabledOrUnlinked: number;
-      metaPixelsDeleted: number;
-      paymentsUnlinked: number;
-      responsesBlocked: number;
-    };
-    message: string;
-    reasonCode: string;
-    status: "blocked" | "failed" | "purged";
-  }>;
-  selectedCount: number;
-  total: number;
-};
-
 const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
   { label: "GCash", value: "gcash" },
   { label: "Maya", value: "maya" },
@@ -107,8 +83,6 @@ export function ClientBulkActions({
   const [refundNote, setRefundNote] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteNote, setDeleteNote] = useState("");
-  const [purgeConfirmation, setPurgeConfirmation] = useState("");
-  const [purgeNote, setPurgeNote] = useState("");
 
   const selectedIds = useMemo(() => selectedClients.map((client) => client.id), [selectedClients]);
   const markEligible = selectedClients.filter(
@@ -128,12 +102,6 @@ export function ClientBulkActions({
   const deleteEligible = selectedClients.filter((client) => client.deleteEligible);
   const deleteSkipped = selectedClients.filter((client) => !client.deleteEligible);
   const deleteReasonGroups = groupDeleteReasons(deleteSkipped);
-  const purgePaidCount = selectedClients.filter((client) => client.paymentStatus === "paid").length;
-  const purgeEventCount = selectedClients.filter((client) => client.eventId).length;
-  const purgeLinkedPaymentCount = selectedClients.filter((client) => client.paymentId).length;
-  const purgeLiveBlockedCount = selectedClients.filter(
-    (client) => client.deleteEligibilityReasonCode === "live_rsvp",
-  ).length;
   const markDefaultMissing = markEligible.some(
     (client) =>
       (client.plan !== "max" && client.plan !== "pro") ||
@@ -210,28 +178,12 @@ export function ClientBulkActions({
     onError: () => toast.error("Bulk Delete failed."),
   });
 
-  const purgeMutation = useMutation({
-    mutationFn: () =>
-      bulkPurgeTestDataAction({
-        clientIds: selectedIds,
-        confirmation: purgeConfirmation,
-        note: purgeNote,
-      }),
-    onSuccess: (result) => {
-      setPurgeConfirmation("");
-      setPurgeNote("");
-      handleBulkPurgeResult(result);
-    },
-    onError: () => toast.error("Purge test data failed."),
-  });
-
   const isPending =
     markPaidMutation.isPending ||
     cancelMutation.isPending ||
     archiveMutation.isPending ||
     refundMutation.isPending ||
-    deleteMutation.isPending ||
-    purgeMutation.isPending;
+    deleteMutation.isPending;
 
   if (selectedClients.length === 0) {
     return null;
@@ -281,30 +233,6 @@ export function ClientBulkActions({
     }
 
     if (result.data.succeeded.length > 0) {
-      onClearSelection();
-    }
-
-    setDialog(null);
-    router.refresh();
-  }
-
-  function handleBulkPurgeResult(result: Awaited<ReturnType<typeof bulkPurgeTestDataAction>>) {
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-
-    const message = buildBulkPurgeMessage(result.data);
-
-    if (result.data.purgedCount === 0) {
-      toast.error(message);
-    } else if (result.data.failedCount > 0 || result.data.blockedCount > 0) {
-      toast(message);
-    } else {
-      toast.success(message);
-    }
-
-    if (result.data.purgedCount > 0) {
       onClearSelection();
     }
 
@@ -686,43 +614,6 @@ export function ClientBulkActions({
                 </div>
               </div>
             ) : null}
-            {isPlatformAdmin ? (
-              <div className="space-y-2">
-                <Label>Platform Admin purge test data</Label>
-                <div className="rounded-md border border-destructive/25 bg-destructive/5 px-3 py-3 text-sm">
-                  <p className="font-medium">
-                    Purge test data permanently removes selected dummy/test client records and
-                    linked draft/private RSVP data.
-                  </p>
-                  <p className="text-muted-foreground mt-2 text-xs">
-                    Payment evidence and admin history are preserved by unlinking protected records
-                    before deletion.
-                  </p>
-                  <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
-                    <div>
-                      <p className="text-muted-foreground">Paid clients</p>
-                      <p className="font-medium">{purgePaidCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Selected events</p>
-                      <p className="font-medium">{purgeEventCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Known linked payments</p>
-                      <p className="font-medium">{purgeLinkedPaymentCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Known live/public blockers</p>
-                      <p className="font-medium">{purgeLiveBlockedCount}</p>
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground mt-3 text-xs">
-                    Persisted RSVP response checks happen server-side during purge and still block
-                    clients that have guest data.
-                  </p>
-                </div>
-              </div>
-            ) : null}
             <div className="space-y-2">
               <Label>What will be preserved</Label>
               <div className="rounded-md border px-3 py-2 text-sm">
@@ -766,30 +657,9 @@ export function ClientBulkActions({
                 placeholder="Reason for deleting these client records"
               />
             </div>
-            {isPlatformAdmin ? (
-              <div className="space-y-4 rounded-md border border-destructive/25 px-3 py-3">
-                <div className="space-y-2">
-                  <Label htmlFor="bulk-purge-confirmation">Type DELETE TEST DATA to confirm purge</Label>
-                  <Input
-                    id="bulk-purge-confirmation"
-                    value={purgeConfirmation}
-                    onChange={(event) => setPurgeConfirmation(event.currentTarget.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bulk-purge-note">Required purge note</Label>
-                  <Textarea
-                    id="bulk-purge-note"
-                    value={purgeNote}
-                    onChange={(event) => setPurgeNote(event.currentTarget.value)}
-                    placeholder="Explain why these dummy/test client records are being purged."
-                  />
-                </div>
-              </div>
-            ) : null}
           </div>
 
-          <DialogFooter className="shrink-0 flex-wrap rounded-none rounded-b-xl px-6 py-4">
+          <DialogFooter className="shrink-0 rounded-none rounded-b-xl px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setDialog(null)}>
               Back
             </Button>
@@ -814,21 +684,6 @@ export function ClientBulkActions({
               >
                 {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 Force delete selected
-              </Button>
-            ) : null}
-            {isPlatformAdmin ? (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={
-                  purgeMutation.isPending ||
-                  purgeConfirmation !== "DELETE TEST DATA" ||
-                  !purgeNote.trim()
-                }
-                onClick={() => purgeMutation.mutate()}
-              >
-                {purgeMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                Purge test data
               </Button>
             ) : null}
           </DialogFooter>
@@ -880,16 +735,6 @@ function buildBulkDeleteMessage(result: BulkDeleteResultData) {
     .join("; ");
 
   const base = `${result.normalDeletedCount + result.forceDeletedCount}/${result.selectedCount} clients deleted. ${result.normalDeletedCount} normal, ${result.forceDeletedCount} force, ${result.skippedCount} skipped, ${result.failedCount} failed.`;
-  return reasons ? `${base} ${reasons}.` : base;
-}
-
-function buildBulkPurgeMessage(result: BulkPurgeResultData) {
-  const reasons = Array.from(new Set(result.results.map((item) => item.message)))
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("; ");
-
-  const base = `${result.purgedCount}/${result.selectedCount} clients purged. ${result.blockedCount} blocked, ${result.failedCount} failed.`;
   return reasons ? `${base} ${reasons}.` : base;
 }
 
