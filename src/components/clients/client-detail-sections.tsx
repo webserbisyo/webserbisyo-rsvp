@@ -265,7 +265,7 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
         )}
       </SectionCard>
 
-      <SectionCard className="h-fit" title="Lifecycle / Cleanup">
+      <SectionCard className="h-fit" title="Lifecycle">
         <DefinitionList
           rows={[
             [
@@ -279,9 +279,6 @@ export function ClientDetailSections({ client, errors }: ClientDetailSectionsPro
             ["Event passed", client.cleanup.eventPassed ? "Yes" : "No"],
             ["Access expired", client.cleanup.hostingExpired ? "Yes" : "No"],
             ["Archive eligible", client.cleanup.archiveEligible ? "Yes" : "No"],
-            ["Delete eligible", client.cleanup.deleteEligible ? "Yes" : "Not yet"],
-            ["Delete status", formatWords(client.cleanup.deleteEligibilityReasonCode)],
-            ["Delete guidance", client.cleanup.deleteEligibilityReason],
           ]}
         />
       </SectionCard>

@@ -60,6 +60,8 @@ export async function createDraftEvent(input: CreateDraftEventInput) {
 
   const eventRow: TablesInsert<"rsvp_events"> = {
     client_id: input.clientId,
+    draft_event_slug: slug,
+    draft_visibility: "private",
     event_date: input.eventDate ?? null,
     event_slug: slug,
     event_type: input.eventType,

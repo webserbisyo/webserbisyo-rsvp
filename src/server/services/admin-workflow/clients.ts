@@ -6,11 +6,9 @@ import type {
   ArchiveClientInput,
   BulkArchiveClientsInput,
   BulkCancelClientsInput,
-  BulkDeleteClientsInput,
   BulkMarkClientsPaidInput,
   BulkRefundClientsInput,
   CancelClientInput,
-  DeleteClientInput,
   MarkClientPaidInput,
   RefundClientPaymentInput,
   ResendOnboardingInput,
@@ -26,12 +24,7 @@ import { sendMetaCapiPurchase } from "@/server/services/send-meta-capi-purchase"
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import { ensureOwnerProfileForClient } from "./provisioning";
 import { calculateHostingCoverage } from "./hosting";
-import {
-  type ClientPaymentDisplayStatus,
-  type DeleteEligibilityReasonCode,
-  deriveClientPaymentStatus,
-  deriveDeleteEligibility,
-} from "./client-rules";
+import { type ClientPaymentDisplayStatus, deriveClientPaymentStatus } from "./client-rules";
 import { getPackageSettingsMap } from "./package-settings";
 
 type ClientActionResult<T> = {
@@ -56,28 +49,11 @@ type ClientOnboardingResult = {
   status: string | undefined;
 };
 
-type ClientDeleteResult = {
-  clientId: string;
-  deleted: boolean;
-  tombstoneId: string;
-};
-
 type ClientRefundResult = {
   clientId: string;
   paymentId: string;
   refundId: string;
   status: string;
-};
-
-type DeleteEligibilitySnapshot = {
-  deleteEligible: boolean;
-  deleteEligibleAt: string | null;
-  eventPassed: boolean;
-  hasPaidNonRefundedPayment: boolean;
-  hasRefundedPaymentHistory: boolean;
-  hostingExpired: boolean;
-  reasonCode: DeleteEligibilityReasonCode;
-  reason: string;
 };
 
 type BulkClientActionResultItem = {
@@ -835,249 +811,6 @@ export async function resendClientOnboarding(input: ResendOnboardingInput, actor
       Boolean(warning),
     ),
   } satisfies ClientActionResult<ClientOnboardingResult>;
-}
-
-export async function deleteClient(
-  input: DeleteClientInput,
-  actorUserId: string,
-): Promise<ClientActionResult<ClientDeleteResult>> {
-  const supabase = createAdminClient();
-  const warnings: string[] = [];
-  const client = await getClientForLifecycle(input.clientId);
-  const [application, events, payments, refunds, eligibility, paymentStatus] = await Promise.all([
-    getApprovedApplicationForClient(client.id),
-    getEventsForClient(client.id),
-    getPaymentsForClientOrApplication(client.id, null),
-    getRefundsForClient(client.id),
-    getDeleteEligibilityForClient(client.id),
-    getLatestPaymentDisplayStatusForClient(client.id),
-  ]);
-
-  if (!eligibility.deleteEligible) {
-    throw new ServiceError(eligibility.reason);
-  }
-
-  const primaryEvent = selectPrimaryEvent(events);
-  const tombstonePayload: TablesInsert<"client_deletion_tombstones"> = {
-    client_email: client.contact_email,
-    client_name: client.name,
-    client_status: client.status,
-    deleted_by: actorUserId,
-    deleted_reason: input.note ?? "Client deleted from admin clients page.",
-    event_date: primaryEvent?.event_date ?? null,
-    event_id: primaryEvent?.id ?? null,
-    event_slug: primaryEvent?.event_slug ?? null,
-    event_type: primaryEvent?.event_type ?? null,
-    metadata: {
-      application_id: application?.id ?? null,
-      archived_at: client.archived_at,
-      cancelled_at: client.cancelled_at,
-      delete_eligible_at: eligibility.deleteEligibleAt,
-      delete_eligibility_reason_code: eligibility.reasonCode,
-      payments: payments.map((payment) => ({
-        amount_due: payment.amount_due,
-        amount_paid: payment.amount_paid,
-        hosting_ends_at: payment.hosting_ends_at,
-        hosting_starts_at: payment.hosting_starts_at,
-        id: payment.id,
-        paid_at: payment.paid_at,
-        payment_method: payment.payment_method,
-        payment_status: payment.payment_status,
-        reference_number: payment.reference_number,
-      })),
-      refunds: refunds.map((refund) => ({
-        amount: refund.amount,
-        confirmed_at: refund.confirmed_at,
-        id: refund.id,
-        method: refund.method,
-        payment_id: refund.payment_id,
-        reason_note: refund.reason_note,
-        reference_number: refund.reference_number,
-      })),
-    },
-    original_client_id: client.id,
-    payment_status: paymentStatus,
-    payment_summary: {
-      count: payments.length,
-      ids: payments.map((payment) => payment.id),
-      refunds_count: refunds.length,
-      statuses: payments.map((payment) => payment.payment_status),
-    },
-  };
-
-  const { data: tombstone, error: tombstoneError } = await supabase
-    .from("client_deletion_tombstones")
-    .insert(tombstonePayload)
-    .select("*")
-    .single();
-
-  assertServiceSuccess(tombstoneError, "Failed to write the client deletion tombstone.");
-  assertServiceData(tombstone, "Deletion tombstone insert returned no row.");
-
-  const deletablePayments = payments.filter((payment) =>
-    ["pending", "cancelled", "failed", "refunded"].includes(payment.payment_status),
-  );
-  if (deletablePayments.length > 0) {
-    const { error: paymentDeleteError } = await supabase
-      .from("payments")
-      .delete()
-      .in(
-        "id",
-        deletablePayments.map((payment) => payment.id),
-      );
-
-    assertServiceSuccess(paymentDeleteError, "Failed to delete linked non-paid payments.");
-  }
-
-  const eventIds = events.map((event) => event.id);
-  const metaPixelFilter =
-    eventIds.length > 0
-      ? `client_id.eq.${client.id},event_id.in.(${eventIds.join(",")})`
-      : `client_id.eq.${client.id}`;
-  const { error: metaPixelDeleteError } = await supabase
-    .from("meta_pixels")
-    .delete()
-    .or(metaPixelFilter);
-
-  assertServiceSuccess(metaPixelDeleteError, "Failed to delete linked Meta Pixel records.");
-
-  if (events.length > 0) {
-    const { error: eventDeleteError } = await supabase
-      .from("rsvp_events")
-      .delete()
-      .eq("client_id", client.id);
-
-    assertServiceSuccess(eventDeleteError, "Failed to delete linked draft RSVP events.");
-  }
-
-  const { error: clientDeleteError } = await supabase.from("clients").delete().eq("id", client.id);
-
-  assertServiceSuccess(clientDeleteError, "Failed to delete the client.");
-
-  const auditWarning = await safeWriteAuditLog({
-    action: "client_deleted",
-    actorUserId,
-    clientId: null,
-    entityId: tombstone.id,
-    entityType: "client_deletion_tombstones",
-    eventId: null,
-    metadata: {
-      deleted_client_id: client.id,
-      deleted_event_id: primaryEvent?.id ?? null,
-      reason: input.note ?? null,
-      tombstone_id: tombstone.id,
-    },
-  });
-
-  if (auditWarning) {
-    warnings.push(auditWarning);
-  }
-
-  return {
-    data: {
-      clientId: client.id,
-      deleted: true,
-      tombstoneId: tombstone.id,
-    },
-    warnings,
-  };
-}
-
-export async function bulkDeleteClients(
-  input: BulkDeleteClientsInput,
-  actorUserId: string,
-): Promise<BulkClientActionResult> {
-  const clientIds = uniqueIds(input.clientIds);
-  const result = createBulkResult(clientIds.length);
-
-  for (const clientId of clientIds) {
-    try {
-      const eligibility = await getDeleteEligibilityForClient(clientId);
-
-      if (!eligibility.deleteEligible) {
-        result.skipped.push({
-          clientId,
-          reason: eligibility.reason,
-        });
-        continue;
-      }
-
-      const deleted = await deleteClient(
-        {
-          clientId,
-          confirmation: input.confirmation,
-          note: input.note,
-        },
-        actorUserId,
-      );
-
-      result.succeeded.push({
-        clientId: deleted.data.clientId,
-        warnings: deleted.warnings,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Bulk delete failed.";
-      result.failed.push({
-        clientId,
-        error: message,
-      });
-    }
-  }
-
-  return result;
-}
-
-export async function getDeleteEligibilityForClient(
-  clientId: string,
-): Promise<DeleteEligibilitySnapshot> {
-  const client = await getClientForLifecycle(clientId);
-  const [events, payments] = await Promise.all([
-    getEventsForClient(client.id),
-    getPaymentsForClientOrApplication(client.id, null),
-  ]);
-  const primaryEvent = selectPrimaryEvent(events);
-  const latestPayment = selectLatestPayment(payments);
-  const hostingEndsAt = latestPayment?.hosting_ends_at ?? client.hosting_ends_at;
-  const paymentStatus = latestPayment?.payment_status ?? null;
-  const refunds = await getRefundsForClient(client.id);
-  const hasPaidNonRefundedPayment = payments.some((payment) => payment.payment_status === "paid");
-  const hasRefundedPaymentHistory =
-    payments.some((payment) => payment.payment_status === "refunded") || refunds.length > 0;
-  const result = deriveDeleteEligibility({
-    archivedAt: client.archived_at,
-    cancelledAt: client.cancelled_at,
-    clientCustomFrontendStatus: client.custom_frontend_status,
-    clientCustomFrontendUrl: client.custom_frontend_url,
-    clientStatus: client.status,
-    eventCustomFrontendEnabled: primaryEvent?.custom_frontend_enabled ?? false,
-    eventCustomFrontendUrl: primaryEvent?.custom_frontend_url ?? null,
-    eventDate: primaryEvent?.event_date ?? null,
-    eventPublishedAt: primaryEvent?.published_at ?? null,
-    eventStatus: primaryEvent?.status ?? null,
-    eventVisibility: primaryEvent?.visibility ?? null,
-    hasPaidNonRefundedPayment,
-    hasRefundedPaymentHistory,
-    hasUnpublishedSetupWork: events.some((event) =>
-      ["setup_in_progress", "ready"].includes(event.status),
-    ),
-    hostingEndsAt,
-    lastActivityAt: client.last_activity_at ?? client.updated_at,
-    latestPaymentStatus: paymentStatus,
-    now: new Date(),
-  });
-
-  return {
-    deleteEligible: result.deleteEligible,
-    deleteEligibleAt: result.deleteEligibleAt,
-    eventPassed: Boolean(
-      primaryEvent?.event_date && primaryEvent.event_date < getTodayDateInManila(),
-    ),
-    hasPaidNonRefundedPayment,
-    hasRefundedPaymentHistory,
-    hostingExpired: Boolean(hostingEndsAt && new Date(hostingEndsAt).getTime() < Date.now()),
-    reasonCode: result.reasonCode,
-    reason: result.reason,
-  };
 }
 
 async function touchClientActivity(clientId: string) {

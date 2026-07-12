@@ -182,6 +182,12 @@ export function ClientsTable({
         packageDefaultAvailability={packageDefaultAvailability}
         selectedClients={selectedClients}
         onClearSelection={() => setRowSelection("clients", {})}
+        onDeleteResult={(failedClientIds) =>
+          setRowSelection(
+            "clients",
+            Object.fromEntries(failedClientIds.map((clientId) => [clientId, true])),
+          )
+        }
       />
       <AdminDataTable
         colSpan={8}

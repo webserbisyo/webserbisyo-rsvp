@@ -8,11 +8,11 @@ import { toast } from "sonner";
 import type { ClientDetailView } from "@/server/queries/admin-clients";
 import {
   archiveClientAction,
-  deleteClientAction,
   refundClientPaymentAction,
   resendClientOnboardingAction,
   restoreClientAction,
 } from "@/server/actions/admin-clients";
+import { PermanentClientDeleteDialog } from "@/components/clients/permanent-client-delete-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,8 +49,6 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
   );
   const [refundReference, setRefundReference] = useState("");
   const [refundNote, setRefundNote] = useState("");
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [deleteNote, setDeleteNote] = useState("");
 
   const mutation = useMutation({
     mutationFn: async (mode: Exclude<LifecycleDialogMode, null>) => {
@@ -139,37 +137,12 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () =>
-      deleteClientAction({
-        clientId: client.id,
-        confirmation: deleteConfirmation,
-        note: deleteNote || undefined,
-      }),
-    onSuccess: (result) => {
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-
-      toast.success("Client deleted.");
-      router.push("/admin/clients");
-      router.refresh();
-    },
-    onError: () => {
-      toast.error("The client could not be deleted.");
-    },
-  });
-
   const canArchive = client.client.status !== "archived";
   const canRestore = client.client.status === "archived";
   const canResendOnboarding = Boolean(
     (client.onboarding.ownerEmail || client.client.email) && client.event.id,
   );
   const canRefund = client.payment.status === "paid";
-  const canDelete = client.cleanup.deleteEligible;
-  const deleteReason = client.cleanup.deleteEligibilityReason;
-  const deletePreview = buildDeletePreview(client);
 
   function submitLifecycleAction() {
     if (dialogMode === "archive" && !note.trim()) {
@@ -225,25 +198,10 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
               Refund client
             </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!canDelete || deleteMutation.isPending}
-              title={!canDelete ? deleteReason : undefined}
-              onClick={() => setDeleteOpen(true)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteOpen(true)}>
               Delete client
             </Button>
           </div>
-        </AlertDescription>
-      </Alert>
-
-      <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-        <AlertTitle>Delete eligibility</AlertTitle>
-        <AlertDescription>
-          {client.cleanup.deleteEligible
-            ? "This client meets the current guarded delete rules."
-            : deleteReason}
         </AlertDescription>
       </Alert>
 
@@ -405,79 +363,14 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Delete client</DialogTitle>
-            <DialogDescription>
-              Review the current eligibility, deletion scope, and preserved records before
-              confirming this permanent cleanup action.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Eligibility state</Label>
-              <Input value={canDelete ? "Eligible for deletion" : "Not eligible"} readOnly />
-            </div>
-            <div className="space-y-2">
-              <Label>Current rule result</Label>
-              <Input value={deleteReason} readOnly />
-            </div>
-            <div className="space-y-2">
-              <Label>What will be deleted</Label>
-              <div className="rounded-md border px-3 py-2 text-sm">
-                <ul className="list-disc space-y-1 pl-5">
-                  {deletePreview.deletes.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>What will be preserved</Label>
-              <div className="rounded-md border px-3 py-2 text-sm">
-                <ul className="list-disc space-y-1 pl-5">
-                  {deletePreview.preserves.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="client-delete-confirmation">Type DELETE to confirm</Label>
-              <Input
-                id="client-delete-confirmation"
-                value={deleteConfirmation}
-                onChange={(event) => setDeleteConfirmation(event.currentTarget.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="client-delete-note">Optional note</Label>
-              <Textarea
-                id="client-delete-note"
-                value={deleteNote}
-                onChange={(event) => setDeleteNote(event.currentTarget.value)}
-                placeholder="Optional deletion note"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
-              Back
-            </Button>
-            <Button
-              type="button"
-              disabled={deleteMutation.isPending || deleteConfirmation !== "DELETE" || !canDelete}
-              onClick={() => deleteMutation.mutate()}
-            >
-              {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Delete client
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PermanentClientDeleteDialog
+        clients={[{ id: client.id, name: client.client.name }]}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onResult={(result) => {
+          if (result.succeeded.length > 0) router.push("/admin/clients");
+        }}
+      />
     </>
   );
 }
@@ -498,37 +391,4 @@ function formatCurrency(value: number | null) {
     currency: "PHP",
     style: "currency",
   }).format(value);
-}
-
-function buildDeletePreview(client: ClientDetailView) {
-  const deletes = ["Client record"];
-  const preserves = [
-    "Deletion tombstone with client, event, and payment summary",
-    "Audit trail entries with client/event references nulled by foreign keys",
-    "Approved application history with client/event references nulled by foreign keys",
-  ];
-
-  if (client.event.id) {
-    deletes.push("Draft/private RSVP event and linked event content");
-  }
-
-  if (client.payment.id) {
-    if (client.payment.status === "paid") {
-      preserves.push("Paid non-refunded payment history, which currently blocks deletion");
-    } else if (client.payment.status === "refunded" || client.payment.refund) {
-      deletes.push("Refunded payment rows after refund proof is copied into the tombstone");
-      preserves.push("Refund proof captured in tombstone metadata before row deletion");
-    } else {
-      deletes.push("Non-paid payment rows linked to this client");
-    }
-  }
-
-  if (client.client.customFrontendUrl || client.client.customFrontendStatus === "connected") {
-    preserves.push("Live website access remains blocked until disabled first");
-  }
-
-  return {
-    deletes,
-    preserves,
-  };
 }

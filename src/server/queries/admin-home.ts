@@ -2,10 +2,6 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import {
-  type DeleteEligibilityReasonCode,
-  deriveDeleteEligibility,
-} from "@/server/services/admin-workflow/client-rules";
 
 export const ADMIN_HOME_NEEDS_ATTENTION_LIMIT = 5;
 export const ADMIN_HOME_RECENT_APPLICATIONS_LIMIT = 6;
@@ -119,12 +115,6 @@ type HomePaymentRow = {
   plan_type: string;
   reference_number: string | null;
   updated_at: string;
-};
-
-type HomeRefundRow = {
-  client_id: string | null;
-  id: string;
-  payment_id: string;
 };
 
 const PENDING_APPLICATION_STATUSES = ["submitted", "reviewing"] as const;
@@ -317,12 +307,11 @@ async function getRevenueThisMonth(supabase: SupabaseClient<Database>) {
 async function getNeedsAttention(
   supabase: SupabaseClient<Database>,
 ): Promise<AdminHomeQueueItem[]> {
-  const [applicationRows, clientRows, eventRows, paymentRows, refundRows] = await Promise.all([
+  const [applicationRows, clientRows, eventRows, paymentRows] = await Promise.all([
     getApplicationsForNeedsAttention(supabase),
     getHomeClients(supabase),
     getHomeEvents(supabase),
     getHomePayments(supabase),
-    getHomeRefunds(supabase),
   ]);
 
   const submittedItems = applicationRows
@@ -342,12 +331,6 @@ async function getNeedsAttention(
 
   const awaitingPaymentItems = buildAwaitingPaymentItems(clientRows, paymentRows);
   const eventPassedItems = buildEventPassedItems(clientRows, eventRows);
-  const cleanupEligibleItems = buildCleanupEligibleItems(
-    clientRows,
-    eventRows,
-    paymentRows,
-    refundRows,
-  );
   const paymentIssueItems = buildPaymentIssueItems(paymentRows);
 
   return [
@@ -355,7 +338,6 @@ async function getNeedsAttention(
     ...reviewingItems,
     ...awaitingPaymentItems,
     ...eventPassedItems,
-    ...cleanupEligibleItems,
     ...paymentIssueItems,
   ]
     .sort(compareNeedsAttentionItems)
@@ -564,18 +546,6 @@ async function getHomePayments(supabase: SupabaseClient<Database>): Promise<Home
   return data ?? [];
 }
 
-async function getHomeRefunds(supabase: SupabaseClient<Database>): Promise<HomeRefundRow[]> {
-  const { data, error } = await supabase
-    .from("payment_refunds")
-    .select("id, client_id, payment_id");
-
-  if (error) {
-    throw error;
-  }
-
-  return data ?? [];
-}
-
 function buildAwaitingPaymentItems(clients: HomeClientRow[], payments: HomePaymentRow[]) {
   const paymentByClientId = selectLatestPaymentByClientId(payments);
 
@@ -623,67 +593,6 @@ function buildEventPassedItems(clients: HomeClientRow[], events: HomeEventRow[])
       title: event.title || formatWords(event.event_type),
       type: "client" as const,
       updatedAt: event.event_date ? `${event.event_date}T00:00:00.000Z` : event.updated_at,
-    }));
-}
-
-function buildCleanupEligibleItems(
-  clients: HomeClientRow[],
-  events: HomeEventRow[],
-  payments: HomePaymentRow[],
-  refunds: HomeRefundRow[],
-) {
-  const eventsByClientId = groupBy(events, (event) => event.client_id);
-  const paymentsByClientId = groupBy(payments, (payment) => payment.client_id);
-  const refundsByClientId = groupBy(refunds, (refund) => refund.client_id);
-
-  return clients
-    .map((client) => {
-      const clientEvents = eventsByClientId.get(client.id) ?? [];
-      const clientPayments = paymentsByClientId.get(client.id) ?? [];
-      const clientRefunds = refundsByClientId.get(client.id) ?? [];
-      const event = selectPrimaryHomeEvent(clientEvents);
-      const payment = selectLatestPayment(clientPayments);
-      const eligibility = deriveDeleteEligibility({
-        archivedAt: client.archived_at,
-        cancelledAt: client.cancelled_at,
-        clientCustomFrontendStatus: client.custom_frontend_status,
-        clientCustomFrontendUrl: client.custom_frontend_url,
-        clientStatus: client.status,
-        eventCustomFrontendEnabled: event?.custom_frontend_enabled ?? false,
-        eventCustomFrontendUrl: event?.custom_frontend_url ?? null,
-        eventDate: event?.event_date ?? null,
-        eventPublishedAt: event?.published_at ?? null,
-        eventStatus: event?.status ?? null,
-        eventVisibility: event?.visibility ?? null,
-        hasPaidNonRefundedPayment: clientPayments.some(
-          (payment) => payment.payment_status === "paid",
-        ),
-        hasRefundedPaymentHistory:
-          clientPayments.some((payment) => payment.payment_status === "refunded") ||
-          clientRefunds.length > 0,
-        hasUnpublishedSetupWork: clientEvents.some((event) =>
-          ["setup_in_progress", "ready"].includes(event.status),
-        ),
-        hostingEndsAt: client.hosting_ends_at,
-        lastActivityAt: client.last_activity_at ?? client.updated_at,
-        latestPaymentStatus: payment?.payment_status ?? null,
-        now: new Date(),
-      });
-
-      return { client, eligibility };
-    })
-    .filter(({ eligibility }) => eligibility.deleteEligible)
-    .sort((left, right) => compareAscending(left.client.updated_at, right.client.updated_at))
-    .slice(0, ADMIN_HOME_NEEDS_ATTENTION_LIMIT)
-    .map(({ client, eligibility }) => ({
-      href: `/admin/clients/${client.id}?status=cleanup_eligible`,
-      id: client.id,
-      statusLabel: "Cleanup Eligible",
-      statusTone: "danger" as const,
-      subtitle: `${client.contact_email} · ${formatDeleteReason(eligibility.reasonCode)}`,
-      title: client.name,
-      type: "client" as const,
-      updatedAt: eligibility.deleteEligibleAt ?? client.updated_at,
     }));
 }
 
@@ -798,10 +707,6 @@ function formatPaymentStatusLabel(status: string) {
     default:
       return "Pending";
   }
-}
-
-function formatDeleteReason(reasonCode: DeleteEligibilityReasonCode) {
-  return formatWords(reasonCode);
 }
 
 function formatDateOnly(value: string | null) {

@@ -34,7 +34,6 @@ const lifecycleStatusBadgeClasses: Record<ClientListStatus, string> = {
   active: "border-emerald-200 bg-emerald-50 text-emerald-700",
   archived: "border-slate-200 bg-slate-100 text-slate-700",
   cancelled: "border-slate-200 bg-slate-100 text-slate-700",
-  cleanup_eligible: "border-sky-200 bg-sky-50 text-sky-700",
   event_soon: "border-amber-200 bg-amber-50 text-amber-700",
   event_passed: "border-purple-200 bg-purple-50 text-purple-700",
   unknown: "border-border bg-muted text-muted-foreground",

@@ -76,14 +76,14 @@ export async function submitRsvpResponse(
   const responsePayload = {
     p_attendance_status: payload.attendanceStatus,
     p_client_id: event.client_id,
-    p_dietary_notes: rsvpSettings.foodAllergiesEnabled ? (payload.dietaryNotes ?? null) : null,
-    p_email: rsvpSettings.emailEnabled ? (payload.email ?? null) : null,
+    p_dietary_notes: rsvpSettings.foodAllergiesEnabled ? (payload.dietaryNotes ?? "") : "",
+    p_email: rsvpSettings.emailEnabled ? (payload.email ?? "") : "",
     p_event_id: event.id,
     p_guest_name: payload.guestName,
-    p_message: trimmedMessage || null,
+    p_message: trimmedMessage,
     p_message_public_status: trimmedMessage ? "pending_review" : "private",
     p_party_size: partySize,
-    p_phone: rsvpSettings.phoneEnabled ? (payload.phone ?? null) : null,
+    p_phone: rsvpSettings.phoneEnabled ? (payload.phone ?? "") : "",
     p_source: options?.source ?? "public_fallback_page",
   };
 

@@ -7,15 +7,14 @@ import {
   ArchiveClientSchema,
   BulkArchiveClientsSchema,
   BulkCancelClientsSchema,
-  BulkDeleteClientsSchema,
   BulkMarkClientsPaidSchema,
   BulkRefundClientsSchema,
   CancelClientSchema,
   CheckCustomWebsiteOriginHealthSchema,
-  DeleteClientSchema,
   DisableCustomWebsiteSchema,
   EnableCustomWebsiteSchema,
   MarkClientPaidSchema,
+  PermanentDeleteClientsSchema,
   RefundClientPaymentSchema,
   ResendOnboardingSchema,
   RestoreClientSchema,
@@ -25,16 +24,15 @@ import {
   archiveClient,
   bulkArchiveClients,
   bulkCancelClients,
-  bulkDeleteClients,
   bulkMarkClientsAsPaid,
   bulkRefundClientPayments,
   cancelClient,
-  deleteClient,
   markClientAsPaid,
   refundClientPayment,
   resendClientOnboarding,
   restoreClient,
 } from "@/server/services/admin-workflow/clients";
+import { deleteClientsPermanently } from "@/server/services/admin-workflow/permanent-client-deletion";
 import {
   disableCustomWebsite,
   enableCustomWebsite,
@@ -145,27 +143,11 @@ export async function bulkArchiveClientsAction(input: unknown) {
   }
 }
 
-export async function deleteClientAction(input: unknown) {
+export async function deleteClientsPermanentlyAction(input: unknown) {
   try {
-    const admin = await requireAdmin();
-    const payload = parseActionInput(DeleteClientSchema, input);
-    const result = await deleteClient(payload, admin.id);
-
-    revalidatePath("/admin");
-    revalidatePath("/admin/clients");
-    revalidatePath(`/admin/clients/${payload.clientId}`);
-
-    return actionSuccess(result.data);
-  } catch (error) {
-    return actionFailure(error);
-  }
-}
-
-export async function bulkDeleteClientsAction(input: unknown) {
-  try {
-    const admin = await requireAdmin();
-    const payload = parseActionInput(BulkDeleteClientsSchema, input);
-    const result = await bulkDeleteClients(payload, admin.id);
+    await requireAdmin();
+    const payload = parseActionInput(PermanentDeleteClientsSchema, input);
+    const result = await deleteClientsPermanently(payload);
 
     revalidateBulkClientRoutes(payload.clientIds);
 

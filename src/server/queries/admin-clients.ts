@@ -17,9 +17,7 @@ import type {
 } from "@/server/services/custom-websites/types";
 import {
   type ClientPaymentDisplayStatus,
-  type DeleteEligibilityReasonCode,
   deriveClientPaymentStatus,
-  deriveDeleteEligibility,
 } from "@/server/services/admin-workflow/client-rules";
 
 export const CLIENTS_PAGE_SIZE = 20;
@@ -45,7 +43,6 @@ export const CLIENT_STATUS_VALUES = [
   "event_soon",
   "event_passed",
   "archived",
-  "cleanup_eligible",
   "cancelled",
   "unknown",
 ] as const;
@@ -55,7 +52,6 @@ export const CLIENT_STATUS_TAB_VALUES = [
   "event_soon",
   "event_passed",
   "archived",
-  "cleanup_eligible",
 ] as const;
 
 export const CLIENT_PLAN_VALUES = ["pro", "max"] as const;
@@ -113,9 +109,6 @@ export type ClientListItem = {
   clientStatus: string | null;
   clientStatusLabel: string;
   createdAt: string;
-  deleteEligible: boolean;
-  deleteEligibilityReasonCode: DeleteEligibilityReasonCode;
-  deleteEligibilityReason: string;
   email: string;
   eventDate: string | null;
   eventId: string | null;
@@ -182,10 +175,6 @@ export type ClientDetailView = {
   };
   cleanup: {
     archiveEligible: boolean;
-    deleteEligible: boolean;
-    deleteEligibleAt: string | null;
-    deleteEligibilityReasonCode: DeleteEligibilityReasonCode;
-    deleteEligibilityReason: string;
     eventPassed: boolean;
     hostingExpired: boolean;
   };
@@ -433,7 +422,6 @@ type ClientSnapshot = {
   hostingEndsAt: string | null;
   hostingLifecycle: ClientHostingLifecycle;
   hostingStartsAt: string | null;
-  isCleanupEligible: boolean;
   payment: PaymentRow | null;
   refund: RefundRow | null;
   paymentStatus: ClientPaymentStatus;
@@ -463,7 +451,6 @@ const EMPTY_COUNTS: ClientStatusCounts = {
   all: 0,
   archived: 0,
   cancelled: 0,
-  cleanup_eligible: 0,
   event_soon: 0,
   event_passed: 0,
   unknown: 0,
@@ -892,34 +879,7 @@ function buildClientSnapshot(
     paymentStatus: rawPaymentStatus,
   });
   const plan = client.plan_type ?? payment?.plan_type ?? null;
-  const deleteEligibility = deriveDeleteEligibility({
-    archivedAt: client.archived_at,
-    cancelledAt: client.cancelled_at,
-    clientCustomFrontendStatus: client.custom_frontend_status,
-    clientCustomFrontendUrl: client.custom_frontend_url,
-    clientStatus: client.status,
-    eventCustomFrontendEnabled: event?.custom_frontend_enabled ?? false,
-    eventCustomFrontendUrl: event?.custom_frontend_url ?? null,
-    eventDate: event?.event_date ?? null,
-    eventPublishedAt: event?.published_at ?? null,
-    eventStatus: event?.status ?? null,
-    eventVisibility: event?.visibility ?? null,
-    hasPaidNonRefundedPayment: payments.some((payment) => payment.payment_status === "paid"),
-    hasRefundedPaymentHistory:
-      payments.some((payment) => payment.payment_status === "refunded") || refunds.length > 0,
-    hasUnpublishedSetupWork: events.some((event) =>
-      ["setup_in_progress", "ready"].includes(event.status),
-    ),
-    hostingEndsAt,
-    lastActivityAt: client.last_activity_at ?? client.updated_at,
-    latestPaymentStatus: payment?.payment_status ?? null,
-    now,
-  });
-  const status = deriveClientListStatus(
-    client.status,
-    eventLifecycle,
-    deleteEligibility.deleteEligible,
-  );
+  const status = deriveClientListStatus(client.status, eventLifecycle);
 
   return {
     application,
@@ -929,7 +889,6 @@ function buildClientSnapshot(
     hostingEndsAt,
     hostingLifecycle,
     hostingStartsAt,
-    isCleanupEligible: deleteEligibility.deleteEligible,
     payment,
     refund,
     paymentStatus,
@@ -1049,8 +1008,6 @@ function matchesClientStatusFilter(record: EnrichedClientRecord, status: ClientL
       return record.eventLifecycle === "event_passed" && record.client.status !== "archived";
     case "archived":
       return record.client.status === "archived";
-    case "cleanup_eligible":
-      return record.isCleanupEligible;
     case "cancelled":
       return record.client.status === "cancelled";
     case "unknown":
@@ -1099,31 +1056,6 @@ function sortClientRecords(records: EnrichedClientRecord[], sort: ClientSort) {
 }
 
 function toClientListItem(record: EnrichedClientRecord): ClientListItem {
-  const deleteEligibility = deriveDeleteEligibility({
-    archivedAt: record.client.archived_at,
-    cancelledAt: record.client.cancelled_at,
-    clientCustomFrontendStatus: record.client.custom_frontend_status,
-    clientCustomFrontendUrl: record.client.custom_frontend_url,
-    clientStatus: record.client.status,
-    eventCustomFrontendEnabled: record.event?.custom_frontend_enabled ?? false,
-    eventCustomFrontendUrl: record.event?.custom_frontend_url ?? null,
-    eventDate: record.event?.event_date ?? null,
-    eventPublishedAt: record.event?.published_at ?? null,
-    eventStatus: record.event?.status ?? null,
-    eventVisibility: record.event?.visibility ?? null,
-    hasPaidNonRefundedPayment: record.payments.some((payment) => payment.payment_status === "paid"),
-    hasRefundedPaymentHistory:
-      record.payments.some((payment) => payment.payment_status === "refunded") ||
-      record.refunds.length > 0,
-    hasUnpublishedSetupWork: record.events.some((event) =>
-      ["setup_in_progress", "ready"].includes(event.status),
-    ),
-    hostingEndsAt: record.hostingEndsAt,
-    lastActivityAt: record.client.last_activity_at ?? record.client.updated_at,
-    latestPaymentStatus: record.payment?.payment_status ?? null,
-    now: new Date(),
-  });
-
   return {
     approvedApplicationId: record.application?.id ?? null,
     approvedApplicationReferenceCode: record.application?.reference_code ?? null,
@@ -1132,9 +1064,6 @@ function toClientListItem(record: EnrichedClientRecord): ClientListItem {
     clientStatus: record.client.status,
     clientStatusLabel: formatClientStoredStatusLabel(record.client.status),
     createdAt: record.client.created_at,
-    deleteEligible: deleteEligibility.deleteEligible,
-    deleteEligibilityReasonCode: deleteEligibility.reasonCode,
-    deleteEligibilityReason: deleteEligibility.reason,
     email: record.client.contact_email,
     eventDate: record.event?.event_date ?? null,
     eventId: record.event?.id ?? null,
@@ -1183,27 +1112,6 @@ function toClientDetailView(
     snapshot.payment?.payment_method ??
     snapshot.application?.preferred_manual_payment_option ??
     null;
-  const deleteEligibility = deriveDeleteEligibility({
-    archivedAt: snapshot.client.archived_at,
-    cancelledAt: snapshot.client.cancelled_at,
-    clientCustomFrontendStatus: snapshot.client.custom_frontend_status,
-    clientCustomFrontendUrl: snapshot.client.custom_frontend_url,
-    clientStatus: snapshot.client.status,
-    eventCustomFrontendEnabled: snapshot.event?.custom_frontend_enabled ?? false,
-    eventCustomFrontendUrl: snapshot.event?.custom_frontend_url ?? null,
-    eventDate: snapshot.event?.event_date ?? null,
-    eventPublishedAt: snapshot.event?.published_at ?? null,
-    eventStatus: snapshot.event?.status ?? null,
-    eventVisibility: snapshot.event?.visibility ?? null,
-    hasPaidNonRefundedPayment: snapshot.payment?.payment_status === "paid",
-    hasRefundedPaymentHistory: paymentStatus === "refunded",
-    hasUnpublishedSetupWork: ["setup_in_progress", "ready"].includes(snapshot.event?.status ?? ""),
-    hostingEndsAt: snapshot.hostingEndsAt,
-    lastActivityAt: snapshot.client.last_activity_at ?? snapshot.client.updated_at,
-    latestPaymentStatus: snapshot.payment?.payment_status ?? null,
-    now: new Date(),
-  });
-
   return {
     activity,
     application: {
@@ -1222,10 +1130,6 @@ function toClientDetailView(
       archiveEligible:
         snapshot.status !== "archived" &&
         (snapshot.eventLifecycle === "event_passed" || snapshot.hostingLifecycle === "expired"),
-      deleteEligible: deleteEligibility.deleteEligible,
-      deleteEligibleAt: deleteEligibility.deleteEligibleAt,
-      deleteEligibilityReasonCode: deleteEligibility.reasonCode,
-      deleteEligibilityReason: deleteEligibility.reason,
       eventPassed: snapshot.eventLifecycle === "event_passed",
       hostingExpired: snapshot.hostingLifecycle === "expired",
     },
@@ -1561,12 +1465,7 @@ function deriveHostingLifecycle(
 function deriveClientListStatus(
   storedStatus: string | null,
   eventLifecycle: ClientEventLifecycle,
-  isCleanupEligible: boolean,
 ): ClientListStatus {
-  if (isCleanupEligible) {
-    return "cleanup_eligible";
-  }
-
   if (storedStatus === "cancelled") {
     return "cancelled";
   }
@@ -1642,8 +1541,6 @@ export function formatClientListStatusLabel(status: ClientListStatus) {
       return "Event Passed";
     case "archived":
       return "Archived";
-    case "cleanup_eligible":
-      return "Cleanup Eligible";
     case "cancelled":
       return "Cancelled";
     case "unknown":

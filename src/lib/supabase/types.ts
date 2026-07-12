@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       audit_logs: {
@@ -1065,9 +1090,9 @@ export type Database = {
           created_at?: string;
           custom_frontend_enabled?: boolean;
           custom_frontend_url?: string | null;
-          draft_event_slug?: string;
+          draft_event_slug: string;
           draft_subdomain_slug?: string | null;
-          draft_visibility?: string;
+          draft_visibility: string;
           event_date?: string | null;
           event_slug: string;
           event_time?: string | null;
@@ -1225,7 +1250,6 @@ export type Database = {
           submitted_at?: string;
           updated_at?: string;
         };
-
         Relationships: [
           {
             foreignKeyName: "rsvp_responses_client_id_fkey";
@@ -1255,28 +1279,81 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_purge_client_permanently: {
+        Args: { p_client_id: string; p_profile_ids?: string[] };
+        Returns: Json;
+      };
       approve_rsvp_response_with_capacity_check: {
-        Args: {
-          p_client_id: string;
-          p_response_id: string;
+        Args: { p_client_id: string; p_response_id: string };
+        Returns: {
+          archived_at: string | null;
+          attendance_status: string;
+          client_id: string;
+          dietary_notes: string | null;
+          email: string | null;
+          event_id: string;
+          guest_name: string;
+          id: string;
+          message: string | null;
+          message_approved_at: string | null;
+          message_approved_by: string | null;
+          message_public_consent: boolean;
+          message_public_status: string;
+          party_size: number;
+          phone: string | null;
+          review_status: string;
+          source: string | null;
+          submitted_at: string;
+          updated_at: string;
         };
-        Returns: Database["public"]["Tables"]["rsvp_responses"]["Row"];
+        SetofOptions: {
+          from: "*";
+          to: "rsvp_responses";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       submit_rsvp_response_with_capacity_check: {
         Args: {
           p_attendance_status: string;
           p_client_id: string;
-          p_dietary_notes: string | null;
-          p_email: string | null;
+          p_dietary_notes: string;
+          p_email: string;
           p_event_id: string;
           p_guest_name: string;
-          p_message: string | null;
+          p_message: string;
           p_message_public_status: string;
           p_party_size: number;
-          p_phone: string | null;
+          p_phone: string;
           p_source: string;
         };
-        Returns: Database["public"]["Tables"]["rsvp_responses"]["Row"];
+        Returns: {
+          archived_at: string | null;
+          attendance_status: string;
+          client_id: string;
+          dietary_notes: string | null;
+          email: string | null;
+          event_id: string;
+          guest_name: string;
+          id: string;
+          message: string | null;
+          message_approved_at: string | null;
+          message_approved_by: string | null;
+          message_public_consent: boolean;
+          message_public_status: string;
+          party_size: number;
+          phone: string | null;
+          review_status: string;
+          source: string | null;
+          submitted_at: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "rsvp_responses";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
     };
     Enums: {
@@ -1404,6 +1481,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

@@ -21,13 +21,7 @@ type ClientStatusTabsProps = {
   };
 };
 
-type ClientListStatusFilter =
-  | "active"
-  | "all"
-  | "archived"
-  | "cleanup_eligible"
-  | "event_passed"
-  | "event_soon";
+type ClientListStatusFilter = "active" | "all" | "archived" | "event_passed" | "event_soon";
 
 const PARAM_STATUS = "status";
 const PARAM_PLAN = "plan";
@@ -52,7 +46,6 @@ const tabs: Array<{
   { label: "Event Soon", value: "event_soon" },
   { label: "Event Passed", value: "event_passed" },
   { label: "Archived", value: "archived" },
-  { label: "Cleanup Eligible", value: "cleanup_eligible" },
 ];
 
 export function ClientStatusTabs({ counts, filters }: ClientStatusTabsProps) {

@@ -116,22 +116,16 @@ export const BulkMarkClientsPaidSchema = z.object({
   referencePrefix: optionalText(120),
 });
 
-export const DeleteClientSchema = z.object({
-  clientId: z.uuid(),
+export const PermanentDeleteClientsSchema = z.object({
+  clientIds: z
+    .array(z.uuid())
+    .min(1, "Select at least one client.")
+    .max(25, "Delete at most 25 clients at a time.")
+    .transform((clientIds) => Array.from(new Set(clientIds))),
   confirmation: z
     .string()
     .trim()
     .refine((value) => value === "DELETE", "Type DELETE to confirm."),
-  note: optionalText(2000),
-});
-
-export const BulkDeleteClientsSchema = z.object({
-  clientIds: z.array(z.uuid()).min(1, "Select at least one client."),
-  confirmation: z
-    .string()
-    .trim()
-    .refine((value) => value === "DELETE", "Type DELETE to confirm."),
-  note: optionalText(2000),
 });
 
 export const RefundClientPaymentSchema = z.object({
@@ -236,7 +230,7 @@ export type ArchiveClientInput = z.infer<typeof ArchiveClientSchema>;
 export type BulkApproveApplicationsInput = z.infer<typeof BulkApproveApplicationsSchema>;
 export type BulkArchiveClientsInput = z.infer<typeof BulkArchiveClientsSchema>;
 export type BulkCancelClientsInput = z.infer<typeof BulkCancelClientsSchema>;
-export type BulkDeleteClientsInput = z.infer<typeof BulkDeleteClientsSchema>;
+export type PermanentDeleteClientsInput = z.infer<typeof PermanentDeleteClientsSchema>;
 export type BulkMarkClientsPaidInput = z.infer<typeof BulkMarkClientsPaidSchema>;
 export type BulkRefundClientsInput = z.infer<typeof BulkRefundClientsSchema>;
 export type BulkRejectAndDeleteApplicationsInput = z.infer<
@@ -245,7 +239,6 @@ export type BulkRejectAndDeleteApplicationsInput = z.infer<
 export type CancelApplicationInput = z.infer<typeof CancelApplicationSchema>;
 export type CancelClientInput = z.infer<typeof CancelClientSchema>;
 export type ConfirmManualPaymentInput = z.infer<typeof ConfirmManualPaymentSchema>;
-export type DeleteClientInput = z.infer<typeof DeleteClientSchema>;
 export type MarkClientPaidInput = z.infer<typeof MarkClientPaidSchema>;
 export type MarkApplicationReviewingInput = z.infer<typeof MarkApplicationReviewingSchema>;
 export type RejectAndDeleteApplicationInput = z.infer<typeof RejectAndDeleteApplicationSchema>;

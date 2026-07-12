@@ -9,10 +9,10 @@ import type { ClientListItem } from "@/server/queries/admin-clients";
 import {
   bulkArchiveClientsAction,
   bulkCancelClientsAction,
-  bulkDeleteClientsAction,
   bulkMarkClientsPaidAction,
   bulkRefundClientPaymentsAction,
 } from "@/server/actions/admin-clients";
+import { PermanentClientDeleteDialog } from "@/components/clients/permanent-client-delete-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +37,7 @@ type ClientBulkActionsProps = {
   packageDefaultAvailability: Record<"max" | "pro", boolean>;
   selectedClients: ClientListItem[];
   onClearSelection: () => void;
+  onDeleteResult: (failedClientIds: string[]) => void;
 };
 
 type BulkDialog = "archive" | "cancel" | "delete" | "paid" | "refund" | null;
@@ -52,6 +53,7 @@ export function ClientBulkActions({
   packageDefaultAvailability,
   selectedClients,
   onClearSelection,
+  onDeleteResult,
 }: ClientBulkActionsProps) {
   const router = useRouter();
   const [dialog, setDialog] = useState<BulkDialog>(null);
@@ -68,8 +70,6 @@ export function ClientBulkActions({
   );
   const [refundReferencePrefix, setRefundReferencePrefix] = useState("");
   const [refundNote, setRefundNote] = useState("");
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [deleteNote, setDeleteNote] = useState("");
 
   const selectedIds = useMemo(() => selectedClients.map((client) => client.id), [selectedClients]);
   const markEligible = selectedClients.filter(
@@ -86,9 +86,6 @@ export function ClientBulkActions({
   );
   const archiveEligible = selectedClients.filter((client) => client.clientStatus !== "archived");
   const refundEligible = selectedClients.filter((client) => client.paymentStatus === "paid");
-  const deleteEligible = selectedClients.filter((client) => client.deleteEligible);
-  const deleteSkipped = selectedClients.filter((client) => !client.deleteEligible);
-  const deleteReasonGroups = groupDeleteReasons(deleteSkipped);
   const markDefaultMissing = markEligible.some(
     (client) =>
       (client.plan !== "max" && client.plan !== "pro") ||
@@ -150,26 +147,11 @@ export function ClientBulkActions({
     onError: () => toast.error("Bulk Refund failed."),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () =>
-      bulkDeleteClientsAction({
-        clientIds: selectedIds,
-        confirmation: deleteConfirmation,
-        note: deleteNote || undefined,
-      }),
-    onSuccess: (result) => {
-      setDeleteConfirmation("");
-      handleBulkResult(result, "deleted");
-    },
-    onError: () => toast.error("Bulk Delete failed."),
-  });
-
   const isPending =
     markPaidMutation.isPending ||
     cancelMutation.isPending ||
     archiveMutation.isPending ||
-    refundMutation.isPending ||
-    deleteMutation.isPending;
+    refundMutation.isPending;
 
   if (selectedClients.length === 0) {
     return null;
@@ -258,11 +240,6 @@ export function ClientBulkActions({
             size="sm"
             variant="outline"
             disabled={isPending}
-            title={
-              deleteEligible.length === 0
-                ? "Selected clients are not yet delete-eligible."
-                : undefined
-            }
             onClick={() => setDialog("delete")}
           >
             Delete selected
@@ -519,109 +496,12 @@ export function ClientBulkActions({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={dialog === "delete"} onOpenChange={(open) => setDialog(open ? "delete" : null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Delete selected clients</DialogTitle>
-            <DialogDescription>
-              {deleteEligible.length} eligible, {deleteSkipped.length} will be skipped. The same
-              server-side rules are re-checked for every client during execution.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="grid gap-3 rounded-md border px-3 py-3 text-sm sm:grid-cols-3">
-              <div>
-                <p className="text-muted-foreground text-xs font-medium">Selected</p>
-                <p className="font-medium">{selectedClients.length}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs font-medium">Eligible</p>
-                <p className="font-medium">{deleteEligible.length}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs font-medium">Skipped</p>
-                <p className="font-medium">{deleteSkipped.length}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>What will be deleted</Label>
-              <div className="rounded-md border px-3 py-2 text-sm">
-                <ul className="list-disc space-y-1 pl-5">
-                  <li>Eligible client records only</li>
-                  <li>Draft/private RSVP events and linked event content for eligible clients</li>
-                  <li>
-                    Non-paid payments, plus refunded payment rows only after tombstone proof is
-                    preserved
-                  </li>
-                  <li>Linked Meta Pixel records for eligible clients</li>
-                </ul>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>What will be preserved</Label>
-              <div className="rounded-md border px-3 py-2 text-sm">
-                <ul className="list-disc space-y-1 pl-5">
-                  <li>Client deletion tombstone written before each final delete</li>
-                  <li>Audit/email/application/profile history through FK nulling</li>
-                  <li>
-                    Paid non-refunded clients, live RSVP clients, and active hosting/access clients
-                    remain blocked
-                  </li>
-                </ul>
-              </div>
-            </div>
-            {deleteReasonGroups.length > 0 ? (
-              <div className="space-y-2">
-                <Label>Skipped clients by reason</Label>
-                <div className="space-y-2 rounded-md border px-3 py-2 text-sm">
-                  {deleteReasonGroups.map((group) => (
-                    <div key={group.reason} className="space-y-1">
-                      <p className="font-medium">{group.reason}</p>
-                      <p className="text-muted-foreground text-xs">{group.clients.join(", ")}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            <div className="space-y-2">
-              <Label htmlFor="bulk-delete-confirmation">Type DELETE to confirm</Label>
-              <Input
-                id="bulk-delete-confirmation"
-                value={deleteConfirmation}
-                onChange={(event) => setDeleteConfirmation(event.currentTarget.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bulk-delete-note">Optional note</Label>
-              <Textarea
-                id="bulk-delete-note"
-                value={deleteNote}
-                onChange={(event) => setDeleteNote(event.currentTarget.value)}
-                placeholder="Reason for deleting these client records"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              type="button"
-              disabled={
-                deleteMutation.isPending ||
-                deleteConfirmation !== "DELETE" ||
-                deleteEligible.length === 0
-              }
-              onClick={() => deleteMutation.mutate()}
-            >
-              {deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Delete selected
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PermanentClientDeleteDialog
+        clients={selectedClients.map((client) => ({ id: client.id, name: client.clientName }))}
+        open={dialog === "delete"}
+        onOpenChange={(open) => setDialog(open ? "delete" : null)}
+        onResult={(result) => onDeleteResult(result.failed.map((failure) => failure.clientId))}
+      />
     </>
   );
 }
@@ -654,21 +534,6 @@ function buildBulkMessage(
   }
 
   return reasons ? `${base} ${reasons}.` : base;
-}
-
-function groupDeleteReasons(selectedClients: ClientListItem[]) {
-  const groups = new Map<string, string[]>();
-
-  for (const client of selectedClients) {
-    const existing = groups.get(client.deleteEligibilityReason) ?? [];
-    existing.push(client.clientName);
-    groups.set(client.deleteEligibilityReason, existing);
-  }
-
-  return Array.from(groups.entries()).map(([reason, clients]) => ({
-    clients,
-    reason,
-  }));
 }
 
 function toDateTimeLocalValue(value: string) {
