@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, Monitor, Smartphone } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EventWebsiteRenderer } from "@/components/event-website/event-website-renderer";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
@@ -23,6 +23,7 @@ type EventWebsitePreviewPanelProps = {
   guestbookMessages: EventWebsiteGuestbookMessage[];
   compactChrome?: boolean;
   customWebsitePreview: DashboardCustomWebsitePreviewDto;
+  customWebsitePreviewRevision: number;
   mode?: "desktop" | "responsive";
   previewChromeUrl: string | null;
   previewScrollRequest: number;
@@ -40,6 +41,7 @@ export function EventWebsitePreviewPanel({
   guestbookMessages,
   compactChrome = false,
   customWebsitePreview,
+  customWebsitePreviewRevision,
   mode = "desktop",
   previewChromeUrl,
   previewScrollRequest,
@@ -66,6 +68,15 @@ export function EventWebsitePreviewPanel({
   const [previewMode, setPreviewMode] = useState<"custom" | "platform">("platform");
   const hasCustomPreview =
     customWebsitePreview.customPreviewAvailable && !!customWebsitePreview.customPreviewUrl;
+  const customPreviewUrl = useMemo(() => {
+    if (!customWebsitePreview.customPreviewUrl) {
+      return null;
+    }
+
+    const url = new URL(customWebsitePreview.customPreviewUrl);
+    url.searchParams.set("revision", String(customWebsitePreviewRevision));
+    return url.toString();
+  }, [customWebsitePreview.customPreviewUrl, customWebsitePreviewRevision]);
   const showCustomPreview = previewMode === "custom";
 
   useEffect(() => {
@@ -141,7 +152,7 @@ export function EventWebsitePreviewPanel({
               <a
                 aria-label="Open custom preview"
                 className="event-preview-open-custom"
-                href={customWebsitePreview.customPreviewUrl!}
+                href={customPreviewUrl!}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -184,9 +195,10 @@ export function EventWebsitePreviewPanel({
             {showCustomPreview && hasCustomPreview ? (
               <iframe
                 className="event-preview-custom-frame"
+                key={customWebsitePreviewRevision}
                 referrerPolicy="no-referrer"
                 sandbox="allow-scripts allow-same-origin allow-popups"
-                src={customWebsitePreview.customPreviewUrl!}
+                src={customPreviewUrl!}
                 title="Custom website preview"
               />
             ) : showCustomPreview ? (

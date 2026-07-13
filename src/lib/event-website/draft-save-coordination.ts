@@ -4,6 +4,8 @@ import { useSyncExternalStore } from "react";
 
 const EVENT_WEBSITE_DRAFT_SAVE_EVENT = "ws:event-website-draft-save-change";
 const EVENT_WEBSITE_DRAFT_SAVE_KEY_PREFIX = "ws:event-website-draft-save:";
+type DashboardNavigationGuard = (href: string) => boolean | Promise<boolean>;
+let dashboardNavigationGuard: DashboardNavigationGuard | null = null;
 
 function getDraftSaveKey(eventId: string) {
   return `${EVENT_WEBSITE_DRAFT_SAVE_KEY_PREFIX}${eventId}`;
@@ -89,4 +91,18 @@ export function useEventWebsiteDraftSavePending(eventId: string | null | undefin
     () => isEventWebsiteDraftSavePending(eventId),
     () => false,
   );
+}
+
+export function registerEventWebsiteNavigationGuard(guard: DashboardNavigationGuard) {
+  dashboardNavigationGuard = guard;
+
+  return () => {
+    if (dashboardNavigationGuard === guard) {
+      dashboardNavigationGuard = null;
+    }
+  };
+}
+
+export async function canNavigateAwayFromEventWebsite(href: string) {
+  return dashboardNavigationGuard ? dashboardNavigationGuard(href) : true;
 }

@@ -37,6 +37,7 @@ export type DashboardEventWebsiteData = {
   } | null;
   eventDate: string | null;
   publishState: "draft" | "published";
+  publishedRevision: number;
   previewChromeUrl: string | null;
   publicPageUrl: string | null;
   publishedAt: string | null;
@@ -46,6 +47,8 @@ export type DashboardEventWebsiteData = {
   customWebsitePreview: DashboardCustomWebsitePreviewDto;
   maxGuestCount: number | null;
   rsvpCloseAt: string | null;
+  savedAt: string | null;
+  savedRevision: number;
   snapshotPublishedAt: string | null;
   status: string | null;
   title: string | null;
@@ -95,7 +98,10 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
             hero_title,
             hero_subtitle,
             published_at,
+            published_revision,
             rsvp_note,
+            saved_at,
+            saved_revision,
             schedule_note,
             venue_note
           )
@@ -199,6 +205,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
             subdomainSlug: event.subdomain_slug ?? null,
           }
         : null,
+      savedRevision: eventContent?.saved_revision ?? 0,
     }),
   ]);
 
@@ -208,6 +215,7 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     eventContent: eventContentData,
     eventDate: event?.event_date ?? null,
     publishState: event?.status === "published" && event?.published_at ? "published" : "draft",
+    publishedRevision: eventContent?.published_revision ?? 0,
     previewChromeUrl: publicLinkSet?.previewChromeUrl ?? null,
     publicPageUrl,
     publishedAt: event?.published_at ?? null,
@@ -218,6 +226,8 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
     customWebsitePreview,
     maxGuestCount: event?.max_guest_count ?? null,
     rsvpCloseAt: event?.rsvp_close_at ?? null,
+    savedAt: eventContent?.saved_at ?? null,
+    savedRevision: eventContent?.saved_revision ?? 0,
     snapshotPublishedAt: eventContent?.published_at ?? null,
     status: event?.status ?? null,
     title: event?.title ?? null,

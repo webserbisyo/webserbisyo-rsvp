@@ -10,6 +10,7 @@ import {
   type EventWebsiteSectionDefinition,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { EVENT_WEBSITE_REORDER_UI_ENABLED } from "@/config/event-website-capabilities";
 import type {
   EventWebsiteOperationalStatus,
   EventWebsiteSectionSummary,
@@ -30,6 +31,10 @@ type EventWebsiteLeftPaneProps = {
   defaultWebsiteFlowSections: EventWebsiteSectionDefinition[];
   enabledSections: Record<EventWebsiteSectionKey, boolean>;
   publicPageUrl: string | null;
+  publicationStatusPill: EventWebsiteStatusPill;
+  onReloadServerVersion?: () => void;
+  onRetry?: () => void;
+  onSaveNow?: () => void;
   futureDevelopmentSections: EventWebsiteSectionDefinition[];
   onEnabledSectionChange: (section: EventWebsiteSectionKey, enabled: boolean) => void;
   onResetWebsiteFlowOrder: () => void;
@@ -52,6 +57,10 @@ export function EventWebsiteLeftPane({
   defaultWebsiteFlowSections,
   enabledSections,
   publicPageUrl,
+  publicationStatusPill,
+  onReloadServerVersion,
+  onRetry,
+  onSaveNow,
   futureDevelopmentSections,
   onEnabledSectionChange,
   onResetWebsiteFlowOrder,
@@ -128,6 +137,10 @@ export function EventWebsiteLeftPane({
           autoSaveEnabled={autoSaveEnabled}
           onToggleAutoSave={onToggleAutoSave}
           publicPageUrl={publicPageUrl}
+          publicationStatusPill={publicationStatusPill}
+          onReloadServerVersion={onReloadServerVersion}
+          onRetry={onRetry}
+          onSaveNow={onSaveNow}
           sectionSummary={sectionSummary}
           statusPill={statusPill}
           sticky={statusCardSticky}
@@ -139,23 +152,25 @@ export function EventWebsiteLeftPane({
       <div className="event-section-group">
         <div className="event-section-heading">
           <span className="event-section-heading-label">Website Flow</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label="Reset website flow order to default"
-            className={cn(
-              "event-section-reset-btn",
-              isOrderDirty && "event-section-reset-btn--dirty",
-            )}
-            onClick={onResetWebsiteFlowOrder}
-          >
-            <RotateCcw className="size-3" aria-hidden="true" />
-            Reset order
-          </Button>
+          {EVENT_WEBSITE_REORDER_UI_ENABLED ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label="Reset website flow order to default"
+              className={cn(
+                "event-section-reset-btn",
+                isOrderDirty && "event-section-reset-btn--dirty",
+              )}
+              onClick={onResetWebsiteFlowOrder}
+            >
+              <RotateCcw className="size-3" aria-hidden="true" />
+              Reset order
+            </Button>
+          ) : null}
         </div>
 
-        {allowFullCardDrag ? (
+        {EVENT_WEBSITE_REORDER_UI_ENABLED && allowFullCardDrag ? (
           <Reorder.Group
             axis="y"
             values={websiteFlowSections}
@@ -179,7 +194,7 @@ export function EventWebsiteLeftPane({
                   canMoveDown={index < websiteFlowSections.length - 1}
                   canMoveUp={index > 0}
                   enabled={section.required || (enabledSections[section.key] ?? false)}
-                  reorderable
+                  reorderable={EVENT_WEBSITE_REORDER_UI_ENABLED}
                   section={section}
                   selected={selectedSection === section.key}
                   onMoveDown={() => moveFlowSection(section.key, 1)}
@@ -201,7 +216,7 @@ export function EventWebsiteLeftPane({
                   canMoveDown={index < websiteFlowSections.length - 1}
                   canMoveUp={index > 0}
                   enabled={section.required || (enabledSections[section.key] ?? false)}
-                  reorderable
+                  reorderable={EVENT_WEBSITE_REORDER_UI_ENABLED}
                   section={section}
                   selected={selectedSection === section.key}
                   onMoveDown={() => moveFlowSection(section.key, 1)}

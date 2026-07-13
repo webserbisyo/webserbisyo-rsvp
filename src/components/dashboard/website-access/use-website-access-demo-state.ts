@@ -375,6 +375,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     startTransition(async () => {
       const result = await publishEventWebsiteAction({
         eventId: serverState.eventId,
+        expectedSavedRevision: serverState.savedRevision,
       });
 
       if (!result.ok) {
@@ -401,6 +402,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         privateAccessToken: result.data.privateAccessToken,
         publishState: "published",
         publishedAt: result.data.publishedAt,
+        publishedRevision: result.data.publishedRevision,
         publishedSlug: result.data.publishedSlug,
         publishedSubdomain: result.data.publishedSubdomain,
         publishedVisibility,

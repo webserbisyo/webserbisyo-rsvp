@@ -8,18 +8,38 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buildEventWebsiteCanonicalEventPatchInput } from "@/lib/event-website/canonical";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
 import { EventWebsiteCanonicalEventPatchSchema } from "@/lib/validations/event-website.schema";
-import type { Json, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import type { Json } from "@/lib/supabase/types";
 import { assertServiceData, ServiceError } from "./service-error";
-import { writeAuditLog } from "./write-audit-log";
 
 export type SaveEventWebsiteDraftInput = {
   actorUserId: string;
   clientId: string;
+  clientSequence: number;
   content: EventWebsiteContent;
   eventId: string;
+  expectedRevision: number;
 };
 
-export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
+export type SaveEventWebsiteDraftResult =
+  | {
+      clientSequence: number;
+      content: EventWebsiteContent;
+      contentId: string;
+      eventId: string;
+      savedAt: string;
+      savedRevision: number;
+      status: "saved";
+    }
+  | {
+      clientSequence: number;
+      eventId: string;
+      serverRevision: number;
+      status: "conflict";
+    };
+
+export async function saveEventWebsiteDraft(
+  input: SaveEventWebsiteDraftInput,
+): Promise<SaveEventWebsiteDraftResult> {
   const supabase = createAdminClient();
   const { data: eventRecord, error: eventLookupError } = await supabase
     .from("rsvp_events")
@@ -45,63 +65,65 @@ export async function saveEventWebsiteDraft(input: SaveEventWebsiteDraftInput) {
     throw new ServiceError(getCanonicalPatchErrorMessage(canonicalPatchResult.error));
   }
 
-  const canonicalPatch = canonicalPatchResult.data;
-  const eventRow: TablesUpdate<"rsvp_events"> = {
-    event_date: canonicalPatch.event_date,
-    event_time: canonicalPatch.event_time,
-    rsvp_close_at: canonicalPatch.rsvp_close_at,
-    venue_address: canonicalPatch.venue_address,
-    venue_name: canonicalPatch.venue_name,
-  };
-  const row: TablesInsert<"event_content"> = {
-    content_json: input.content as unknown as Json,
-    event_id: input.eventId,
-  };
-  const { data: content, error } = await supabase
-    .from("event_content")
-    .upsert(row, { onConflict: "event_id" })
-    .select("id, event_id")
-    .single();
+  const { data, error } = await supabase.rpc("save_event_website_draft_revision", {
+    p_actor_user_id: input.actorUserId,
+    p_canonical_event_patch: canonicalPatchResult.data as unknown as Json,
+    p_client_id: input.clientId,
+    p_client_sequence: input.clientSequence,
+    p_content: input.content as unknown as Json,
+    p_event_id: input.eventId,
+    p_expected_revision: input.expectedRevision,
+  });
 
   if (error) {
-    throw new ServiceError(formatSupabaseWriteError("Failed to save event content.", error), error);
-  }
-
-  assertServiceData(content, "Event Website draft save returned no row.");
-
-  const { data: event, error: eventError } = await supabase
-    .from("rsvp_events")
-    .update(eventRow)
-    .eq("id", input.eventId)
-    .eq("client_id", input.clientId)
-    .select("id, client_id")
-    .single();
-
-  if (eventError) {
     throw new ServiceError(
-      formatSupabaseWriteError("Failed to update event canonical fields.", eventError),
-      eventError,
+      formatSupabaseWriteError("Failed to save the Event Website draft.", error),
+      error,
     );
   }
 
-  assertServiceData(event, "Canonical RSVP event update returned no row.");
+  assertServiceData(data, "Event Website draft save returned no result.");
+  return parseDraftSaveResult(data, input);
+}
 
-  await writeAuditLog({
-    action: "event_website_draft_saved",
-    actorUserId: input.actorUserId,
-    clientId: event.client_id,
-    entityId: content.id,
-    entityType: "event_content",
+function parseDraftSaveResult(
+  value: Json,
+  input: SaveEventWebsiteDraftInput,
+): SaveEventWebsiteDraftResult {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new ServiceError("Event Website draft save returned an invalid result.");
+  }
+
+  if (value.status === "conflict" && typeof value.serverRevision === "number") {
+    return {
+      clientSequence: input.clientSequence,
+      eventId: input.eventId,
+      serverRevision: value.serverRevision,
+      status: "conflict",
+    };
+  }
+
+  if (
+    value.status !== "saved" ||
+    typeof value.contentId !== "string" ||
+    typeof value.savedAt !== "string" ||
+    typeof value.savedRevision !== "number" ||
+    !value.content ||
+    typeof value.content !== "object" ||
+    Array.isArray(value.content)
+  ) {
+    throw new ServiceError("Event Website draft save returned an invalid result.");
+  }
+
+  return {
+    clientSequence: input.clientSequence,
+    content: value.content as unknown as EventWebsiteContent,
+    contentId: value.contentId,
     eventId: input.eventId,
-    metadata: {
-      enabledSectionCount: Object.values(input.content.layout.enabledSections).filter(Boolean)
-        .length,
-      eventType: input.content.eventType,
-      version: input.content.version,
-    },
-  });
-
-  return content;
+    savedAt: value.savedAt,
+    savedRevision: value.savedRevision,
+    status: "saved",
+  };
 }
 
 function formatSupabaseWriteError(message: string, error: unknown) {

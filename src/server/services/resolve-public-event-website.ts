@@ -17,11 +17,15 @@ type PublicEventRecord = {
   event_content:
     | {
         published_at: string | null;
+        published_revision: number;
         published_content_json: unknown;
+        saved_revision: number;
       }
     | Array<{
         published_at: string | null;
+        published_revision: number;
         published_content_json: unknown;
+        saved_revision: number;
       }>
     | null;
   event_date: string | null;
@@ -111,7 +115,9 @@ async function loadPublishedPublicEvent(input: {
         rsvp_close_at,
         event_content (
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `;
   const { data: event, error } = await supabase
@@ -225,8 +231,10 @@ async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: s
     eventType: event.event_type,
     guestbookMessages,
     publishedAt: event.published_at,
+    publishedRevision: eventContent.published_revision,
     rsvpCloseAt: event.rsvp_close_at,
     rsvpOpenAt: event.rsvp_open_at,
+    savedRevision: eventContent.saved_revision,
     subdomainSlug: event.subdomain_slug,
     venueAddress: event.venue_address,
     venueName: event.venue_name,

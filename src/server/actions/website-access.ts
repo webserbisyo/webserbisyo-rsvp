@@ -22,6 +22,7 @@ import {
   updateWebsiteAccessDraftVisibility,
 } from "@/server/services/publish-event-website";
 import { ServiceError } from "@/server/services/service-error";
+import { logEventWebsiteOperation } from "@/server/services/event-website-operation-log";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 const UpdateWebsiteAccessDraftVisibilityActionSchema = z.object({
@@ -42,6 +43,7 @@ const UpdateWebsiteAccessDraftSubdomainActionSchema = z.object({
 const PublishEventWebsiteActionSchema = z.object({
   confirmWarnings: z.boolean().optional(),
   eventId: z.uuid(),
+  expectedSavedRevision: z.number().int().nonnegative(),
 });
 
 const UnpublishEventWebsiteActionSchema = z.object({
@@ -149,9 +151,20 @@ export async function updateWebsiteAccessDraftSubdomainAction(input: unknown) {
 }
 
 export async function publishEventWebsiteAction(input: unknown) {
+  let eventId = "unresolved";
+  let expectedRevision: number | undefined;
+
   try {
     const profile = await requireTenantMember();
     const payload = parseActionInput(PublishEventWebsiteActionSchema, input);
+    eventId = payload.eventId;
+    expectedRevision = payload.expectedSavedRevision;
+    logEventWebsiteOperation("info", {
+      eventId,
+      expectedRevision,
+      operation: "publish",
+      stage: "started",
+    });
     const event = await requireOwnedEvent(payload.eventId, profile.client_id ?? "");
     if (!isDashboardBuilderEventTypeEnabled(event.event_type)) {
       throw new ServiceError(unsupportedBuilderMessage);
@@ -161,6 +174,7 @@ export async function publishEventWebsiteAction(input: unknown) {
       clientId: profile.client_id ?? "",
       confirmWarnings: payload.confirmWarnings,
       eventId: event.id,
+      expectedSavedRevision: payload.expectedSavedRevision,
     });
 
     revalidatePath("/dashboard/website-access");
@@ -182,8 +196,22 @@ export async function publishEventWebsiteAction(input: unknown) {
       revalidatePath(path);
     }
 
+    logEventWebsiteOperation("info", {
+      eventId,
+      expectedRevision,
+      operation: "publish",
+      returnedRevision: result.publishedRevision,
+      stage: "succeeded",
+    });
     return actionSuccess(result);
   } catch (error) {
+    logEventWebsiteOperation("error", {
+      category: "publish_failed",
+      eventId,
+      expectedRevision,
+      operation: "publish",
+      stage: "failed",
+    });
     return actionFailure(error);
   }
 }

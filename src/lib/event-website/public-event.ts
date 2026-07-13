@@ -30,6 +30,7 @@ import type {
   EventWebsiteImageAsset,
   EventWebsiteRsvpFormSection,
 } from "@/lib/event-website/types";
+import { EVENT_WEBSITE_SECTION_CONTRACT_VERSION } from "@/lib/event-website/section-contract";
 
 export const PublicEventSlugSchema = z
   .string()
@@ -112,6 +113,7 @@ export type PublicEventSectionsByKey = {
 };
 
 export type PublicEventDto = {
+  contractVersion: typeof EVENT_WEBSITE_SECTION_CONTRACT_VERSION;
   content: EventWebsiteContent;
   eventDate: string | null;
   eventSlug: string;
@@ -120,11 +122,13 @@ export type PublicEventDto = {
   eventType: string;
   guestbookMessages: EventWebsiteGuestbookMessage[];
   publishedAt: string;
+  publishedRevision: number;
   publicGuestbookMessages: PublicGuestbookMessageDto[];
   renderModel: EventWebsiteRenderModel;
   rsvp: PublicEventRsvpState;
   sections: EventWebsiteSectionKey[];
   sectionsByKey: PublicEventSectionsByKey;
+  savedRevision: number;
   formatted: PublicEventFormattedLabels;
   subdomainSlug: string | null;
   urls: PublicEventUrls;
@@ -141,6 +145,7 @@ export function buildPublicEventDto({
   eventTitle,
   eventType,
   publishedAt,
+  publishedRevision,
   rsvpCloseAt,
   rsvpOpenAt,
   subdomainSlug,
@@ -148,6 +153,7 @@ export function buildPublicEventDto({
   venueName,
   visibility,
   guestbookMessages,
+  savedRevision,
 }: {
   content: EventWebsiteContent;
   eventDate: string | null;
@@ -157,12 +163,14 @@ export function buildPublicEventDto({
   eventType: string;
   guestbookMessages: EventWebsiteGuestbookMessage[];
   publishedAt: string;
+  publishedRevision: number;
   rsvpCloseAt: string | null;
   rsvpOpenAt: string | null;
   subdomainSlug: string | null;
   venueAddress: string | null;
   venueName: string | null;
   visibility: PublicEventVisibility;
+  savedRevision: number;
 }): PublicEventDto {
   const publicContent = sanitizePublicContent(content);
   const publicGuestbookMessages = guestbookMessages.map(toPublicGuestbookMessageDto);
@@ -179,6 +187,7 @@ export function buildPublicEventDto({
   });
 
   return {
+    contractVersion: EVENT_WEBSITE_SECTION_CONTRACT_VERSION,
     content: publicContent,
     eventDate,
     eventSlug,
@@ -188,10 +197,12 @@ export function buildPublicEventDto({
     guestbookMessages,
     publicGuestbookMessages,
     publishedAt,
+    publishedRevision,
     renderModel: buildEventWebsiteRenderModel(publicContent),
     rsvp: getPublicEventRsvpState(publicContent.sections.rsvp_form, rsvpOpenAt, rsvpCloseAt),
     sections: buildPublicRenderableSections(publicContent, eventType, guestbookMessages.length),
     sectionsByKey: buildPublicSectionsByKey(publicContent, publicGuestbookMessages),
+    savedRevision,
     formatted,
     subdomainSlug,
     urls,

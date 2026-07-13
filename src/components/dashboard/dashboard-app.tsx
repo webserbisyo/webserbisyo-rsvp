@@ -14,6 +14,7 @@ import {
   notifyDashboardSpaPath,
   type DashboardSpaNavigateDetail,
 } from "@/lib/dashboard/dashboard-spa-navigation";
+import { canNavigateAwayFromEventWebsite } from "@/lib/event-website/draft-save-coordination";
 
 type DashboardAppProps = {
   initialView: DashboardView;
@@ -61,6 +62,20 @@ export function DashboardApp({ initialView }: DashboardAppProps) {
     [queryClient],
   );
 
+  const requestNavigation = useCallback(
+    async (nextHref: string, replace = false) => {
+      if (!(await canNavigateAwayFromEventWebsite(nextHref))) {
+        if (typeof window !== "undefined") {
+          window.history.replaceState(null, "", href);
+        }
+        return;
+      }
+
+      applyNavigation(nextHref, replace);
+    },
+    [applyNavigation, href],
+  );
+
   useEffect(() => {
     const initialPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     applyNavigation(initialPath, true);
@@ -75,12 +90,12 @@ export function DashboardApp({ initialView }: DashboardAppProps) {
 
       if (detail?.href) {
         event.preventDefault();
-        applyNavigation(detail.href, detail.replace);
+        void requestNavigation(detail.href, detail.replace);
       }
     }
 
     function handlePopState() {
-      applyNavigation(
+      void requestNavigation(
         `${window.location.pathname}${window.location.search}${window.location.hash}`,
         true,
       );
@@ -93,10 +108,10 @@ export function DashboardApp({ initialView }: DashboardAppProps) {
       window.removeEventListener(DASHBOARD_SPA_NAVIGATE_EVENT, handleNavigate);
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [applyNavigation]);
+  }, [requestNavigation]);
 
   return (
-    <div onClickCapture={(event) => handleDashboardAnchorClick(event, applyNavigation)}>
+    <div onClickCapture={(event) => handleDashboardAnchorClick(event, requestNavigation)}>
       <DashboardViewRouter searchParams={searchParams} view={view} />
     </div>
   );
@@ -117,7 +132,7 @@ function getSearchParamsFromHref(href: string) {
 
 function handleDashboardAnchorClick(
   event: React.MouseEvent<HTMLDivElement>,
-  applyNavigation: (href: string, replace?: boolean) => void,
+  requestNavigation: (href: string, replace?: boolean) => Promise<void>,
 ) {
   if (event.defaultPrevented || event.button !== 0 || hasModifierKey(event)) {
     return;
@@ -150,7 +165,7 @@ function handleDashboardAnchorClick(
   }
 
   event.preventDefault();
-  applyNavigation(`${url.pathname}${url.search}${url.hash}`);
+  void requestNavigation(`${url.pathname}${url.search}${url.hash}`);
 }
 
 function hasModifierKey(event: React.MouseEvent) {

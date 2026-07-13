@@ -1,0 +1,86 @@
+{
+  "contractVersion": 1,
+  "sections": [
+    { "key": "host_info", "label": "Couple", "visibility": "required", "navigationEligible": true },
+    {
+      "key": "countdown",
+      "label": "Countdown",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "music_effects",
+      "label": "Music",
+      "visibility": "optional",
+      "navigationEligible": false
+    },
+    {
+      "key": "main_event",
+      "label": "Ceremony",
+      "visibility": "required",
+      "navigationEligible": true
+    },
+    { "key": "venue", "label": "Venue", "visibility": "required", "navigationEligible": true },
+    {
+      "key": "secondary_event",
+      "label": "Reception",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "timeline_program",
+      "label": "Timeline",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "entourage",
+      "label": "Entourage",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "principal_sponsors",
+      "label": "Sponsors",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "attire_motif",
+      "label": "Attire",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "extra_info",
+      "label": "Details",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    { "key": "rsvp_form", "label": "RSVP", "visibility": "required", "navigationEligible": true },
+    {
+      "key": "gift_details",
+      "label": "Gifts",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "guestbook",
+      "label": "Guestbook",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "story_message",
+      "label": "Story",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "contact_socials",
+      "label": "Contact",
+      "visibility": "optional",
+      "navigationEligible": true
+    }
+  ]
+}

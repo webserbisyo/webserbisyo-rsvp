@@ -34,11 +34,15 @@ type WebsiteAccessDataRow = {
         content_json: unknown;
         published_at: string | null;
         published_content_json: unknown;
+        published_revision: number;
+        saved_revision: number;
       }
     | Array<{
         content_json: unknown;
         published_at: string | null;
         published_content_json: unknown;
+        published_revision: number;
+        saved_revision: number;
       }>
     | null;
   event_date: string | null;
@@ -105,6 +109,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       publicUrl: null,
       publishState: "unpublished",
       publishedAt: null,
+      publishedRevision: 0,
       publishedSlug: null,
       publishedSubdomain: null,
       publishedVisibility: "private",
@@ -113,6 +118,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       qrPublicUrl: null,
       rsvpQrPublicUrl: null,
       snapshotPublishedAt: null,
+      savedRevision: 0,
       subdomainFieldsInstalled: false,
       websiteAccessUpdatedAt: null,
       wildcardBaseDomain,
@@ -151,10 +157,8 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const hasSlugPendingChanges = Boolean(draftSlug && publishedSlug && draftSlug !== publishedSlug);
   const hasSubdomainPendingChanges = (draftSubdomain ?? null) !== (publishedSubdomain ?? null);
   const hasAccessPendingChanges = draftVisibility !== publishedVisibility;
-  const hasContentPendingChanges = isDraftNewerThanPublished(
-    contentDraftSavedAt,
-    eventContent?.published_at ?? null,
-  );
+  const hasContentPendingChanges =
+    (eventContent?.saved_revision ?? 0) > (eventContent?.published_revision ?? 0);
   const hasPendingChanges =
     hasAccessPendingChanges ||
     hasSlugPendingChanges ||
@@ -241,6 +245,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     publicRsvpUrl,
     publishState,
     publishedAt: event.published_at ?? null,
+    publishedRevision: eventContent?.published_revision ?? 0,
     publishedSlug,
     publishedSubdomain,
     publishedVisibility,
@@ -248,6 +253,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     qrPublicUrl,
     rsvpQrPublicUrl,
     snapshotPublishedAt: eventContent?.published_at ?? null,
+    savedRevision: eventContent?.saved_revision ?? 0,
     subdomainFieldsInstalled: eventRecord.subdomainFieldsInstalled,
     websiteAccessUpdatedAt: event.website_access_updated_at ?? null,
     wildcardBaseDomain,
@@ -301,7 +307,9 @@ async function getWebsiteAccessEventRow(
         event_content (
           content_json,
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `,
     )
@@ -353,7 +361,9 @@ async function getDraftSchemaFallbackEventRow(
         event_content (
           content_json,
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `,
     )
@@ -406,7 +416,9 @@ async function getDraftSchemaFallbackEventRow(
         event_content (
           content_json,
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `,
     )
@@ -470,24 +482,4 @@ function isMissingWebsiteAccessSubdomainColumnError(error: PostgrestError) {
   return ["draft_subdomain_slug", "subdomain_slug"].some((columnName) =>
     error.message.includes(columnName),
   );
-}
-
-function isDraftNewerThanPublished(savedAt?: string | null, publishedAt?: string | null) {
-  const savedTime = parseIsoDateString(savedAt);
-  const publishedTime = parseIsoDateString(publishedAt);
-
-  if (savedTime === null || publishedTime === null) {
-    return false;
-  }
-
-  return savedTime > publishedTime;
-}
-
-function parseIsoDateString(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? null : parsed;
 }

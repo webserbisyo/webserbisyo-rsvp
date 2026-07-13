@@ -9,6 +9,7 @@ import {
   resolvePublicRsvpLinkSet,
 } from "@/lib/public-rsvp-url";
 import type { CustomWebsiteHealthStatus, DashboardCustomWebsitePreviewDto } from "./types";
+import { issueEventWebsitePreviewToken } from "@/server/services/event-website-preview-token";
 
 type CustomWebsitePreviewEvent = {
   eventSlug: string | null;
@@ -23,6 +24,7 @@ export async function resolveDashboardCustomWebsitePreview(input: {
   accessToken?: string | null;
   clientId: string;
   event: CustomWebsitePreviewEvent | null;
+  savedRevision: number;
 }): Promise<DashboardCustomWebsitePreviewDto> {
   const eventSlug = input.event?.eventSlug ?? null;
   const linkSet = eventSlug
@@ -62,6 +64,7 @@ export async function resolveDashboardCustomWebsitePreview(input: {
     data.custom_frontend_enabled &&
     data.preview_enabled &&
     originUrl &&
+    (data.platform_event_slug ?? eventSlug) &&
     (healthStatus === "healthy" || healthStatus === "unknown"),
   );
 
@@ -78,6 +81,12 @@ export async function resolveDashboardCustomWebsitePreview(input: {
         ? buildCustomPreviewUrl({
             accessToken: input.accessToken,
             eventSlug: data.platform_event_slug ?? eventSlug,
+            previewToken: issueEventWebsitePreviewToken({
+              clientId: input.clientId,
+              eventId: input.event.id,
+              eventSlug: data.platform_event_slug ?? eventSlug ?? "",
+            }),
+            savedRevision: input.savedRevision,
             originUrl,
           })
         : null,
@@ -87,6 +96,7 @@ export async function resolveDashboardCustomWebsitePreview(input: {
     lastHealthCheckedAt: data.last_health_checked_at,
     linkSet,
     routeMode: canPreview ? "custom" : "default",
+    savedRevision: input.savedRevision,
   });
 }
 
@@ -98,6 +108,7 @@ function buildDashboardPreviewDto(input: {
   lastHealthCheckedAt?: string | null;
   linkSet: ReturnType<typeof resolvePublicRsvpLinkSet> | null;
   routeMode?: "custom" | "default";
+  savedRevision?: number;
 }): DashboardCustomWebsitePreviewDto {
   const fallbackUrl =
     input.linkSet?.fallbackPathUrl ??
@@ -119,12 +130,15 @@ function buildDashboardPreviewDto(input: {
     platformEventSlug: input.eventSlug,
     publicWebsiteUrl: input.linkSet?.displayUrl ?? null,
     routeMode: input.routeMode ?? "default",
+    savedRevision: input.savedRevision ?? 0,
   };
 }
 
 function buildCustomPreviewUrl(input: {
   accessToken?: string | null;
   eventSlug: string | null;
+  previewToken: string;
+  savedRevision: number;
   originUrl: string;
 }) {
   const url = new URL(input.originUrl);
@@ -134,6 +148,8 @@ function buildCustomPreviewUrl(input: {
   }
 
   url.searchParams.set("preview", "dashboard");
+  url.searchParams.set("previewToken", input.previewToken);
+  url.searchParams.set("revision", String(input.savedRevision));
 
   return appendPrivateAccessToken(url.toString(), input.accessToken) ?? url.toString();
 }

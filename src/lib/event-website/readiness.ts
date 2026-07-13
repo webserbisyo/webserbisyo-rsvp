@@ -30,13 +30,17 @@ type WorkspaceStatusInput = {
   isDirty: boolean;
   isPublished: boolean;
   publishedAt?: string | null;
+  publishedRevision?: number;
   savedAt?: string | null;
+  savedRevision?: number;
 };
 
 type WebsiteAccessStatusInput = {
   isPublished: boolean;
   publishedAt?: string | null;
+  publishedRevision?: number;
   savedAt?: string | null;
+  savedRevision?: number;
 };
 
 const requiredSections = new Set(["host_info", "main_event", "venue", "rsvp_form"]);
@@ -81,7 +85,7 @@ export function getEventWebsiteWorkspaceStatus(
     };
   }
 
-  if (isDraftNewerThanPublished(input.savedAt, input.publishedAt)) {
+  if (isDraftNewerThanPublished(input)) {
     return {
       description: "Your latest saved draft is newer than the public snapshot.",
       label: "Draft changes not published",
@@ -92,7 +96,7 @@ export function getEventWebsiteWorkspaceStatus(
 
   return {
     description: "The public fallback page matches the latest saved draft.",
-    label: "Published and up to date",
+    label: "Published",
     state: "published_up_to_date",
     tone: "success",
   };
@@ -110,7 +114,7 @@ export function getWebsiteAccessPublishStatus(
     };
   }
 
-  if (isDraftNewerThanPublished(input.savedAt, input.publishedAt)) {
+  if (isDraftNewerThanPublished(input)) {
     return {
       description: "The public page is live, but a newer saved draft is waiting to be published.",
       label: "Draft changes not published",
@@ -121,15 +125,24 @@ export function getWebsiteAccessPublishStatus(
 
   return {
     description: "The published snapshot is live and matches the latest saved draft.",
-    label: "Published and up to date",
+    label: "Published",
     state: "published_up_to_date",
     tone: "success",
   };
 }
 
-function isDraftNewerThanPublished(savedAt?: string | null, publishedAt?: string | null) {
-  const savedTime = parseIsoDateString(savedAt);
-  const publishedTime = parseIsoDateString(publishedAt);
+function isDraftNewerThanPublished(input: {
+  publishedAt?: string | null;
+  publishedRevision?: number;
+  savedAt?: string | null;
+  savedRevision?: number;
+}) {
+  if (typeof input.savedRevision === "number" && typeof input.publishedRevision === "number") {
+    return input.savedRevision > input.publishedRevision;
+  }
+
+  const savedTime = parseIsoDateString(input.savedAt);
+  const publishedTime = parseIsoDateString(input.publishedAt);
 
   if (savedTime === null || publishedTime === null) {
     return false;

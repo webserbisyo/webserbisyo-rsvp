@@ -38,6 +38,7 @@ export type WebsiteAccessInitialData = {
   publicRsvpUrl: string | null;
   publishState: PublishState;
   publishedAt: string | null;
+  publishedRevision: number;
   publishedSlug: string | null;
   publishedSubdomain: string | null;
   publishedVisibility: VisibilityMode;
@@ -45,6 +46,7 @@ export type WebsiteAccessInitialData = {
   qrPublicUrl: string | null;
   rsvpQrPublicUrl: string | null;
   snapshotPublishedAt: string | null;
+  savedRevision: number;
   subdomainFieldsInstalled: boolean;
   wildcardBaseDomain: string;
   wildcardDomainConfigured: boolean;

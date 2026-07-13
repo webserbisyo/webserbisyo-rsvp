@@ -10,6 +10,7 @@ export type DashboardCustomWebsitePreviewDto = {
   healthStatus: CustomWebsiteHealthStatus;
   lastHealthCheckedAt: string | null;
   platformEventSlug: string | null;
+  savedRevision: number;
   publicWebsiteUrl: string | null;
   routeMode: CustomWebsiteRouteMode;
 };

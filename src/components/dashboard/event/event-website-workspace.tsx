@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import {
   EditorSaveButton,
@@ -30,6 +21,7 @@ import {
 } from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsitePreviewPanel } from "@/components/dashboard/event/event-website-preview-panel";
 import { EventWebsiteStatusCard } from "@/components/dashboard/event/event-website-status-card";
+import { useEventWebsiteAutosave } from "@/components/dashboard/event/use-event-website-autosave";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,9 +56,7 @@ import {
 } from "@/lib/event-website/readiness";
 import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
 import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
-import { markEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import { cn } from "@/lib/utils";
-import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
 
@@ -75,7 +65,6 @@ const FAST_AUTOSAVE_DELAY_MS = 300;
 const DESKTOP_LAYOUT_QUERY = "(min-width: 1200px)";
 const TABLET_LAYOUT_QUERY = "(min-width: 768px)";
 
-type DraftSaveState = "error" | "idle" | "saved" | "saving";
 type ResponsiveWorkspaceMode = "flow" | "preview";
 
 type EventWebsiteWorkspaceProps = {
@@ -148,7 +137,8 @@ function EnabledEventWebsiteWorkspace({
   initialSelectedSection = null,
 }: EventWebsiteWorkspaceProps) {
   const queryClient = useQueryClient();
-  const [isPending, startTransition] = useTransition();
+  const [stableEventId] = useState(() => eventWebsiteData.eventId);
+  const eventTransitionHandledRef = useRef(false);
   const isDesktopLayout = useMediaQuery(DESKTOP_LAYOUT_QUERY, true);
   const isTabletLayout = useMediaQuery(TABLET_LAYOUT_QUERY, false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
@@ -159,9 +149,6 @@ function EnabledEventWebsiteWorkspace({
     [eventWebsiteData.eventType],
   );
   const [savedContent, setSavedContent] = useState(eventWebsiteData.eventWebsiteContent);
-  const [draftRevision, setDraftRevision] = useState(0);
-  const [draftSaveState, setDraftSaveState] = useState<DraftSaveState>("idle");
-  const [draftSaveErrorMessage, setDraftSaveErrorMessage] = useState<string | null>(null);
   const initialSectionKey = useMemo(
     () =>
       resolveInitialSelectedSection({
@@ -206,25 +193,68 @@ function EnabledEventWebsiteWorkspace({
     () => !areContentsEqual(currentContent, savedContent),
     [currentContent, savedContent],
   );
+  const handleDraftSaved = useCallback(
+    (result: {
+      clientSequence: number;
+      content: typeof savedContent;
+      savedAt: string;
+      savedRevision: number;
+    }) => {
+      setSavedContent(result.content);
+      if (stableEventId) {
+        emitDashboardSyncEvent({
+          eventId: stableEventId,
+          name: "event-website:draft-updated",
+        });
+      }
+      invalidateEventWebsiteQueries(queryClient);
+    },
+    [queryClient, stableEventId],
+  );
+  const autosave = useEventWebsiteAutosave({
+    autoSaveEnabled,
+    content: currentContent,
+    eventId: stableEventId,
+    initialSavedAt: eventWebsiteData.savedAt,
+    initialSavedRevision: eventWebsiteData.savedRevision,
+    isDirty,
+    onSaved: handleDraftSaved,
+  });
+  useEffect(() => {
+    if (eventWebsiteData.eventId === stableEventId || eventTransitionHandledRef.current) {
+      return;
+    }
+
+    eventTransitionHandledRef.current = true;
+    void autosave.flush().then((saved) => {
+      if (saved) {
+        window.location.reload();
+      }
+    });
+  }, [autosave, eventWebsiteData.eventId, stableEventId]);
   const sectionSummary = useMemo(
     () => summarizeEventWebsiteSections(currentContent),
     [currentContent],
   );
-  const savedAt = useMemo(() => getEventWebsiteSavedAt(savedContent), [savedContent]);
+  const savedAt = autosave.savedAt ?? getEventWebsiteSavedAt(savedContent);
   const workflowStatus = useMemo(
     () =>
       getEventWebsiteWorkspaceStatus({
         isDirty,
         isPublished: eventWebsiteData.publishState === "published",
         publishedAt: eventWebsiteData.snapshotPublishedAt ?? eventWebsiteData.publishedAt,
+        publishedRevision: eventWebsiteData.publishedRevision,
         savedAt,
+        savedRevision: autosave.savedRevision,
       }),
     [
       eventWebsiteData.publishState,
       eventWebsiteData.publishedAt,
       eventWebsiteData.snapshotPublishedAt,
+      eventWebsiteData.publishedRevision,
       isDirty,
       savedAt,
+      autosave.savedRevision,
     ],
   );
   const sectionsByKey = useMemo(
@@ -243,15 +273,6 @@ function EnabledEventWebsiteWorkspace({
     ],
   );
   const selectedSectionDefinition = sectionsByKey.get(selectedSection);
-  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queuedAutosaveRef = useRef(false);
-  const saveInFlightRef = useRef(false);
-  const activeSaveRevisionRef = useRef<number | null>(null);
-  const lastSavedRevisionRef = useRef(0);
-  const draftRevisionRef = useRef(0);
-  const latestContentRef = useRef(currentContent);
-  const nextAutosaveDelayRef = useRef(DEFAULT_AUTOSAVE_DELAY_MS);
-  const savedContentRef = useRef(savedContent);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,33 +290,8 @@ function EnabledEventWebsiteWorkspace({
     };
   }, [initialSectionKey]);
 
-  useEffect(() => {
-    latestContentRef.current = currentContent;
-  }, [currentContent]);
-
-  useEffect(() => {
-    savedContentRef.current = savedContent;
-  }, [savedContent]);
-
-  const markDraftChanged = useCallback(() => {
-    const nextRevision = draftRevisionRef.current + 1;
-    draftRevisionRef.current = nextRevision;
-    setDraftRevision(nextRevision);
-    return nextRevision;
-  }, []);
-
-  function clearAutosaveTimer() {
-    if (autosaveTimerRef.current) {
-      clearTimeout(autosaveTimerRef.current);
-      autosaveTimerRef.current = null;
-    }
-  }
-
-  useEffect(() => clearAutosaveTimer, []);
-
   function resetWebsiteFlowOrder() {
-    nextAutosaveDelayRef.current = FAST_AUTOSAVE_DELAY_MS;
-    markDraftChanged();
+    autosave.scheduleSave(FAST_AUTOSAVE_DELAY_MS);
     setWebsiteFlowSections(defaultWebsiteFlowSections);
   }
 
@@ -306,20 +302,17 @@ function EnabledEventWebsiteWorkspace({
       return;
     }
 
-    nextAutosaveDelayRef.current = FAST_AUTOSAVE_DELAY_MS;
-    markDraftChanged();
+    autosave.scheduleSave(FAST_AUTOSAVE_DELAY_MS);
     setEnabledSections((current) => ({ ...current, [key]: enabled }));
   }
 
   function updatePreviewDraft(nextDraft: EventWebsitePreviewDraft) {
-    nextAutosaveDelayRef.current = DEFAULT_AUTOSAVE_DELAY_MS;
-    markDraftChanged();
+    autosave.scheduleSave(DEFAULT_AUTOSAVE_DELAY_MS);
     setPreviewDraft(nextDraft);
   }
 
   function updateWebsiteFlowSections(nextSections: typeof websiteFlowSections) {
-    nextAutosaveDelayRef.current = FAST_AUTOSAVE_DELAY_MS;
-    markDraftChanged();
+    autosave.scheduleSave(FAST_AUTOSAVE_DELAY_MS);
     setWebsiteFlowSections(nextSections);
   }
 
@@ -334,146 +327,31 @@ function EnabledEventWebsiteWorkspace({
     setIsResponsiveEditorOpen(true);
   }
 
-  const persistDraft = useCallback(
-    async (trigger: "auto" | "manual") => {
-      clearAutosaveTimer();
-
-      if (!eventWebsiteData.eventId) {
-        const message = "The current event could not be resolved for saving.";
-        setDraftSaveState("error");
-        setDraftSaveErrorMessage(message);
-
-        if (trigger === "manual") {
-          toast.error(message);
-        }
-        return;
-      }
-
-      if (saveInFlightRef.current) {
-        queuedAutosaveRef.current =
-          draftRevisionRef.current > (activeSaveRevisionRef.current ?? draftRevisionRef.current);
-        return;
-      }
-
-      saveInFlightRef.current = true;
-      setDraftSaveState("saving");
-      setDraftSaveErrorMessage(null);
-      markEventWebsiteDraftSavePending(eventWebsiteData.eventId, true);
-
-      let currentTrigger = trigger;
-
-      try {
-        while (true) {
-          queuedAutosaveRef.current = false;
-          const submittedRevision = draftRevisionRef.current;
-          activeSaveRevisionRef.current = submittedRevision;
-
-          const result = await saveEventWebsiteAction({
-            content: latestContentRef.current,
-            eventId: eventWebsiteData.eventId,
-          });
-
-          if (!result.ok) {
-            const message =
-              result.error === "The request could not be completed."
-                ? "Event Website draft could not be saved."
-                : result.error;
-            setDraftSaveState("error");
-            setDraftSaveErrorMessage(message);
-
-            if (currentTrigger === "manual") {
-              toast.error(message);
-            }
-            return;
-          }
-
-          if (submittedRevision > lastSavedRevisionRef.current) {
-            lastSavedRevisionRef.current = submittedRevision;
-            setSavedContent(result.data.content);
-            emitDashboardSyncEvent({
-              eventId: eventWebsiteData.eventId,
-              name: "event-website:draft-updated",
-            });
-            invalidateEventWebsiteQueries(queryClient);
-          }
-
-          const hasNewerLocalEdits = draftRevisionRef.current > submittedRevision;
-          if (hasNewerLocalEdits) {
-            queuedAutosaveRef.current = true;
-          }
-
-          setDraftSaveState(hasNewerLocalEdits ? "saving" : "saved");
-          setDraftSaveErrorMessage(null);
-
-          if (currentTrigger === "manual") {
-            toast.success("Event Website draft saved.");
-          }
-
-          if (!queuedAutosaveRef.current) {
-            return;
-          }
-
-          currentTrigger = "auto";
-          setDraftSaveState("saving");
-        }
-      } finally {
-        saveInFlightRef.current = false;
-        activeSaveRevisionRef.current = null;
-        markEventWebsiteDraftSavePending(eventWebsiteData.eventId, false);
-      }
-    },
-    [eventWebsiteData.eventId, queryClient],
-  );
-
   function handleSaveChanges() {
-    startTransition(async () => {
-      await persistDraft("manual");
-    });
+    void autosave.saveNow();
   }
 
-  useEffect(() => {
-    if (!autoSaveEnabled || !eventWebsiteData.eventId) {
-      clearAutosaveTimer();
-      return;
+  function reloadServerVersion() {
+    if (
+      window.confirm(
+        "Reload the saved server version? Your unsaved local changes will be discarded.",
+      )
+    ) {
+      window.location.reload();
     }
-
-    if (areContentsEqual(latestContentRef.current, savedContentRef.current)) {
-      clearAutosaveTimer();
-      queuedAutosaveRef.current = false;
-
-      if (!saveInFlightRef.current) {
-        setDraftSaveState((current) => (current === "error" ? current : "saved"));
-      }
-      return;
-    }
-
-    if (saveInFlightRef.current) {
-      queuedAutosaveRef.current =
-        draftRevisionRef.current > (activeSaveRevisionRef.current ?? draftRevisionRef.current);
-      return;
-    }
-
-    clearAutosaveTimer();
-    const delay = nextAutosaveDelayRef.current;
-    nextAutosaveDelayRef.current = DEFAULT_AUTOSAVE_DELAY_MS;
-    autosaveTimerRef.current = setTimeout(() => {
-      void persistDraft("auto");
-    }, delay);
-
-    return clearAutosaveTimer;
-  }, [autoSaveEnabled, draftRevision, eventWebsiteData.eventId, persistDraft]);
+  }
 
   const statusPill = useMemo<EventWebsiteStatusPill>(() => {
-    if (draftSaveState === "saving") {
+    if (autosave.persistenceState === "saving" || autosave.persistenceState === "retrying") {
       return {
-        label: "Saving...",
+        label: autosave.persistenceState === "retrying" ? "Retrying..." : "Saving...",
         tone: "neutral",
       };
     }
 
-    if (draftSaveState === "error") {
+    if (autosave.persistenceState === "error" || autosave.persistenceState === "conflict") {
       return {
-        label: draftSaveErrorMessage ? "Couldn't save. Retry" : "Couldn't save",
+        label: autosave.persistenceState === "conflict" ? "Conflict detected" : "Couldn't save",
         tone: "warning",
       };
     }
@@ -485,44 +363,50 @@ function EnabledEventWebsiteWorkspace({
       };
     }
 
-    if (workflowStatus.state === "draft_newer_than_published") {
+    return {
+      label: autosave.savedRecently
+        ? "Saved just now"
+        : autosave.savedAt
+          ? `Saved at ${formatCompactSaveTime(autosave.savedAt)}`
+          : "Saved",
+      tone: "neutral",
+    };
+  }, [autosave.savedAt, autosave.savedRecently, autosave.persistenceState, isDirty]);
+  const publicationStatusPill = useMemo<EventWebsiteStatusPill>(() => {
+    if (eventWebsiteData.publishState !== "published") {
       return {
         href: "/dashboard/website-access",
-        label: "Draft changes not published",
-        tone: workflowStatus.tone,
+        label: "Not published",
+        tone: "neutral",
       };
     }
 
-    if (workflowStatus.state === "published_up_to_date") {
+    if (autosave.savedRevision > eventWebsiteData.publishedRevision) {
       return {
-        label: workflowStatus.label,
-        tone: workflowStatus.tone,
+        href: "/dashboard/website-access",
+        label: "Draft changes not published",
+        tone: "warning",
       };
     }
 
     return {
-      label: "All changes saved",
-      tone: "neutral",
+      href: "/dashboard/website-access",
+      label: "Published",
+      tone: "success",
     };
-  }, [
-    draftSaveErrorMessage,
-    draftSaveState,
-    isDirty,
-    workflowStatus.label,
-    workflowStatus.state,
-    workflowStatus.tone,
-  ]);
+  }, [autosave.savedRevision, eventWebsiteData.publishState, eventWebsiteData.publishedRevision]);
 
-  const saveButtonLabel = isPending
-    ? "Saving..."
-    : !eventWebsiteData.eventId
-      ? "Save unavailable"
-      : isDirty
-        ? "Save changes"
-        : "All changes saved";
+  const saveButtonLabel =
+    autosave.persistenceState === "saving"
+      ? "Saving..."
+      : !eventWebsiteData.eventId
+        ? "Save unavailable"
+        : isDirty
+          ? "Save changes"
+          : "All changes saved";
 
   const saveButtonProps = {
-    disabled: isPending || !eventWebsiteData.eventId || !isDirty,
+    disabled: autosave.persistenceState === "saving" || !eventWebsiteData.eventId || !isDirty,
     hidden: autoSaveEnabled,
     label: saveButtonLabel,
     onClick: handleSaveChanges,
@@ -538,6 +422,16 @@ function EnabledEventWebsiteWorkspace({
           enabledSections={enabledSections}
           defaultWebsiteFlowSections={defaultWebsiteFlowSections}
           publicPageUrl={eventWebsiteData.publicPageUrl}
+          publicationStatusPill={publicationStatusPill}
+          onReloadServerVersion={
+            autosave.persistenceState === "conflict" ? reloadServerVersion : undefined
+          }
+          onRetry={autosave.persistenceState === "error" ? () => void autosave.retry() : undefined}
+          onSaveNow={
+            isDirty && !["retrying", "saving"].includes(autosave.persistenceState)
+              ? () => void autosave.saveNow()
+              : undefined
+          }
           futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
           onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
           selectedSection={selectedSection}
@@ -562,6 +456,7 @@ function EnabledEventWebsiteWorkspace({
         </div>
         <EventWebsitePreviewPanel
           customWebsitePreview={eventWebsiteData.customWebsitePreview}
+          customWebsitePreviewRevision={autosave.savedRevision}
           enabledSections={enabledSections}
           guestbookMessages={eventWebsiteData.guestbookMessages}
           previewChromeUrl={eventWebsiteData.previewChromeUrl}
@@ -580,6 +475,16 @@ function EnabledEventWebsiteWorkspace({
         autoSaveEnabled={autoSaveEnabled}
         onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
         publicPageUrl={eventWebsiteData.publicPageUrl}
+        publicationStatusPill={publicationStatusPill}
+        onReloadServerVersion={
+          autosave.persistenceState === "conflict" ? reloadServerVersion : undefined
+        }
+        onRetry={autosave.persistenceState === "error" ? () => void autosave.retry() : undefined}
+        onSaveNow={
+          isDirty && !["retrying", "saving"].includes(autosave.persistenceState)
+            ? () => void autosave.saveNow()
+            : undefined
+        }
         sectionSummary={sectionSummary}
         statusPill={statusPill}
         sticky={false}
@@ -618,6 +523,18 @@ function EnabledEventWebsiteWorkspace({
             defaultWebsiteFlowSections={defaultWebsiteFlowSections}
             enabledSections={enabledSections}
             publicPageUrl={eventWebsiteData.publicPageUrl}
+            publicationStatusPill={publicationStatusPill}
+            onReloadServerVersion={
+              autosave.persistenceState === "conflict" ? reloadServerVersion : undefined
+            }
+            onRetry={
+              autosave.persistenceState === "error" ? () => void autosave.retry() : undefined
+            }
+            onSaveNow={
+              isDirty && !["retrying", "saving"].includes(autosave.persistenceState)
+                ? () => void autosave.saveNow()
+                : undefined
+            }
             futureDevelopmentSections={resolvedSections.futureDevelopmentSections}
             onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
             selectedSection={selectedSection}
@@ -639,6 +556,7 @@ function EnabledEventWebsiteWorkspace({
             <EventWebsitePreviewPanel
               compactChrome
               customWebsitePreview={eventWebsiteData.customWebsitePreview}
+              customWebsitePreviewRevision={autosave.savedRevision}
               defaultDevice={isTabletLayout ? "desktop" : "mobile"}
               enabledSections={enabledSections}
               guestbookMessages={eventWebsiteData.guestbookMessages}
@@ -661,6 +579,8 @@ function EnabledEventWebsiteWorkspace({
         onOpenChange={setIsResponsiveEditorOpen}
         onPreviewDraftChange={updatePreviewDraft}
         previewDraft={previewDraft}
+        persistenceStatusPill={statusPill}
+        onRetry={autosave.persistenceState === "error" ? () => void autosave.retry() : undefined}
         resolvedSections={resolvedSections}
         saveButtonProps={saveButtonProps}
         selectedSection={selectedSectionDefinition}
@@ -682,6 +602,8 @@ function ResponsiveSectionEditorSurface({
   isTabletLayout,
   onOpenChange,
   onPreviewDraftChange,
+  onRetry,
+  persistenceStatusPill,
   previewDraft,
   resolvedSections,
   saveButtonProps,
@@ -693,6 +615,8 @@ function ResponsiveSectionEditorSurface({
   isTabletLayout: boolean;
   onOpenChange: (open: boolean) => void;
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  onRetry?: () => void;
+  persistenceStatusPill: EventWebsiteStatusPill;
   previewDraft: EventWebsitePreviewDraft;
   resolvedSections: ReturnType<typeof resolveEventWebsiteSections>;
   saveButtonProps: EventWebsiteSaveButtonProps;
@@ -726,6 +650,14 @@ function ResponsiveSectionEditorSurface({
           <h2 className="event-website-mobile-editor-shell__title">
             {selectedSection?.label ?? "Edit section"}
           </h2>
+          <span className="event-status-badge is-neutral" aria-live="polite">
+            {persistenceStatusPill.label}
+          </span>
+          {onRetry ? (
+            <Button type="button" variant="link" size="sm" onClick={onRetry}>
+              Retry
+            </Button>
+          ) : null}
         </div>
       </div>
       <div className="event-website-mobile-editor-scroll">
@@ -788,6 +720,19 @@ function ResponsiveSectionEditorSurface({
       </DrawerContent>
     </Drawer>
   );
+}
+
+function formatCompactSaveTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "recently";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function LockedEventWebsiteWorkspace({

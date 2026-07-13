@@ -11,7 +11,7 @@ import {
   normalizeEventWebsiteContentForSave,
 } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Json, TablesUpdate } from "@/lib/supabase/types";
+import type { Json } from "@/lib/supabase/types";
 import { ensurePrivateAccessToken, rotatePrivateAccessToken } from "./private-access-token";
 import { assertServiceData, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
@@ -21,6 +21,8 @@ type EventContentRecord = {
   id: string;
   published_at: string | null;
   published_content_json: unknown;
+  published_revision: number;
+  saved_revision: number;
 };
 
 type EventWebsiteRecord = {
@@ -88,6 +90,7 @@ export type PublishEventWebsiteInput = {
   clientId: string;
   confirmWarnings?: boolean;
   eventId: string;
+  expectedSavedRevision: number;
 };
 
 export type PublishEventWebsiteResult = {
@@ -95,6 +98,7 @@ export type PublishEventWebsiteResult = {
   previousPublishedSlug: string | null;
   previousPublishedSubdomain: string | null;
   publishedAt: string;
+  publishedRevision: number;
   publishedSlug: string;
   publishedSubdomain: string | null;
   publishedVisibility: "private" | "public" | "unlisted";
@@ -316,22 +320,17 @@ export async function publishEventWebsite(
 
   assertServiceData(eventContent, "The Event Website draft content is missing.");
 
-  let normalizedDraft;
-
   try {
-    normalizedDraft = mergeEventWebsiteContent(
-      normalizeEventWebsiteContentForSave(eventContent.content_json),
-      {
-        event: {
-          eventDate: eventRecord.event_date,
-          eventTime: eventRecord.event_time,
-          eventType: null,
-          rsvpCloseAt: eventRecord.rsvp_close_at,
-          venueAddress: eventRecord.venue_address,
-          venueName: eventRecord.venue_name,
-        },
+    mergeEventWebsiteContent(normalizeEventWebsiteContentForSave(eventContent.content_json), {
+      event: {
+        eventDate: eventRecord.event_date,
+        eventTime: eventRecord.event_time,
+        eventType: null,
+        rsvpCloseAt: eventRecord.rsvp_close_at,
+        venueAddress: eventRecord.venue_address,
+        venueName: eventRecord.venue_name,
       },
-    );
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       throw new ServiceError("The saved Event Website draft is invalid and cannot be published.");
@@ -340,28 +339,6 @@ export async function publishEventWebsite(
     throw error;
   }
 
-  const publishedAt = new Date().toISOString();
-  const previousPublishedSlug = eventRecord.published_at ? eventRecord.event_slug : null;
-  const previousPublishedSubdomain =
-    eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? eventRecord.published_at
-        ? eventRecord.subdomain_slug
-        : null
-      : eventRecord.published_at
-        ? eventRecord.event_slug
-        : null;
-  const previousVisibility = eventRecord.visibility;
-  const contentRow: TablesUpdate<"event_content"> = {
-    published_at: publishedAt,
-    published_by: input.actorUserId,
-    published_content_json: normalizedDraft as unknown as Json,
-  };
-  const eventRow: TablesUpdate<"rsvp_events"> = {
-    event_slug: eventRecord.draft_event_slug,
-    published_at: publishedAt,
-    status: "published",
-    visibility: eventRecord.draft_visibility,
-  };
   const privateAccessToken =
     eventRecord.draft_visibility === "private"
       ? await ensurePrivateAccessToken({
@@ -370,87 +347,71 @@ export async function publishEventWebsite(
           eventId: input.eventId,
         })
       : null;
-  const draftLiveEventRow: TablesUpdate<"rsvp_events"> =
-    eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? {
-          ...eventRow,
-          ...(privateAccessToken ? { private_access_token: privateAccessToken } : {}),
-          subdomain_slug: eventRecord.draft_subdomain_slug,
-        }
-      : {
-          ...eventRow,
-          ...(privateAccessToken ? { private_access_token: privateAccessToken } : {}),
-        };
+  const { data: publishResult, error: publishError } = await supabase.rpc(
+    "publish_event_website_revision",
+    {
+      p_actor_user_id: input.actorUserId,
+      p_client_id: input.clientId,
+      p_event_id: input.eventId,
+      p_expected_saved_revision: input.expectedSavedRevision,
+      ...(privateAccessToken ? { p_private_access_token: privateAccessToken } : {}),
+    },
+  );
 
-  const { data: contentUpdate, error: contentError } = await supabase
-    .from("event_content")
-    .update(contentRow)
-    .eq("event_id", input.eventId)
-    .select("id")
-    .single();
-
-  if (contentError) {
-    throw new ServiceError("Failed to update the published Event Website snapshot.", contentError);
-  }
-
-  assertServiceData(contentUpdate, "Published Event Website snapshot update returned no row.");
-  const eventUpdateQuery = supabase
-    .from("rsvp_events")
-    .update(draftLiveEventRow)
-    .eq("id", input.eventId)
-    .eq("client_id", input.clientId);
-  const { data: publishedEvent, error: eventUpdateError } =
-    eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? await eventUpdateQuery.select("id, event_slug, subdomain_slug, visibility").single()
-      : await eventUpdateQuery.select("id, event_slug, visibility").single();
-
-  if (eventUpdateError) {
-    if (isSubdomainUniqueViolation(eventUpdateError)) {
+  if (publishError) {
+    if (isSubdomainUniqueViolation(publishError)) {
       throw new ServiceError("That RSVP subdomain is already being used by another event.");
     }
 
-    throw new ServiceError("Failed to mark the Event Website as published.", eventUpdateError);
+    throw new ServiceError("Failed to publish the Event Website revision.", publishError);
   }
 
-  assertServiceData(publishedEvent, "Publish state update returned no event row.");
-  const normalizedPublishedEvent = publishedEvent as {
-    event_slug: string;
-    subdomain_slug?: string | null;
-    visibility: string;
-  };
-  const publishedSubdomainValue =
-    eventRecord.websiteAccessSchemaMode === "draft_live"
-      ? typeof normalizedPublishedEvent.subdomain_slug === "string"
-        ? normalizedPublishedEvent.subdomain_slug
-        : null
-      : normalizedPublishedEvent.event_slug;
+  assertServiceData(publishResult, "Publish operation returned no result.");
+  return parsePublishResult(publishResult, privateAccessToken);
+}
 
-  await writeAuditLog({
-    action: "event_website_published",
-    actorUserId: input.actorUserId,
-    clientId: input.clientId,
-    entityId: eventContent.id,
-    entityType: "event_content",
-    eventId: input.eventId,
-    metadata: {
-      next_slug: normalizedPublishedEvent.event_slug,
-      next_subdomain: publishedSubdomainValue,
-      next_visibility: normalizedPublishedEvent.visibility,
-      previous_slug: eventRecord.event_slug,
-      previous_subdomain: previousPublishedSubdomain,
-      previous_visibility: previousVisibility,
-      version: normalizedDraft.version,
-    },
-  });
+function parsePublishResult(
+  value: Json,
+  privateAccessToken: string | null,
+): PublishEventWebsiteResult {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    value.status !== "published" ||
+    typeof value.publishedAt !== "string" ||
+    typeof value.publishedRevision !== "number" ||
+    typeof value.publishedSlug !== "string" ||
+    typeof value.publishedVisibility !== "string"
+  ) {
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      value.status === "conflict"
+    ) {
+      throw new ServiceError(
+        "The saved draft changed before it could be published. Refresh and try again.",
+      );
+    }
+
+    throw new ServiceError("Publish operation returned an invalid result.");
+  }
 
   return {
     privateAccessToken,
-    previousPublishedSlug,
-    previousPublishedSubdomain,
-    publishedAt,
-    publishedSlug: normalizedPublishedEvent.event_slug,
-    publishedSubdomain: publishedSubdomainValue,
-    publishedVisibility: normalizedPublishedEvent.visibility as "private" | "public" | "unlisted",
+    previousPublishedSlug:
+      typeof value.previousPublishedSlug === "string" ? value.previousPublishedSlug : null,
+    previousPublishedSubdomain:
+      typeof value.previousPublishedSubdomain === "string"
+        ? value.previousPublishedSubdomain
+        : null,
+    publishedAt: value.publishedAt,
+    publishedRevision: value.publishedRevision,
+    publishedSlug: value.publishedSlug,
+    publishedSubdomain:
+      typeof value.publishedSubdomain === "string" ? value.publishedSubdomain : null,
+    publishedVisibility: value.publishedVisibility as "private" | "public" | "unlisted",
     state: "published",
   };
 }
@@ -583,7 +544,9 @@ async function getOwnedEventRecord(
           id,
           content_json,
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `
     : `
@@ -662,7 +625,9 @@ async function getDraftSchemaFallbackRecord(
           id,
           content_json,
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `
     : `
@@ -731,7 +696,9 @@ async function getDraftSchemaFallbackRecord(
           id,
           content_json,
           published_content_json,
-          published_at
+          published_at,
+          published_revision,
+          saved_revision
         )
       `
     : `

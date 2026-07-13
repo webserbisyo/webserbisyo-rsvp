@@ -1,22 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import {
   isDashboardBuilderEventTypeEnabled,
   unsupportedBuilderMessage,
 } from "@/config/event-type-availability";
 import { normalizeEventWebsiteContentForSave } from "@/lib/event-website/hydration";
-import { PermissionError, requireTenantMember } from "@/lib/permissions";
+import { AuthenticationError, PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { saveEventWebsiteDraft } from "@/server/services/save-event-website-draft";
 import { ServiceError } from "@/server/services/service-error";
+import { logEventWebsiteOperation } from "@/server/services/event-website-operation-log";
 import { uploadEventWebsiteGiftImage } from "@/server/services/upload-event-website-gift-image";
 import { actionFailure, actionSuccess, parseActionInput } from "./action-utils";
 
 const SaveEventWebsiteActionSchema = z.object({
+  clientSequence: z.number().int().nonnegative(),
   content: z.unknown(),
   eventId: z.uuid(),
+  expectedRevision: z.number().int().nonnegative(),
 });
 
 const GiftImageUploadActionSchema = z.object({
@@ -28,9 +31,23 @@ const GiftImageUploadActionSchema = z.object({
 });
 
 export async function saveEventWebsiteAction(input: unknown) {
+  let eventId = "unresolved";
+  let clientSequence: number | undefined;
+  let expectedRevision: number | undefined;
+
   try {
     const profile = await requireTenantMember();
     const payload = parseActionInput(SaveEventWebsiteActionSchema, input);
+    eventId = payload.eventId;
+    clientSequence = payload.clientSequence;
+    expectedRevision = payload.expectedRevision;
+    logEventWebsiteOperation("info", {
+      clientSequence,
+      eventId,
+      expectedRevision,
+      operation: "draft_save",
+      stage: "started",
+    });
     const supabase = await createServerSupabaseClient();
     const { data: event, error } = await supabase
       .from("rsvp_events")
@@ -52,33 +69,97 @@ export async function saveEventWebsiteAction(input: unknown) {
     }
 
     const normalizedContent = normalizeEventWebsiteContentForSave(payload.content);
-    const contentToSave = {
-      ...normalizedContent,
-      meta: {
-        ...normalizedContent.meta,
-        savedAt: new Date().toISOString(),
-        savedBy: profile.id,
-      },
-    };
-    const content = await saveEventWebsiteDraft({
+    const result = await saveEventWebsiteDraft({
       actorUserId: profile.id,
       clientId: profile.client_id,
-      content: contentToSave,
+      clientSequence,
+      content: normalizedContent,
       eventId: event.id,
+      expectedRevision,
     });
+
+    if (result.status === "conflict") {
+      logEventWebsiteOperation("warn", {
+        clientSequence,
+        eventId,
+        expectedRevision,
+        operation: "draft_save",
+        returnedRevision: result.serverRevision,
+        stage: "conflict",
+      });
+      return actionSuccess(result);
+    }
 
     revalidatePath("/dashboard/event");
     revalidatePath("/dashboard/website-access");
     revalidatePath("/dashboard");
 
-    return actionSuccess({
-      content: contentToSave,
-      contentId: content.id,
-      eventId: content.event_id,
+    logEventWebsiteOperation("info", {
+      clientSequence,
+      eventId,
+      expectedRevision,
+      operation: "draft_save",
+      returnedRevision: result.savedRevision,
+      stage: "succeeded",
     });
+    return actionSuccess(result);
   } catch (error) {
-    return actionFailure(error);
+    const failure = classifyDraftSaveFailure(error);
+    logEventWebsiteOperation("error", {
+      category: failure.category,
+      clientSequence,
+      eventId,
+      expectedRevision,
+      operation: "draft_save",
+      stage: failure.category === "authorization" ? "authorization_failed" : "failed",
+    });
+    return {
+      error: failure.message,
+      errorCategory: failure.category,
+      ok: false as const,
+      retryable: failure.retryable,
+    };
   }
+}
+
+function classifyDraftSaveFailure(error: unknown) {
+  if (error instanceof ZodError) {
+    return {
+      category: "validation",
+      message: "Please check the Event Website fields.",
+      retryable: false,
+    } as const;
+  }
+
+  if (error instanceof AuthenticationError || error instanceof PermissionError) {
+    return {
+      category: "authorization",
+      message: error.message,
+      retryable: false,
+    } as const;
+  }
+
+  if (error instanceof ServiceError) {
+    const code = getErrorCode(error.cause);
+    const retryable = Boolean(code && (/^08/.test(code) || /^53/.test(code) || code === "57P01"));
+    return {
+      category: retryable ? "temporary" : "permanent",
+      message: error.message,
+      retryable,
+    } as const;
+  }
+
+  return {
+    category: "temporary",
+    message: "Event Website draft could not be saved.",
+    retryable: true,
+  } as const;
+}
+
+function getErrorCode(error: unknown) {
+  return error && typeof error === "object" && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : "";
 }
 
 export async function uploadEventWebsiteGiftImageAction(input: unknown) {

@@ -14,6 +14,10 @@ type EventWebsiteStatusCardProps = {
   autoSaveEnabled: boolean;
   onToggleAutoSave: () => void;
   publicPageUrl: string | null;
+  publicationStatusPill: EventWebsiteStatusPill;
+  onReloadServerVersion?: () => void;
+  onRetry?: () => void;
+  onSaveNow?: () => void;
   sectionSummary: EventWebsiteSectionSummary;
   statusPill: EventWebsiteStatusPill;
   sticky?: boolean;
@@ -25,6 +29,10 @@ export function EventWebsiteStatusCard({
   autoSaveEnabled,
   onToggleAutoSave,
   publicPageUrl,
+  publicationStatusPill,
+  onReloadServerVersion,
+  onRetry,
+  onSaveNow,
   sectionSummary,
   statusPill,
   sticky = true,
@@ -43,7 +51,7 @@ export function EventWebsiteStatusCard({
         sticky && "sticky top-[calc(var(--dash-header-height)+1rem)] z-20",
       )}
     >
-      <div className="event-status-card-top-row flex items-center justify-between gap-2">
+      <div className="event-status-card-top-row flex flex-wrap items-center justify-between gap-2">
         {statusPill.href ? (
           <Link
             href={statusPill.href}
@@ -60,6 +68,7 @@ export function EventWebsiteStatusCard({
           </Link>
         ) : (
           <span
+            aria-live="polite"
             className={cn(
               "event-status-badge",
               statusPill.tone === "success" && "is-ready",
@@ -69,6 +78,31 @@ export function EventWebsiteStatusCard({
           >
             <span className="event-status-badge-dot" aria-hidden="true" />
             {statusPill.label}
+          </span>
+        )}
+        {publicationStatusPill.href ? (
+          <Link
+            href={publicationStatusPill.href}
+            className={cn(
+              "event-status-badge event-status-badge-link",
+              publicationStatusPill.tone === "success" && "is-ready",
+              publicationStatusPill.tone === "warning" && "is-warning",
+              publicationStatusPill.tone === "neutral" && "is-neutral",
+            )}
+          >
+            {publicationStatusPill.label}
+            <ArrowUpRight className="size-3" aria-hidden="true" />
+          </Link>
+        ) : (
+          <span
+            className={cn(
+              "event-status-badge",
+              publicationStatusPill.tone === "success" && "is-ready",
+              publicationStatusPill.tone === "warning" && "is-warning",
+              publicationStatusPill.tone === "neutral" && "is-neutral",
+            )}
+          >
+            {publicationStatusPill.label}
           </span>
         )}
         <span className="event-status-card-count text-sm font-semibold text-[--dash-foreground] tabular-nums">
@@ -87,6 +121,39 @@ export function EventWebsiteStatusCard({
           {sectionSummary.activeSectionCount} active section
           {sectionSummary.activeSectionCount === 1 ? "" : "s"}
         </span>
+        {onRetry ? (
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={onRetry}
+          >
+            Retry
+          </Button>
+        ) : null}
+        {onSaveNow ? (
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={onSaveNow}
+          >
+            Save now
+          </Button>
+        ) : null}
+        {onReloadServerVersion ? (
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={onReloadServerVersion}
+          >
+            Reload server version
+          </Button>
+        ) : null}
       </div>
 
       <div className="event-status-card-action-row flex items-center justify-between gap-2">
