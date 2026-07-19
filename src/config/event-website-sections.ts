@@ -210,7 +210,8 @@ const optionalBaseSections: Record<
     required: false,
   },
   gallery: {
-    defaultEnabled: true,
+    comingSoon: true,
+    defaultEnabled: false,
     helper: "Photo highlights and visual memories.",
     icon: Images,
     key: "gallery",
@@ -337,7 +338,7 @@ const sharedGenericOptionalDefaults: EventWebsiteOptionalConfig[] = [
   { key: "extra_info" },
 ];
 
-const futureDevelopmentOptionalKeys: EventWebsiteOptionalSectionKey[] = ["gallery", "style_theme"];
+const futureDevelopmentOptionalKeys: EventWebsiteOptionalSectionKey[] = ["style_theme"];
 
 function resolveFutureDevelopmentSections(): EventWebsiteSectionDefinition[] {
   return [
@@ -511,6 +512,7 @@ export const eventWebsiteTypeConfig: Record<
       { key: "story_message", label: "Love Story" },
       { key: "attire_motif" },
       { key: "guestbook" },
+      { key: "gallery", comingSoon: true, defaultEnabled: false },
       { key: "gift_details" },
       { key: "contact_socials" },
       { key: "music_effects" },

@@ -79,7 +79,7 @@ test("publication state is independent from unsaved browser state", () => {
 
 test("section contract is versioned and reorder UI is centrally disabled", () => {
   expect(EVENT_WEBSITE_SECTION_CONTRACT_VERSION).toBe(1);
-  expect(eventWebsiteSectionContract).toHaveLength(16);
+  expect(eventWebsiteSectionContract).toHaveLength(17);
   expect(requiredEventWebsiteSectionKeys).toEqual([
     "host_info",
     "main_event",

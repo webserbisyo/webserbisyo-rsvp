@@ -415,12 +415,20 @@ export const EventWebsiteContactSocialsSectionSchema = z
   })
   .strict();
 
+export const EventWebsiteGallerySectionSchema = z
+  .object({
+    sectionIntro: draftText(500),
+    sectionTitle: draftText(120),
+  })
+  .strict();
+
 export const EventWebsiteSectionsSchema = z
   .object({
     attire_motif: EventWebsiteAttireMotifSectionSchema,
     contact_socials: EventWebsiteContactSocialsSectionSchema,
     countdown: EventWebsiteCountdownSectionSchema,
     extra_info: EventWebsiteExtraInfoSectionSchema,
+    gallery: EventWebsiteGallerySectionSchema,
     gift_details: EventWebsiteGiftDetailsSectionSchema,
     guestbook: EventWebsiteGuestbookSectionSchema,
     host_info: EventWebsiteHostInfoSectionSchema,
@@ -618,12 +626,16 @@ export const EventWebsiteStoryMessageSectionPatchSchema =
 export const EventWebsiteContactSocialsSectionPatchSchema =
   EventWebsiteContactSocialsSectionSchema.partial().strict();
 
+export const EventWebsiteGallerySectionPatchSchema =
+  EventWebsiteGallerySectionSchema.partial().strict();
+
 export const EventWebsiteSectionsPatchSchema = z
   .object({
     attire_motif: EventWebsiteAttireMotifSectionPatchSchema.optional(),
     contact_socials: EventWebsiteContactSocialsSectionPatchSchema.optional(),
     countdown: EventWebsiteCountdownSectionPatchSchema.optional(),
     extra_info: EventWebsiteExtraInfoSectionPatchSchema.optional(),
+    gallery: EventWebsiteGallerySectionPatchSchema.optional(),
     gift_details: EventWebsiteGiftDetailsSectionPatchSchema.optional(),
     guestbook: EventWebsiteGuestbookSectionPatchSchema.optional(),
     host_info: EventWebsiteHostInfoSectionPatchSchema.optional(),

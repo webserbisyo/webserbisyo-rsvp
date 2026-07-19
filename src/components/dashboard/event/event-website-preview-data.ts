@@ -377,6 +377,10 @@ export function buildEventWebsiteContentFromPreviewDraft({
         sectionIntro: previewDraft.extraInfo.sectionIntro,
         sectionTitle: previewDraft.extraInfo.sectionTitle,
       },
+      gallery: {
+        sectionIntro: savedContent.sections.gallery.sectionIntro,
+        sectionTitle: savedContent.sections.gallery.sectionTitle,
+      },
       gift_details: {
         giftNote: previewDraft.giftDetails.giftNote,
         options: previewDraft.giftDetails.options.map((option, index) => ({

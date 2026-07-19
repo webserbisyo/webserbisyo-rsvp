@@ -24,6 +24,7 @@ export const eventWebsiteContentSectionKeys = [
   "gift_details",
   "guestbook",
   "story_message",
+  "gallery",
   "contact_socials",
 ] as const satisfies readonly EventWebsiteSectionKey[];
 
@@ -201,6 +202,11 @@ export type EventWebsiteStoryMessageSection = {
   storyTitle: string;
 };
 
+export type EventWebsiteGallerySection = {
+  sectionIntro: string;
+  sectionTitle: string;
+};
+
 export type EventWebsiteContactSocialsSection = {
   contactNumber: string;
   contactPerson: string;
@@ -215,6 +221,7 @@ export type EventWebsiteSections = {
   contact_socials: EventWebsiteContactSocialsSection;
   countdown: EventWebsiteCountdownSection;
   extra_info: EventWebsiteExtraInfoSection;
+  gallery: EventWebsiteGallerySection;
   gift_details: EventWebsiteGiftDetailsSection;
   guestbook: EventWebsiteGuestbookSection;
   host_info: EventWebsiteHostInfoSection;

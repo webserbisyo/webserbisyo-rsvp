@@ -77,6 +77,12 @@
       "navigationEligible": true
     },
     {
+      "key": "gallery",
+      "label": "Gallery",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
       "key": "contact_socials",
       "label": "Contact",
       "visibility": "optional",

@@ -42,6 +42,7 @@ as $$
         'gift_details',
         'guestbook',
         'story_message',
+        'gallery',
         'contact_socials'
       )
     )

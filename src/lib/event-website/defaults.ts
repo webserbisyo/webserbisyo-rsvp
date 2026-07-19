@@ -25,10 +25,9 @@ export function getDefaultWeddingSectionOrder(): EventWebsiteContentSectionKey[]
 }
 
 export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSectionKey, boolean> {
-  return Object.fromEntries(eventWebsiteContentSectionKeys.map((key) => [key, true])) as Record<
-    EventWebsiteContentSectionKey,
-    boolean
-  >;
+  return Object.fromEntries(
+    eventWebsiteContentSectionKeys.map((key) => [key, key !== "gallery"]),
+  ) as Record<EventWebsiteContentSectionKey, boolean>;
 }
 
 export function buildDefaultWeddingEventWebsiteContent(
@@ -110,6 +109,10 @@ export function buildDefaultWeddingEventWebsiteContent(
         ],
         sectionIntro: "Here are a few helpful notes for our guests.",
         sectionTitle: "Additional Details",
+      },
+      gallery: {
+        sectionIntro: "Photo highlights and visual memories.",
+        sectionTitle: "Gallery",
       },
       gift_details: {
         giftNote: firstNonEmpty(

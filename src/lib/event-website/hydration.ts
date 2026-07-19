@@ -114,6 +114,10 @@ function mergeEventWebsiteContentPatch(
         ...defaults.sections.extra_info,
         ...(patch.sections?.extra_info ?? {}),
       },
+      gallery: {
+        ...defaults.sections.gallery,
+        ...(patch.sections?.gallery ?? {}),
+      },
       gift_details: {
         ...defaults.sections.gift_details,
         ...(patch.sections?.gift_details ?? {}),
