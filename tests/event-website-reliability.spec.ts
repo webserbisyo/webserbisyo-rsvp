@@ -7,6 +7,8 @@ import {
   getEventWebsiteContentIssuePaths,
   isEmptyJsonObject,
   normalizeEventWebsiteContentForSave,
+  parseEventWebsiteContentJson,
+  validateEventWebsiteContentJson,
   validateEventWebsiteContentForPersistence,
 } from "../src/lib/event-website/hydration";
 import {
@@ -138,6 +140,67 @@ test("persisted malformed content cannot silently adopt sample defaults", () => 
   expect(source).not.toContain("parsedContentJson ?? rawContentJson");
 });
 
+test("exact legacy 16-key content upgrades Gallery without changing existing data", () => {
+  const legacy = buildLegacyEventWebsiteContent();
+  const originalOrder = [...legacy.layout.sectionOrder];
+  legacy.layout.enabledSections.music_effects = false;
+  legacy.sections.host_info = {
+    ...(legacy.sections.host_info as Record<string, unknown>),
+    brideName: "Isabella",
+    groomName: "Rafael",
+  };
+
+  const parsed = parseEventWebsiteContentJson(legacy);
+  expect(parsed).not.toBeNull();
+  expect(validateEventWebsiteContentJson(legacy).success).toBe(true);
+  expect(parsed?.layout.enabledSections.gallery).toBe(false);
+  expect(parsed?.sections.gallery).toEqual({
+    sectionIntro: "Photo highlights and visual memories.",
+    sectionTitle: "Gallery",
+  });
+  expect(parsed?.sections.host_info.brideName).toBe("Isabella");
+  expect(parsed?.sections.host_info.groomName).toBe("Rafael");
+  expect(parsed?.layout.enabledSections.music_effects).toBe(false);
+
+  const contactIndex = originalOrder.indexOf("contact_socials");
+  const expectedOrder = [
+    ...originalOrder.slice(0, contactIndex),
+    "gallery",
+    ...originalOrder.slice(contactIndex),
+  ];
+  expect(parsed?.layout.sectionOrder).toEqual(expectedOrder);
+
+  expect(legacy.layout.enabledSections.gallery).toBeUndefined();
+  expect(legacy.sections.gallery).toBeUndefined();
+  expect(legacy.layout.sectionOrder).toEqual(originalOrder);
+});
+
+test("legacy Gallery compatibility does not hide other malformed content", () => {
+  const missingSection = buildLegacyEventWebsiteContent();
+  delete missingSection.sections.venue;
+  expect(parseEventWebsiteContentJson(missingSection)).toBeNull();
+
+  const missingOrderKey = buildLegacyEventWebsiteContent();
+  missingOrderKey.layout.sectionOrder = missingOrderKey.layout.sectionOrder.filter(
+    (key) => key !== "contact_socials",
+  );
+  expect(parseEventWebsiteContentJson(missingOrderKey)).toBeNull();
+
+  const unknownKey = buildLegacyEventWebsiteContent();
+  unknownKey.sections.unknown_section = {};
+  expect(parseEventWebsiteContentJson(unknownKey)).toBeNull();
+
+  const nestedVisibility = buildLegacyEventWebsiteContent();
+  nestedVisibility.sections.host_info = {
+    ...(nestedVisibility.sections.host_info as Record<string, unknown>),
+    enabled: true,
+  };
+  expect(parseEventWebsiteContentJson(nestedVisibility)).toBeNull();
+
+  expect(parseEventWebsiteContentJson(null)).toBeNull();
+  expect(parseEventWebsiteContentJson([])).toBeNull();
+});
+
 test("an HTTP 200 branded unavailable page is not considered healthy content", () => {
   expect(
     isCustomWebsiteUnavailableHtml(
@@ -174,3 +237,20 @@ test("isEmptyJsonObject identifies uninitialized empty objects", () => {
   expect(isEmptyJsonObject(null)).toBe(false);
   expect(isEmptyJsonObject([])).toBe(false);
 });
+
+function buildLegacyEventWebsiteContent() {
+  const current = buildDefaultWeddingEventWebsiteContent();
+  const legacy = structuredClone(current) as unknown as {
+    layout: {
+      enabledSections: Record<string, boolean>;
+      sectionOrder: string[];
+    };
+    sections: Record<string, unknown>;
+  };
+
+  delete legacy.layout.enabledSections.gallery;
+  delete legacy.sections.gallery;
+  legacy.layout.sectionOrder = legacy.layout.sectionOrder.filter((key) => key !== "gallery");
+
+  return legacy;
+}
