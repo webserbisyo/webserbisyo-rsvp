@@ -10,6 +10,9 @@ import {
 import { hasPublishedPrivateAccess, normalizePrivateAccessToken } from "@/lib/private-access";
 import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getEventWebsiteContentIssuePaths } from "@/lib/event-website/hydration";
+import { EventWebsiteContentIntegrityError } from "./event-website-resolution";
+import { logEventWebsiteOperation } from "./event-website-operation-log";
 import { listApprovedGuestbookMessages } from "./event-website-guestbook";
 
 type PublicEventRecord = {
@@ -46,15 +49,20 @@ type PublicEventRecord = {
   visibility: "private" | "public" | "unlisted";
 };
 
-export const resolvePublicEventWebsite = cache(
+export type PublicEventWebsiteResolution =
+  | { status: "EVENT_NOT_FOUND" }
+  | { status: "EVENT_NOT_PUBLISHED" }
+  | { data: PublicEventDto; status: "RESOLVED" };
+
+export const resolvePublicEventWebsiteResult = cache(
   async (
     eventSlugInput: string,
     accessTokenInput?: string | null,
-  ): Promise<PublicEventDto | null> => {
+  ): Promise<PublicEventWebsiteResolution> => {
     const parsedSlug = PublicEventSlugSchema.safeParse(eventSlugInput);
 
     if (!parsedSlug.success) {
-      return null;
+      return { status: "EVENT_NOT_FOUND" };
     }
 
     return loadPublishedPublicEvent({
@@ -62,6 +70,27 @@ export const resolvePublicEventWebsite = cache(
       lookupColumn: "event_slug",
       lookupValue: parsedSlug.data,
     });
+  },
+);
+
+export const resolvePublicEventWebsite = cache(
+  async (eventSlugInput: string, accessTokenInput?: string | null): Promise<PublicEventDto | null> => {
+    try {
+      const result = await resolvePublicEventWebsiteResult(eventSlugInput, accessTokenInput);
+      return result.status === "RESOLVED" ? result.data : null;
+    } catch (error) {
+      if (error instanceof EventWebsiteContentIntegrityError) {
+        logEventWebsiteOperation("error", {
+          category: error.code,
+          eventId: error.eventId,
+          issuePaths: error.issuePaths,
+          operation: "public_resolve",
+          stage: "failed",
+        });
+        return null;
+      }
+      throw error;
+    }
   },
 );
 
@@ -77,12 +106,24 @@ export const resolvePublicEventWebsiteBySubdomain = cache(
     }
 
     try {
-      return await loadPublishedPublicEvent({
+      const result = await loadPublishedPublicEvent({
         accessToken: normalizePrivateAccessToken(accessTokenInput),
         lookupColumn: "subdomain_slug",
         lookupValue: parsedSlug.data,
       });
+      return result.status === "RESOLVED" ? result.data : null;
     } catch (error) {
+      if (error instanceof EventWebsiteContentIntegrityError) {
+        logEventWebsiteOperation("error", {
+          category: error.code,
+          eventId: error.eventId,
+          issuePaths: error.issuePaths,
+          operation: "public_resolve",
+          stage: "failed",
+        });
+        return null;
+      }
+
       if (isMissingSubdomainLookupColumnError(error)) {
         return null;
       }
@@ -131,10 +172,6 @@ async function loadPublishedPublicEvent(input: {
       `,
     )
     .eq(input.lookupColumn, input.lookupValue)
-    .eq("status", "published")
-    .eq("fallback_page_enabled", true)
-    .in("visibility", PUBLIC_EVENT_RENDER_VISIBILITIES)
-    .is("archived_at", null)
     .maybeSingle();
 
   if (error) {
@@ -152,10 +189,6 @@ async function loadPublishedPublicEvent(input: {
         `,
       )
       .eq("event_slug", input.lookupValue)
-      .eq("status", "published")
-      .eq("fallback_page_enabled", true)
-      .in("visibility", PUBLIC_EVENT_RENDER_VISIBILITIES)
-      .is("archived_at", null)
       .maybeSingle();
 
     if (fallbackError) {
@@ -177,8 +210,19 @@ async function loadPublishedPublicEvent(input: {
 }
 
 async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: string | null) {
-  if (!event || !event.published_at || !isPublicRenderingEventTypeEnabled(event.event_type)) {
-    return null;
+  if (!event) {
+    return { status: "EVENT_NOT_FOUND" } as const;
+  }
+
+  if (
+    !event.published_at ||
+    event.status !== "published" ||
+    !event.fallback_page_enabled ||
+    event.archived_at ||
+    !PUBLIC_EVENT_RENDER_VISIBILITIES.includes(event.visibility) ||
+    !isPublicRenderingEventTypeEnabled(event.event_type)
+  ) {
+    return { status: "EVENT_NOT_PUBLISHED" } as const;
   }
 
   if (
@@ -188,7 +232,7 @@ async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: s
       visibility: event.visibility,
     })
   ) {
-    return null;
+    return { status: "EVENT_NOT_FOUND" } as const;
   }
 
   const eventContent = Array.isArray(event.event_content)
@@ -196,7 +240,11 @@ async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: s
     : event.event_content;
 
   if (!eventContent?.published_content_json || !eventContent.published_at) {
-    return null;
+    throw new EventWebsiteContentIntegrityError({
+      code: "EVENT_CONTENT_INVALID",
+      eventId: event.id,
+      issuePaths: ["published_content_json"],
+    });
   }
 
   const { mergeEventWebsiteContent, parseEventWebsiteContentJson } =
@@ -204,7 +252,11 @@ async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: s
   const parsedContent = parseEventWebsiteContentJson(eventContent.published_content_json);
 
   if (!parsedContent) {
-    return null;
+    throw new EventWebsiteContentIntegrityError({
+      code: "EVENT_CONTENT_INVALID",
+      eventId: event.id,
+      issuePaths: getEventWebsiteContentIssuePaths(eventContent.published_content_json),
+    });
   }
 
   const content = mergeEventWebsiteContent(parsedContent, {
@@ -222,24 +274,27 @@ async function toPublicEventDto(event: PublicEventRecord | null, accessToken?: s
     eventId: event.id,
   });
 
-  return buildPublicEventDto({
-    content,
-    eventDate: event.event_date,
-    eventSlug: event.event_slug,
-    eventTime: event.event_time,
-    eventTitle: event.title,
-    eventType: event.event_type,
-    guestbookMessages,
-    publishedAt: event.published_at,
-    publishedRevision: eventContent.published_revision,
-    rsvpCloseAt: event.rsvp_close_at,
-    rsvpOpenAt: event.rsvp_open_at,
-    savedRevision: eventContent.saved_revision,
-    subdomainSlug: event.subdomain_slug,
-    venueAddress: event.venue_address,
-    venueName: event.venue_name,
-    visibility: event.visibility,
-  });
+  return {
+    data: buildPublicEventDto({
+      content,
+      eventDate: event.event_date,
+      eventSlug: event.event_slug,
+      eventTime: event.event_time,
+      eventTitle: event.title,
+      eventType: event.event_type,
+      guestbookMessages,
+      publishedAt: event.published_at,
+      publishedRevision: eventContent.published_revision,
+      rsvpCloseAt: event.rsvp_close_at,
+      rsvpOpenAt: event.rsvp_open_at,
+      savedRevision: eventContent.saved_revision,
+      subdomainSlug: event.subdomain_slug,
+      venueAddress: event.venue_address,
+      venueName: event.venue_name,
+      visibility: event.visibility,
+    }),
+    status: "RESOLVED",
+  } as const;
 }
 
 function isMissingSubdomainLookupColumnError(error: unknown) {

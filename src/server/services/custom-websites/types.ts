@@ -1,5 +1,12 @@
 export type CustomWebsiteRouteMode = "custom" | "default";
-export type CustomWebsiteHealthStatus = "healthy" | "unhealthy" | "unknown";
+export type CustomWebsiteHealthStatus =
+  | "contract_invalid"
+  | "event_content_invalid"
+  | "event_not_found"
+  | "frontend_unreachable"
+  | "healthy"
+  | "preview_misconfigured"
+  | "unknown";
 
 export type DashboardCustomWebsitePreviewDto = {
   customPreviewAvailable: boolean;

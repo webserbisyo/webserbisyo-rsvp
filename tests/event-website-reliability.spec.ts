@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { EVENT_WEBSITE_REORDER_UI_ENABLED } from "../src/config/event-website-capabilities";
+import { buildDefaultWeddingEventWebsiteContent } from "../src/lib/event-website/defaults";
+import { isCustomWebsiteUnavailableHtml } from "../src/lib/event-website/custom-website-health-policy";
+import {
+  getEventWebsiteContentIssuePaths,
+  isEmptyJsonObject,
+  normalizeEventWebsiteContentForSave,
+  validateEventWebsiteContentForPersistence,
+} from "../src/lib/event-website/hydration";
 import {
   getAutosaveRetryDelay,
   getPublicationRevisionState,
@@ -78,4 +87,90 @@ test("section contract is versioned and reorder UI is centrally disabled", () =>
     "rsvp_form",
   ]);
   expect(EVENT_WEBSITE_REORDER_UI_ENABLED).toBe(false);
+});
+
+test("complete event content rejects visibility nested under any section", () => {
+  const valid = buildDefaultWeddingEventWebsiteContent();
+  expect(() => validateEventWebsiteContentForPersistence(valid)).not.toThrow();
+
+  for (const sectionKey of Object.keys(valid.sections)) {
+    const malformed = structuredClone(valid) as Record<string, unknown>;
+    const sections = malformed.sections as Record<string, Record<string, unknown>>;
+    sections[sectionKey] = { ...sections[sectionKey], enabled: true };
+
+    expect(() => validateEventWebsiteContentForPersistence(malformed)).toThrow();
+    expect(getEventWebsiteContentIssuePaths(malformed)).toContain(`sections.${sectionKey}`);
+  }
+});
+
+test("visibility remains valid only in the canonical layout map", () => {
+  const valid = buildDefaultWeddingEventWebsiteContent();
+  valid.layout.enabledSections.music_effects = false;
+  expect(validateEventWebsiteContentForPersistence(valid).layout.enabledSections.music_effects).toBe(
+    false,
+  );
+
+  const unknownKey = structuredClone(valid) as typeof valid & {
+    layout: { enabledSections: Record<string, boolean> };
+  };
+  unknownKey.layout.enabledSections.unknown_section = true;
+  expect(() => validateEventWebsiteContentForPersistence(unknownKey)).toThrow();
+});
+
+test("service validation precedes every privileged draft write", () => {
+  const source = readFileSync(
+    new URL("../src/server/services/save-event-website-draft.ts", import.meta.url),
+    "utf8",
+  );
+  expect(source.indexOf("validateEventWebsiteContentJson(input.content)")).toBeGreaterThan(-1);
+  expect(source.indexOf("validateEventWebsiteContentJson(input.content)")).toBeLessThan(
+    source.indexOf("createAdminClient()"),
+  );
+});
+
+test("persisted malformed content cannot silently adopt sample defaults", () => {
+  const source = readFileSync(
+    new URL("../src/server/queries/dashboard-event.ts", import.meta.url),
+    "utf8",
+  );
+  expect(source).toContain("hasInvalidPersistedContent");
+  expect(source).toContain("eventWebsiteContent = hasInvalidPersistedContent");
+  expect(source).not.toContain("parsedContentJson ?? rawContentJson");
+});
+
+test("an HTTP 200 branded unavailable page is not considered healthy content", () => {
+  expect(
+    isCustomWebsiteUnavailableHtml(
+      "<html><body><h1>Event unavailable</h1><p>Published event not found.</p></body></html>",
+    ),
+  ).toBe(true);
+  expect(isCustomWebsiteUnavailableHtml("<html><body><main>Wedding website</main></body></html>"))
+    .toBe(false);
+});
+
+test("save normalization accepts patch-shaped content and returns valid full structure", () => {
+  const patch = {
+    layout: {
+      enabledSections: {
+        music_effects: false,
+      },
+    },
+    sections: {
+      host_info: {
+        brideName: "Isabella",
+        groomName: "Rafael",
+      },
+    },
+  };
+  const normalized = normalizeEventWebsiteContentForSave(patch);
+  expect(normalized.layout.enabledSections.music_effects).toBe(false);
+  expect(normalized.sections.host_info.brideName).toBe("Isabella");
+  expect(normalized.sections.main_event.eventDate).toBeDefined();
+});
+
+test("isEmptyJsonObject identifies uninitialized empty objects", () => {
+  expect(isEmptyJsonObject({})).toBe(true);
+  expect(isEmptyJsonObject({ foo: "bar" })).toBe(false);
+  expect(isEmptyJsonObject(null)).toBe(false);
+  expect(isEmptyJsonObject([])).toBe(false);
 });

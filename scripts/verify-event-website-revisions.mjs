@@ -63,11 +63,29 @@ try {
   assert.equal(firstSave.data?.savedRevision, 1);
   assert.equal(firstSave.data?.clientSequence, 1);
 
+  const malformedContent = draftContent("malformed-save", true);
+  malformedContent.sections = { music_effects: { enabled: true } };
+  const malformedSave = await admin.rpc("save_event_website_draft_revision", {
+    p_actor_user_id: userId,
+    p_canonical_event_patch: canonicalPatch("Malformed Venue"),
+    p_client_id: targetClientId,
+    p_client_sequence: 2,
+    p_content: malformedContent,
+    p_event_id: targetEventId,
+    p_expected_revision: 1,
+  });
+  assert(malformedSave.error, "Nested section visibility must be rejected by the database");
+  assert.equal(malformedSave.error.code, "22023");
+
+  const afterMalformedSave = await loadContent(targetEventId);
+  assert.equal(afterMalformedSave.saved_revision, 1);
+  assert.equal(afterMalformedSave.content_json.testMarker, "first-save");
+
   const staleSave = await admin.rpc("save_event_website_draft_revision", {
     p_actor_user_id: userId,
     p_canonical_event_patch: canonicalPatch("Stale Venue"),
     p_client_id: targetClientId,
-    p_client_sequence: 2,
+    p_client_sequence: 3,
     p_content: draftContent("stale-write", true),
     p_event_id: targetEventId,
     p_expected_revision: 0,
@@ -86,7 +104,7 @@ try {
     p_actor_user_id: userId,
     p_canonical_event_patch: canonicalPatch("Second Venue"),
     p_client_id: targetClientId,
-    p_client_sequence: 3,
+    p_client_sequence: 4,
     p_content: secondContent,
     p_event_id: targetEventId,
     p_expected_revision: 1,
@@ -129,12 +147,25 @@ try {
     p_actor_user_id: userId,
     p_canonical_event_patch: canonicalPatch("Denied Venue"),
     p_client_id: targetClientId,
-    p_client_sequence: 4,
+    p_client_sequence: 5,
     p_content: draftContent("denied-write", false),
     p_event_id: targetEventId,
     p_expected_revision: 2,
   });
   assert(unauthorizedRpc.error, "Authenticated users must not execute the revision RPC");
+
+  const anonymousRpc = await createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  }).rpc("save_event_website_draft_revision", {
+    p_actor_user_id: userId,
+    p_canonical_event_patch: canonicalPatch("Anonymous Venue"),
+    p_client_id: targetClientId,
+    p_client_sequence: 6,
+    p_content: draftContent("anonymous-write", false),
+    p_event_id: targetEventId,
+    p_expected_revision: 2,
+  });
+  assert(anonymousRpc.error, "Anonymous users must not execute the revision RPC");
 
   const controlContent = await loadContent(controlEventId);
   assert.equal(controlContent.saved_revision, 0);
@@ -152,13 +183,41 @@ function draftContent(marker, guestbookEnabled) {
   return {
     layout: {
       enabledSections: {
+        attire_motif: true,
+        contact_socials: true,
+        countdown: true,
+        entourage: true,
+        extra_info: true,
+        gift_details: true,
         guestbook: guestbookEnabled,
         host_info: true,
         main_event: true,
+        music_effects: true,
+        principal_sponsors: true,
         rsvp_form: true,
+        secondary_event: true,
+        story_message: true,
+        timeline_program: true,
         venue: true,
       },
-      sectionOrder: ["host_info", "main_event", "venue", "guestbook", "rsvp_form"],
+      sectionOrder: [
+        "host_info",
+        "countdown",
+        "music_effects",
+        "main_event",
+        "venue",
+        "secondary_event",
+        "timeline_program",
+        "entourage",
+        "principal_sponsors",
+        "attire_motif",
+        "extra_info",
+        "rsvp_form",
+        "gift_details",
+        "guestbook",
+        "story_message",
+        "contact_socials",
+      ],
     },
     testMarker: marker,
   };

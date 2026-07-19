@@ -8,7 +8,7 @@ import {
 } from "@/config/event-type-availability";
 import {
   mergeEventWebsiteContent,
-  normalizeEventWebsiteContentForSave,
+  parseEventWebsiteContentJson,
 } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
@@ -321,7 +321,13 @@ export async function publishEventWebsite(
   assertServiceData(eventContent, "The Event Website draft content is missing.");
 
   try {
-    mergeEventWebsiteContent(normalizeEventWebsiteContentForSave(eventContent.content_json), {
+    const parsedDraftContent = parseEventWebsiteContentJson(eventContent.content_json);
+
+    if (!parsedDraftContent) {
+      throw new ServiceError("The saved Event Website draft is invalid and cannot be published.");
+    }
+
+    mergeEventWebsiteContent(parsedDraftContent, {
       event: {
         eventDate: eventRecord.event_date,
         eventTime: eventRecord.event_time,
@@ -332,6 +338,10 @@ export async function publishEventWebsite(
       },
     });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      throw error;
+    }
+
     if (error instanceof ZodError) {
       throw new ServiceError("The saved Event Website draft is invalid and cannot be published.");
     }

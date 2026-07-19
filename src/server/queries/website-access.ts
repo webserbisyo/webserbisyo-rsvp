@@ -7,6 +7,7 @@ import {
 } from "@/components/dashboard/website-access/website-access-utils";
 import type { WebsiteAccessInitialData } from "@/components/dashboard/website-access/website-access-types";
 import {
+  isEmptyJsonObject,
   mergeEventWebsiteContent,
   parseEventWebsiteContentJson,
 } from "@/lib/event-website/hydration";
@@ -89,6 +90,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       changesSummary: "Draft ready to publish",
       copyPublicUrl: null,
       contentDraftSavedAt: null,
+      contentIntegrity: "valid",
       customWebsiteConnected: false,
       draftSlug: null,
       draftSubdomain: null,
@@ -129,10 +131,15 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
   const eventContent = Array.isArray(event.event_content)
     ? (event.event_content[0] ?? null)
     : event.event_content;
-  const mergedDraftContent = eventContent
-    ? mergeEventWebsiteContent(
-        parseEventWebsiteContentJson(eventContent.content_json) ?? eventContent.content_json,
-        {
+  const parsedDraftContent = eventContent
+    ? parseEventWebsiteContentJson(eventContent.content_json)
+    : null;
+  const contentIntegrity =
+    eventContent && !isEmptyJsonObject(eventContent.content_json) && !parsedDraftContent
+      ? "invalid"
+      : "valid";
+  const mergedDraftContent = parsedDraftContent
+    ? mergeEventWebsiteContent(parsedDraftContent, {
           event: {
             eventDate: event.event_date,
             eventTime: event.event_time,
@@ -140,8 +147,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
             venueAddress: event.venue_address,
             venueName: event.venue_name,
           },
-        },
-      )
+        })
     : null;
   const contentDraftSavedAt = getEventWebsiteSavedAt(mergedDraftContent);
   const publishState =
@@ -224,6 +230,7 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
     }),
     copyPublicUrl,
     contentDraftSavedAt,
+    contentIntegrity,
     customWebsiteConnected,
     draftSlug,
     draftSubdomain,

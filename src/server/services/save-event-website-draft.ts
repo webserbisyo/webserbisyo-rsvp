@@ -6,9 +6,13 @@ import {
 } from "@/config/event-type-availability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildEventWebsiteCanonicalEventPatchInput } from "@/lib/event-website/canonical";
+import { validateEventWebsiteContentJson } from "@/lib/event-website/hydration";
 import type { EventWebsiteContent } from "@/lib/event-website/types";
-import { EventWebsiteCanonicalEventPatchSchema } from "@/lib/validations/event-website.schema";
+import {
+  EventWebsiteCanonicalEventPatchSchema,
+} from "@/lib/validations/event-website.schema";
 import type { Json } from "@/lib/supabase/types";
+import { logEventWebsiteOperation } from "./event-website-operation-log";
 import { assertServiceData, ServiceError } from "./service-error";
 
 export type SaveEventWebsiteDraftInput = {
@@ -40,6 +44,23 @@ export type SaveEventWebsiteDraftResult =
 export async function saveEventWebsiteDraft(
   input: SaveEventWebsiteDraftInput,
 ): Promise<SaveEventWebsiteDraftResult> {
+  const validatedContent = validateEventWebsiteContentJson(input.content);
+
+  if (!validatedContent.success) {
+    logEventWebsiteOperation("error", {
+      category: "validation",
+      clientSequence: input.clientSequence,
+      eventId: input.eventId,
+      expectedRevision: input.expectedRevision,
+      issuePaths: validatedContent.error.issues.map((issue) =>
+        issue.path.length > 0 ? issue.path.map(String).join(".") : "root",
+      ),
+      operation: "draft_save",
+      stage: "failed",
+    });
+    throw validatedContent.error;
+  }
+
   const supabase = createAdminClient();
   const { data: eventRecord, error: eventLookupError } = await supabase
     .from("rsvp_events")
@@ -58,7 +79,7 @@ export async function saveEventWebsiteDraft(
   }
 
   const canonicalPatchResult = EventWebsiteCanonicalEventPatchSchema.safeParse(
-    buildEventWebsiteCanonicalEventPatchInput(input.content),
+    buildEventWebsiteCanonicalEventPatchInput(validatedContent.data),
   );
 
   if (!canonicalPatchResult.success) {
@@ -70,7 +91,7 @@ export async function saveEventWebsiteDraft(
     p_canonical_event_patch: canonicalPatchResult.data as unknown as Json,
     p_client_id: input.clientId,
     p_client_sequence: input.clientSequence,
-    p_content: input.content as unknown as Json,
+    p_content: validatedContent.data as unknown as Json,
     p_event_id: input.eventId,
     p_expected_revision: input.expectedRevision,
   });
@@ -83,7 +104,7 @@ export async function saveEventWebsiteDraft(
   }
 
   assertServiceData(data, "Event Website draft save returned no result.");
-  return parseDraftSaveResult(data, input);
+  return parseDraftSaveResult(data, { ...input, content: validatedContent.data });
 }
 
 function parseDraftSaveResult(

@@ -468,8 +468,24 @@ function getHealthBadgeLabel(status: AdminClientCustomWebsiteDto["healthStatus"]
     return "Healthy";
   }
 
-  if (status === "unhealthy") {
-    return "Unhealthy";
+  if (status === "frontend_unreachable") {
+    return "Frontend unreachable";
+  }
+
+  if (status === "event_not_found") {
+    return "Event not found";
+  }
+
+  if (status === "event_content_invalid") {
+    return "Event content invalid";
+  }
+
+  if (status === "preview_misconfigured") {
+    return "Preview misconfigured";
+  }
+
+  if (status === "contract_invalid") {
+    return "Contract invalid";
   }
 
   return "Unknown";
@@ -480,7 +496,7 @@ function getHealthBadgeTone(status: AdminClientCustomWebsiteDto["healthStatus"])
     return "success";
   }
 
-  if (status === "unhealthy") {
+  if (status !== "unknown") {
     return "danger";
   }
 

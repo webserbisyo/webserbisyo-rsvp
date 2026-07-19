@@ -2,10 +2,13 @@ import "server-only";
 
 import { buildPublicEventDto, type PublicEventDto } from "@/lib/event-website/public-event";
 import {
+  getEventWebsiteContentIssuePaths,
+  isEmptyJsonObject,
   mergeEventWebsiteContent,
   parseEventWebsiteContentJson,
 } from "@/lib/event-website/hydration";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { EventWebsiteContentIntegrityError } from "./event-website-resolution";
 import { listApprovedGuestbookMessages } from "./event-website-guestbook";
 
 export async function resolveDraftEventWebsitePreview(input: {
@@ -48,10 +51,19 @@ export async function resolveDraftEventWebsitePreview(input: {
 
   const relation = event?.event_content;
   const eventContent = Array.isArray(relation) ? (relation[0] ?? null) : relation;
-  const parsedContent = parseEventWebsiteContentJson(eventContent?.content_json);
 
-  if (!event || !eventContent || !parsedContent || !eventContent.saved_at) {
+  if (!event || !eventContent?.saved_at || isEmptyJsonObject(eventContent.content_json)) {
     return null;
+  }
+
+  const parsedContent = parseEventWebsiteContentJson(eventContent.content_json);
+
+  if (!parsedContent) {
+    throw new EventWebsiteContentIntegrityError({
+      code: "PREVIEW_CONTENT_INVALID",
+      eventId: event.id,
+      issuePaths: getEventWebsiteContentIssuePaths(eventContent.content_json),
+    });
   }
 
   const content = mergeEventWebsiteContent(parsedContent, {

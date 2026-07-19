@@ -189,7 +189,8 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   });
   const visibilityLabel = getVisibilityLabel(draftVisibility);
   const canShareLiveUrl = Boolean(websiteUrlCopy);
-  const isPublishBlocked = isPending || isDraftSavePending;
+  const isPublishBlocked =
+    isPending || isDraftSavePending || serverState.contentIntegrity === "invalid";
 
   useDashboardRefresh({
     eventId: serverState.eventId,
@@ -549,6 +550,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       void copyText(rsvpUrlQr, "RSVP QR link copied");
     },
     customWebsiteConnected: serverState.customWebsiteConnected,
+    contentIntegrity: serverState.contentIntegrity,
     handleDraftSlugInput,
     handleVisibilitySelect,
     hasEverPublished,

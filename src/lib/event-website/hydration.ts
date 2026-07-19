@@ -17,8 +17,39 @@ import {
 } from "@/lib/validations/event-website.schema";
 
 export function parseEventWebsiteContentJson(raw: unknown): EventWebsiteContent | null {
-  const parsed = EventWebsiteContentSchema.safeParse(raw);
+  const parsed = validateEventWebsiteContentJson(raw);
   return parsed.success ? normalizeParsedEventWebsiteContent(parsed.data) : null;
+}
+
+export function isEmptyJsonObject(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value as Record<string, unknown>).length === 0
+  );
+}
+
+export function validateEventWebsiteContentJson(raw: unknown) {
+  return EventWebsiteContentSchema.safeParse(raw);
+}
+
+export function validateEventWebsiteContentForPersistence(raw: unknown): EventWebsiteContent {
+  return EventWebsiteContentSchema.parse(raw);
+}
+
+export function getEventWebsiteContentIssuePaths(raw: unknown) {
+  const parsed = validateEventWebsiteContentJson(raw);
+
+  if (parsed.success) {
+    return [];
+  }
+
+  return parsed.error.issues.map((issue) => formatEventWebsiteIssuePath(issue.path));
+}
+
+function formatEventWebsiteIssuePath(path: PropertyKey[]) {
+  return path.length > 0 ? path.map(String).join(".") : "root";
 }
 
 export function mergeEventWebsiteContent(

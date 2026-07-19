@@ -1,5 +1,6 @@
 import { PublicEventSlugSchema } from "@/lib/event-website/public-event";
 import { logEventWebsiteOperation } from "@/server/services/event-website-operation-log";
+import { EventWebsiteContentIntegrityError } from "@/server/services/event-website-resolution";
 import { verifyEventWebsitePreviewToken } from "@/server/services/event-website-preview-token";
 import { resolveDraftEventWebsitePreview } from "@/server/services/resolve-draft-event-website-preview";
 
@@ -43,7 +44,26 @@ export async function GET(request: Request, context: { params: Promise<{ eventSl
     }
 
     return Response.json({ data: event }, { headers: NO_STORE_HEADERS });
-  } catch {
+  } catch (error) {
+    if (error instanceof EventWebsiteContentIntegrityError) {
+      logEventWebsiteOperation("error", {
+        category: error.code,
+        eventId: error.eventId,
+        issuePaths: error.issuePaths,
+        operation: "draft_preview",
+        stage: "failed",
+      });
+      return Response.json(
+        {
+          error: {
+            code: "preview_content_unavailable",
+            message: "Event data is temporarily unavailable.",
+          },
+        },
+        { headers: NO_STORE_HEADERS, status: 503 },
+      );
+    }
+
     logEventWebsiteOperation("error", {
       category: "fetch_failed",
       eventId: claims.eventId,

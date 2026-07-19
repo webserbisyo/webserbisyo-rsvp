@@ -21,6 +21,13 @@ export function WebsiteAccessPage({ initialData }: WebsiteAccessPageProps) {
     <div className="space-y-6 pt-6 pb-24 md:pb-8">
       <h1 className="sr-only">Website Access</h1>
 
+      {state.contentIntegrity === "invalid" ? (
+        <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+          Event data could not be loaded because the saved content is invalid. Your website data
+          has not been replaced. Please retry or contact platform support.
+        </p>
+      ) : null}
+
       <LiveWebsiteBar
         disabled={state.isPublishBlocked}
         isPublished={state.isPublished}

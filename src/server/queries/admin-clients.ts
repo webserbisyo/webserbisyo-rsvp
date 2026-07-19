@@ -1280,7 +1280,14 @@ function normalizeCustomWebsiteStatus(
 }
 
 function normalizeCustomWebsiteHealthStatus(value: string | null): CustomWebsiteHealthStatus {
-  if (value === "healthy" || value === "unhealthy") {
+  if (
+    value === "healthy" ||
+    value === "frontend_unreachable" ||
+    value === "event_not_found" ||
+    value === "event_content_invalid" ||
+    value === "preview_misconfigured" ||
+    value === "contract_invalid"
+  ) {
     return value;
   }
 

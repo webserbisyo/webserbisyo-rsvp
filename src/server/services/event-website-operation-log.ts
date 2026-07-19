@@ -5,7 +5,8 @@ type EventWebsiteOperationLog = {
   clientSequence?: number;
   eventId: string;
   expectedRevision?: number;
-  operation: "draft_preview" | "draft_save" | "publish";
+  issuePaths?: string[];
+  operation: "dashboard_load" | "draft_preview" | "draft_save" | "publish" | "public_resolve";
   returnedRevision?: number;
   stage: "authorization_failed" | "failed" | "started" | "succeeded" | "conflict";
 };

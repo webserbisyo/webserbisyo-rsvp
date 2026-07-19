@@ -1,6 +1,8 @@
 import "server-only";
 
 import {
+  getEventWebsiteContentIssuePaths,
+  isEmptyJsonObject,
   mergeEventWebsiteContent,
   parseEventWebsiteContentJson,
 } from "@/lib/event-website/hydration";
@@ -17,12 +19,16 @@ import type { Json } from "@/lib/supabase/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { resolveDashboardCustomWebsitePreview } from "@/server/services/custom-websites/resolve-custom-website";
 import type { DashboardCustomWebsitePreviewDto } from "@/server/services/custom-websites/types";
+import { logEventWebsiteOperation } from "@/server/services/event-website-operation-log";
 import { listApprovedGuestbookMessages } from "@/server/services/event-website-guestbook";
 
 export type DashboardEventWebsiteData = {
+  contentIntegrity:
+    | { status: "valid" }
+    | { diagnosticId: string; status: "invalid" };
   eventId: string | null;
   eventSlug: string | null;
-  eventWebsiteContent: EventWebsiteContent;
+  eventWebsiteContent: EventWebsiteContent | null;
   eventContent: {
     contentJson: Json;
     coupleOrCelebrantNames: string | null;
@@ -167,10 +173,27 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
   };
   const rawContentJson = eventContent?.content_json ?? null;
   const parsedContentJson = parseEventWebsiteContentJson(rawContentJson);
-  const eventWebsiteContent = mergeEventWebsiteContent(
-    parsedContentJson ?? rawContentJson,
-    defaultsContext,
+  const isEmptyInitialContent = isEmptyJsonObject(rawContentJson);
+  const hasInvalidPersistedContent = Boolean(
+    eventContent && !isEmptyInitialContent && !parsedContentJson,
   );
+  const diagnosticId = event?.id
+    ? `event-content-${event.id.slice(0, 8)}-${eventContent?.saved_revision ?? 0}`
+    : "event-content-unresolved";
+
+  if (hasInvalidPersistedContent) {
+    logEventWebsiteOperation("error", {
+      category: "EVENT_CONTENT_INVALID",
+      eventId: event?.id ?? "unresolved",
+      issuePaths: getEventWebsiteContentIssuePaths(rawContentJson),
+      operation: "dashboard_load",
+      stage: "failed",
+    });
+  }
+
+  const eventWebsiteContent = hasInvalidPersistedContent
+    ? null
+    : mergeEventWebsiteContent(parsedContentJson, defaultsContext);
   const publicLinkSet = event?.event_slug
     ? resolvePublicRsvpLinkSet({
         accessToken:
@@ -210,6 +233,9 @@ export async function getDashboardEventWebsiteData(): Promise<DashboardEventWebs
   ]);
 
   return {
+    contentIntegrity: hasInvalidPersistedContent
+      ? { diagnosticId, status: "invalid" }
+      : { status: "valid" },
     eventId: event?.id ?? null,
     eventSlug: event?.event_slug ?? null,
     eventContent: eventContentData,

@@ -86,8 +86,7 @@ async function handleCustomProxyRequest(request: Request, context: ProxyRouteCon
 
   if (
     !resolution.customFrontendEnabled ||
-    !resolution.customFrontendOriginUrl ||
-    resolution.healthStatus === "unhealthy"
+    !resolution.customFrontendOriginUrl
   ) {
     return fetchPlatformFallbackResponse({
       eventSlug: resolution.eventSlug,

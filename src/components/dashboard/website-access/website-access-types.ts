@@ -17,6 +17,7 @@ export type WebsiteAccessInitialData = {
   changesSummary: string;
   copyPublicUrl: string | null;
   contentDraftSavedAt: string | null;
+  contentIntegrity: "invalid" | "valid";
   customWebsiteConnected: boolean;
   draftSlug: string | null;
   draftSubdomain: string | null;

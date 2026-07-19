@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { TablesUpdate } from "@/lib/supabase/types";
+import { isCustomWebsiteUnavailableHtml } from "@/lib/event-website/custom-website-health-policy";
+import { EVENT_WEBSITE_SECTION_CONTRACT_VERSION } from "@/lib/event-website/section-contract";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { EventWebsiteContentIntegrityError } from "@/server/services/event-website-resolution";
+import { resolvePublicEventWebsiteResult } from "@/server/services/resolve-public-event-website";
 import {
   ServiceError,
   assertServiceData,
@@ -24,7 +28,7 @@ export async function checkCustomWebsiteOriginHealth(input: { clientId: string; 
   const supabase = createAdminClient();
   const { data: row, error: loadError } = await supabase
     .from("client_custom_websites")
-    .select("id, client_id, event_id, custom_frontend_origin_url")
+    .select("id, client_id, event_id, custom_frontend_origin_url, platform_event_slug")
     .eq("client_id", input.clientId)
     .eq("event_id", input.eventId)
     .maybeSingle();
@@ -38,7 +42,9 @@ export async function checkCustomWebsiteOriginHealth(input: { clientId: string; 
     throw new ServiceError("Save a custom frontend origin before checking health.");
   }
 
-  const result = await probeCustomWebsiteOrigin(origin);
+  const result = row.platform_event_slug
+    ? await probeResolvedCustomWebsite(origin, row.platform_event_slug)
+    : misconfiguredHealthResult();
   const update: TablesUpdate<"client_custom_websites"> = {
     last_health_checked_at: result.checkedAt,
     last_health_error: result.error,
@@ -68,25 +74,80 @@ export async function probeCustomWebsiteOrigin(
 
   try {
     const safeOrigin = await assertSafeCustomFrontendOriginForFetch(origin);
-    const headResult = await fetchOrigin(safeOrigin, "HEAD");
-
-    if (headResult.statusCode && [405, 501].includes(headResult.statusCode)) {
-      return toHealthResult(checkedAt, await fetchOrigin(safeOrigin, "GET"));
-    }
-
-    return toHealthResult(checkedAt, headResult);
+    return toHealthResult(checkedAt, await fetchOrigin(safeOrigin));
   } catch (error) {
     return {
       checkedAt,
       error: toHealthErrorMessage(error),
       responseMs: null,
-      status: "unhealthy",
+      status: "frontend_unreachable",
       statusCode: null,
     };
   }
 }
 
-async function fetchOrigin(origin: string, method: "GET" | "HEAD") {
+async function probeResolvedCustomWebsite(origin: string, eventSlug: string) {
+  const checkedAt = new Date().toISOString();
+
+  try {
+    const resolution = await resolvePublicEventWebsiteResult(eventSlug);
+
+    if (resolution.status !== "RESOLVED") {
+      return {
+        checkedAt,
+        error:
+          resolution.status === "EVENT_NOT_PUBLISHED"
+            ? "The configured event is not published."
+            : "The configured event could not be resolved.",
+        responseMs: null,
+        status: "event_not_found" as const,
+        statusCode: null,
+      };
+    }
+
+    if (resolution.data.contractVersion !== EVENT_WEBSITE_SECTION_CONTRACT_VERSION) {
+      return {
+        checkedAt,
+        error: "The custom website contract is incompatible.",
+        responseMs: null,
+        status: "contract_invalid" as const,
+        statusCode: null,
+      };
+    }
+
+    return probeCustomWebsiteOrigin(origin);
+  } catch (error) {
+    if (error instanceof EventWebsiteContentIntegrityError) {
+      return {
+        checkedAt,
+        error: "The configured event content failed integrity validation.",
+        responseMs: null,
+        status: "event_content_invalid" as const,
+        statusCode: 503,
+      };
+    }
+
+    return {
+      checkedAt,
+      error: toHealthErrorMessage(error),
+      responseMs: null,
+      status: "frontend_unreachable" as const,
+      statusCode: null,
+    };
+  }
+}
+
+function misconfiguredHealthResult(): CustomWebsiteHealthCheckResult {
+  return {
+    checkedAt: new Date().toISOString(),
+    error: "The custom preview event slug is not configured.",
+    responseMs: null,
+    status: "preview_misconfigured",
+    statusCode: null,
+  };
+}
+
+async function fetchOrigin(origin: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
   const startedAt = Date.now();
@@ -94,19 +155,22 @@ async function fetchOrigin(origin: string, method: "GET" | "HEAD") {
   try {
     const response = await fetch(origin, {
       cache: "no-store",
-      method,
+      method: "GET",
       redirect: "manual",
       signal: controller.signal,
     });
 
+    const responseText = await response.text();
     return {
       error: null,
+      unavailablePage: isCustomWebsiteUnavailableHtml(responseText),
       responseMs: Date.now() - startedAt,
       statusCode: response.status,
     };
   } catch (error) {
     return {
       error: toHealthErrorMessage(error),
+      unavailablePage: false,
       responseMs: Date.now() - startedAt,
       statusCode: null,
     };
@@ -120,13 +184,19 @@ function toHealthResult(
   result: { error: string | null; responseMs: number | null; statusCode: number | null },
 ): CustomWebsiteHealthCheckResult {
   const statusCode = result.statusCode;
-  const isHealthy = typeof statusCode === "number" && statusCode >= 200 && statusCode < 400;
+  const unavailablePage = "unavailablePage" in result && result.unavailablePage === true;
+  const isHealthy =
+    !unavailablePage && typeof statusCode === "number" && statusCode >= 200 && statusCode < 400;
 
   return {
     checkedAt,
-    error: isHealthy ? null : (result.error ?? `Origin returned HTTP ${statusCode ?? "unknown"}.`),
+    error: isHealthy
+      ? null
+      : unavailablePage
+        ? "The custom frontend could not resolve its configured event."
+        : (result.error ?? `Origin returned HTTP ${statusCode ?? "unknown"}.`),
     responseMs: result.responseMs,
-    status: isHealthy ? "healthy" : "unhealthy",
+    status: isHealthy ? "healthy" : unavailablePage ? "event_not_found" : "frontend_unreachable",
     statusCode,
   };
 }

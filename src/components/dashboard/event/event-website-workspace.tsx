@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
+import { ErrorState } from "@/components/feedback/error-state";
 import { EventWebsiteEditorPanel } from "@/components/dashboard/event/event-website-editor-panel";
 import {
   EditorSaveButton,
@@ -72,9 +73,22 @@ type EventWebsiteWorkspaceProps = {
   initialSelectedSection?: string | null;
 };
 
+type ValidDashboardEventWebsiteData = Omit<
+  DashboardEventWebsiteData,
+  "contentIntegrity" | "eventWebsiteContent"
+> & {
+  contentIntegrity: { status: "valid" };
+  eventWebsiteContent: NonNullable<DashboardEventWebsiteData["eventWebsiteContent"]>;
+};
+
+type EnabledEventWebsiteWorkspaceProps = {
+  eventWebsiteData: ValidDashboardEventWebsiteData;
+  initialSelectedSection?: string | null;
+};
+
 function areContentsEqual(
-  left: DashboardEventWebsiteData["eventWebsiteContent"],
-  right: DashboardEventWebsiteData["eventWebsiteContent"],
+  left: NonNullable<DashboardEventWebsiteData["eventWebsiteContent"]>,
+  right: NonNullable<DashboardEventWebsiteData["eventWebsiteContent"]>,
 ) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -106,6 +120,24 @@ export function EventWebsiteWorkspace({
   eventWebsiteData,
   initialSelectedSection = null,
 }: EventWebsiteWorkspaceProps) {
+  if (eventWebsiteData.contentIntegrity.status === "invalid" || !eventWebsiteData.eventWebsiteContent) {
+    return (
+      <ErrorState
+        title="Event Website data could not be loaded"
+        description={`Your saved website data has not been replaced. Retry later or contact platform support with diagnostic ${
+          eventWebsiteData.contentIntegrity.status === "invalid"
+            ? eventWebsiteData.contentIntegrity.diagnosticId
+            : "event-content-unresolved"
+        }.`}
+      />
+    );
+  }
+
+  const validEventWebsiteData: ValidDashboardEventWebsiteData = {
+    ...eventWebsiteData,
+    contentIntegrity: { status: "valid" },
+    eventWebsiteContent: eventWebsiteData.eventWebsiteContent,
+  };
   const eventTypeAvailability = getEventTypeAvailability(eventWebsiteData.eventType);
 
   if (!isDashboardBuilderEventTypeEnabled(eventWebsiteData.eventType)) {
@@ -126,7 +158,7 @@ export function EventWebsiteWorkspace({
 
   return (
     <EnabledEventWebsiteWorkspace
-      eventWebsiteData={eventWebsiteData}
+      eventWebsiteData={validEventWebsiteData}
       initialSelectedSection={initialSelectedSection}
     />
   );
@@ -135,7 +167,7 @@ export function EventWebsiteWorkspace({
 function EnabledEventWebsiteWorkspace({
   eventWebsiteData,
   initialSelectedSection = null,
-}: EventWebsiteWorkspaceProps) {
+}: EnabledEventWebsiteWorkspaceProps) {
   const queryClient = useQueryClient();
   const [stableEventId] = useState(() => eventWebsiteData.eventId);
   const eventTransitionHandledRef = useRef(false);
@@ -610,7 +642,7 @@ function ResponsiveSectionEditorSurface({
   selectedSection,
   selectedSectionId,
 }: {
-  eventData: DashboardEventWebsiteData;
+  eventData: ValidDashboardEventWebsiteData;
   isOpen: boolean;
   isTabletLayout: boolean;
   onOpenChange: (open: boolean) => void;
