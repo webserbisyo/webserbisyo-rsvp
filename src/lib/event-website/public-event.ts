@@ -95,6 +95,7 @@ export type PublicEventSectionsByKey = {
   countdown: EventWebsiteContent["sections"]["countdown"];
   entourage: EventWebsiteContent["sections"]["entourage"];
   extra_info: EventWebsiteContent["sections"]["extra_info"];
+  gallery: EventWebsiteContent["sections"]["gallery"];
   gift_details: Omit<EventWebsiteContent["sections"]["gift_details"], "options"> & {
     options: PublicEventGiftOption[];
   };
@@ -347,6 +348,7 @@ function buildPublicSectionsByKey(
       sectionIntro: content.sections.extra_info.sectionIntro,
       sectionTitle: content.sections.extra_info.sectionTitle,
     },
+    gallery: { ...content.sections.gallery },
     gift_details: {
       giftNote: content.sections.gift_details.giftNote,
       options: content.sections.gift_details.options.map((option) => ({

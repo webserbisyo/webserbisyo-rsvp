@@ -135,13 +135,14 @@ function insertGalleryIntoSectionOrder(
     return [...order];
   }
 
-  const contactIndex = order.indexOf("contact_socials");
+  const musicIndex = order.indexOf("music_effects");
 
-  if (contactIndex === -1) {
-    return [...order, LEGACY_GALLERY_KEY];
+  if (musicIndex === -1) {
+    return [...order];
   }
 
-  return [...order.slice(0, contactIndex), LEGACY_GALLERY_KEY, ...order.slice(contactIndex)];
+  const insertIndex = musicIndex + 1;
+  return [...order.slice(0, insertIndex), LEGACY_GALLERY_KEY, ...order.slice(insertIndex)];
 }
 
 function hasExactLegacySectionKeys(value: unknown): value is Record<string, unknown> {

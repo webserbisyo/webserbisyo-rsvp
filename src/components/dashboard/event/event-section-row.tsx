@@ -33,8 +33,10 @@ export function EventSectionRow({
   selected,
 }: EventSectionRowProps) {
   const Icon = section.icon;
+  const showToggle =
+    !section.required && (!section.comingSoon || section.toggleableWhenComingSoon);
   const showRequiredLock = section.required && !section.comingSoon;
-  const showComingSoonIndicator = Boolean(section.comingSoon);
+  const showComingSoonIndicator = Boolean(section.comingSoon && !showToggle);
   const rowAriaLabel = section.comingSoon ? `${section.label}. ${section.helper}` : undefined;
 
   return (
@@ -42,7 +44,7 @@ export function EventSectionRow({
       className={cn(
         "event-section-row group w-full text-left",
         selected && "is-selected",
-        !enabled && !section.required && !section.comingSoon && "is-off",
+        !enabled && showToggle && "is-off",
         section.comingSoon && "is-coming-soon",
         section.generated && "is-generated",
       )}
@@ -73,7 +75,7 @@ export function EventSectionRow({
       <span className="event-section-actions" onClick={(event) => event.stopPropagation()}>
         {reorderable ? (
           <>
-            {!section.comingSoon ? (
+            {!section.comingSoon || section.toggleableWhenComingSoon ? (
               <>
                 <Button
                   type="button"
@@ -114,7 +116,7 @@ export function EventSectionRow({
           </span>
         ) : null}
 
-        {!showRequiredLock && !showComingSoonIndicator ? (
+        {showToggle ? (
           <Switch
             className="dashboard-toggle event-section-toggle"
             checked={enabled}

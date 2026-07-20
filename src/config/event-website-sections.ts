@@ -72,6 +72,7 @@ export type EventWebsiteSectionDefinition = {
   defaultEnabled: boolean;
   comingSoon?: boolean;
   generated?: boolean;
+  toggleableWhenComingSoon?: boolean;
 };
 
 type EventWebsiteSectionOverride = {
@@ -87,6 +88,7 @@ type EventWebsiteOptionalConfig = {
   helper?: string;
   icon?: LucideIcon;
   label?: string;
+  toggleableWhenComingSoon?: boolean;
 };
 
 type EventWebsiteTypeConfig = {
@@ -217,6 +219,7 @@ const optionalBaseSections: Record<
     key: "gallery",
     label: "Gallery",
     required: false,
+    toggleableWhenComingSoon: true,
   },
   food_dietary: {
     defaultEnabled: true,
@@ -505,18 +508,23 @@ export const eventWebsiteTypeConfig: Record<
   wedding: {
     optionalDefaults: [
       { key: "countdown" },
+      { key: "music_effects" },
+      {
+        key: "gallery",
+        comingSoon: true,
+        defaultEnabled: false,
+        toggleableWhenComingSoon: true,
+      },
       { key: "secondary_event", label: "Reception" },
       { key: "timeline_program" },
       { key: "entourage" },
       { key: "principal_sponsors" },
-      { key: "story_message", label: "Love Story" },
       { key: "attire_motif" },
-      { key: "guestbook" },
-      { key: "gallery", comingSoon: true, defaultEnabled: false },
-      { key: "gift_details" },
-      { key: "contact_socials" },
-      { key: "music_effects" },
       { key: "extra_info" },
+      { key: "gift_details" },
+      { key: "guestbook" },
+      { key: "story_message", label: "Love Story" },
+      { key: "contact_socials" },
     ],
     required: {
       ...genericRequiredConfig,
@@ -587,5 +595,7 @@ function resolveOptionalSection(config: EventWebsiteOptionalConfig): EventWebsit
     helper: config.helper ?? base.helper,
     icon: config.icon ?? base.icon,
     label: config.label ?? base.label,
+    toggleableWhenComingSoon:
+      config.toggleableWhenComingSoon ?? base.toggleableWhenComingSoon,
   };
 }

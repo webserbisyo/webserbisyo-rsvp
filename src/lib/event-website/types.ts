@@ -12,6 +12,7 @@ export const eventWebsiteContentSectionKeys = [
   "host_info",
   "countdown",
   "music_effects",
+  "gallery",
   "main_event",
   "venue",
   "secondary_event",
@@ -24,7 +25,6 @@ export const eventWebsiteContentSectionKeys = [
   "gift_details",
   "guestbook",
   "story_message",
-  "gallery",
   "contact_socials",
 ] as const satisfies readonly EventWebsiteSectionKey[];
 

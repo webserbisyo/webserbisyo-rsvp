@@ -1,8 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { EVENT_WEBSITE_REORDER_UI_ENABLED } from "../src/config/event-website-capabilities";
+import { resolveEventWebsiteSections } from "../src/config/event-website-sections";
 import { buildDefaultWeddingEventWebsiteContent } from "../src/lib/event-website/defaults";
 import { isCustomWebsiteUnavailableHtml } from "../src/lib/event-website/custom-website-health-policy";
+import {
+  buildPublicEventDto,
+  buildPublicRenderableSections,
+} from "../src/lib/event-website/public-event";
 import {
   getEventWebsiteContentIssuePaths,
   isEmptyJsonObject,
@@ -91,6 +96,27 @@ test("section contract is versioned and reorder UI is centrally disabled", () =>
   expect(EVENT_WEBSITE_REORDER_UI_ENABLED).toBe(false);
 });
 
+test("Gallery is canonical, disabled by default, and ordered immediately after Music", () => {
+  const content = buildDefaultWeddingEventWebsiteContent();
+  const sections = resolveEventWebsiteSections("wedding");
+  const gallery = sections.optionalSections.find((section) => section.key === "gallery");
+  const styleTheme = sections.futureDevelopmentSections.find(
+    (section) => section.key === "style_theme",
+  );
+
+  expect(Object.keys(content.layout.enabledSections)).toHaveLength(17);
+  expect(content.layout.enabledSections.gallery).toBe(false);
+  expect(content.layout.sectionOrder.indexOf("gallery")).toBe(
+    content.layout.sectionOrder.indexOf("music_effects") + 1,
+  );
+  expect(gallery).toMatchObject({
+    comingSoon: true,
+    defaultEnabled: false,
+    toggleableWhenComingSoon: true,
+  });
+  expect(styleTheme?.toggleableWhenComingSoon).not.toBe(true);
+});
+
 test("complete event content rejects visibility nested under any section", () => {
   const valid = buildDefaultWeddingEventWebsiteContent();
   expect(() => validateEventWebsiteContentForPersistence(valid)).not.toThrow();
@@ -162,11 +188,11 @@ test("exact legacy 16-key content upgrades Gallery without changing existing dat
   expect(parsed?.sections.host_info.groomName).toBe("Rafael");
   expect(parsed?.layout.enabledSections.music_effects).toBe(false);
 
-  const contactIndex = originalOrder.indexOf("contact_socials");
+  const musicIndex = originalOrder.indexOf("music_effects");
   const expectedOrder = [
-    ...originalOrder.slice(0, contactIndex),
+    ...originalOrder.slice(0, musicIndex + 1),
     "gallery",
-    ...originalOrder.slice(contactIndex),
+    ...originalOrder.slice(musicIndex + 1),
   ];
   expect(parsed?.layout.sectionOrder).toEqual(expectedOrder);
 
@@ -185,6 +211,12 @@ test("legacy Gallery compatibility does not hide other malformed content", () =>
     (key) => key !== "contact_socials",
   );
   expect(parseEventWebsiteContentJson(missingOrderKey)).toBeNull();
+
+  const missingMusic = buildLegacyEventWebsiteContent();
+  missingMusic.layout.sectionOrder = missingMusic.layout.sectionOrder.filter(
+    (key) => key !== "music_effects",
+  );
+  expect(parseEventWebsiteContentJson(missingMusic)).toBeNull();
 
   const unknownKey = buildLegacyEventWebsiteContent();
   unknownKey.sections.unknown_section = {};
@@ -229,6 +261,39 @@ test("save normalization accepts patch-shaped content and returns valid full str
   expect(normalized.layout.enabledSections.music_effects).toBe(false);
   expect(normalized.sections.host_info.brideName).toBe("Isabella");
   expect(normalized.sections.main_event.eventDate).toBeDefined();
+});
+
+test("Gallery visibility survives normalization and controls public rendering", () => {
+  const enabled = normalizeEventWebsiteContentForSave({
+    layout: { enabledSections: { gallery: true } },
+  });
+  expect(enabled.layout.enabledSections.gallery).toBe(true);
+  expect(buildPublicRenderableSections(enabled, "wedding")).toContain("gallery");
+  const publicEvent = buildPublicEventDto({
+    content: enabled,
+    eventDate: "2026-06-20",
+    eventSlug: "gallery-lifecycle-test",
+    eventTime: "16:00",
+    eventTitle: "Gallery lifecycle test",
+    eventType: "wedding",
+    guestbookMessages: [],
+    publishedAt: "2026-06-01T00:00:00.000Z",
+    publishedRevision: 1,
+    rsvpCloseAt: null,
+    rsvpOpenAt: null,
+    savedRevision: 1,
+    subdomainSlug: null,
+    venueAddress: null,
+    venueName: null,
+    visibility: "public",
+  });
+  expect(publicEvent.sectionsByKey.gallery).toEqual(enabled.sections.gallery);
+
+  const disabled = normalizeEventWebsiteContentForSave({
+    layout: { enabledSections: { gallery: false } },
+  });
+  expect(disabled.layout.enabledSections.gallery).toBe(false);
+  expect(buildPublicRenderableSections(disabled, "wedding")).not.toContain("gallery");
 });
 
 test("isEmptyJsonObject identifies uninitialized empty objects", () => {

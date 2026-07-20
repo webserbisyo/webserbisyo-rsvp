@@ -15,6 +15,12 @@
       "navigationEligible": false
     },
     {
+      "key": "gallery",
+      "label": "Gallery",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
       "key": "main_event",
       "label": "Ceremony",
       "visibility": "required",
@@ -73,12 +79,6 @@
     {
       "key": "story_message",
       "label": "Story",
-      "visibility": "optional",
-      "navigationEligible": true
-    },
-    {
-      "key": "gallery",
-      "label": "Gallery",
       "visibility": "optional",
       "navigationEligible": true
     },
