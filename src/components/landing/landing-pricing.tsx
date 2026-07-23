@@ -2,32 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, Crown, Gem, Check } from "lucide-react";
-import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
-
-const PRO_FEATURES = [
-  "Premium mobile-friendly RSVP website",
-  "Event details and schedule sections",
-  "RSVP form and guest tracking",
-  "Gallery and story sections",
-  "Unlimited RSVP responses",
-  "Guest response export",
-  "Hosting included",
-  "Website access controls",
-  "1-year support and maintenance",
-];
-
-const MAX_FEATURES = [
-  "Everything in PRO",
-  "Advanced custom animations",
-  "Premium motion and interaction polish",
-  "Enhanced visual personalization",
-  "More immersive section transitions",
-  "Couple Alignment Kit included",
-  "E-book resources for conversations, budgeting, newlywed planning, date night ideas, and more — ₱10,000 bonus value.",
-  "Priority creative refinement",
-  "Priority setup",
-];
+import { MaxPlanFeatureList } from "@/components/pricing/max-plan-feature-list";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { MAX_PRICING_PLAN, PRO_PRICING_PLAN } from "@/lib/pricing-plans";
 
 // Frontend-only rolling 72-hour countdown
 // Uses a fixed UTC epoch constant in code
@@ -155,18 +133,24 @@ export function LandingPricing() {
                     <div className="size-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#ff8a5c]">
                       <Gem className="size-5" />
                     </div>
-                    <h3 className="text-2xl font-extrabold text-white tracking-wide">PRO</h3>
+                    <h3 className="text-2xl font-extrabold text-white tracking-wide">
+                      {PRO_PRICING_PLAN.name}
+                    </h3>
                   </div>
 
                   {/* Description */}
                   <p className="text-sm text-white/60 leading-relaxed mb-6">
-                    Everything you need for a beautiful RSVP website.
+                    {PRO_PRICING_PLAN.description}
                   </p>
 
                   {/* Pricing Representation */}
                   <div className="flex items-baseline gap-2 mb-8">
-                    <span className="text-4xl font-extrabold text-white">₱1,599</span>
-                    <span className="text-sm text-white/40 line-through">₱3,200</span>
+                    <span className="text-4xl font-extrabold text-white">
+                      {PRO_PRICING_PLAN.priceLabel}
+                    </span>
+                    <span className="text-sm text-white/40 line-through">
+                      {PRO_PRICING_PLAN.regularPriceLabel}
+                    </span>
                     <span className="text-xs text-white/50 font-medium">regular</span>
                   </div>
 
@@ -178,10 +162,12 @@ export function LandingPricing() {
 
                   {/* Feature List */}
                   <ul className="space-y-3.5 mb-8">
-                    {PRO_FEATURES.map((feat) => (
-                      <li key={feat} className="flex items-start gap-3">
+                    {PRO_PRICING_PLAN.features.map((feature) => (
+                      <li key={feature.label} className="flex items-start gap-3">
                         <Check className="size-4 text-[#ff8a5c] shrink-0 mt-0.5" />
-                        <span className="text-sm text-white/80 leading-snug">{feat}</span>
+                        <span className="text-sm text-white/80 leading-snug">
+                          {feature.label}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -197,7 +183,7 @@ export function LandingPricing() {
                       currency: "PHP",
                       plan: "pro",
                       source: "landing_pricing",
-                      value: 1599,
+                      value: PRO_PRICING_PLAN.price,
                     }}
                   >
                     Select PRO <ArrowRight className="size-4" />
@@ -228,18 +214,24 @@ export function LandingPricing() {
                     <div className="size-10 rounded-xl bg-[#ff8a5c]/10 border border-[#ff8a5c]/35 flex items-center justify-center text-[#ff8a5c]">
                       <Crown className="size-5" />
                     </div>
-                    <h3 className="text-2xl font-extrabold text-white tracking-wide">MAX</h3>
+                    <h3 className="text-2xl font-extrabold text-white tracking-wide">
+                      {MAX_PRICING_PLAN.name}
+                    </h3>
                   </div>
 
                   {/* Description */}
                   <p className="text-sm text-white/60 leading-relaxed mb-6">
-                    For couples who want a more premium and memorable guest experience.
+                    {MAX_PRICING_PLAN.description}
                   </p>
 
                   {/* Pricing Representation */}
                   <div className="flex items-baseline gap-2 mb-8">
-                    <span className="text-4xl font-extrabold text-white">₱3,599</span>
-                    <span className="text-sm text-white/40 line-through">₱7,200</span>
+                    <span className="text-4xl font-extrabold text-white">
+                      {MAX_PRICING_PLAN.priceLabel}
+                    </span>
+                    <span className="text-sm text-white/40 line-through">
+                      {MAX_PRICING_PLAN.regularPriceLabel}
+                    </span>
                     <span className="text-xs text-white/50 font-medium">regular</span>
                   </div>
 
@@ -250,14 +242,7 @@ export function LandingPricing() {
                   </p>
 
                   {/* Feature List */}
-                  <ul className="space-y-3.5 mb-8">
-                    {MAX_FEATURES.map((feat) => (
-                      <li key={feat} className="flex items-start gap-3">
-                        <Check className="size-4 text-[#ff8a5c] shrink-0 mt-0.5" />
-                        <span className="text-sm text-white/80 leading-snug">{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <MaxPlanFeatureList />
                 </div>
 
                 {/* Footer Block */}
@@ -270,7 +255,7 @@ export function LandingPricing() {
                       currency: "PHP",
                       plan: "max",
                       source: "landing_pricing",
-                      value: 3599,
+                      value: MAX_PRICING_PLAN.price,
                     }}
                   >
                     Select MAX <ArrowRight className="size-4" />

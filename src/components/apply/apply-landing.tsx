@@ -3,43 +3,15 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Crown, Gem, Check } from "lucide-react";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
+import { MaxPlanFeatureList } from "@/components/pricing/max-plan-feature-list";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { MAX_PRICING_PLAN, PRO_PRICING_PLAN } from "@/lib/pricing-plans";
 
 type ApplyLandingProps = {
   config: {
     messengerPageUrl?: string | null;
   };
 };
-
-const PRO_FEATURES = [
-  "Premium mobile-friendly RSVP website",
-  "Event details and schedule sections",
-  "RSVP form and guest tracking",
-  "Gallery and story sections",
-  "Unlimited RSVP responses",
-  "Guest response export",
-  "Hosting included",
-  "Website access controls",
-  "1-year support and maintenance",
-];
-
-const MAX_FEATURES = [
-  { label: "Everything in PRO", emphasis: "standard" },
-  { label: "Advanced custom animations", emphasis: "exclusive" },
-  { label: "Premium motion and interaction polish", emphasis: "exclusive" },
-  { label: "Enhanced visual personalization", emphasis: "exclusive" },
-  { label: "More immersive section transitions", emphasis: "exclusive" },
-  { label: "Monogram Animation included", emphasis: "featured", badge: "Included" },
-  { label: "Couple Alignment Kit included", emphasis: "exclusive" },
-  {
-    label:
-      "E-book resources for conversations, budgeting, newlywed planning, date night ideas, and more — ₱10,000 bonus value",
-    emphasis: "featured",
-    badge: "Bonus",
-  },
-  { label: "Priority creative refinement", emphasis: "exclusive" },
-  { label: "Priority setup", emphasis: "exclusive" },
-] as const;
 
 // Frontend-only rolling 72-hour countdown
 // Uses a fixed UTC epoch constant in code
@@ -167,18 +139,24 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                     <div className="size-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#ff8a5c]">
                       <Gem className="size-5" />
                     </div>
-                    <h2 className="text-2xl font-extrabold text-white tracking-wide">PRO</h2>
+                    <h2 className="text-2xl font-extrabold text-white tracking-wide">
+                      {PRO_PRICING_PLAN.name}
+                    </h2>
                   </div>
 
                   {/* Description */}
                   <p className="text-sm text-white/60 leading-relaxed mb-6">
-                    Everything you need for a beautiful RSVP website.
+                    {PRO_PRICING_PLAN.description}
                   </p>
 
                   {/* Pricing Representation */}
                   <div className="flex items-baseline gap-2 mb-8">
-                    <span className="text-4xl font-extrabold text-white">₱1,599</span>
-                    <span className="text-sm text-white/40 line-through">₱3,200</span>
+                    <span className="text-4xl font-extrabold text-white">
+                      {PRO_PRICING_PLAN.priceLabel}
+                    </span>
+                    <span className="text-sm text-white/40 line-through">
+                      {PRO_PRICING_PLAN.regularPriceLabel}
+                    </span>
                     <span className="text-xs text-white/50 font-medium">regular</span>
                   </div>
 
@@ -190,10 +168,12 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
 
                   {/* Feature List */}
                   <ul className="space-y-3.5 mb-8">
-                    {PRO_FEATURES.map((feat) => (
-                      <li key={feat} className="flex items-start gap-3">
+                    {PRO_PRICING_PLAN.features.map((feature) => (
+                      <li key={feature.label} className="flex items-start gap-3">
                         <Check className="size-4 text-[#ff8a5c] shrink-0 mt-0.5" />
-                        <span className="text-sm text-white/80 leading-snug">{feat}</span>
+                        <span className="text-sm text-white/80 leading-snug">
+                          {feature.label}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -209,7 +189,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                       currency: "PHP",
                       plan: "pro",
                       source: "apply_pricing",
-                      value: 1599,
+                      value: PRO_PRICING_PLAN.price,
                     }}
                   >
                     Select PRO <ArrowRight className="size-4" />
@@ -240,18 +220,24 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                     <div className="size-10 rounded-xl bg-[#ff8a5c]/10 border border-[#ff8a5c]/35 flex items-center justify-center text-[#ff8a5c]">
                       <Crown className="size-5" />
                     </div>
-                    <h2 className="text-2xl font-extrabold text-white tracking-wide">MAX</h2>
+                    <h2 className="text-2xl font-extrabold text-white tracking-wide">
+                      {MAX_PRICING_PLAN.name}
+                    </h2>
                   </div>
 
                   {/* Description */}
                   <p className="text-sm text-white/60 leading-relaxed mb-6">
-                    For couples who want a more premium and memorable guest experience.
+                    {MAX_PRICING_PLAN.description}
                   </p>
 
                   {/* Pricing Representation */}
                   <div className="flex items-baseline gap-2 mb-8">
-                    <span className="text-4xl font-extrabold text-white">₱3,599</span>
-                    <span className="text-sm text-white/40 line-through">₱7,200</span>
+                    <span className="text-4xl font-extrabold text-white">
+                      {MAX_PRICING_PLAN.priceLabel}
+                    </span>
+                    <span className="text-sm text-white/40 line-through">
+                      {MAX_PRICING_PLAN.regularPriceLabel}
+                    </span>
                     <span className="text-xs text-white/50 font-medium">regular</span>
                   </div>
 
@@ -262,48 +248,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                   </p>
 
                   {/* Feature List */}
-                  <ul className="mb-8 space-y-3.5">
-                    {MAX_FEATURES.map((feature) => (
-                      <li
-                        key={feature.label}
-                        className={`flex items-start gap-3 ${
-                          feature.emphasis === "featured"
-                            ? "-mx-3 rounded-xl border border-amber-300/10 bg-gradient-to-r from-[#ff8a5c]/10 via-amber-400/[0.06] to-transparent px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-                            : ""
-                        }`}
-                      >
-                        <Check
-                          className={`mt-0.5 size-4 shrink-0 ${
-                            feature.emphasis === "featured"
-                              ? "text-amber-300"
-                              : feature.emphasis === "exclusive"
-                                ? "text-[#ff9f7a]"
-                                : "text-[#ff8a5c]"
-                          }`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <span
-                              className={`text-sm leading-snug ${
-                                feature.emphasis === "featured"
-                                  ? "font-semibold text-[#ffe1d2]"
-                                  : feature.emphasis === "exclusive"
-                                    ? "font-medium text-[#ffc4aa]"
-                                    : "text-white/80"
-                              }`}
-                            >
-                              {feature.label}
-                            </span>
-                            {"badge" in feature ? (
-                              <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-200/90 uppercase">
-                                {feature.badge}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                  <MaxPlanFeatureList />
                 </div>
 
                 {/* Footer Block */}
@@ -316,7 +261,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                       currency: "PHP",
                       plan: "max",
                       source: "apply_pricing",
-                      value: 3599,
+                      value: MAX_PRICING_PLAN.price,
                     }}
                   >
                     Select MAX <ArrowRight className="size-4" />
