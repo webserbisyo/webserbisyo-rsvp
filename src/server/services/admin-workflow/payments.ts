@@ -16,6 +16,7 @@ import { writeAuditLog } from "@/server/services/write-audit-log";
 import { calculateHostingCoverage } from "./hosting";
 import { getRequiredPackageSettings } from "./package-settings";
 import {
+  assertCompleteOwnerSetup,
   ensureClientForApplication,
   ensureEventBundleForClient,
   ensureOwnerProfileForClient,
@@ -75,6 +76,7 @@ export async function confirmManualPayment(
     email: application.email,
     fullName: application.full_name,
   });
+  assertCompleteOwnerSetup(ownerSetup);
 
   const shouldWriteConfirmationAudit = payment.payment_status !== "paid";
   const { data: updatedPayment, error: paymentError } = await supabase

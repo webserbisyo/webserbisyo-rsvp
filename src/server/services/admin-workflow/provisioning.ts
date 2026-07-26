@@ -1,8 +1,13 @@
 import "server-only";
 
+import { clientStatusAllowsDashboardAccess } from "@/lib/auth/client-access";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 import { createClientUser } from "@/server/services/create-client-user";
+import {
+  escapePostgrestLikePattern,
+  normalizeAuthEmail,
+} from "@/server/services/find-auth-user-by-email";
 import { createDraftEvent } from "@/server/services/create-draft-event";
 import { provisionClient } from "@/server/services/provision-client";
 import {
@@ -47,19 +52,19 @@ type EnsureEventBundleInput = {
 
 export async function ensureClientForApplication(input: EnsureClientInput) {
   if (input.existingClientId) {
-    return getClientById(input.existingClientId);
+    return getAccessEnabledClientById(input.existingClientId);
   }
 
   if (input.application.approved_client_id) {
-    return getClientById(input.application.approved_client_id);
+    return getAccessEnabledClientById(input.application.approved_client_id);
   }
 
   const supabase = await createServerSupabaseClient();
-  const normalizedEmail = input.application.email.trim().toLowerCase();
+  const normalizedEmail = normalizeAuthEmail(input.application.email);
   const { data: matchingClients, error } = await supabase
     .from("clients")
     .select("*")
-    .eq("contact_email", normalizedEmail)
+    .ilike("contact_email", escapePostgrestLikePattern(normalizedEmail))
     .order("created_at", { ascending: true })
     .limit(2);
 
@@ -72,6 +77,12 @@ export async function ensureClientForApplication(input: EnsureClientInput) {
   }
 
   if (matchingClients?.[0]) {
+    if (normalizeAuthEmail(matchingClients[0].contact_email) !== normalizedEmail) {
+      throw new ServiceError(
+        "The existing client email does not match the normalized application email.",
+      );
+    }
+    assertClientCanBeProvisioned(matchingClients[0]);
     return matchingClients[0];
   }
 
@@ -92,15 +103,40 @@ export async function ensureOwnerProfileForClient(input: {
   return createClientUser(input);
 }
 
+export function assertCompleteOwnerSetup(
+  ownerSetup: Awaited<ReturnType<typeof ensureOwnerProfileForClient>>,
+) {
+  if (ownerSetup.warning) {
+    throw new ServiceError(ownerSetup.warning);
+  }
+
+  if (!ownerSetup.profileId || !ownerSetup.userId) {
+    throw new ServiceError(
+      "Client owner access is incomplete. Resolve the authentication relationship before continuing.",
+    );
+  }
+
+  if (ownerSetup.profileId !== ownerSetup.userId) {
+    throw new ServiceError(
+      "Client owner access is inconsistent. The profile and authentication user must share one identifier.",
+    );
+  }
+
+  return {
+    profileId: ownerSetup.profileId,
+    userId: ownerSetup.userId,
+  };
+}
+
 export async function ensureEventBundleForClient(input: EnsureEventBundleInput) {
   if (input.existingEventId) {
-    const event = await getEventById(input.existingEventId);
+    const event = await getEventById(input.existingEventId, input.clientId);
     const content = await ensureEventContent(event);
     return { content, event };
   }
 
   if (input.application.approved_event_id) {
-    const event = await getEventById(input.application.approved_event_id);
+    const event = await getEventById(input.application.approved_event_id, input.clientId);
     const content = await ensureEventContent(event);
     return { content, event };
   }
@@ -167,24 +203,38 @@ async function ensureEventContent(event: EventRecord) {
   return content;
 }
 
-async function getClientById(clientId: string) {
+async function getAccessEnabledClientById(clientId: string) {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.from("clients").select("*").eq("id", clientId).single();
 
   assertServiceSuccess(error, "Failed to load the linked client.");
   assertServiceData(data, "The linked client no longer exists.");
+  assertClientCanBeProvisioned(data);
 
   return data;
 }
 
-async function getEventById(eventId: string) {
+async function getEventById(eventId: string, clientId: string) {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.from("rsvp_events").select("*").eq("id", eventId).single();
+  const { data, error } = await supabase
+    .from("rsvp_events")
+    .select("*")
+    .eq("id", eventId)
+    .eq("client_id", clientId)
+    .single();
 
   assertServiceSuccess(error, "Failed to load the linked event.");
-  assertServiceData(data, "The linked event no longer exists.");
+  assertServiceData(data, "The linked event does not belong to the provisioned client.");
 
   return data;
+}
+
+function assertClientCanBeProvisioned(client: Tables<"clients">) {
+  if (!clientStatusAllowsDashboardAccess(client.status)) {
+    throw new ServiceError(
+      "This client is archived or cancelled. Restore access explicitly before provisioning client access.",
+    );
+  }
 }
 
 function buildDefaultEventSlug(application: ApplicationProvisioningRecord) {

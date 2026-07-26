@@ -1,5 +1,6 @@
 import "server-only";
 
+import { clientStatusAllowsDashboardAccess } from "@/lib/auth/client-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
@@ -20,6 +21,7 @@ import {
 import { sendClientPasswordSetup } from "@/server/services/send-client-password-setup";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import {
+  assertCompleteOwnerSetup,
   ensureClientForApplication,
   ensureEventBundleForClient,
   ensureOwnerProfileForClient,
@@ -44,6 +46,18 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
         "This application already contains provisioned links. Open the client record instead.",
       );
     }
+
+    const ownerSetup = await ensureOwnerProfileForClient({
+      clientId: linkedRecords.client.id,
+      email: application.email,
+      fullName: application.full_name,
+    });
+    assertCompleteOwnerSetup(ownerSetup);
+    await ensureEventBundleForClient({
+      application,
+      clientId: linkedRecords.client.id,
+      existingEventId: linkedRecords.event.id,
+    });
 
     return {
       application,
@@ -75,10 +89,7 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     email: application.email,
     fullName: application.full_name,
   });
-
-  if (ownerSetup.warning) {
-    warnings.push(ownerSetup.warning);
-  }
+  assertCompleteOwnerSetup(ownerSetup);
 
   const eventBundle = await ensureEventBundleForClient({
     application,
@@ -96,6 +107,7 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
       status: "approved",
     })
     .eq("id", application.id)
+    .in("status", ["submitted", "reviewing"])
     .select(
       "id, approved_at, approved_client_id, approved_event_id, reviewed_at, status, preferred_plan, preferred_manual_payment_option",
     )
@@ -103,6 +115,23 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
 
   assertServiceSuccess(error, "Failed to approve the application.");
   assertServiceData(approvedApplication, "Application approval returned no row.");
+
+  try {
+    await writeAuditLog({
+      action: "client_provisioning_completed",
+      actorUserId,
+      clientId: client.id,
+      entityId: application.id,
+      entityType: "rsvp_applications",
+      eventId: eventBundle.event.id,
+      metadata: {
+        application_id: application.id,
+        profile_id: ownerSetup.profileId,
+      },
+    });
+  } catch {
+    warnings.push("Provisioning completion audit logging was skipped.");
+  }
 
   try {
     await writeAuditLog({
@@ -123,20 +152,44 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     warnings.push("Audit log write was skipped for this approval.");
   }
 
-  if (ownerSetup.profileId && ownerSetup.userId) {
+  try {
+    const emailResult = await sendClientPasswordSetup({
+      actorUserId,
+      applicationId: application.id,
+      clientId: client.id,
+      eventId: eventBundle.event.id,
+      recipientName: application.full_name,
+    });
+
+    if (emailResult.status !== "sent") {
+      warnings.push(
+        "Secure client access was provisioned, but the setup email was not delivered. Use Resend access after checking the email provider.",
+      );
+    }
+
     try {
-      await sendClientPasswordSetup({
+      await writeAuditLog({
+        action:
+          emailResult.status === "sent"
+            ? "client_password_setup_email_sent"
+            : "client_password_setup_email_failed",
         actorUserId,
-        applicationId: application.id,
         clientId: client.id,
+        entityId: emailResult.id,
+        entityType: "email_logs",
         eventId: eventBundle.event.id,
-        recipientName: application.full_name,
+        metadata: {
+          application_id: application.id,
+          email_status: emailResult.status,
+        },
       });
     } catch {
-      warnings.push("Onboarding email could not be sent or logged.");
+      warnings.push("Setup email audit logging was skipped.");
     }
-  } else {
-    warnings.push("Client access email was skipped because secure owner access is incomplete.");
+  } catch {
+    warnings.push(
+      "Secure client access was provisioned, but the setup email could not be prepared. Use Resend access after reviewing the relationship graph.",
+    );
   }
 
   return {
@@ -540,6 +593,12 @@ async function getConsistentProvisionedLinks(clientId: string, eventId: string) 
   if (event.client_id !== client.id) {
     throw new ServiceError(
       "This application has inconsistent provisioned links. Resolve the linked client or event before approving it again.",
+    );
+  }
+
+  if (!clientStatusAllowsDashboardAccess(client.status)) {
+    throw new ServiceError(
+      "This application belongs to an archived or cancelled client. Restore client access explicitly before retrying provisioning.",
     );
   }
 
