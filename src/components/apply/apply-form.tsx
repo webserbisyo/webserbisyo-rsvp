@@ -346,7 +346,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
           <span className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
             step >= 2 ? "text-white/90" : "text-white/40"
           }`}>
-            Review &amp; Pay
+            Review Application
           </span>
         </div>
 
