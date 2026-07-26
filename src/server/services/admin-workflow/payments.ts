@@ -11,7 +11,7 @@ import {
   assertServiceSuccess,
 } from "@/server/services/service-error";
 import { sendMetaCapiPurchase } from "@/server/services/send-meta-capi-purchase";
-import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
+import { sendClientPasswordSetup } from "@/server/services/send-client-password-setup";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import { calculateHostingCoverage } from "./hosting";
 import { getRequiredPackageSettings } from "./package-settings";
@@ -71,7 +71,6 @@ export async function confirmManualPayment(
 
   const shouldSendOnboarding = await shouldSendOnboardingEmail(client.id);
   const ownerSetup = await ensureOwnerProfileForClient({
-    accessMode: shouldSendOnboarding ? "temporary_password" : "invite",
     clientId: client.id,
     email: application.email,
     fullName: application.full_name,
@@ -144,14 +143,13 @@ export async function confirmManualPayment(
 
   assertServiceSuccess(applicationError, "Failed to link the approved client and event.");
 
-  if (shouldSendOnboarding && ownerSetup.temporaryPassword) {
-    await sendOnboardingEmail({
+  if (shouldSendOnboarding && ownerSetup.profileId && ownerSetup.userId) {
+    await sendClientPasswordSetup({
+      actorUserId,
       applicationId: application.id,
       clientId: client.id,
       eventId: eventBundle.event.id,
-      recipientEmail: application.email,
       recipientName: application.full_name,
-      temporaryPassword: ownerSetup.temporaryPassword,
     });
   }
 
@@ -319,7 +317,7 @@ async function shouldSendOnboardingEmail(clientId: string) {
     .from("email_logs")
     .select("id", { count: "exact", head: true })
     .eq("client_id", clientId)
-    .eq("email_type", "client_onboarding");
+    .in("email_type", ["client_onboarding", "client_password_setup"]);
 
   assertServiceSuccess(error, "Failed to check onboarding email history.");
 

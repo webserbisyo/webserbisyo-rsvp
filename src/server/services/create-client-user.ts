@@ -1,12 +1,15 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { generateTemporaryPassword } from "./generate-temporary-password";
+import {
+  escapePostgrestLikePattern,
+  findUniqueAuthUserByEmail,
+  normalizeAuthEmail,
+} from "./find-auth-user-by-email";
+import { generateInternalAuthPassword } from "./generate-internal-auth-password";
 import { assertServiceData } from "./service-error";
 
 export type CreateClientUserInput = {
-  accessMode?: "invite" | "temporary_password";
   clientId: string;
   email: string;
   fullName?: string | null;
@@ -14,7 +17,6 @@ export type CreateClientUserInput = {
 
 export type CreateClientUserResult = {
   profileId?: string;
-  temporaryPassword?: string;
   userId?: string;
   warning?: string;
 };
@@ -22,188 +24,115 @@ export type CreateClientUserResult = {
 export async function createClientUser(
   input: CreateClientUserInput,
 ): Promise<CreateClientUserResult> {
-  const supabase = await createServerSupabaseClient();
   const adminSupabase = createAdminClient();
-  const normalizedEmail = input.email.trim().toLowerCase();
-  const accessMode = input.accessMode ?? "invite";
-
-  const { data: existingProfile, error: existingProfileError } = await supabase
+  const normalizedEmail = normalizeAuthEmail(input.email);
+  const { data: profiles, error: profilesError } = await adminSupabase
     .from("profiles")
     .select("*")
-    .eq("email", normalizedEmail)
-    .maybeSingle();
+    .ilike("email", escapePostgrestLikePattern(normalizedEmail))
+    .limit(2);
 
-  if (existingProfileError) {
+  if (profilesError) {
     return {
       warning: "Client owner setup was skipped because the existing profile could not be checked.",
     };
   }
 
-  if (existingProfile) {
-    if (existingProfile.client_id === input.clientId && existingProfile.role === "client_owner") {
-      const authUser = await findAuthUserByEmail(adminSupabase, normalizedEmail);
-
-      if (!authUser || authUser.id !== existingProfile.id) {
-        return {
-          warning:
-            "Client owner access could not be refreshed because the linked auth account is missing.",
-        };
-      }
-
-      if (accessMode === "temporary_password") {
-        return issueTemporaryPassword(adminSupabase, authUser.id, existingProfile.id);
-      }
-
-      return { profileId: existingProfile.id, userId: authUser.id };
-    }
-
+  if ((profiles?.length ?? 0) > 1) {
     return {
       warning:
-        "Client owner setup was skipped because this email is already linked to a different profile.",
+        "Client owner setup was skipped because multiple profiles use this normalized email.",
     };
   }
 
-  const authUser = await findAuthUserByEmail(adminSupabase, normalizedEmail);
+  const existingProfile = profiles?.[0] ?? null;
+
+  if (existingProfile) {
+    if (existingProfile.client_id !== input.clientId || existingProfile.role !== "client_owner") {
+      return {
+        warning:
+          "Client owner setup was skipped because this email is already linked to a different profile.",
+      };
+    }
+
+    if (!existingProfile.is_active) {
+      return {
+        warning:
+          "Client owner setup requires manual review because the existing profile is inactive.",
+      };
+    }
+
+    const authUser = await findUniqueAuthUserByEmail(normalizedEmail);
+
+    if (!authUser || authUser.id !== existingProfile.id) {
+      return {
+        warning:
+          "Client owner access could not be refreshed because the linked auth account is missing or inconsistent.",
+      };
+    }
+
+    return { profileId: existingProfile.id, userId: authUser.id };
+  }
+
+  const authUser = await findUniqueAuthUserByEmail(normalizedEmail);
 
   if (authUser) {
-    const profileResult = await createProfileForAuthUser(supabase, {
+    const profileResult = await createProfileForAuthUser({
       authUserId: authUser.id,
       clientId: input.clientId,
       email: normalizedEmail,
       fullName: input.fullName,
     });
 
-    if (profileResult.warning || accessMode !== "temporary_password") {
-      return {
-        ...profileResult,
-        userId: authUser.id,
-      };
-    }
-
-    const passwordResult = await issueTemporaryPassword(adminSupabase, authUser.id, authUser.id);
-
     return {
       ...profileResult,
-      ...passwordResult,
-      warning: passwordResult.warning ?? profileResult.warning,
+      userId: authUser.id,
     };
   }
 
-  if (accessMode === "temporary_password") {
-    const temporaryPassword = generateTemporaryPassword();
-    const { data: createdUser, error: createError } = await adminSupabase.auth.admin.createUser({
-      email: normalizedEmail,
-      email_confirm: true,
-      password: temporaryPassword,
-      user_metadata: {
-        client_id: input.clientId,
-        full_name: input.fullName ?? null,
-        role: "client_owner",
-      },
-    });
+  const internalPassword = generateInternalAuthPassword();
+  const { data: createdUser, error: createError } = await adminSupabase.auth.admin.createUser({
+    email: normalizedEmail,
+    email_confirm: true,
+    password: internalPassword,
+    user_metadata: {
+      full_name: input.fullName ?? null,
+    },
+  });
 
-    if (createError) {
-      return {
-        warning: getCreateUserWarningMessage(createError),
-      };
-    }
-
-    if (!createdUser.user) {
-      return {
-        warning: "Client owner access could not be created because no auth user was returned.",
-      };
-    }
-
-    const profileResult = await createProfileForAuthUser(supabase, {
-      authUserId: createdUser.user.id,
-      clientId: input.clientId,
-      email: normalizedEmail,
-      fullName: input.fullName,
-    });
-
-    if (profileResult.warning) {
-      return {
-        ...profileResult,
-        userId: createdUser.user.id,
-      };
-    }
-
+  if (createError) {
     return {
-      ...profileResult,
-      temporaryPassword,
-      userId: createdUser.user.id,
+      warning: getCreateUserWarningMessage(createError),
     };
   }
 
-  const redirectTo = process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/callback?next=/dashboard`
-    : undefined;
-  const { data: invitedUser, error: inviteError } =
-    await adminSupabase.auth.admin.inviteUserByEmail(normalizedEmail, {
-      data: {
-        client_id: input.clientId,
-        full_name: input.fullName ?? null,
-        role: "client_owner",
-      },
-      redirectTo,
-    });
-
-  if (inviteError) {
+  if (!createdUser.user) {
     return {
-      warning: getInviteWarningMessage(inviteError),
+      warning: "Client owner access could not be created because no auth user was returned.",
     };
   }
 
-  if (!invitedUser.user) {
-    return {
-      warning: "Client owner setup was skipped because the onboarding invite returned no user.",
-    };
-  }
-
-  return createProfileForAuthUser(supabase, {
-    authUserId: invitedUser.user.id,
+  const profileResult = await createProfileForAuthUser({
+    authUserId: createdUser.user.id,
     clientId: input.clientId,
     email: normalizedEmail,
     fullName: input.fullName,
   });
-}
-
-async function issueTemporaryPassword(
-  adminSupabase: ReturnType<typeof createAdminClient>,
-  authUserId: string,
-  profileId: string,
-): Promise<CreateClientUserResult> {
-  const temporaryPassword = generateTemporaryPassword();
-  const { error } = await adminSupabase.auth.admin.updateUserById(authUserId, {
-    email_confirm: true,
-    password: temporaryPassword,
-  });
-
-  if (error) {
-    return {
-      profileId,
-      userId: authUserId,
-      warning: getUpdateUserWarningMessage(error),
-    };
-  }
 
   return {
-    profileId,
-    temporaryPassword,
-    userId: authUserId,
+    ...profileResult,
+    userId: createdUser.user.id,
   };
 }
 
-async function createProfileForAuthUser(
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
-  input: {
-    authUserId: string;
-    clientId: string;
-    email: string;
-    fullName?: string | null;
-  },
-): Promise<CreateClientUserResult> {
-  const { data: profile, error: profileError } = await supabase
+async function createProfileForAuthUser(input: {
+  authUserId: string;
+  clientId: string;
+  email: string;
+  fullName?: string | null;
+}): Promise<CreateClientUserResult> {
+  const adminSupabase = createAdminClient();
+  const { data: profile, error: profileError } = await adminSupabase
     .from("profiles")
     .insert({
       client_id: input.clientId,
@@ -217,20 +146,24 @@ async function createProfileForAuthUser(
     .single();
 
   if (profileError) {
-    const { data: existingProfile, error: existingProfileError } = await supabase
+    const { data: existingProfile, error: existingProfileError } = await adminSupabase
       .from("profiles")
       .select("*")
       .eq("id", input.authUserId)
       .maybeSingle();
 
     if (!existingProfileError && existingProfile) {
-      if (existingProfile.client_id === input.clientId && existingProfile.role === "client_owner") {
+      if (
+        existingProfile.client_id === input.clientId &&
+        existingProfile.role === "client_owner" &&
+        existingProfile.is_active
+      ) {
         return { profileId: existingProfile.id };
       }
 
       return {
         warning:
-          "Client owner setup was skipped because this auth user is already linked to a different profile.",
+          "Client owner setup was skipped because this auth user is already linked to a different or inactive profile.",
       };
     }
 
@@ -244,41 +177,7 @@ async function createProfileForAuthUser(
   return { profileId: profile.id };
 }
 
-async function findAuthUserByEmail(
-  adminSupabase: ReturnType<typeof createAdminClient>,
-  email: string,
-) {
-  const { data, error } = await adminSupabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-
-  if (error) {
-    return null;
-  }
-
-  return data.users.find((user) => user.email?.toLowerCase() === email) ?? null;
-}
-
-function getInviteWarningMessage(error: { code?: string | null; message?: string | null }) {
-  const normalizedMessage = error.message?.toLowerCase() ?? "";
-
-  if (normalizedMessage.includes("already been registered")) {
-    return "Onboarding invite skipped because the user already exists.";
-  }
-
-  if (normalizedMessage.includes("rate limit")) {
-    return "Onboarding invite skipped because email sending is rate-limited.";
-  }
-
-  if (normalizedMessage.includes("invalid")) {
-    return "Onboarding invite skipped because the email address is invalid.";
-  }
-
-  return "Onboarding invite skipped because the client owner could not be invited.";
-}
-
-function getCreateUserWarningMessage(error: { code?: string | null; message?: string | null }) {
+function getCreateUserWarningMessage(error: { message?: string | null }) {
   const normalizedMessage = error.message?.toLowerCase() ?? "";
 
   if (normalizedMessage.includes("already been registered")) {
@@ -286,18 +185,8 @@ function getCreateUserWarningMessage(error: { code?: string | null; message?: st
   }
 
   if (normalizedMessage.includes("password")) {
-    return "Client owner access could not be created because the password did not meet auth requirements.";
+    return "Client owner access could not be created because the internal password did not meet auth requirements.";
   }
 
   return "Client owner access could not be created.";
-}
-
-function getUpdateUserWarningMessage(error: { code?: string | null; message?: string | null }) {
-  const normalizedMessage = error.message?.toLowerCase() ?? "";
-
-  if (normalizedMessage.includes("password")) {
-    return "Client owner access could not be reset because the password did not meet auth requirements.";
-  }
-
-  return "Client owner access could not be reset.";
 }

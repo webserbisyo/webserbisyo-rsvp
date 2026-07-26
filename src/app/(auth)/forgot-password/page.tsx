@@ -5,7 +5,7 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell
       title="Reset your dashboard password"
-      description="Enter your dashboard email and we'll send a secure reset link if the account is active."
+      description="Request a secure link using the approved email connected to your dashboard."
     >
       <ForgotPasswordForm />
     </AuthShell>

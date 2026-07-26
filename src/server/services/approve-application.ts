@@ -7,8 +7,8 @@ import { createClientUser } from "./create-client-user";
 import { createDraftEvent } from "./create-draft-event";
 import { provisionClient } from "./provision-client";
 import { recordOneTimePayment } from "./record-one-time-payment";
+import { sendClientPasswordSetup } from "./send-client-password-setup";
 import { sendMetaCapiPurchase } from "./send-meta-capi-purchase";
-import { sendOnboardingEmail } from "./send-onboarding-email";
 import { assertServiceData, assertServiceSuccess } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
@@ -41,7 +41,6 @@ export async function approveApplication(
         });
 
   const ownerSetup = await createClientUser({
-    accessMode: "temporary_password",
     clientId: client.id,
     email: application.email,
     fullName: payload.contactName ?? application.full_name,
@@ -95,14 +94,13 @@ export async function approveApplication(
   assertServiceSuccess(approvalError, "Failed to mark RSVP application as approved.");
   assertServiceData(approvedApplication, "Approved RSVP application update returned no row.");
 
-  if (ownerSetup.temporaryPassword) {
-    await sendOnboardingEmail({
+  if (ownerSetup.profileId && ownerSetup.userId) {
+    await sendClientPasswordSetup({
+      actorUserId,
       applicationId: application.id,
       clientId: client.id,
       eventId: eventBundle.event.id,
-      recipientEmail: application.email,
       recipientName: payload.contactName ?? application.full_name,
-      temporaryPassword: ownerSetup.temporaryPassword,
     });
   }
 

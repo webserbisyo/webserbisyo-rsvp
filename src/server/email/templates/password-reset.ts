@@ -7,8 +7,10 @@ type BuildPasswordResetEmailInput = {
   supportEmail?: string | null;
 };
 
+export const CLIENT_PASSWORD_RECOVERY_SUBJECT = "Reset your WebSerbisyo RSVP password";
+
 export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
-  const subject = "Reset your WebSerbisyo RSVP password";
+  const subject = CLIENT_PASSWORD_RECOVERY_SUBJECT;
   const supportEmail = input.supportEmail ?? "webserbisyo@gmail.com";
 
   const html = `
@@ -31,13 +33,13 @@ export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
                     </tr>
                     <tr>
                       <td style="padding:0 28px 24px;">
-                        <a href="${escapeAttribute(input.resetUrl)}" style="display:inline-block; background:#e86d52; color:#fffdf9; text-decoration:none; font-weight:700; border-radius:999px; padding:14px 24px;">Reset password</a>
+                        <a href="${escapeAttribute(input.resetUrl)}" style="display:inline-block; background:#e86d52; color:#fffdf9; text-decoration:none; font-weight:700; border-radius:999px; padding:14px 24px;">Reset My Password</a>
                       </td>
                     </tr>
                     <tr>
                       <td style="padding:0 28px 28px;">
                         <div style="padding:16px 18px; background:#fff7ef; border:1px solid #f2d2c3; border-radius:18px; font-size:14px; line-height:1.7; color:#4b5563;">
-                          This link is time-limited. If you did not request this password reset, you can safely ignore this email.
+                          For your security, this link expires. If it no longer works, request a new secure link. If you did not request this password reset, you can safely ignore this email.
                         </div>
                       </td>
                     </tr>
@@ -73,9 +75,9 @@ export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
     "",
     "We received a request to reset your WebSerbisyo RSVP dashboard password.",
     "",
-    `Reset password: ${input.resetUrl}`,
+    `Reset My Password: ${input.resetUrl}`,
     "",
-    "This link is time-limited. If you did not request this password reset, you can safely ignore this email.",
+    "For your security, this link expires. If it no longer works, request a new secure link. If you did not request this password reset, you can safely ignore this email.",
     "",
     "This is an automated account email from WebSerbisyo RSVP.",
     input.messengerUrl ? `Need help? Message WebSerbisyo on Facebook: ${input.messengerUrl}` : null,

@@ -8,8 +8,8 @@ const DIGITS = "23456789";
 const SYMBOLS = "!@#$%^&*()-_=+?";
 const ALL = `${UPPER}${LOWER}${DIGITS}${SYMBOLS}`;
 
-export function generateTemporaryPassword(length = 16) {
-  const targetLength = Math.max(length, 12);
+export function generateInternalAuthPassword(length = 32) {
+  const targetLength = Math.max(length, 24);
   const requiredSets = [UPPER, LOWER, DIGITS, SYMBOLS];
   const characters = requiredSets.map((set) => pick(set));
 

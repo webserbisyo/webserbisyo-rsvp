@@ -85,7 +85,6 @@ export async function ensureClientForApplication(input: EnsureClientInput) {
 }
 
 export async function ensureOwnerProfileForClient(input: {
-  accessMode?: "invite" | "temporary_password";
   clientId: string;
   email: string;
   fullName?: string | null;

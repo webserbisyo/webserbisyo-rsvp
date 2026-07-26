@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "playwright test tests/event-website-reliability.spec.ts",
     "test:auth-security": "playwright test tests/auth-security.spec.ts",
+    "test:password-security": "playwright test tests/password-security.spec.ts",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",

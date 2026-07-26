@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 
 type LoginFormProps = {
   initialErrorCode?: string;
+  initialSuccessMessage?: string | null;
   nextPath?: string | null;
   signOutOnMount?: boolean;
 };
@@ -21,7 +22,12 @@ const INITIAL_LOGIN_STATE: LoginActionState = {
   error: null,
 };
 
-export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }: LoginFormProps) {
+export function LoginForm({
+  initialErrorCode,
+  initialSuccessMessage,
+  nextPath,
+  signOutOnMount = false,
+}: LoginFormProps) {
   const initialMessage = getAuthRedirectErrorMessage(initialErrorCode);
   const [state, formAction, isPending] = useActionState(loginAction, INITIAL_LOGIN_STATE);
 
@@ -39,6 +45,12 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
   }, [initialMessage]);
 
   useEffect(() => {
+    if (initialSuccessMessage) {
+      toast.success(initialSuccessMessage);
+    }
+  }, [initialSuccessMessage]);
+
+  useEffect(() => {
     if (state.error) {
       toast.error(state.error);
     }
@@ -47,8 +59,14 @@ export function LoginForm({ initialErrorCode, nextPath, signOutOnMount = false }
   return (
     <div className="space-y-5">
       <p className="sr-only" aria-live="assertive" aria-atomic="true">
-        {state.error ?? initialMessage}
+        {state.error ?? initialMessage ?? initialSuccessMessage}
       </p>
+
+      {initialSuccessMessage ? (
+        <p className="rounded-xl border border-emerald-200/30 bg-emerald-500/15 px-4 py-3 text-sm text-white">
+          {initialSuccessMessage}
+        </p>
+      ) : null}
 
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="next" value={nextPath ?? ""} />

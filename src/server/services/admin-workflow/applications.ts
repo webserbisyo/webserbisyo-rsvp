@@ -17,7 +17,7 @@ import {
   assertServiceData,
   assertServiceSuccess,
 } from "@/server/services/service-error";
-import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
+import { sendClientPasswordSetup } from "@/server/services/send-client-password-setup";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import {
   ensureClientForApplication,
@@ -71,7 +71,6 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
   });
 
   const ownerSetup = await ensureOwnerProfileForClient({
-    accessMode: "temporary_password",
     clientId: client.id,
     email: application.email,
     fullName: application.full_name,
@@ -124,21 +123,20 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     warnings.push("Audit log write was skipped for this approval.");
   }
 
-  if (ownerSetup.temporaryPassword) {
+  if (ownerSetup.profileId && ownerSetup.userId) {
     try {
-      await sendOnboardingEmail({
+      await sendClientPasswordSetup({
+        actorUserId,
         applicationId: application.id,
         clientId: client.id,
         eventId: eventBundle.event.id,
-        recipientEmail: application.email,
         recipientName: application.full_name,
-        temporaryPassword: ownerSetup.temporaryPassword,
       });
     } catch {
       warnings.push("Onboarding email could not be sent or logged.");
     }
   } else {
-    warnings.push("Client access email was skipped because no temporary password was issued.");
+    warnings.push("Client access email was skipped because secure owner access is incomplete.");
   }
 
   return {

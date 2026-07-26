@@ -1,7 +1,5 @@
 import "server-only";
 
-type ClientAccessEmailMode = "onboarding" | "password_reset";
-
 type BuildClientAccessEmailInput = {
   clientName: string;
   dashboardUrl: string;
@@ -9,13 +7,12 @@ type BuildClientAccessEmailInput = {
   eventType: string | null;
   loginEmail: string;
   messengerUrl?: string | null;
-  mode: ClientAccessEmailMode;
   planLabel: string;
   recipientName?: string | null;
   replyToEmail?: string | null;
   roleLabel: string;
+  setupUrl: string;
   supportEmail?: string | null;
-  temporaryPassword: string;
 };
 
 type ClientAccessEmailContent = {
@@ -23,6 +20,8 @@ type ClientAccessEmailContent = {
   subject: string;
   text: string;
 };
+
+export const CLIENT_PASSWORD_SETUP_SUBJECT = "Create your WebSerbisyo RSVP dashboard password";
 
 export function buildClientAccessEmail(
   input: BuildClientAccessEmailInput,
@@ -33,30 +32,18 @@ export function buildClientAccessEmail(
   const supportEmail = input.supportEmail ?? input.replyToEmail ?? "webserbisyo@gmail.com";
   const eventTypeLabel = formatEventTypeLabel(input.eventType);
   const eventDateLabel = input.eventDate ? formatDate(input.eventDate) : "To be announced";
-  const ctaLabel = input.mode === "password_reset" ? "Open dashboard" : "Go to your dashboard";
-  const subject =
-    input.mode === "password_reset"
-      ? "Your new WebSerbisyo RSVP temporary password"
-      : "Your WebSerbisyo RSVP dashboard account is ready";
-  const eyebrow = input.mode === "password_reset" ? "Account access reset" : "Dashboard ready";
-  const intro =
-    input.mode === "password_reset"
-      ? "Your dashboard access was reset. Use the details below to sign in with a new temporary password."
-      : "Your RSVP dashboard account is ready. Review your event details, website status, package, and next steps in one place.";
-  const welcomeNote =
-    input.mode === "password_reset"
-      ? "Sign in with the updated details below, then continue checking your event and account progress in one place."
-      : eventTypeLabel
-        ? `Welcome to WebSerbisyo RSVP. Your client dashboard is ready for your ${eventTypeLabel.toLowerCase()} celebration.`
-        : "Welcome to WebSerbisyo RSVP. Your client dashboard is ready for your upcoming celebration.";
+  const ctaLabel = "Create My Password";
+  const subject = CLIENT_PASSWORD_SETUP_SUBJECT;
+  const eyebrow = "Dashboard ready";
+  const intro = "Your RSVP dashboard account is ready. Create a secure password before signing in.";
+  const welcomeNote = eventTypeLabel
+    ? `Welcome to WebSerbisyo RSVP. Your client dashboard is ready for your ${eventTypeLabel.toLowerCase()} celebration.`
+    : "Welcome to WebSerbisyo RSVP. Your client dashboard is ready for your upcoming celebration.";
   const securityNote =
-    input.mode === "password_reset"
-      ? "This is a new temporary password. If you did not request this update, reply to this email right away."
-      : 'Use the account details above to sign in to your WebSerbisyo RSVP dashboard. You can use "Forgot password?" from the sign-in page anytime you need to reset your access.';
+    "For your security, this link expires. If it no longer works, request a new secure link from Forgot password on the sign-in page.";
 
   const rows = [
     ["Login email", escapeHtml(input.loginEmail)],
-    ["Temporary password", escapeHtml(input.temporaryPassword)],
     ["Celebration type", escapeHtml(eventTypeLabel ?? "Upcoming celebration")],
     ["Event date", escapeHtml(eventDateLabel)],
     ["Package", escapeHtml(input.planLabel)],
@@ -73,8 +60,8 @@ export function buildClientAccessEmail(
     .join("");
 
   const nextSteps = [
-    "Review your event summary, package, and payment details.",
-    "Check your RSVP website status and next setup steps.",
+    "Create your password using the secure button above.",
+    "Sign in and review your event summary, package, and payment details.",
     'Use "Forgot password?" from the sign-in page anytime you need to reset your access.',
   ]
     .map(
@@ -135,7 +122,7 @@ export function buildClientAccessEmail(
                     </tr>
                     <tr>
                       <td style="padding:12px 28px 28px;">
-                        <a href="${escapeAttribute(input.dashboardUrl)}" style="display:inline-block; background:#e86d52; color:#fffdf9; text-decoration:none; font-weight:700; border-radius:999px; padding:14px 24px;">${ctaLabel}</a>
+                        <a href="${escapeAttribute(input.setupUrl)}" style="display:inline-block; background:#e86d52; color:#fffdf9; text-decoration:none; font-weight:700; border-radius:999px; padding:14px 24px;">${ctaLabel}</a>
                       </td>
                     </tr>
                     <tr>
@@ -181,19 +168,19 @@ export function buildClientAccessEmail(
     welcomeNote,
     "",
     `Login email: ${input.loginEmail}`,
-    `Temporary password: ${input.temporaryPassword}`,
     `Celebration type: ${eventTypeLabel ?? "Upcoming celebration"}`,
     `Event date: ${eventDateLabel}`,
     `Package: ${input.planLabel}`,
     `Access: ${roleCopy}`,
     "",
+    `Create My Password: ${input.setupUrl}`,
     `Dashboard: ${input.dashboardUrl}`,
     "",
     securityNote,
     "",
     "Next steps:",
-    "1. Review your event summary, package, and payment details.",
-    "2. Check your RSVP website status and next setup steps.",
+    "1. Create your password using the secure link above.",
+    "2. Sign in and review your event summary, package, and payment details.",
     "3. Use Forgot password from the sign-in page anytime you need to reset your access.",
     "",
     "This is an automated account email from WebSerbisyo RSVP.",
