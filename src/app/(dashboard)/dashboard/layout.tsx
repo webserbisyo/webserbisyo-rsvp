@@ -22,6 +22,16 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     }
 
     if (error instanceof PermissionError) {
+      if (
+        error.code === "client_inactive" ||
+        error.code === "missing_client" ||
+        error.code === "wrong_client"
+      ) {
+        redirect(
+          `/login?error=${error.code === "client_inactive" ? "client_inactive" : "missing_profile"}`,
+        );
+      }
+
       redirect("/admin");
     }
 

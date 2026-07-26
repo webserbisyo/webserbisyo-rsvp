@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { clientStatusAllowsDashboardAccess } from "@/lib/auth/client-access";
 import type { Database, Tables } from "@/lib/supabase/types";
 
 export type AuthenticatedProfile = Pick<
@@ -8,6 +9,7 @@ export type AuthenticatedProfile = Pick<
 
 export type AuthRedirectErrorCode =
   | "callback_failed"
+  | "client_inactive"
   | "inactive_profile"
   | "missing_profile"
   | "unknown_role";
@@ -55,6 +57,28 @@ export async function getProfileLookupResult(
     };
   }
 
+  if (CLIENT_ROLES.has(data.role)) {
+    if (!data.client_id) {
+      return {
+        profile: data,
+        status: "missing_profile",
+      };
+    }
+
+    const { data: client, error: clientError } = await supabase
+      .from("clients")
+      .select("status")
+      .eq("id", data.client_id)
+      .maybeSingle();
+
+    if (clientError || !clientStatusAllowsDashboardAccess(client?.status)) {
+      return {
+        profile: data,
+        status: "client_inactive",
+      };
+    }
+  }
+
   return {
     profile: data,
     status: "ok",
@@ -97,6 +121,8 @@ export function getAuthRedirectErrorMessage(code: string | null | undefined): st
   switch (code) {
     case "callback_failed":
       return "The sign-in callback could not be completed. Please try again.";
+    case "client_inactive":
+      return "This client dashboard is not currently active. Contact support if you need access.";
     case "inactive_profile":
       return "Your account is inactive. Contact support if you need access.";
     case "missing_profile":

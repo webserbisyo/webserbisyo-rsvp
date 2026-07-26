@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getAuthGuardMode } from "@/lib/auth/proxy-policy";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getSupabasePublicEnv } from "./lib/supabase/env";
+import { applySupabaseResponseHeaders } from "./lib/supabase/response-headers";
 
 const AUTH_GUARD_PATH_PREFIXES = ["/admin", "/dashboard"] as const;
 const PLATFORM_OWNED_PUBLIC_PATH_PREFIXES = [
@@ -30,7 +32,13 @@ export async function proxy(request: NextRequest) {
 
   const requestHeaders = createAuthGuardRequestHeaders(request);
 
-  if (process.env.RSVP_AUTH_GUARD_ENABLED !== "true") {
+  const authGuardMode = getAuthGuardMode(process.env);
+
+  if (authGuardMode === "production_misconfigured") {
+    return authConfigurationErrorResponse();
+  }
+
+  if (authGuardMode === "local_bypass") {
     return NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -43,11 +51,7 @@ export async function proxy(request: NextRequest) {
   try {
     env = getSupabasePublicEnv();
   } catch {
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+    return authConfigurationErrorResponse();
   }
 
   let supabaseResponse = NextResponse.next({
@@ -61,7 +65,7 @@ export async function proxy(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, responseHeaders) {
         cookiesToSet.forEach(({ name, value, options }) =>
           request.cookies.set({ name, value, ...options }),
         );
@@ -73,6 +77,7 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set({ name, value, ...options }),
         );
+        applySupabaseResponseHeaders(supabaseResponse.headers, responseHeaders);
       },
     },
   });
@@ -172,6 +177,16 @@ function createAuthGuardRequestHeaders(request: NextRequest) {
   requestHeaders.set(ORIGINAL_SEARCH_HEADER, request.nextUrl.search);
 
   return requestHeaders;
+}
+
+function authConfigurationErrorResponse() {
+  return new NextResponse("Authentication is temporarily unavailable.", {
+    headers: {
+      "Cache-Control": "private, no-store",
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+    status: 503,
+  });
 }
 
 export const config = {

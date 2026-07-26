@@ -8,6 +8,7 @@ import {
   EventSlugSchema,
   createPublicRsvpResponseSchema,
 } from "@/lib/validations/rsvp-response.schema";
+import { enforceRsvpSubmissionRateLimit } from "@/server/security/request-rate-limit";
 import { assertServiceSuccess, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
@@ -41,9 +42,13 @@ type RsvpCompanionSubmissionPayload = {
 
 export async function submitRsvpResponse(
   input: unknown,
-  options?: { accessToken?: string | null; source?: string },
+  options?: { accessToken?: string | null; clientAddress?: string | null; source?: string },
 ) {
   const eventSlug = parseEventSlug(input);
+  enforceRsvpSubmissionRateLimit({
+    clientAddress: options?.clientAddress,
+    eventSlug,
+  });
   const supabase = createAdminClient();
   // Public RSVP writes intentionally use a server-only admin client after validation.
   // Dashboard reads stay on SSR + RLS so browser-facing code never receives service-role access.
