@@ -67,7 +67,7 @@ test("branded emails contain secure actions and no readable password", () => {
 test("the password form requires a recovery event and ends the local session", () => {
   const source = readSource("src/components/auth/reset-password-form.tsx");
 
-  expect(source).toContain('event === "PASSWORD_RECOVERY"');
+  expect(source).toContain("verifyRecoveryMarkerAction");
   expect(source).toContain("updateUser({ password: nextPassword })");
   expect(source).toContain('signOut({ scope: "local" })');
   expect(source).toContain("/login?message=password_updated");

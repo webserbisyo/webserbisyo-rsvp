@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import {
+  clearRecoveryMarkerAction,
+  verifyRecoveryMarkerAction,
+} from "@/app/actions/recovery-intent-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +31,15 @@ export function ResetPasswordForm() {
 
     async function checkExistingSession() {
       const { data } = await supabase.auth.getSession();
-      if (isMounted && data.session) {
-        setRecoveryState("ready");
+      if (!isMounted) return;
+
+      if (data.session) {
+        const { valid } = await verifyRecoveryMarkerAction(data.session.user.id);
+        if (isMounted) {
+          setRecoveryState(valid ? "ready" : "invalid");
+        }
+      } else {
+        setRecoveryState("invalid");
       }
     }
 
@@ -40,10 +51,14 @@ export function ResetPasswordForm() {
       }
     }, 5_000);
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (isMounted && (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session))) {
-        window.clearTimeout(invalidTimer);
-        setRecoveryState("ready");
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      if (session) {
+        const { valid } = await verifyRecoveryMarkerAction(session.user.id);
+        if (isMounted) {
+          window.clearTimeout(invalidTimer);
+          setRecoveryState(valid ? "ready" : "invalid");
+        }
       }
     });
 
@@ -81,6 +96,7 @@ export function ResetPasswordForm() {
       return;
     }
 
+    await clearRecoveryMarkerAction();
     setPassword("");
     setConfirmPassword("");
     setRecoveryState("success");
