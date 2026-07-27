@@ -14,7 +14,6 @@ import { loginAction, type LoginActionState } from "@/server/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 
 type LoginFormProps = {
   initialErrorCode?: string;
@@ -139,9 +138,9 @@ export function LoginForm({
           </Button>
 
           <div className="flex items-center gap-3" aria-hidden="true">
-            <Separator className="bg-white/35" />
-            <span className="text-xs font-medium tracking-wide text-white/70">or</span>
-            <Separator className="bg-white/35" />
+            <div className="h-px flex-1 bg-white/35" />
+            <span className="shrink-0 text-xs font-medium tracking-wide text-white/70">or</span>
+            <div className="h-px flex-1 bg-white/35" />
           </div>
         </>
       ) : null}
