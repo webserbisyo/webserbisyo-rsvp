@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, LockKeyhole, CheckCircle2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { setRecoveryMarkerAction } from "@/app/actions/recovery-intent-actions";
 import { Button } from "@/components/ui/button";
 
 export function AuthConfirmClient() {
@@ -41,6 +42,8 @@ export function AuthConfirmClient() {
       );
       return;
     }
+
+    await setRecoveryMarkerAction(data.session.user.id);
 
     const targetUrl = isSetup
       ? `/reset-password?intent=password_setup`
