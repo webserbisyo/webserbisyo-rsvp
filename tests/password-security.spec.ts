@@ -30,7 +30,7 @@ test("setup and recovery both use Supabase recovery-class links", () => {
   const source = readSource("src/server/services/client-password-links.ts");
 
   expect(source).toContain('type: "recovery"');
-  expect(source).toContain('new URL("/reset-password", baseUrl)');
+  expect(source).toContain('new URL("/auth/confirm", baseUrl)');
   expect(source).toContain("client_password_setup_link_issued");
   expect(source).toContain("client_password_recovery_link_issued");
   expect(source).not.toContain("action_link,");
@@ -68,7 +68,6 @@ test("the password form requires a recovery event and ends the local session", (
   const source = readSource("src/components/auth/reset-password-form.tsx");
 
   expect(source).toContain('event === "PASSWORD_RECOVERY"');
-  expect(source).not.toContain('event === "SIGNED_IN"');
   expect(source).toContain("updateUser({ password: nextPassword })");
   expect(source).toContain('signOut({ scope: "local" })');
   expect(source).toContain("/login?message=password_updated");

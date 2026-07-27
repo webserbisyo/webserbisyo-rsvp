@@ -82,6 +82,7 @@ export function buildClientAccessEmail(
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px; margin:0 auto;">
               <tr>
                 <td style="padding:0 20px 18px; text-align:center;">
+                  <img src="https://rsvp.webserbisyo.com/images/brand/webserbisyo-logo.jpeg" alt="WebSerbisyo RSVP" width="80" height="80" style="display:block; margin:0 auto 12px; width:80px; height:80px; border-radius:16px; border:0;" />
                   <div style="display:inline-flex; gap:8px;">
                     <span style="display:inline-block; width:8px; height:8px; border-radius:999px; background:#f0c987;"></span>
                     <span style="display:inline-block; width:8px; height:8px; border-radius:999px; background:#e86d52;"></span>

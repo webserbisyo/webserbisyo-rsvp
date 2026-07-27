@@ -23,18 +23,32 @@ export function ResetPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function checkExistingSession() {
+      const { data } = await supabase.auth.getSession();
+      if (isMounted && data.session) {
+        setRecoveryState("ready");
+      }
+    }
+
+    void checkExistingSession();
+
     const invalidTimer = window.setTimeout(() => {
-      setRecoveryState((current) => (current === "checking" ? "invalid" : current));
+      if (isMounted) {
+        setRecoveryState((current) => (current === "checking" ? "invalid" : current));
+      }
     }, 5_000);
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" && session) {
+      if (isMounted && (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session))) {
         window.clearTimeout(invalidTimer);
         setRecoveryState("ready");
       }
     });
 
     return () => {
+      isMounted = false;
       window.clearTimeout(invalidTimer);
       subscription.subscription.unsubscribe();
     };

@@ -30,15 +30,29 @@ export async function generateClientPasswordLink(input: {
     throw new ServiceError("The linked authentication email could not be verified.");
   }
 
+  const baseUrl = buildResetPasswordUrl();
   const { data, error } = await supabase.auth.admin.generateLink({
     type: "recovery",
     email: userData.user.email,
     options: {
-      redirectTo: buildResetPasswordUrl(),
+      redirectTo: baseUrl,
     },
   });
 
-  if (error || !data.properties?.action_link) {
+  const hashedToken = data?.properties?.hashed_token;
+  const actionLink = data?.properties?.action_link;
+
+  let tokenHash = hashedToken;
+  if (!tokenHash && actionLink) {
+    try {
+      const parsed = new URL(actionLink);
+      tokenHash = parsed.searchParams.get("token") || parsed.searchParams.get("token_hash") || undefined;
+    } catch {
+      // fallback
+    }
+  }
+
+  if (error || !tokenHash) {
     throw new ServiceError("The secure password link could not be generated.");
   }
 
@@ -58,7 +72,15 @@ export async function generateClientPasswordLink(input: {
     },
   });
 
-  return data.properties.action_link;
+  const confirmUrl = new URL("/auth/confirm", baseUrl);
+  confirmUrl.searchParams.set("token_hash", tokenHash);
+  confirmUrl.searchParams.set("type", "recovery");
+  confirmUrl.searchParams.set("next", "/reset-password");
+  if (input.intent === "password_setup") {
+    confirmUrl.searchParams.set("intent", "password_setup");
+  }
+
+  return confirmUrl.toString();
 }
 
 function buildResetPasswordUrl() {
