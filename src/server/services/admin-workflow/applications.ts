@@ -20,6 +20,7 @@ import {
 } from "@/server/services/service-error";
 import { sendClientPasswordSetup } from "@/server/services/send-client-password-setup";
 import { writeAuditLog } from "@/server/services/write-audit-log";
+import { ensureAuthUserByEmail } from "@/server/services/create-client-user";
 import {
   assertCompleteOwnerSetup,
   ensureClientForApplication,
@@ -79,42 +80,37 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     "approve this application",
   );
 
-  const client = await ensureClientForApplication({
-    application,
-    planType: application.preferred_plan as "pro" | "max",
+  const authUserId = await ensureAuthUserByEmail(application.email, application.full_name);
+  const adminSupabase = createAdminClient();
+
+  const { data: rpcResult, error: rpcError } = await (
+    adminSupabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+  )("provision_application_atomic", {
+    p_actor_user_id: actorUserId,
+    p_application_id: application.id,
+    p_auth_user_id: authUserId,
   });
 
-  const ownerSetup = await ensureOwnerProfileForClient({
-    clientId: client.id,
-    email: application.email,
-    fullName: application.full_name,
-  });
-  assertCompleteOwnerSetup(ownerSetup);
+  assertServiceSuccess(rpcError, "Failed to provision application atomically.");
+  assertServiceData(rpcResult, "Provisioning RPC returned no result.");
 
-  const eventBundle = await ensureEventBundleForClient({
-    application,
-    clientId: client.id,
-  });
+  const provisioned = rpcResult as {
+    client_id: string;
+    event_id: string;
+    profile_id: string;
+    status: string;
+  };
 
-  const now = new Date().toISOString();
-  const { data: approvedApplication, error } = await supabase
-    .from("rsvp_applications")
-    .update({
-      approved_at: now,
-      approved_client_id: client.id,
-      approved_event_id: eventBundle.event.id,
-      reviewed_at: now,
-      status: "approved",
-    })
-    .eq("id", application.id)
-    .in("status", ["submitted", "reviewing"])
-    .select(
-      "id, approved_at, approved_client_id, approved_event_id, reviewed_at, status, preferred_plan, preferred_manual_payment_option",
-    )
-    .single();
+  const [client, approvedApplication] = await Promise.all([
+    getLinkedClientById(provisioned.client_id),
+    getApplicationForMutation(application.id),
+  ]);
 
-  assertServiceSuccess(error, "Failed to approve the application.");
-  assertServiceData(approvedApplication, "Application approval returned no row.");
+  const ownerSetup = { profileId: provisioned.profile_id, userId: authUserId };
+  const eventBundle = { event: { id: provisioned.event_id } };
 
   try {
     await writeAuditLog({

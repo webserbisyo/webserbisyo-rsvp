@@ -47,7 +47,7 @@ test("concurrent approval and client creation are protected from duplicate sends
   const approval = readSource("src/server/services/admin-workflow/applications.ts");
   const migration = readMigration("_prevent_duplicate_client_provisioning.sql");
 
-  expect(approval).toContain('.in("status", ["submitted", "reviewing"])');
+  expect(approval).toContain('["submitted", "reviewing"]');
   expect(migration).toContain("uq_clients_contact_email_normalized");
   expect(migration).toContain("duplicate normalized client contact emails");
 });
@@ -56,7 +56,7 @@ test("setup email is issued only after graph verification and records safe outco
   const approval = readSource("src/server/services/admin-workflow/applications.ts");
   const sender = readSource("src/server/services/send-client-password-setup.ts");
 
-  expect(approval.indexOf("client_provisioning_completed")).toBeLessThan(
+  expect(approval.indexOf("provision_application_atomic")).toBeLessThan(
     approval.indexOf("sendClientPasswordSetup({"),
   );
   expect(approval).toContain("client_password_setup_email_sent");
@@ -64,6 +64,26 @@ test("setup email is issued only after graph verification and records safe outco
   expect(sender).toContain("application.approved_client_id !== input.clientId");
   expect(sender).toContain("application.approved_event_id !== input.eventId");
   expect(approval).not.toContain("action_link");
+});
+
+test("service_role is granted required profile privileges while anon remains restricted", () => {
+  const migration = readMigration("_grant_service_role_profiles.sql");
+
+  expect(migration).toContain("grant select, insert, update, delete on table public.profiles to service_role;");
+  expect(migration).toContain("anon must not have INSERT privilege");
+  expect(migration).toContain("has_table_privilege('service_role', 'public.profiles', 'INSERT')");
+});
+
+test("atomic provisioning RPC is invoked by approveApplication workflow", () => {
+  const approvalSource = readSource("src/server/services/admin-workflow/applications.ts");
+  const rpcMigration = readMigration("_provision_application_atomic_rpc.sql");
+
+  expect(approvalSource).toContain('adminSupabase.rpc');
+  expect(approvalSource).toContain('"provision_application_atomic"');
+  expect(rpcMigration).toContain("create or replace function app_private.provision_application_atomic");
+  expect(rpcMigration).toContain("grant execute on function app_private.provision_application_atomic");
+  expect(rpcMigration).toContain("for update");
+  expect(rpcMigration).toContain("insert into public.profiles");
 });
 
 function readSource(path: string) {

@@ -11,7 +11,7 @@ test("client provisioning keeps its internal password undisclosed", () => {
   expect(source).not.toContain("updateUserById");
   const userMetadata = source.slice(
     source.indexOf("user_metadata:"),
-    source.indexOf("if (createError)"),
+    source.indexOf("},", source.indexOf("user_metadata:")),
   );
   expect(userMetadata).not.toContain("client_id");
   expect(userMetadata).not.toContain("role:");
