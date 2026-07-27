@@ -7,7 +7,7 @@ import {
   normalizeAuthEmail,
 } from "./find-auth-user-by-email";
 import { generateInternalAuthPassword } from "./generate-internal-auth-password";
-import { assertServiceData } from "./service-error";
+import { ServiceError, assertServiceData, assertServiceSuccess } from "./service-error";
 
 export type CreateClientUserInput = {
   clientId: string;
@@ -20,6 +20,39 @@ export type CreateClientUserResult = {
   userId?: string;
   warning?: string;
 };
+
+export async function ensureAuthUserByEmail(
+  email: string,
+  fullName?: string | null,
+): Promise<string> {
+  const adminSupabase = createAdminClient();
+  const normalizedEmail = normalizeAuthEmail(email);
+  const existingAuthUser = await findUniqueAuthUserByEmail(normalizedEmail);
+
+  if (existingAuthUser) {
+    return existingAuthUser.id;
+  }
+
+  const internalPassword = generateInternalAuthPassword();
+  const { data: createdUser, error: createError } = await adminSupabase.auth.admin.createUser({
+    email: normalizedEmail,
+    email_confirm: true,
+    password: internalPassword,
+    user_metadata: {
+      full_name: fullName ?? null,
+    },
+  });
+
+  if (createError || !createdUser.user) {
+    throw new ServiceError(
+      createError
+        ? getCreateUserWarningMessage(createError)
+        : "Failed to create authentication account.",
+    );
+  }
+
+  return createdUser.user.id;
+}
 
 export async function createClientUser(
   input: CreateClientUserInput,
@@ -167,9 +200,7 @@ async function createProfileForAuthUser(input: {
       };
     }
 
-    return {
-      warning: "Client owner setup was skipped because the owner profile could not be created.",
-    };
+    assertServiceSuccess(profileError, "Failed to create the client owner profile.");
   }
 
   assertServiceData(profile, "Client owner profile insert returned no row.");
