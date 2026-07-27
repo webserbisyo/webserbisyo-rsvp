@@ -19,7 +19,7 @@ import {
   assertServiceData,
   assertServiceSuccess,
 } from "@/server/services/service-error";
-import { sendOnboardingEmail } from "@/server/services/send-onboarding-email";
+import { sendClientPasswordSetup } from "@/server/services/send-client-password-setup";
 import { sendMetaCapiPurchase } from "@/server/services/send-meta-capi-purchase";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 import { ensureOwnerProfileForClient } from "./provisioning";
@@ -752,11 +752,8 @@ export async function resendClientOnboarding(input: ResendOnboardingInput, actor
   const ownerProfile = await getOwnerProfileForClient(client.id);
   const event = await getPrimaryEventForClient(client.id);
   const application = await getApprovedApplicationForClient(client.id);
-  const defaultRecipientEmail = ownerProfile?.email ?? client.contact_email;
-  const recipientEmail = input.recipientEmail ?? defaultRecipientEmail;
   const accessEmail = ownerProfile?.email ?? client.contact_email;
   const ownerSetup = await ensureOwnerProfileForClient({
-    accessMode: "temporary_password",
     clientId: client.id,
     email: accessEmail,
     fullName: ownerProfile?.full_name ?? client.contact_name ?? client.name,
@@ -766,19 +763,16 @@ export async function resendClientOnboarding(input: ResendOnboardingInput, actor
     throw new ServiceError(ownerSetup.warning);
   }
 
-  if (!ownerSetup.temporaryPassword) {
-    throw new ServiceError("A new temporary password could not be generated for this client.");
+  if (!ownerSetup.profileId || !ownerSetup.userId) {
+    throw new ServiceError("Secure client owner access could not be reconciled.");
   }
 
-  const emailLog = await sendOnboardingEmail({
+  const emailLog = await sendClientPasswordSetup({
+    actorUserId,
     applicationId: application?.id ?? null,
     clientId: client.id,
     eventId: event.id,
-    mode: "password_reset",
-    note: input.note ?? null,
-    recipientEmail,
     recipientName: ownerProfile?.full_name ?? client.contact_name ?? client.name,
-    temporaryPassword: ownerSetup.temporaryPassword,
   });
 
   await touchClientActivity(client.id);
@@ -794,10 +788,8 @@ export async function resendClientOnboarding(input: ResendOnboardingInput, actor
       email_log_id: emailLog.id,
       email_log_written: emailLog.logWritten,
       email_status: emailLog.status,
-      is_custom_recipient: recipientEmail !== defaultRecipientEmail,
+      issuance_reason: "password_setup",
       note_present: Boolean(input.note),
-      password_reset: true,
-      recipient_email: recipientEmail,
     },
   });
 

@@ -86,14 +86,11 @@ function normalizeGuestbookSectionInput(value: unknown) {
     return value;
   }
 
-  const raw = value as {
-    emptyStateMessage?: unknown;
-    messageBody?: unknown;
-    sectionIntro?: unknown;
-    sectionTitle?: unknown;
-  };
+  const raw = value as Record<string, unknown>;
+  const { messageBody, ...normalized } = raw;
 
   return {
+    ...normalized,
     emptyStateMessage:
       typeof raw.emptyStateMessage === "string"
         ? raw.emptyStateMessage
@@ -101,8 +98,8 @@ function normalizeGuestbookSectionInput(value: unknown) {
     sectionIntro:
       typeof raw.sectionIntro === "string"
         ? normalizeGuestbookIntro(raw.sectionIntro)
-        : typeof raw.messageBody === "string"
-          ? normalizeGuestbookIntro(raw.messageBody)
+        : typeof messageBody === "string"
+          ? normalizeGuestbookIntro(messageBody)
           : DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
     sectionTitle:
       typeof raw.sectionTitle === "string"
@@ -116,13 +113,8 @@ function normalizeGuestbookSectionPatchInput(value: unknown) {
     return value;
   }
 
-  const raw = value as {
-    emptyStateMessage?: unknown;
-    messageBody?: unknown;
-    sectionIntro?: unknown;
-    sectionTitle?: unknown;
-  };
-  const normalized: Record<string, unknown> = {};
+  const raw = value as Record<string, unknown>;
+  const { messageBody, ...normalized } = raw;
 
   if (typeof raw.emptyStateMessage === "string") {
     normalized.emptyStateMessage = raw.emptyStateMessage;
@@ -130,8 +122,8 @@ function normalizeGuestbookSectionPatchInput(value: unknown) {
 
   if (typeof raw.sectionIntro === "string") {
     normalized.sectionIntro = normalizeGuestbookIntro(raw.sectionIntro);
-  } else if (typeof raw.messageBody === "string") {
-    normalized.sectionIntro = normalizeGuestbookIntro(raw.messageBody);
+  } else if (typeof messageBody === "string") {
+    normalized.sectionIntro = normalizeGuestbookIntro(messageBody);
   }
 
   if (typeof raw.sectionTitle === "string") {

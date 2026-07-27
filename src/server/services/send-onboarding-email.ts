@@ -5,17 +5,16 @@ import { buildClientAccessEmail } from "@/server/email/templates/client-access";
 import { createResendClient } from "@/lib/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TablesInsert } from "@/lib/supabase/types";
-import { writeEmailLog } from "./write-email-log";
+import { finalizePasswordEmailLog } from "./write-email-log";
 
 export type SendOnboardingEmailInput = {
   applicationId?: string | null;
   clientId: string;
+  emailLogId: string;
   eventId: string;
-  mode?: "onboarding" | "password_reset";
-  note?: string | null;
   recipientEmail: string;
   recipientName?: string | null;
-  temporaryPassword: string;
+  setupUrl: string;
 };
 
 export type SendOnboardingEmailResult = {
@@ -40,7 +39,6 @@ type EmailSummary = {
 
 export async function sendOnboardingEmail(input: SendOnboardingEmailInput) {
   const summary = await getEmailSummary(input.clientId, input.eventId, input.recipientEmail);
-  const mode = input.mode ?? "onboarding";
   const content = buildClientAccessEmail({
     clientName: summary.clientName,
     dashboardUrl: summary.dashboardUrl,
@@ -48,27 +46,19 @@ export async function sendOnboardingEmail(input: SendOnboardingEmailInput) {
     eventType: summary.eventType,
     loginEmail: summary.loginEmail,
     messengerUrl: summary.messengerUrl,
-    mode,
     planLabel: summary.planLabel,
     recipientName: input.recipientName ?? summary.clientName,
     replyToEmail: process.env.RESEND_REPLY_TO_EMAIL ?? null,
     roleLabel: summary.roleLabel,
+    setupUrl: input.setupUrl,
     supportEmail: summary.supportEmail,
-    temporaryPassword: input.temporaryPassword,
   });
-
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
-    return writeOnboardingLog({
-      applicationId: input.applicationId ?? null,
-      clientId: input.clientId,
-      emailType: "client_onboarding",
+    const emailLog = await finalizePasswordEmailLog(input.emailLogId, {
       errorMessage: "RESEND_API_KEY or RESEND_FROM_EMAIL is not configured.",
-      eventId: input.eventId,
-      recipientEmail: input.recipientEmail,
-      recipientName: input.recipientName ?? null,
       status: "skipped",
-      subject: content.subject,
     });
+    return toOnboardingResult(emailLog);
   }
 
   try {
@@ -83,43 +73,25 @@ export async function sendOnboardingEmail(input: SendOnboardingEmailInput) {
     });
 
     if (result.error) {
-      return writeOnboardingLog({
-        applicationId: input.applicationId ?? null,
-        clientId: input.clientId,
-        emailType: "client_onboarding",
+      const emailLog = await finalizePasswordEmailLog(input.emailLogId, {
         errorMessage: result.error.message,
-        eventId: input.eventId,
-        recipientEmail: input.recipientEmail,
-        recipientName: input.recipientName ?? null,
         status: "failed",
-        subject: content.subject,
       });
+      return toOnboardingResult(emailLog);
     }
 
-    return writeOnboardingLog({
-      applicationId: input.applicationId ?? null,
-      clientId: input.clientId,
-      emailType: "client_onboarding",
-      eventId: input.eventId,
+    const emailLog = await finalizePasswordEmailLog(input.emailLogId, {
       providerMessageId: result.data?.id ?? null,
-      recipientEmail: input.recipientEmail,
-      recipientName: input.recipientName ?? null,
       sentAt: new Date().toISOString(),
       status: "sent",
-      subject: content.subject,
     });
+    return toOnboardingResult(emailLog);
   } catch (error) {
-    return writeOnboardingLog({
-      applicationId: input.applicationId ?? null,
-      clientId: input.clientId,
-      emailType: "client_onboarding",
+    const emailLog = await finalizePasswordEmailLog(input.emailLogId, {
       errorMessage: error instanceof Error ? error.message : "Unknown email failure.",
-      eventId: input.eventId,
-      recipientEmail: input.recipientEmail,
-      recipientName: input.recipientName ?? null,
       status: "failed",
-      subject: content.subject,
     });
+    return toOnboardingResult(emailLog);
   }
 }
 
@@ -174,30 +146,17 @@ async function getEmailSummary(
   };
 }
 
-async function writeOnboardingLog(
-  input: Parameters<typeof writeEmailLog>[0],
-): Promise<SendOnboardingEmailResult> {
-  try {
-    const emailLog = await writeEmailLog(input);
-
-    return {
-      id: emailLog.id,
-      logWritten: true,
-      recipientEmail: emailLog.recipient_email,
-      status: emailLog.status,
-    };
-  } catch (error) {
-    return {
-      id: null,
-      logWritten: false,
-      recipientEmail: input.recipientEmail,
-      status: input.status,
-      warning:
-        error instanceof Error
-          ? `Email log could not be written: ${error.message}`
-          : "Email log could not be written.",
-    };
-  }
+function toOnboardingResult(emailLog: {
+  id: string;
+  recipient_email: string;
+  status: string;
+}): SendOnboardingEmailResult {
+  return {
+    id: emailLog.id,
+    logWritten: true,
+    recipientEmail: emailLog.recipient_email,
+    status: emailLog.status,
+  };
 }
 
 function buildDashboardUrl() {

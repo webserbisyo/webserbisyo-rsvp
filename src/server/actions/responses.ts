@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { requireTenantMember } from "@/lib/permissions";
@@ -21,11 +22,13 @@ const RsvpModerationSchema = z.object({
 export async function submitRsvpResponseAction(input: unknown) {
   try {
     const plainInput = toPlainInput(input) as { accessToken?: unknown };
+    const requestHeaders = await headers();
     const response = await submitRsvpResponse(plainInput, {
       accessToken:
         typeof plainInput.accessToken === "string"
           ? normalizePrivateAccessToken(plainInput.accessToken)
           : null,
+      clientAddress: getClientAddress(requestHeaders),
     });
 
     if (!response) {
@@ -39,6 +42,14 @@ export async function submitRsvpResponseAction(input: unknown) {
   } catch (error) {
     return actionFailure(error);
   }
+}
+
+function getClientAddress(requestHeaders: Headers) {
+  return (
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    requestHeaders.get("x-real-ip") ??
+    null
+  );
 }
 
 export async function moderateRsvpResponsesAction(input: unknown) {

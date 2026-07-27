@@ -40,9 +40,6 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
   const [refundOpen, setRefundOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [note, setNote] = useState("");
-  const [resendRecipientEmail, setResendRecipientEmail] = useState(
-    client.onboarding.ownerEmail ?? client.client.email,
-  );
   const [resendNote, setResendNote] = useState("");
   const [refundConfirmedAt, setRefundConfirmedAt] = useState(
     toDateTimeLocalValue(new Date().toISOString()),
@@ -85,10 +82,6 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
       resendClientOnboardingAction({
         clientId: client.id,
         note: resendNote || undefined,
-        recipientEmail:
-          resendRecipientEmail && resendRecipientEmail !== client.onboarding.ownerEmail
-            ? resendRecipientEmail
-            : undefined,
       }),
     onSuccess: (result) => {
       if (!result.ok) {
@@ -96,7 +89,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
         return;
       }
 
-      toast.success("Client access reset email triggered.");
+      toast.success("Secure password setup email triggered.");
       for (const warning of result.data.warnings ?? []) {
         toast.warning(warning);
       }
@@ -170,7 +163,7 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
               onClick={() => setResendOpen(true)}
             >
               {resendMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Reset and resend access
+              Resend password setup
             </Button>
 
             {canArchive ? (
@@ -257,22 +250,21 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
       <Dialog open={resendOpen} onOpenChange={setResendOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Reset and resend dashboard access</DialogTitle>
+            <DialogTitle>Resend secure password setup</DialogTitle>
             <DialogDescription>
-              Generate a new temporary password and send a fresh dashboard access email. A custom
-              recipient receives the new login details for this client workspace.
+              Generate a fresh secure setup link. The email is sent only to the authorized client
+              owner address and does not change the current password.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="client-onboarding-recipient">Recipient email</Label>
+              <Label htmlFor="client-onboarding-recipient">Authorized account email</Label>
               <Input
                 id="client-onboarding-recipient"
                 type="email"
-                value={resendRecipientEmail}
-                onChange={(event) => setResendRecipientEmail(event.currentTarget.value)}
-                placeholder={client.onboarding.ownerEmail ?? "client@example.com"}
+                value={client.onboarding.ownerEmail ?? client.client.email}
+                readOnly
               />
             </div>
             <div className="space-y-2">
@@ -292,12 +284,12 @@ export function ClientLifecycleActions({ client }: ClientLifecycleActionsProps) 
             </Button>
             <Button
               type="button"
-              disabled={resendMutation.isPending || !resendRecipientEmail}
+              disabled={resendMutation.isPending}
               className="bg-rsvp-brand text-rsvp-brand-foreground hover:bg-rsvp-brand/90"
               onClick={() => resendMutation.mutate()}
             >
               {resendMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Send new temporary password
+              Send secure setup link
             </Button>
           </DialogFooter>
         </DialogContent>

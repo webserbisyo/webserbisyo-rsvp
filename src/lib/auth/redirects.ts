@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { clientStatusAllowsDashboardAccess } from "@/lib/auth/client-access";
 import type { Database, Tables } from "@/lib/supabase/types";
 
 export type AuthenticatedProfile = Pick<
@@ -8,8 +9,16 @@ export type AuthenticatedProfile = Pick<
 
 export type AuthRedirectErrorCode =
   | "callback_failed"
+  | "client_inactive"
   | "inactive_profile"
   | "missing_profile"
+  | "oauth_admin_password_only"
+  | "oauth_callback_failed"
+  | "oauth_client_inactive"
+  | "oauth_configuration_error"
+  | "oauth_not_authorized"
+  | "oauth_provider_error"
+  | "oauth_session_invalid"
   | "unknown_role";
 
 export type ProfileLookupResult =
@@ -55,6 +64,28 @@ export async function getProfileLookupResult(
     };
   }
 
+  if (CLIENT_ROLES.has(data.role)) {
+    if (!data.client_id) {
+      return {
+        profile: data,
+        status: "missing_profile",
+      };
+    }
+
+    const { data: client, error: clientError } = await supabase
+      .from("clients")
+      .select("status")
+      .eq("id", data.client_id)
+      .maybeSingle();
+
+    if (clientError || !clientStatusAllowsDashboardAccess(client?.status)) {
+      return {
+        profile: data,
+        status: "client_inactive",
+      };
+    }
+  }
+
   return {
     profile: data,
     status: "ok",
@@ -97,12 +128,26 @@ export function getAuthRedirectErrorMessage(code: string | null | undefined): st
   switch (code) {
     case "callback_failed":
       return "The sign-in callback could not be completed. Please try again.";
+    case "client_inactive":
+      return "This client dashboard is not currently active. Contact support if you need access.";
     case "inactive_profile":
       return "Your account is inactive. Contact support if you need access.";
     case "missing_profile":
       return "Your account is missing a valid profile. Contact support before signing in.";
     case "unknown_role":
       return "Your account role is not supported yet. Contact support before signing in.";
+    case "oauth_not_authorized":
+      return "This Google account is not connected to an approved WebSerbisyo RSVP dashboard. Sign in with the email used for your approved application, or contact WebSerbisyo support.";
+    case "oauth_admin_password_only":
+      return "Google sign-in is currently available for client accounts only. Please use email and password for administrator access.";
+    case "oauth_client_inactive":
+      return "This dashboard access is currently inactive. Contact WebSerbisyo support if you believe this is a mistake.";
+    case "oauth_provider_error":
+    case "oauth_callback_failed":
+    case "oauth_session_invalid":
+      return "Google sign-in could not be completed. Please try again or use email and password.";
+    case "oauth_configuration_error":
+      return "Google sign-in is temporarily unavailable. Please use email and password.";
     default:
       return null;
   }

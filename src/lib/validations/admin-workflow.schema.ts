@@ -175,7 +175,6 @@ export const RestoreClientSchema = z.object({
 export const ResendOnboardingSchema = z.object({
   clientId: z.uuid(),
   note: optionalText(2000),
-  recipientEmail: z.email().optional(),
 });
 
 const PackagePlanSettingsSchema = z

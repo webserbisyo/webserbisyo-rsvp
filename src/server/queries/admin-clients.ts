@@ -1374,7 +1374,7 @@ function selectOwnerProfile(profiles: ProfileRow[]) {
 function selectLatestOnboardingEmail(emailLogs: EmailLogRow[]) {
   return (
     [...emailLogs]
-      .filter((log) => log.email_type === "client_onboarding")
+      .filter((log) => ["client_onboarding", "client_password_setup"].includes(log.email_type))
       .sort((left, right) => {
         return (
           compareNullableIsoDesc(left.sent_at, right.sent_at) ||
@@ -1388,7 +1388,11 @@ function selectLatestOnboardingEmail(emailLogs: EmailLogRow[]) {
 function selectActivityItems(auditLogs: AuditRow[], emailLogs: EmailLogRow[]) {
   const auditItems = auditLogs.map(toAuditActivityItem);
   const emailItems = emailLogs
-    .filter((log) => log.email_type === "client_onboarding")
+    .filter((log) =>
+      ["client_onboarding", "client_password_setup", "client_password_recovery"].includes(
+        log.email_type,
+      ),
+    )
     .map(toEmailActivityItem);
 
   return [...auditItems, ...emailItems]

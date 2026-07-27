@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { EVENT_WEBSITE_REORDER_UI_ENABLED } from "../src/config/event-website-capabilities";
 import { resolveEventWebsiteSections } from "../src/config/event-website-sections";
 import { buildDefaultWeddingEventWebsiteContent } from "../src/lib/event-website/defaults";
@@ -134,9 +135,9 @@ test("complete event content rejects visibility nested under any section", () =>
 test("visibility remains valid only in the canonical layout map", () => {
   const valid = buildDefaultWeddingEventWebsiteContent();
   valid.layout.enabledSections.music_effects = false;
-  expect(validateEventWebsiteContentForPersistence(valid).layout.enabledSections.music_effects).toBe(
-    false,
-  );
+  expect(
+    validateEventWebsiteContentForPersistence(valid).layout.enabledSections.music_effects,
+  ).toBe(false);
 
   const unknownKey = structuredClone(valid) as typeof valid & {
     layout: { enabledSections: Record<string, boolean> };
@@ -147,7 +148,7 @@ test("visibility remains valid only in the canonical layout map", () => {
 
 test("service validation precedes every privileged draft write", () => {
   const source = readFileSync(
-    new URL("../src/server/services/save-event-website-draft.ts", import.meta.url),
+    join(process.cwd(), "src/server/services/save-event-website-draft.ts"),
     "utf8",
   );
   expect(source.indexOf("validateEventWebsiteContentJson(input.content)")).toBeGreaterThan(-1);
@@ -157,10 +158,7 @@ test("service validation precedes every privileged draft write", () => {
 });
 
 test("persisted malformed content cannot silently adopt sample defaults", () => {
-  const source = readFileSync(
-    new URL("../src/server/queries/dashboard-event.ts", import.meta.url),
-    "utf8",
-  );
+  const source = readFileSync(join(process.cwd(), "src/server/queries/dashboard-event.ts"), "utf8");
   expect(source).toContain("hasInvalidPersistedContent");
   expect(source).toContain("eventWebsiteContent = hasInvalidPersistedContent");
   expect(source).not.toContain("parsedContentJson ?? rawContentJson");
@@ -239,8 +237,9 @@ test("an HTTP 200 branded unavailable page is not considered healthy content", (
       "<html><body><h1>Event unavailable</h1><p>Published event not found.</p></body></html>",
     ),
   ).toBe(true);
-  expect(isCustomWebsiteUnavailableHtml("<html><body><main>Wedding website</main></body></html>"))
-    .toBe(false);
+  expect(
+    isCustomWebsiteUnavailableHtml("<html><body><main>Wedding website</main></body></html>"),
+  ).toBe(false);
 });
 
 test("save normalization accepts patch-shaped content and returns valid full structure", () => {

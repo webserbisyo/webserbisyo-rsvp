@@ -54,6 +54,10 @@ export async function POST(
                 (rawBody as { accessToken?: unknown }).accessToken as string | undefined,
               )
             : null),
+        clientAddress:
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+          request.headers.get("x-real-ip") ??
+          null,
         source: "public_custom_frontend",
       },
     );
@@ -80,7 +84,7 @@ export async function POST(
     }
 
     if (error instanceof ServiceError) {
-      const status = getSubmitErrorStatus(error.message);
+      const status = getSubmitErrorStatus(error);
 
       if (status === 404) {
         return notFoundJson("public-rsvp-submit", error.message);
@@ -103,7 +107,17 @@ export async function POST(
   }
 }
 
-function getSubmitErrorStatus(message: string) {
+function getSubmitErrorStatus(error: ServiceError) {
+  if (
+    error.cause &&
+    typeof error.cause === "object" &&
+    "code" in error.cause &&
+    error.cause.code === "RATE_LIMITED"
+  ) {
+    return 429;
+  }
+
+  const message = error.message;
   if (
     message === "RSVP event is not available." ||
     message === "RSVP form is not available for this event." ||

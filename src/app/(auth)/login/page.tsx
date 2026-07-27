@@ -11,6 +11,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 type LoginPageProps = {
   searchParams: Promise<{
     error?: string;
+    message?: string;
     next?: string;
   }>;
 };
@@ -41,6 +42,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <AuthShell>
       <LoginForm
         initialErrorCode={initialErrorCode}
+        initialSuccessMessage={
+          params.message === "password_updated"
+            ? "Password updated successfully. Sign in using your new password."
+            : null
+        }
         nextPath={nextPath}
         signOutOnMount={signOutOnMount}
       />

@@ -3,10 +3,11 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildPasswordResetEmail } from "@/server/email/templates/password-reset";
 import { createResendClient } from "@/lib/resend";
-import { writeEmailLog } from "./write-email-log";
+import { finalizePasswordEmailLog } from "./write-email-log";
 
 type SendPasswordResetEmailInput = {
   clientId: string;
+  emailLogId: string;
   eventId?: string | null;
   recipientEmail: string;
   recipientName?: string | null;
@@ -21,17 +22,10 @@ export async function sendPasswordResetEmail(input: SendPasswordResetEmailInput)
     resetUrl: input.resetUrl,
     supportEmail: supportDetails.supportEmail,
   });
-
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
-    return writePasswordResetLog({
-      clientId: input.clientId,
-      emailType: "client_onboarding",
+    return finalizePasswordEmailLog(input.emailLogId, {
       errorMessage: "RESEND_API_KEY or RESEND_FROM_EMAIL is not configured.",
-      eventId: input.eventId ?? null,
-      recipientEmail: input.recipientEmail,
-      recipientName: input.recipientName ?? null,
       status: "skipped",
-      subject: content.subject,
     });
   }
 
@@ -47,48 +41,22 @@ export async function sendPasswordResetEmail(input: SendPasswordResetEmailInput)
     });
 
     if (result.error) {
-      return writePasswordResetLog({
-        clientId: input.clientId,
-        emailType: "client_onboarding",
+      return finalizePasswordEmailLog(input.emailLogId, {
         errorMessage: result.error.message,
-        eventId: input.eventId ?? null,
-        recipientEmail: input.recipientEmail,
-        recipientName: input.recipientName ?? null,
         status: "failed",
-        subject: content.subject,
       });
     }
 
-    return writePasswordResetLog({
-      clientId: input.clientId,
-      emailType: "client_onboarding",
-      eventId: input.eventId ?? null,
+    return finalizePasswordEmailLog(input.emailLogId, {
       providerMessageId: result.data?.id ?? null,
-      recipientEmail: input.recipientEmail,
-      recipientName: input.recipientName ?? null,
       sentAt: new Date().toISOString(),
       status: "sent",
-      subject: content.subject,
     });
   } catch (error) {
-    return writePasswordResetLog({
-      clientId: input.clientId,
-      emailType: "client_onboarding",
+    return finalizePasswordEmailLog(input.emailLogId, {
       errorMessage: error instanceof Error ? error.message : "Unknown email failure.",
-      eventId: input.eventId ?? null,
-      recipientEmail: input.recipientEmail,
-      recipientName: input.recipientName ?? null,
       status: "failed",
-      subject: content.subject,
     });
-  }
-}
-
-async function writePasswordResetLog(input: Parameters<typeof writeEmailLog>[0]) {
-  try {
-    return await writeEmailLog(input);
-  } catch {
-    return null;
   }
 }
 

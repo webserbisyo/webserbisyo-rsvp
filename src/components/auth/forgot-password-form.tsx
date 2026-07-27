@@ -31,7 +31,8 @@ export function ForgotPasswordForm() {
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-white/78">
-        Enter your dashboard email and we&apos;ll send a reset link if the account is active.
+        Enter your approved dashboard email. You can also use this if you never created a password
+        or your first setup link expired.
       </p>
 
       {message ? (
@@ -73,7 +74,7 @@ export function ForgotPasswordForm() {
           ) : (
             <ArrowRight className="size-4" />
           )}
-          {isPending ? "Sending reset link..." : "Send reset link"}
+          {isPending ? "Sending secure link..." : "Send secure link"}
         </Button>
       </form>
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect, unstable_rethrow } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 import {
   getAuthRedirectErrorMessage,
@@ -82,19 +83,19 @@ export async function loginAction(
 export async function requestPasswordResetAction(input: unknown) {
   try {
     const payload = parseActionInput(RequestPasswordResetSchema, input);
-    await requestClientPasswordReset(payload.email);
-  } catch (error) {
-    if (error instanceof Error) {
-      return actionFailure(error);
-    }
-
-    // Keep the response generic to avoid account enumeration.
-    return actionSuccess({
-      message: "If an active dashboard account exists for that email, a reset link has been sent.",
+    const requestHeaders = await headers();
+    await requestClientPasswordReset(payload.email, {
+      clientAddress:
+        requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        requestHeaders.get("x-real-ip") ??
+        null,
     });
+  } catch {
+    // Every outcome remains generic to prevent account enumeration.
   }
 
   return actionSuccess({
-    message: "If an active dashboard account exists for that email, a reset link has been sent.",
+    message:
+      "If this email is connected to an approved WebSerbisyo dashboard, we sent a secure password link.",
   });
 }
