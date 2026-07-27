@@ -26,7 +26,7 @@ function verifyUserId(token: string, expectedUserId: string): boolean {
     if (parts.length !== 3) return false;
 
     const [userId, timestampStr, hmac] = parts;
-    if (userId !== expectedUserId) return false;
+    if (userId !== expectedUserId || !timestampStr || !hmac) return false;
 
     const timestamp = parseInt(timestampStr, 10);
     if (isNaN(timestamp)) return false;
