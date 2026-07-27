@@ -3,16 +3,31 @@
 import Image from "next/image";
 import { Copy, QrCode } from "lucide-react";
 import type { PublicPaymentOption } from "@/lib/apply/public-payment-option-dto";
+import { getPaymentOptionLabel } from "@/lib/apply/public-payment-option-dto";
 
 type PaymentOptionCardProps = {
   isSelected?: boolean;
   onCopyNumber?: () => void;
   option: PublicPaymentOption;
+  showProviderTitle?: boolean;
 };
 
-export function PaymentOptionCard({ isSelected = false, onCopyNumber, option }: PaymentOptionCardProps) {
+export function PaymentOptionCard({
+  isSelected = false,
+  onCopyNumber,
+  option,
+  showProviderTitle = false,
+}: PaymentOptionCardProps) {
+  const providerTitle = option.label?.trim() || getPaymentOptionLabel(option.provider);
+
   return (
     <div className={`flex flex-col items-center gap-4 bg-white/[0.01] border border-white/[0.04] rounded-xl p-4 w-full transition-all duration-300 ${isSelected ? "border-white/[0.08]" : ""}`}>
+      {/* Provider Title */}
+      {showProviderTitle ? (
+        <h4 className="text-center text-base sm:text-lg font-bold leading-tight text-white tracking-wide pb-1">
+          {providerTitle}
+        </h4>
+      ) : null}
       {/* QR code — centered, large */}
       {option.qrImageUrl ? (
         <div className="flex justify-center w-full">

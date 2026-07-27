@@ -23,6 +23,13 @@ test.describe("Payment UX Enhancement", () => {
     await expect(paymentSection).toContainText("Already submitted your application?");
     await expect(paymentSection).toContainText("Choose your preferred payment method below. Use the same email from your application so we can correctly match your payment.");
 
+    // Verify provider titles above QR codes
+    const gcashTitle = paymentSection.locator('h4:has-text("GCash")');
+    await expect(gcashTitle).toBeVisible();
+
+    const mayaTitle = paymentSection.locator('h4:has-text("Maya")');
+    await expect(mayaTitle).toBeVisible();
+
     // Verify proof instructions
     await expect(paymentSection).toContainText("After paying, send us your proof of payment on Messenger together with your application email, reference code, and selected package.");
 
