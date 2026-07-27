@@ -9,10 +9,10 @@ export function LandingVisualHero() {
       aria-label="WebSerbisyo RSVP visual introduction"
       className="landing-theme-dark relative isolate min-h-[100svh] w-full overflow-hidden bg-[var(--landing-bg)]"
     >
-      {/* SideRays: full-section WebGL background, right-weighted on mobile for text contrast */}
+      {/* SideRays: WebGL background, physically constrained to top-right product area on mobile */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 max-lg:translate-x-[18%] max-lg:opacity-40 max-md:translate-x-[28%] max-md:scale-[0.9] lg:translate-x-0 lg:scale-100 lg:opacity-100 transition-opacity"
+        className="pointer-events-none absolute z-0 overflow-hidden right-[-35%] top-0 h-[48%] w-[95%] opacity-45 sm:right-[-28%] sm:h-[52%] sm:w-[88%] md:right-[-20%] md:h-[62%] md:w-[78%] md:opacity-55 lg:inset-0 lg:h-full lg:w-full lg:overflow-visible lg:opacity-100"
       >
         <SideRays
           speed={2.5}
@@ -33,7 +33,7 @@ export function LandingVisualHero() {
       {/* Mobile dark contrast backdrop behind left text column */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[85%] sm:w-[75%] bg-gradient-to-r from-[var(--landing-bg)] via-[var(--landing-bg)]/90 to-transparent lg:hidden"
+        className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-full bg-[linear-gradient(90deg,var(--landing-bg)_0%,var(--landing-bg)_48%,rgba(5,5,5,0.88)_66%,transparent_88%)] lg:hidden"
       />
 
       {/* Hero content: properly balanced responsive layout */}

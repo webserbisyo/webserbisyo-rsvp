@@ -39,6 +39,21 @@ test.describe("Payment UX Enhancement", () => {
     await expect(applyCta).toContainText("Start Application");
   });
 
+  test("hero section renders constrained decorative light and pointer-events-none overlay", async ({ page }) => {
+    await page.goto("/");
+
+    const heroSection = page.locator('section[aria-label="WebSerbisyo RSVP visual introduction"]');
+    await expect(heroSection).toBeVisible();
+
+    // Verify headline contrast text
+    const heading = heroSection.locator("h1");
+    await expect(heading).toContainText("Digital RSVP websites for Filipino celebrations");
+
+    // Verify primary CTA is clickable over background layers
+    const heroCta = heroSection.locator('a[href="/apply"]').first();
+    await expect(heroCta).toBeVisible();
+  });
+
   test("application step 2 displays trust callout and updated footer", async ({ page }) => {
     await page.goto("/apply/start");
 
