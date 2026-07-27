@@ -24,6 +24,7 @@ export function buildPasswordResetEmail(input: BuildPasswordResetEmailInput) {
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fffdf9; border:1px solid #eadfce; border-radius:24px;">
                     <tr>
                       <td style="padding:32px 28px 18px;">
+                        <img src="https://rsvp.webserbisyo.com/images/brand/webserbisyo-logo.jpeg" alt="WebSerbisyo RSVP" width="80" height="80" style="display:block; margin:0 0 16px; width:80px; height:80px; border-radius:16px; border:0;" />
                         <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#a17345; font-weight:700;">Password reset</div>
                         <h1 style="margin:14px 0 10px; font-size:30px; line-height:1.2; color:#201a17;">Need a new password, ${escapeHtml(input.clientFirstName)}?</h1>
                         <p style="margin:0; font-size:15px; line-height:1.7; color:#4b5563;">
