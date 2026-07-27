@@ -5,12 +5,12 @@ import { Copy, QrCode } from "lucide-react";
 import type { PublicPaymentOption } from "@/lib/apply/public-payment-option-dto";
 
 type PaymentOptionCardProps = {
-  isSelected: boolean;
+  isSelected?: boolean;
   onCopyNumber?: () => void;
   option: PublicPaymentOption;
 };
 
-export function PaymentOptionCard({ isSelected, onCopyNumber, option }: PaymentOptionCardProps) {
+export function PaymentOptionCard({ isSelected = false, onCopyNumber, option }: PaymentOptionCardProps) {
   return (
     <div className={`flex flex-col items-center gap-4 bg-white/[0.01] border border-white/[0.04] rounded-xl p-4 w-full transition-all duration-300 ${isSelected ? "border-white/[0.08]" : ""}`}>
       {/* QR code — centered, large */}

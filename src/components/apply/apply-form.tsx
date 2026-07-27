@@ -625,6 +625,17 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 </div>
               </div>
 
+              {/* Trust callout card */}
+              <div className="mb-6 rounded-2xl border border-[#ff8a5c]/25 bg-[#ff8a5c]/[0.06] p-4 sm:p-5 text-center">
+                <p className="text-xs sm:text-sm font-extrabold tracking-widest text-[#ff8a5c] uppercase mb-1.5">
+                  WEBSITE MUNA, BAGO BAYAD.
+                </p>
+                <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-md mx-auto">
+                  This step only confirms your preferred payment method.{" "}
+                  <span className="font-semibold text-white">No payment is required now.</span> We’ll message you on Messenger once your website preview is ready.
+                </p>
+              </div>
+
               {/* Payment method */}
               {hasPaymentOptions ? (
                 <div className="mb-8">
@@ -678,7 +689,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
               </div>
 
               <p className="text-center text-[11px] text-white/40 leading-relaxed mt-6">
-                No payment required now — we&apos;ll reach out on Messenger to confirm your slot and send payment instructions.
+                No payment will be collected upon submission.
               </p>
             </>
           )}
