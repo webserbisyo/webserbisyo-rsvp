@@ -75,6 +75,7 @@ export function LandingPayment({ messengerPageUrl, paymentOptions }: LandingPaym
                 <PaymentOptionCard
                   key={option.provider}
                   isSelected={false}
+                  showProviderTitle={true}
                   option={option}
                   onCopyNumber={
                     option.accountNumber

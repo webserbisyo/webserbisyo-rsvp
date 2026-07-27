@@ -9,8 +9,11 @@ export function LandingVisualHero() {
       aria-label="WebSerbisyo RSVP visual introduction"
       className="landing-theme-dark relative isolate min-h-[100svh] w-full overflow-hidden bg-[var(--landing-bg)]"
     >
-      {/* SideRays: full-section WebGL background, covers entire hero */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* SideRays: full-section WebGL background, right-weighted on mobile for text contrast */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 max-lg:translate-x-[18%] max-lg:opacity-40 max-md:translate-x-[28%] max-md:scale-[0.9] lg:translate-x-0 lg:scale-100 lg:opacity-100 transition-opacity"
+      >
         <SideRays
           speed={2.5}
           rayColor1="#EAB308"
@@ -26,6 +29,12 @@ export function LandingVisualHero() {
           className="absolute inset-0"
         />
       </div>
+
+      {/* Mobile dark contrast backdrop behind left text column */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[85%] sm:w-[75%] bg-gradient-to-r from-[var(--landing-bg)] via-[var(--landing-bg)]/90 to-transparent lg:hidden"
+      />
 
       {/* Hero content: properly balanced responsive layout */}
       <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-7xl items-center px-4 sm:px-6 lg:px-8">
