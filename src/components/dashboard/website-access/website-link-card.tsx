@@ -1,9 +1,10 @@
 "use client";
 
-import { CheckCircle2, Copy, Lock } from "lucide-react";
+import { CheckCircle2, Lock, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/index";
+import { formatPublicUrlForDisplay } from "@/lib/utils/website-share";
 
 type WebsiteLinkCardProps = {
   canCopy: boolean;
@@ -41,6 +42,7 @@ export function WebsiteLinkCard({
   websiteUrlProduction = "",
 }: WebsiteLinkCardProps) {
   const displayUrl = websiteUrlPublished || websiteUrlDraft || websiteUrlFallback;
+  const formattedDisplayUrl = formatPublicUrlForDisplay(displayUrl);
   const helperText = hasSlugChange
     ? "Subdomain change pending. Publish latest changes to apply."
     : isSlugLocked
@@ -59,17 +61,17 @@ export function WebsiteLinkCard({
 
         <div className="mb-5 grid min-w-0 items-center gap-3 sm:grid-cols-[1fr_auto]">
           <div className="flex h-12 min-w-0 items-center overflow-hidden rounded-xl border border-[#eacdbf] bg-[#FBF4EF] px-4 font-mono text-sm font-medium text-[#2D1F1A]">
-            <span className="block min-w-0 truncate">{displayUrl}</span>
+            <span className="block min-w-0 truncate">{formattedDisplayUrl}</span>
           </div>
           <Button
             type="button"
             disabled={isUpdating || !canCopy}
             onClick={onCopy}
-            aria-label="Copy website link"
+            aria-label="Share website link"
             className="h-12 rounded-xl border border-[#eacdbf] bg-[#FFF7F3] px-5 text-sm font-semibold text-[#A7583C] shadow-none hover:bg-[#fff0e8]"
           >
-            <Copy className="h-4 w-4" aria-hidden="true" />
-            Copy
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+            Share
           </Button>
         </div>
 

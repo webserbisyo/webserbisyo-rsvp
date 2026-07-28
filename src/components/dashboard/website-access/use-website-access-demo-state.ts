@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { shareWebsiteLink } from "@/lib/utils/website-share";
 import type {
   PublishStatusState,
   VisibilityMode,
@@ -533,7 +534,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         return;
       }
 
-      void copyText(websiteUrlCopy, "Website link copied");
+      void shareWebsiteLink(websiteUrlCopy);
     },
     copyWebsiteQrLink: () => {
       if (!requireLiveUrl(websiteUrlQr)) {

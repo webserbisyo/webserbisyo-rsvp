@@ -1,8 +1,9 @@
 "use client";
 
-import { Copy, ExternalLink, Globe, Link as LinkIcon } from "lucide-react";
+import { ExternalLink, Globe, Share2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { formatPublicUrlForDisplay, shareWebsiteLink } from "@/lib/utils/website-share";
 
 export function RsvpWebsiteCard({
   isShareable,
@@ -15,20 +16,15 @@ export function RsvpWebsiteCard({
 }) {
   const url = isShareable ? publicUrl : null;
 
-  const displayUrl = url ? url.replace(/^https?:\/\//, "") : "Publish pending";
+  const displayUrl = url ? formatPublicUrlForDisplay(url) : "Publish pending";
 
-  async function handleCopy() {
+  async function handleShare() {
     if (!url) {
       toast.error(shareHint);
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("RSVP link copied to clipboard");
-    } catch {
-      toast.error("Could not copy the RSVP link.");
-    }
+    await shareWebsiteLink(url);
   }
 
   return (
@@ -42,8 +38,8 @@ export function RsvpWebsiteCard({
       <div className={`ws-link-field ${!url ? "is-disabled" : ""}`} title={url ?? shareHint}>
         <Globe size={18} />
         <span>{displayUrl}</span>
-        <button onClick={() => void handleCopy()} aria-label="Copy RSVP link" disabled={!url}>
-          <Copy size={18} />
+        <button onClick={() => void handleShare()} aria-label="Share website link" disabled={!url}>
+          <Share2 size={18} />
         </button>
       </div>
 
@@ -61,9 +57,9 @@ export function RsvpWebsiteCard({
             View website
           </button>
         )}
-        <button className="ws-copy-btn" onClick={() => void handleCopy()} disabled={!url}>
-          <LinkIcon size={16} />
-          Copy link
+        <button className="ws-copy-btn" onClick={() => void handleShare()} disabled={!url}>
+          <Share2 size={16} />
+          Share
         </button>
         <Link href="/dashboard/website-access" className="ws-manage-btn">
           Manage access
