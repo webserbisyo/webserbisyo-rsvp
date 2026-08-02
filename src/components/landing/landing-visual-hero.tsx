@@ -41,10 +41,10 @@ export function LandingVisualHero() {
       <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-7xl items-center px-4 sm:px-6 lg:px-8">
         <div className="grid w-full items-center gap-10 pt-24 pb-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10 lg:pt-32 lg:pb-16">
           {/* Left Pane */}
-          <div className="flex max-w-3xl flex-col items-start">
+          <div className="flex max-w-3xl flex-col items-start sm:mx-auto sm:items-center lg:mx-0 lg:items-start">
             {/* Promo pill */}
             {PROMO_CONFIG.isActive && (
-              <div className="mb-4 inline-flex items-center rounded-full bg-white/[0.03] px-3.5 py-1 text-xs font-semibold tracking-wide text-[var(--landing-text)] ring-1 ring-[var(--landing-border)] transition-colors ring-inset hover:bg-white/5 sm:text-sm">
+              <div className="mb-4 inline-flex items-center rounded-full bg-white/[0.03] px-3.5 py-1 text-xs font-semibold tracking-wide text-[var(--landing-text)] ring-1 ring-[var(--landing-border)] transition-colors ring-inset hover:bg-white/5 sm:self-center sm:text-sm lg:self-auto">
                 <span className="mr-1.5 font-extrabold text-[#ff8a5c]">
                   {PROMO_CONFIG.discountLabel}
                 </span>
@@ -54,12 +54,12 @@ export function LandingVisualHero() {
             )}
 
             {/* Headline */}
-            <h1 className="max-w-2xl text-4xl leading-[1.06] font-bold tracking-tight text-[var(--landing-text)] sm:text-5xl lg:text-6xl">
+            <h1 className="max-w-2xl text-4xl leading-[1.06] font-bold tracking-tight text-[var(--landing-text)] sm:mx-auto sm:text-center sm:text-5xl lg:mx-0 lg:text-left lg:text-6xl">
               Beautiful RSVP websites for Filipino weddings
             </h1>
 
             {/* Emphasized Trust Block */}
-            <div className="mt-5 w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:max-w-[480px] sm:px-5 sm:py-4 sm:text-left">
+            <div className="mt-5 w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:max-w-[480px] sm:px-5 sm:py-4 lg:text-left">
               <p className="text-base font-bold tracking-wide text-white sm:text-lg">
                 Website muna, bago bayad <span aria-hidden="true">😊</span>
               </p>
@@ -69,10 +69,10 @@ export function LandingVisualHero() {
             </div>
 
             {/* CTA */}
-            <div className="mt-6 w-full max-w-md sm:w-auto sm:max-w-none">
+            <div className="mt-6 w-full max-w-md sm:max-w-[480px] lg:max-w-none">
               <TrackedLink
                 href="/apply"
-                className="landing-cta-button group/hero-cta h-14 w-full justify-center gap-2 px-8 text-base sm:w-auto"
+                className="landing-cta-button group/hero-cta h-14 w-full justify-center gap-2 px-8 text-base lg:w-auto"
                 trackingEvent="StartApplicationClick"
                 trackingParams={{
                   content_category: "RSVP Website Application",
@@ -114,7 +114,7 @@ export function LandingVisualHero() {
             </div>
 
             {/* Mobile Stacked Asset */}
-            <div className="mt-10 flex w-full justify-center lg:hidden" aria-hidden="true">
+            <div className="mt-10 flex w-full justify-center sm:mt-8 lg:hidden" aria-hidden="true">
               <Image
                 src="/images/rsvp.webp"
                 alt="Digital RSVP invitation and phone preview"
