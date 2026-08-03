@@ -18,7 +18,6 @@ import {
   buildInitialEnabledSections,
   buildInitialPreviewDraft,
   buildInitialWebsiteFlow,
-  buildPreviewDraftFromContent,
   type EventWebsitePreviewDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import { EventWebsitePreviewPanel } from "@/components/dashboard/event/event-website-preview-panel";
@@ -33,14 +32,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetClose,
@@ -70,6 +61,8 @@ import { cn } from "@/lib/utils";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
 
+const DEFAULT_AUTOSAVE_DELAY_MS = 900;
+const FAST_AUTOSAVE_DELAY_MS = 300;
 const DESKTOP_LAYOUT_QUERY = "(min-width: 1200px)";
 const TABLET_LAYOUT_QUERY = "(min-width: 768px)";
 
@@ -92,6 +85,13 @@ type EnabledEventWebsiteWorkspaceProps = {
   eventWebsiteData: ValidDashboardEventWebsiteData;
   initialSelectedSection?: string | null;
 };
+
+function areContentsEqual(
+  left: NonNullable<DashboardEventWebsiteData["eventWebsiteContent"]>,
+  right: NonNullable<DashboardEventWebsiteData["eventWebsiteContent"]>,
+) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
 
 function subscribeToMediaQuery(query: string, callback: () => void) {
   if (typeof window === "undefined") {
@@ -120,10 +120,7 @@ export function EventWebsiteWorkspace({
   eventWebsiteData,
   initialSelectedSection = null,
 }: EventWebsiteWorkspaceProps) {
-  if (
-    eventWebsiteData.contentIntegrity.status === "invalid" ||
-    !eventWebsiteData.eventWebsiteContent
-  ) {
+  if (eventWebsiteData.contentIntegrity.status === "invalid" || !eventWebsiteData.eventWebsiteContent) {
     return (
       <ErrorState
         title="Event Website data could not be loaded"
@@ -224,8 +221,17 @@ function EnabledEventWebsiteWorkspace({
       }),
     [enabledSections, previewDraft, savedContent, websiteFlowSections],
   );
+  const isDirty = useMemo(
+    () => !areContentsEqual(currentContent, savedContent),
+    [currentContent, savedContent],
+  );
   const handleDraftSaved = useCallback(
-    (result: { content: typeof savedContent; savedAt: string; savedRevision: number }) => {
+    (result: {
+      clientSequence: number;
+      content: typeof savedContent;
+      savedAt: string;
+      savedRevision: number;
+    }) => {
       setSavedContent(result.content);
       if (stableEventId) {
         emitDashboardSyncEvent({
@@ -237,29 +243,15 @@ function EnabledEventWebsiteWorkspace({
     },
     [queryClient, stableEventId],
   );
-  const replaceDraftFromServer = useCallback(
-    (nextContent: typeof savedContent) => {
-      setSavedContent(nextContent);
-      setPreviewDraft(buildPreviewDraftFromContent(nextContent));
-      setEnabledSections(
-        buildInitialEnabledSections(editableSections, nextContent.layout.enabledSections),
-      );
-      setWebsiteFlowSections(
-        buildInitialWebsiteFlow(editableSections, nextContent.layout.sectionOrder),
-      );
-    },
-    [editableSections],
-  );
   const autosave = useEventWebsiteAutosave({
     autoSaveEnabled,
     content: currentContent,
     eventId: stableEventId,
     initialSavedAt: eventWebsiteData.savedAt,
     initialSavedRevision: eventWebsiteData.savedRevision,
-    onDraftReplaced: replaceDraftFromServer,
+    isDirty,
     onSaved: handleDraftSaved,
   });
-  const isDirty = autosave.isDirty;
   useEffect(() => {
     if (eventWebsiteData.eventId === stableEventId || eventTransitionHandledRef.current) {
       return;
@@ -331,6 +323,7 @@ function EnabledEventWebsiteWorkspace({
   }, [initialSectionKey]);
 
   function resetWebsiteFlowOrder() {
+    autosave.scheduleSave(FAST_AUTOSAVE_DELAY_MS);
     setWebsiteFlowSections(defaultWebsiteFlowSections);
   }
 
@@ -341,14 +334,17 @@ function EnabledEventWebsiteWorkspace({
       return;
     }
 
+    autosave.scheduleSave(FAST_AUTOSAVE_DELAY_MS);
     setEnabledSections((current) => ({ ...current, [key]: enabled }));
   }
 
   function updatePreviewDraft(nextDraft: EventWebsitePreviewDraft) {
+    autosave.scheduleSave(DEFAULT_AUTOSAVE_DELAY_MS);
     setPreviewDraft(nextDraft);
   }
 
   function updateWebsiteFlowSections(nextSections: typeof websiteFlowSections) {
+    autosave.scheduleSave(FAST_AUTOSAVE_DELAY_MS);
     setWebsiteFlowSections(nextSections);
   }
 
@@ -367,20 +363,27 @@ function EnabledEventWebsiteWorkspace({
     void autosave.saveNow();
   }
 
+  function reloadServerVersion() {
+    if (
+      window.confirm(
+        "Reload the saved server version? Your unsaved local changes will be discarded.",
+      )
+    ) {
+      window.location.reload();
+    }
+  }
+
   const statusPill = useMemo<EventWebsiteStatusPill>(() => {
-    if (autosave.persistenceState === "saving") {
+    if (autosave.persistenceState === "saving" || autosave.persistenceState === "retrying") {
       return {
-        label: "Saving changes…",
+        label: autosave.persistenceState === "retrying" ? "Retrying..." : "Saving...",
         tone: "neutral",
       };
     }
 
-    if (autosave.persistenceState === "failed" || autosave.persistenceState === "conflict") {
+    if (autosave.persistenceState === "error" || autosave.persistenceState === "conflict") {
       return {
-        label:
-          autosave.persistenceState === "conflict"
-            ? "Another saved version was found"
-            : "Save failed — Retry",
+        label: autosave.persistenceState === "conflict" ? "Conflict detected" : "Couldn't save",
         tone: "warning",
       };
     }
@@ -393,10 +396,14 @@ function EnabledEventWebsiteWorkspace({
     }
 
     return {
-      label: "All changes saved",
+      label: autosave.savedRecently
+        ? "Saved just now"
+        : autosave.savedAt
+          ? `Saved at ${formatCompactSaveTime(autosave.savedAt)}`
+          : "Saved",
       tone: "neutral",
     };
-  }, [autosave.persistenceState, isDirty]);
+  }, [autosave.savedAt, autosave.savedRecently, autosave.persistenceState, isDirty]);
   const publicationStatusPill = useMemo<EventWebsiteStatusPill>(() => {
     if (eventWebsiteData.publishState !== "published") {
       return {
@@ -448,9 +455,12 @@ function EnabledEventWebsiteWorkspace({
           defaultWebsiteFlowSections={defaultWebsiteFlowSections}
           publicPageUrl={eventWebsiteData.publicPageUrl}
           publicationStatusPill={publicationStatusPill}
-          onRetry={autosave.persistenceState === "failed" ? () => void autosave.retry() : undefined}
+          onReloadServerVersion={
+            autosave.persistenceState === "conflict" ? reloadServerVersion : undefined
+          }
+          onRetry={autosave.persistenceState === "error" ? () => void autosave.retry() : undefined}
           onSaveNow={
-            isDirty && !["saving", "conflict"].includes(autosave.persistenceState)
+            isDirty && !["retrying", "saving"].includes(autosave.persistenceState)
               ? () => void autosave.saveNow()
               : undefined
           }
@@ -487,36 +497,23 @@ function EnabledEventWebsiteWorkspace({
           selectedSection={selectedSectionDefinition}
           websiteFlowSections={websiteFlowSections}
         />
-        <EventWebsiteConflictDialog
-          conflictDetails={autosave.conflictDetails}
-          open={autosave.persistenceState === "conflict"}
-          onAdoptLatest={() => void autosave.adoptLatest()}
-          onKeepLocal={() => void autosave.keepLocalChanges()}
-          onReview={() => void autosave.reviewConflict()}
-          onMergeNonOverlapping={() => void autosave.mergeNonOverlappingConflict()}
-        />
       </div>
     );
   }
 
   return (
     <div className="event-website-responsive-shell">
-      <EventWebsiteConflictDialog
-        conflictDetails={autosave.conflictDetails}
-        open={autosave.persistenceState === "conflict"}
-        onAdoptLatest={() => void autosave.adoptLatest()}
-        onKeepLocal={() => void autosave.keepLocalChanges()}
-        onReview={() => void autosave.reviewConflict()}
-        onMergeNonOverlapping={() => void autosave.mergeNonOverlappingConflict()}
-      />
       <EventWebsiteStatusCard
         autoSaveEnabled={autoSaveEnabled}
         onToggleAutoSave={() => setAutoSaveEnabled((current) => !current)}
         publicPageUrl={eventWebsiteData.publicPageUrl}
         publicationStatusPill={publicationStatusPill}
-        onRetry={autosave.persistenceState === "failed" ? () => void autosave.retry() : undefined}
+        onReloadServerVersion={
+          autosave.persistenceState === "conflict" ? reloadServerVersion : undefined
+        }
+        onRetry={autosave.persistenceState === "error" ? () => void autosave.retry() : undefined}
         onSaveNow={
-          isDirty && !["saving", "conflict"].includes(autosave.persistenceState)
+          isDirty && !["retrying", "saving"].includes(autosave.persistenceState)
             ? () => void autosave.saveNow()
             : undefined
         }
@@ -559,11 +556,14 @@ function EnabledEventWebsiteWorkspace({
             enabledSections={enabledSections}
             publicPageUrl={eventWebsiteData.publicPageUrl}
             publicationStatusPill={publicationStatusPill}
+            onReloadServerVersion={
+              autosave.persistenceState === "conflict" ? reloadServerVersion : undefined
+            }
             onRetry={
-              autosave.persistenceState === "failed" ? () => void autosave.retry() : undefined
+              autosave.persistenceState === "error" ? () => void autosave.retry() : undefined
             }
             onSaveNow={
-              isDirty && !["saving", "conflict"].includes(autosave.persistenceState)
+              isDirty && !["retrying", "saving"].includes(autosave.persistenceState)
                 ? () => void autosave.saveNow()
                 : undefined
             }
@@ -612,90 +612,13 @@ function EnabledEventWebsiteWorkspace({
         onPreviewDraftChange={updatePreviewDraft}
         previewDraft={previewDraft}
         persistenceStatusPill={statusPill}
-        onRetry={autosave.persistenceState === "failed" ? () => void autosave.retry() : undefined}
+        onRetry={autosave.persistenceState === "error" ? () => void autosave.retry() : undefined}
         resolvedSections={resolvedSections}
         saveButtonProps={saveButtonProps}
         selectedSection={selectedSectionDefinition}
         selectedSectionId={selectedSection}
       />
     </div>
-  );
-}
-
-function EventWebsiteConflictDialog({
-  conflictDetails,
-  onAdoptLatest,
-  onKeepLocal,
-  onMergeNonOverlapping,
-  onReview,
-  open,
-}: {
-  conflictDetails: { overlappingPaths: readonly unknown[] } | null;
-  onAdoptLatest: () => void;
-  onKeepLocal: () => void;
-  onMergeNonOverlapping: () => void;
-  onReview: () => void;
-  open: boolean;
-}) {
-  const [confirmKeepLocal, setConfirmKeepLocal] = useState(false);
-  const hasOverlap = Boolean(conflictDetails?.overlappingPaths.length);
-
-  useEffect(() => {
-    if (!open) setConfirmKeepLocal(false);
-  }, [open]);
-
-  return (
-    <Dialog open={open} onOpenChange={() => undefined}>
-      <DialogContent showCloseButton={false} className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Another saved version was found</DialogTitle>
-          <DialogDescription>
-            Your draft is preserved. Review the saved version before choosing how to continue.
-          </DialogDescription>
-        </DialogHeader>
-        {conflictDetails ? (
-          <p className="text-muted-foreground text-sm" aria-live="polite">
-            {hasOverlap
-              ? "Both editors changed at least one of the same fields. Choose which version to keep."
-              : "The changes are separate and can be merged without replacing the other editor’s work."}
-          </p>
-        ) : null}
-        {confirmKeepLocal ? (
-          <p className="text-sm font-medium">
-            Keep your changes and preserve unrelated saved changes? This writes a new revision.
-          </p>
-        ) : null}
-        <DialogFooter className="gap-2 sm:flex-wrap">
-          {confirmKeepLocal ? (
-            <>
-              <Button type="button" variant="outline" onClick={() => setConfirmKeepLocal(false)}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={onKeepLocal}>
-                Keep my changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button type="button" variant="outline" onClick={onReview}>
-                Review changes
-              </Button>
-              {conflictDetails && !hasOverlap ? (
-                <Button type="button" variant="outline" onClick={onMergeNonOverlapping}>
-                  Merge saved changes
-                </Button>
-              ) : null}
-              <Button type="button" variant="outline" onClick={onAdoptLatest}>
-                Load latest saved version
-              </Button>
-              <Button type="button" onClick={() => setConfirmKeepLocal(true)}>
-                Keep my changes
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -829,6 +752,19 @@ function ResponsiveSectionEditorSurface({
       </DrawerContent>
     </Drawer>
   );
+}
+
+function formatCompactSaveTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "recently";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function LockedEventWebsiteWorkspace({

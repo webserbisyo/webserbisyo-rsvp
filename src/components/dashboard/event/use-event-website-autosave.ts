@@ -6,34 +6,27 @@ import {
   markEventWebsiteDraftSavePending,
   registerEventWebsiteNavigationGuard,
 } from "@/lib/event-website/draft-save-coordination";
+import { saveEventWebsiteAction } from "@/server/actions/event-website";
 import {
-  DraftSaveController,
-  type DraftSaveControllerState,
-  type DraftSaveStatus,
-} from "@/lib/event-website/draft-save-controller";
-import {
-  mergeEventWebsiteDraftThreeWay,
-  type DraftPath,
-} from "@/lib/event-website/draft-three-way-merge";
-import {
-  getLatestEventWebsiteDraftAction,
-  saveEventWebsiteAction,
-} from "@/server/actions/event-website";
+  getAutosaveRetryDelay,
+  shouldAcknowledgeClientSequence,
+} from "@/lib/event-website/autosave-policy";
 
-const DEFAULT_AUTOSAVE_DELAY_MS = 900;
+const MAX_AUTOMATIC_RETRIES = 3;
 
-export type EventWebsitePersistenceState = DraftSaveStatus;
+export type EventWebsitePersistenceState =
+  | "conflict"
+  | "error"
+  | "retrying"
+  | "saved"
+  | "saving"
+  | "unsaved";
 
 type SavedDraft = {
+  clientSequence: number;
   content: EventWebsiteContent;
   savedAt: string;
   savedRevision: number;
-};
-
-type ConflictDetails = {
-  localChanges: DraftPath[];
-  overlappingPaths: DraftPath[];
-  serverChanges: DraftPath[];
 };
 
 type UseEventWebsiteAutosaveInput = {
@@ -42,7 +35,7 @@ type UseEventWebsiteAutosaveInput = {
   eventId: string | null;
   initialSavedAt: string | null;
   initialSavedRevision: number;
-  onDraftReplaced: (content: EventWebsiteContent) => void;
+  isDirty: boolean;
   onSaved: (result: SavedDraft) => void;
 };
 
@@ -52,199 +45,236 @@ export function useEventWebsiteAutosave({
   eventId,
   initialSavedAt,
   initialSavedRevision,
-  onDraftReplaced,
+  isDirty,
   onSaved,
 }: UseEventWebsiteAutosaveInput) {
-  const onSavedRef = useRef(onSaved);
-  const onDraftReplacedRef = useRef(onDraftReplaced);
-  const eventIdRef = useRef(eventId);
-  const controllerRef = useRef<DraftSaveController<EventWebsiteContent> | null>(null);
-  const [state, setState] = useState<DraftSaveControllerState<EventWebsiteContent> | null>(null);
-  const [conflictDetails, setConflictDetails] = useState<ConflictDetails | null>(null);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new DraftSaveController({
-      autoSaveEnabled,
-      debounceMs: DEFAULT_AUTOSAVE_DELAY_MS,
-      initialContent: content,
-      initialSavedAt,
-      initialSavedRevision,
-      onChange: () => {
-        const controller = controllerRef.current;
-        if (controller) setState(controller.getState());
-      },
-      onSaved: (savedContent, savedAt, savedRevision) => {
-        onSavedRef.current({ content: savedContent, savedAt, savedRevision });
-      },
-      persist: async ({ content: snapshot, expectedRevision, saveAttemptId }) => {
-        const currentEventId = eventIdRef.current;
-        if (!currentEventId) {
-          return {
-            error: "The current event could not be resolved for saving.",
-            retryable: false,
-            status: "failed" as const,
-          };
-        }
-        markEventWebsiteDraftSavePending(currentEventId, true);
-        try {
-          const response = await saveEventWebsiteAction({
-            clientSequence: saveAttemptId,
-            content: snapshot,
-            eventId: currentEventId,
-            expectedRevision,
-          });
-          if (!response.ok) {
-            return {
-              error: response.error,
-              retryable: "retryable" in response && response.retryable,
-              status: "failed" as const,
-            };
-          }
-          return response.data.status === "conflict"
-            ? { serverRevision: response.data.serverRevision, status: "conflict" as const }
-            : {
-                savedAt: response.data.savedAt,
-                savedRevision: response.data.savedRevision,
-                status: "saved" as const,
-              };
-        } finally {
-          markEventWebsiteDraftSavePending(currentEventId, false);
-        }
-      },
-    });
-  }
-
-  const controller = controllerRef.current;
-  const snapshot = state ?? controller.getState();
-
-  useEffect(() => {
-    onSavedRef.current = onSaved;
-    onDraftReplacedRef.current = onDraftReplaced;
-    eventIdRef.current = eventId;
-  }, [eventId, onDraftReplaced, onSaved]);
-
-  useEffect(() => {
-    controller.updateDraft(content);
-  }, [content, controller]);
-
-  useEffect(() => {
-    controller.setAutoSaveEnabled(autoSaveEnabled);
-  }, [autoSaveEnabled, controller]);
-
-  useEffect(
-    () => () => {
-      controller.dispose();
-    },
-    [controller],
+  const [persistenceState, setPersistenceState] = useState<EventWebsitePersistenceState>(
+    isDirty ? "unsaved" : "saved",
   );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(initialSavedAt);
+  const [savedRevision, setSavedRevision] = useState(initialSavedRevision);
+  const [savedRecently, setSavedRecently] = useState(false);
+  const [conflictRevision, setConflictRevision] = useState<number | null>(null);
+  const contentRef = useRef(content);
+  const dirtyRef = useRef(isDirty);
+  const onSavedRef = useRef(onSaved);
+  const autoSaveEnabledRef = useRef(autoSaveEnabled);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedRecentlyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const localSequenceRef = useRef(0);
+  const acknowledgedSequenceRef = useRef(0);
+  const serverRevisionRef = useRef(initialSavedRevision);
+  const queuePromiseRef = useRef<Promise<boolean> | null>(null);
 
-  const fetchLatest = useCallback(async () => {
-    const currentEventId = eventIdRef.current;
-    if (!currentEventId) return null;
-    const result = await getLatestEventWebsiteDraftAction({ eventId: currentEventId });
-    return result.ok ? result.data : null;
+  useEffect(() => {
+    contentRef.current = content;
+    dirtyRef.current = isDirty;
+    onSavedRef.current = onSaved;
+    autoSaveEnabledRef.current = autoSaveEnabled;
+  }, [autoSaveEnabled, content, isDirty, onSaved]);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
-  const reviewConflict = useCallback(async () => {
-    const latest = await fetchLatest();
-    if (!latest) return null;
-    const current = controller.getState();
-    const comparison = mergeEventWebsiteDraftThreeWay({
-      base: current.baseline,
-      local: current.current,
-      server: latest.content,
-    });
-    setConflictDetails(comparison);
-    return comparison;
-  }, [controller, fetchLatest]);
+  const runQueue = useCallback(
+    (allowAutomaticRetry: boolean) => {
+      clearTimer();
 
-  const adoptLatest = useCallback(async () => {
-    const latest = await fetchLatest();
-    if (!latest) return false;
-    controller.adoptLatest(latest.content, latest.savedRevision, latest.savedAt);
-    setConflictDetails(null);
-    onDraftReplacedRef.current(latest.content);
-    return true;
-  }, [controller, fetchLatest]);
+      if (!eventId) {
+        setErrorMessage("The current event could not be resolved for saving.");
+        setPersistenceState("error");
+        return Promise.resolve(false);
+      }
 
-  const reconcile = useCallback(
-    async (reason: "conflict-merge" | "explicit-keep-local", allowOverlap: boolean) => {
-      const latest = await fetchLatest();
-      if (!latest) return false;
-      const current = controller.getState();
-      const comparison = mergeEventWebsiteDraftThreeWay({
-        base: current.baseline,
-        local: current.current,
-        server: latest.content,
-      });
-      setConflictDetails(comparison);
-      if (!allowOverlap && comparison.overlappingPaths.length > 0) return false;
+      if (queuePromiseRef.current) {
+        return queuePromiseRef.current;
+      }
 
-      controller.prepareReconciledDraft(
-        latest.content,
-        comparison.merged,
-        latest.savedRevision,
-        latest.savedAt,
-      );
-      onDraftReplacedRef.current(comparison.merged);
-      return controller.saveReconciled(reason);
+      const queuePromise = (async () => {
+        markEventWebsiteDraftSavePending(eventId, true);
+
+        try {
+          while (dirtyRef.current || localSequenceRef.current > acknowledgedSequenceRef.current) {
+            const submittedSequence = localSequenceRef.current;
+            let retryAttempt = 0;
+
+            while (true) {
+              setPersistenceState(retryAttempt > 0 ? "retrying" : "saving");
+              setErrorMessage(null);
+
+              const result = await saveEventWebsiteAction({
+                clientSequence: submittedSequence,
+                content: contentRef.current,
+                eventId,
+                expectedRevision: serverRevisionRef.current,
+              });
+
+              if (!result.ok) {
+                retryAttempt += 1;
+                if (
+                  allowAutomaticRetry &&
+                  "retryable" in result &&
+                  result.retryable &&
+                  retryAttempt <= MAX_AUTOMATIC_RETRIES
+                ) {
+                  setPersistenceState("retrying");
+                  await wait(getAutosaveRetryDelay(retryAttempt));
+                  continue;
+                }
+
+                setErrorMessage(result.error);
+                setPersistenceState("error");
+                return false;
+              }
+
+              if (result.data.status === "conflict") {
+                setConflictRevision(result.data.serverRevision);
+                setErrorMessage(
+                  "A newer server version exists. Reload it or keep these local changes.",
+                );
+                setPersistenceState("conflict");
+                return false;
+              }
+
+              serverRevisionRef.current = result.data.savedRevision;
+              setSavedRevision(result.data.savedRevision);
+              setSavedAt(result.data.savedAt);
+              setSavedRecently(true);
+              if (savedRecentlyTimerRef.current) {
+                clearTimeout(savedRecentlyTimerRef.current);
+              }
+              savedRecentlyTimerRef.current = setTimeout(() => {
+                setSavedRecently(false);
+              }, 10_000);
+
+              if (
+                shouldAcknowledgeClientSequence(
+                  acknowledgedSequenceRef.current,
+                  result.data.clientSequence,
+                )
+              ) {
+                acknowledgedSequenceRef.current = result.data.clientSequence;
+                onSavedRef.current(result.data);
+              }
+
+              break;
+            }
+
+            if (localSequenceRef.current <= submittedSequence) {
+              dirtyRef.current = false;
+              setPersistenceState("saved");
+              setConflictRevision(null);
+              setErrorMessage(null);
+              return true;
+            }
+          }
+
+          setPersistenceState("saved");
+          return true;
+        } finally {
+          markEventWebsiteDraftSavePending(eventId, false);
+          queuePromiseRef.current = null;
+        }
+      })();
+
+      queuePromiseRef.current = queuePromise;
+      return queuePromise;
     },
-    [controller, fetchLatest],
+    [clearTimer, eventId],
   );
 
-  const mergeNonOverlappingConflict = useCallback(
-    () => reconcile("conflict-merge", false),
-    [reconcile],
+  const scheduleSave = useCallback(
+    (delayMs: number) => {
+      localSequenceRef.current += 1;
+      dirtyRef.current = true;
+      setPersistenceState("unsaved");
+      setErrorMessage(null);
+      setConflictRevision(null);
+      clearTimer();
+
+      if (!autoSaveEnabledRef.current) {
+        return;
+      }
+
+      timerRef.current = setTimeout(() => {
+        void runQueue(true);
+      }, delayMs);
+    },
+    [clearTimer, runQueue],
   );
-  const keepLocalChanges = useCallback(() => reconcile("explicit-keep-local", true), [reconcile]);
-  const flush = useCallback(() => controller.flush(), [controller]);
-  const retry = useCallback(() => controller.retry(), [controller]);
-  const saveNow = useCallback(() => controller.saveNow(), [controller]);
+
+  const flush = useCallback(() => {
+    if (!dirtyRef.current && !queuePromiseRef.current) {
+      return Promise.resolve(true);
+    }
+
+    return runQueue(true);
+  }, [runQueue]);
+
+  const retry = useCallback(() => runQueue(true), [runQueue]);
+  const saveNow = useCallback(() => runQueue(false), [runQueue]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!dirtyRef.current && !queuePromiseRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   useEffect(
     () =>
       registerEventWebsiteNavigationGuard(async () => {
-        let current = controller.getState();
-        if (!current.isDirty && current.status !== "saving") return true;
-        if (current.status === "saving") {
-          await controller.waitForActive();
-          current = controller.getState();
-          if (!current.isDirty && current.status !== "saving") return true;
+        if (!dirtyRef.current && !queuePromiseRef.current) {
+          return true;
         }
-        if (current.status === "conflict") return false;
-        if (autoSaveEnabled && (await controller.flush())) return true;
-        return window.confirm("Your Event Website draft is not saved. Leave without saving?");
+
+        if (await flush()) {
+          return true;
+        }
+
+        return window.confirm(
+          "Your latest Event Website changes could not be saved. Leave and discard them?",
+        );
       }),
-    [autoSaveEnabled, controller],
+    [flush],
   );
 
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      const current = controller.getState();
-      if (current.isDirty || current.status === "saving") {
-        event.preventDefault();
-        event.returnValue = "";
+  useEffect(
+    () => () => {
+      clearTimer();
+      if (savedRecentlyTimerRef.current) {
+        clearTimeout(savedRecentlyTimerRef.current);
       }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [controller]);
+    },
+    [clearTimer],
+  );
 
   return {
-    adoptLatest,
-    conflictDetails,
-    conflictRevision: snapshot.conflictRevision,
-    errorMessage: snapshot.errorMessage,
+    conflictRevision,
+    errorMessage,
     flush,
-    isDirty: snapshot.isDirty,
-    keepLocalChanges,
-    mergeNonOverlappingConflict,
-    persistenceState: snapshot.status,
+    persistenceState,
     retry,
-    reviewConflict,
-    savedAt: snapshot.savedAt,
-    savedRecently: false,
-    savedRevision: snapshot.savedRevision,
+    savedAt,
+    savedRecently,
+    savedRevision,
     saveNow,
+    scheduleSave,
   };
+}
+
+function wait(delayMs: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, delayMs));
 }
