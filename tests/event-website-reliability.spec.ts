@@ -24,6 +24,15 @@ import {
   shouldAdoptEventWebsiteServerSnapshot,
 } from "../src/lib/event-website/autosave-policy";
 import {
+  DraftSaveController,
+  type DraftSaveReason,
+  type DraftSaveResponse,
+} from "../src/lib/event-website/draft-save-controller";
+import {
+  assertSafeEventWebsiteDraftMergeValue,
+  mergeEventWebsiteDraftThreeWay,
+} from "../src/lib/event-website/draft-three-way-merge";
+import {
   EVENT_WEBSITE_SECTION_CONTRACT_VERSION,
   eventWebsiteSectionContract,
   requiredEventWebsiteSectionKeys,
@@ -300,6 +309,295 @@ test("isEmptyJsonObject identifies uninitialized empty objects", () => {
   expect(isEmptyJsonObject({ foo: "bar" })).toBe(false);
   expect(isEmptyJsonObject(null)).toBe(false);
   expect(isEmptyJsonObject([])).toBe(false);
+});
+
+type TestDraft = { body: string; title: string; tags?: string[] };
+type TestPersist = (input: {
+  content: TestDraft;
+  expectedRevision: number;
+  reason: DraftSaveReason;
+  saveAttemptId: number;
+}) => Promise<DraftSaveResponse<TestDraft>>;
+type TestScheduler = {
+  clear: (timer: ReturnType<typeof setTimeout>) => void;
+  set: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
+};
+
+class ManualScheduler {
+  private callbacks = new Map<number, () => void>();
+  private nextId = 0;
+  clear = (timer: ReturnType<typeof setTimeout>) => {
+    this.callbacks.delete(Number(timer));
+  };
+  set = (callback: () => void) => {
+    const id = ++this.nextId;
+    this.callbacks.set(id, callback);
+    return id as unknown as ReturnType<typeof setTimeout>;
+  };
+  runAll() {
+    const callbacks = [...this.callbacks.values()];
+    this.callbacks.clear();
+    callbacks.forEach((callback) => callback());
+  }
+  get size() {
+    return this.callbacks.size;
+  }
+}
+
+function createController(input?: {
+  autoSaveEnabled?: boolean;
+  persist?: TestPersist;
+  scheduler?: TestScheduler;
+}) {
+  const scheduler = input?.scheduler ?? new ManualScheduler();
+  const calls: Array<{ content: TestDraft; expectedRevision: number; reason: string }> = [];
+  const controller = new DraftSaveController<TestDraft>({
+    autoSaveEnabled: input?.autoSaveEnabled ?? true,
+    debounceMs: 1,
+    initialContent: { body: "base", title: "base" },
+    initialSavedAt: "2026-01-01T00:00:00.000Z",
+    initialSavedRevision: 7,
+    persist:
+      input?.persist ??
+      (async (request) => {
+        calls.push(request);
+        return { savedAt: "2026-01-02T00:00:00.000Z", savedRevision: 8, status: "saved" };
+      }),
+    scheduler,
+  });
+  return { calls, controller, scheduler };
+}
+
+test("disabling auto-save cancels a pending debounce and a stale callback rechecks the toggle", async () => {
+  const scheduler = new ManualScheduler();
+  const { calls, controller } = createController({ scheduler });
+  controller.updateDraft({ body: "local", title: "base" });
+  expect(scheduler.size).toBe(1);
+  controller.setAutoSaveEnabled(false);
+  expect(scheduler.size).toBe(0);
+  (scheduler as ManualScheduler).runAll();
+  await Promise.resolve();
+  expect(calls).toHaveLength(0);
+
+  // A scheduler that cannot cancel an already-dispatched callback must still not save.
+  let callback: (() => void) | undefined;
+  const uncancellable = {
+    clear: () => undefined,
+    set: (next: () => void) => {
+      callback = next;
+      return 1 as unknown as ReturnType<typeof setTimeout>;
+    },
+  };
+  const second = createController({ scheduler: uncancellable });
+  second.controller.updateDraft({ body: "local", title: "base" });
+  second.controller.setAutoSaveEnabled(false);
+  callback?.();
+  await Promise.resolve();
+  expect(second.calls).toHaveLength(0);
+});
+
+test("manual Save consumes debounce and persists the latest rendered draft through the shared path", async () => {
+  const { calls, controller, scheduler } = createController();
+  controller.updateDraft({ body: "first", title: "base" });
+  controller.updateDraft({ body: "latest", title: "base" });
+  await controller.saveNow();
+  (scheduler as ManualScheduler).runAll();
+  await Promise.resolve();
+  expect(calls).toHaveLength(1);
+  expect(calls[0]).toMatchObject({ content: { body: "latest", title: "base" }, reason: "manual" });
+  expect(controller.getState()).toMatchObject({
+    isDirty: false,
+    savedRevision: 8,
+    status: "clean",
+  });
+});
+
+test("auto-save and manual Save use the same serialized persistence controller", async () => {
+  const { calls, controller, scheduler } = createController();
+  controller.updateDraft({ body: "auto", title: "base" });
+  (scheduler as ManualScheduler).runAll();
+  await Promise.resolve();
+  controller.updateDraft({ body: "manual", title: "base" });
+  await controller.saveNow();
+  expect(calls.map((call) => call.reason)).toEqual(["auto", "manual"]);
+  expect(calls.map((call) => call.expectedRevision)).toEqual([7, 8]);
+});
+
+test("rapid edits coalesce and only one request is active while later edits are queued", async () => {
+  let active = 0;
+  let maxActive = 0;
+  const resolvers: Array<
+    (value: { savedAt: string; savedRevision: number; status: "saved" }) => void
+  > = [];
+  const calls: Array<{ content: TestDraft; expectedRevision: number }> = [];
+  const { controller } = createController({
+    autoSaveEnabled: false,
+    persist: (request) =>
+      new Promise((resolve) => {
+        calls.push(request);
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        resolvers.push((value) => {
+          active -= 1;
+          resolve(value);
+        });
+      }),
+  });
+  controller.updateDraft({ body: "one", title: "base" });
+  const saving = controller.saveNow();
+  controller.updateDraft({ body: "two", title: "base" });
+  controller.updateDraft({ body: "three", title: "base" });
+  void controller.saveNow();
+  expect(calls).toHaveLength(1);
+  resolvers.shift()?.({ savedAt: "2026-01-02T00:00:00.000Z", savedRevision: 8, status: "saved" });
+  await Promise.resolve();
+  expect(calls).toHaveLength(2);
+  expect(calls[1]?.content.body).toBe("three");
+  expect(calls[1]?.expectedRevision).toBe(8);
+  resolvers.shift()?.({ savedAt: "2026-01-03T00:00:00.000Z", savedRevision: 9, status: "saved" });
+  await saving;
+  expect(maxActive).toBe(1);
+  expect(controller.getState()).toMatchObject({
+    isDirty: false,
+    savedRevision: 9,
+    status: "clean",
+  });
+});
+
+test("a save confirms only its submitted snapshot and leaves newer local work dirty", async () => {
+  let resolveSave:
+    | ((value: { savedAt: string; savedRevision: number; status: "saved" }) => void)
+    | undefined;
+  const { controller } = createController({
+    autoSaveEnabled: false,
+    persist: () =>
+      new Promise((resolve) => {
+        resolveSave = resolve;
+      }),
+  });
+  controller.updateDraft({ body: "submitted", title: "base" });
+  const saving = controller.saveNow();
+  controller.updateDraft({ body: "newer", title: "base" });
+  resolveSave?.({ savedAt: "2026-01-02T00:00:00.000Z", savedRevision: 8, status: "saved" });
+  await saving;
+  expect(controller.getState()).toMatchObject({ isDirty: true, savedRevision: 8, status: "dirty" });
+});
+
+test("conflicts never retry a stale revision and reconciled save adopts the fresh revision", async () => {
+  const calls: Array<{ expectedRevision: number }> = [];
+  const { controller } = createController({
+    autoSaveEnabled: false,
+    persist: async (request) => {
+      calls.push(request);
+      return calls.length === 1
+        ? { serverRevision: 8, status: "conflict" as const }
+        : { savedAt: "2026-01-03T00:00:00.000Z", savedRevision: 9, status: "saved" as const };
+    },
+  });
+  controller.updateDraft({ body: "local", title: "base" });
+  await controller.saveNow();
+  await controller.saveNow();
+  expect(calls.map((call) => call.expectedRevision)).toEqual([7]);
+  controller.prepareReconciledDraft(
+    { body: "server", title: "base" },
+    { body: "local", title: "server-title" },
+    8,
+    "2026-01-02T00:00:00.000Z",
+  );
+  await controller.saveReconciled("conflict-merge");
+  expect(calls.map((call) => call.expectedRevision)).toEqual([7, 8]);
+  expect(controller.getState()).toMatchObject({
+    isDirty: false,
+    savedRevision: 9,
+    status: "clean",
+  });
+});
+
+test("failures always leave saving state and automatic retries are bounded", async () => {
+  const { calls, controller } = createController({
+    persist: async (request) => {
+      calls.push(request);
+      return { error: "temporary", retryable: true, status: "failed" as const };
+    },
+  });
+  controller.updateDraft({ body: "local", title: "base" });
+  await controller.saveNow();
+  expect(controller.getState()).toMatchObject({ isDirty: true, status: "failed" });
+
+  const autoCalls: unknown[] = [];
+  const auto = createController({
+    persist: async (request) => {
+      autoCalls.push(request);
+      return { error: "temporary", retryable: true, status: "failed" as const };
+    },
+  });
+  auto.controller.updateDraft({ body: "local", title: "base" });
+  (auto.scheduler as ManualScheduler).runAll();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(auto.controller.getState().status).toBe("failed");
+  expect(autoCalls).toHaveLength(4);
+});
+
+test("three-way merge preserves non-overlapping server changes and rejects overlaps, arrays, and unsafe keys", () => {
+  const nonOverlapping = mergeEventWebsiteDraftThreeWay({
+    base: { body: "base", title: "base" },
+    local: { body: "local", title: "base" },
+    server: { body: "base", title: "server" },
+  });
+  expect(nonOverlapping.overlappingPaths).toEqual([]);
+  expect(nonOverlapping.merged).toEqual({ body: "local", title: "server" });
+
+  const overlapping = mergeEventWebsiteDraftThreeWay({
+    base: { body: "base", title: "base", tags: ["a"] },
+    local: { body: "local", title: "base", tags: ["local"] },
+    server: { body: "server", title: "base", tags: ["server"] },
+  });
+  expect(overlapping.overlappingPaths).toContainEqual(["body"]);
+  expect(overlapping.overlappingPaths).toContainEqual(["tags"]);
+  expect(
+    mergeEventWebsiteDraftThreeWay({ base: "base", local: "local", server: "server" }).merged,
+  ).toBe("local");
+  expect(() => assertSafeEventWebsiteDraftMergeValue(JSON.parse('{"__proto__":{"x":1}}'))).toThrow(
+    "Unsafe draft merge key",
+  );
+});
+
+test("navigation and publish remain separate from draft persistence", () => {
+  const autosaveSource = readFileSync(
+    join(process.cwd(), "src/components/dashboard/event/use-event-website-autosave.ts"),
+    "utf8",
+  );
+  expect(autosaveSource.match(/addEventListener\("beforeunload"/g) ?? []).toHaveLength(1);
+  expect(autosaveSource.match(/removeEventListener\("beforeunload"/g) ?? []).toHaveLength(1);
+  const saveActionSource = readFileSync(
+    join(process.cwd(), "src/server/actions/event-website.ts"),
+    "utf8",
+  );
+  expect(saveActionSource).not.toContain("publishEventWebsite");
+});
+
+test("default timer scheduler schedules and clears without a receiver error", async () => {
+  const calls: string[] = [];
+  const controller = new DraftSaveController<TestDraft>({
+    autoSaveEnabled: true,
+    debounceMs: 1,
+    initialContent: { body: "base", title: "base" },
+    initialSavedAt: null,
+    initialSavedRevision: 1,
+    persist: async (request) => {
+      calls.push(request.reason);
+      return { savedAt: "2026-01-01T00:00:00.000Z", savedRevision: 2, status: "saved" };
+    },
+  });
+  expect(() => controller.updateDraft({ body: "changed", title: "base" })).not.toThrow();
+  controller.setAutoSaveEnabled(false);
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  expect(calls).toEqual([]);
+  controller.setAutoSaveEnabled(true);
+  controller.updateDraft({ body: "changed again", title: "base" });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  expect(calls).toEqual(["auto"]);
+  controller.dispose();
 });
 
 function buildLegacyEventWebsiteContent() {
