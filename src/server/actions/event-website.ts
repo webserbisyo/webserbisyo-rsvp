@@ -22,6 +22,10 @@ const SaveEventWebsiteActionSchema = z.object({
   expectedRevision: z.number().int().nonnegative(),
 });
 
+const GetLatestEventWebsiteDraftActionSchema = z.object({
+  eventId: z.uuid(),
+});
+
 const GiftImageUploadActionSchema = z.object({
   file: z.custom<File>((value) => value instanceof File && value.size > 0, {
     message: "Upload a valid image file.",
@@ -119,6 +123,43 @@ export async function saveEventWebsiteAction(input: unknown) {
       ok: false as const,
       retryable: failure.retryable,
     };
+  }
+}
+
+/** Returns the latest authoritative draft only after the same tenant ownership check used for saves. */
+export async function getLatestEventWebsiteDraftAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(GetLatestEventWebsiteDraftActionSchema, input);
+    if (!profile.client_id) {
+      throw new PermissionError("The current tenant could not be resolved.");
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const { data: event, error } = await supabase
+      .from("rsvp_events")
+      .select("id, client_id, event_content ( content_json, saved_at, saved_revision )")
+      .eq("id", payload.eventId)
+      .eq("client_id", profile.client_id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!event || event.client_id !== profile.client_id) {
+      throw new PermissionError("The requested event does not belong to the current tenant.");
+    }
+
+    const eventContent = Array.isArray(event.event_content)
+      ? (event.event_content[0] ?? null)
+      : event.event_content;
+    if (!eventContent) throw new ServiceError("The Event Website draft could not be resolved.");
+
+    return actionSuccess({
+      content: normalizeEventWebsiteContentForSave(eventContent.content_json),
+      savedAt: eventContent.saved_at ?? new Date(0).toISOString(),
+      savedRevision: eventContent.saved_revision ?? 0,
+    });
+  } catch (error) {
+    return actionFailure(error);
   }
 }
 
