@@ -43,7 +43,7 @@ type UseEventWebsiteAutosaveInput = {
   initialSavedAt: string | null;
   initialSavedRevision: number;
   onDraftReplaced: (content: EventWebsiteContent) => void;
-  onSaved: (result: SavedDraft) => void;
+  onSaved: (result: SavedDraft) => void | Promise<void>;
 };
 
 export function useEventWebsiteAutosave({
@@ -61,6 +61,7 @@ export function useEventWebsiteAutosave({
   const controllerRef = useRef<DraftSaveController<EventWebsiteContent> | null>(null);
   const [state, setState] = useState<DraftSaveControllerState<EventWebsiteContent> | null>(null);
   const [conflictDetails, setConflictDetails] = useState<ConflictDetails | null>(null);
+  const autoReconciledConflictRef = useRef<number | null>(null);
 
   if (!controllerRef.current) {
     controllerRef.current = new DraftSaveController({
@@ -76,7 +77,7 @@ export function useEventWebsiteAutosave({
       onSaved: (savedContent, savedAt, savedRevision) => {
         onSavedRef.current({ content: savedContent, savedAt, savedRevision });
       },
-      persist: async ({ content: snapshot, expectedRevision, saveAttemptId }) => {
+      persist: async ({ content: snapshot, expectedRevision, mutationId, saveAttemptId }) => {
         const currentEventId = eventIdRef.current;
         if (!currentEventId) {
           return {
@@ -92,6 +93,7 @@ export function useEventWebsiteAutosave({
             content: snapshot,
             eventId: currentEventId,
             expectedRevision,
+            mutationId,
           });
           if (!response.ok) {
             return {
@@ -197,6 +199,12 @@ export function useEventWebsiteAutosave({
     [reconcile],
   );
   const keepLocalChanges = useCallback(() => reconcile("explicit-keep-local", true), [reconcile]);
+  useEffect(() => {
+    if (snapshot.status !== "conflict" || snapshot.conflictRevision === null) return;
+    if (autoReconciledConflictRef.current === snapshot.conflictRevision) return;
+    autoReconciledConflictRef.current = snapshot.conflictRevision;
+    void reconcile("conflict-merge", false);
+  }, [reconcile, snapshot.conflictRevision, snapshot.status]);
   const flush = useCallback(() => controller.flush(), [controller]);
   const retry = useCallback(() => controller.retry(), [controller]);
   const saveNow = useCallback(() => controller.saveNow(), [controller]);

@@ -15,6 +15,7 @@ import {
   type DashboardSpaNavigateDetail,
 } from "@/lib/dashboard/dashboard-spa-navigation";
 import { canNavigateAwayFromEventWebsite } from "@/lib/event-website/draft-save-coordination";
+import { EventWebsiteRevisionCoordinatorProvider } from "@/lib/dashboard/event-website-revision-coordinator";
 
 type DashboardAppProps = {
   initialView: DashboardView;
@@ -111,9 +112,11 @@ export function DashboardApp({ initialView }: DashboardAppProps) {
   }, [requestNavigation]);
 
   return (
+    <EventWebsiteRevisionCoordinatorProvider>
     <div onClickCapture={(event) => handleDashboardAnchorClick(event, requestNavigation)}>
       <DashboardViewRouter searchParams={searchParams} view={view} />
     </div>
+    </EventWebsiteRevisionCoordinatorProvider>
   );
 }
 

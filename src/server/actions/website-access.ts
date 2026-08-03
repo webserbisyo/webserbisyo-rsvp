@@ -43,7 +43,6 @@ const UpdateWebsiteAccessDraftSubdomainActionSchema = z.object({
 const PublishEventWebsiteActionSchema = z.object({
   confirmWarnings: z.boolean().optional(),
   eventId: z.uuid(),
-  expectedSavedRevision: z.number().int().nonnegative(),
 });
 
 const UnpublishEventWebsiteActionSchema = z.object({
@@ -152,16 +151,13 @@ export async function updateWebsiteAccessDraftSubdomainAction(input: unknown) {
 
 export async function publishEventWebsiteAction(input: unknown) {
   let eventId = "unresolved";
-  let expectedRevision: number | undefined;
 
   try {
     const profile = await requireTenantMember();
     const payload = parseActionInput(PublishEventWebsiteActionSchema, input);
     eventId = payload.eventId;
-    expectedRevision = payload.expectedSavedRevision;
     logEventWebsiteOperation("info", {
       eventId,
-      expectedRevision,
       operation: "publish",
       stage: "started",
     });
@@ -174,7 +170,6 @@ export async function publishEventWebsiteAction(input: unknown) {
       clientId: profile.client_id ?? "",
       confirmWarnings: payload.confirmWarnings,
       eventId: event.id,
-      expectedSavedRevision: payload.expectedSavedRevision,
     });
 
     revalidatePath("/dashboard/website-access");
@@ -198,7 +193,6 @@ export async function publishEventWebsiteAction(input: unknown) {
 
     logEventWebsiteOperation("info", {
       eventId,
-      expectedRevision,
       operation: "publish",
       returnedRevision: result.publishedRevision,
       stage: "succeeded",
@@ -208,7 +202,6 @@ export async function publishEventWebsiteAction(input: unknown) {
     logEventWebsiteOperation("error", {
       category: "publish_failed",
       eventId,
-      expectedRevision,
       operation: "publish",
       stage: "failed",
     });

@@ -315,6 +315,7 @@ type TestDraft = { body: string; title: string; tags?: string[] };
 type TestPersist = (input: {
   content: TestDraft;
   expectedRevision: number;
+  mutationId: string;
   reason: DraftSaveReason;
   saveAttemptId: number;
 }) => Promise<DraftSaveResponse<TestDraft>>;
@@ -350,7 +351,7 @@ function createController(input?: {
   scheduler?: TestScheduler;
 }) {
   const scheduler = input?.scheduler ?? new ManualScheduler();
-  const calls: Array<{ content: TestDraft; expectedRevision: number; reason: string }> = [];
+  const calls: Array<{ content: TestDraft; expectedRevision: number; mutationId: string; reason: string }> = [];
   const controller = new DraftSaveController<TestDraft>({
     autoSaveEnabled: input?.autoSaveEnabled ?? true,
     debounceMs: 1,
@@ -598,6 +599,23 @@ test("default timer scheduler schedules and clears without a receiver error", as
   await new Promise((resolve) => setTimeout(resolve, 5));
   expect(calls).toEqual(["auto"]);
   controller.dispose();
+});
+
+test("each save carries a request-scoped mutation identity while retaining revision locking", async () => {
+  const { calls, controller } = createController({ autoSaveEnabled: false });
+  controller.updateDraft({ body: "changed", title: "base" });
+  await controller.saveNow();
+  expect(calls[0]?.mutationId).toMatch(/^[0-9a-f-]{20,}$/i);
+  expect(calls[0]?.expectedRevision).toBe(7);
+});
+
+test("Publish latest does not use a page-loaded expected saved revision", () => {
+  const source = readFileSync(
+    join(process.cwd(), "src/components/dashboard/website-access/use-website-access-demo-state.ts"),
+    "utf8",
+  );
+  expect(source).toContain("revisionCoordinator.waitForSave(eventId)");
+  expect(source).not.toContain("expectedSavedRevision: serverState.savedRevision");
 });
 
 function buildLegacyEventWebsiteContent() {

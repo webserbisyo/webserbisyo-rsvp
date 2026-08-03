@@ -66,6 +66,7 @@ import {
 } from "@/lib/event-website/readiness";
 import { emitDashboardSyncEvent } from "@/lib/dashboard/dashboard-sync";
 import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
+import { useEventWebsiteRevisionCoordinator } from "@/lib/dashboard/event-website-revision-coordinator";
 import { cn } from "@/lib/utils";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
 import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
@@ -172,6 +173,7 @@ function EnabledEventWebsiteWorkspace({
   initialSelectedSection = null,
 }: EnabledEventWebsiteWorkspaceProps) {
   const queryClient = useQueryClient();
+  const revisionCoordinator = useEventWebsiteRevisionCoordinator();
   const [stableEventId] = useState(() => eventWebsiteData.eventId);
   const eventTransitionHandledRef = useRef(false);
   const isDesktopLayout = useMediaQuery(DESKTOP_LAYOUT_QUERY, true);
@@ -225,8 +227,17 @@ function EnabledEventWebsiteWorkspace({
     [enabledSections, previewDraft, savedContent, websiteFlowSections],
   );
   const handleDraftSaved = useCallback(
-    (result: { content: typeof savedContent; savedAt: string; savedRevision: number }) => {
+    async (result: { content: typeof savedContent; savedAt: string; savedRevision: number }) => {
       setSavedContent(result.content);
+      if (stableEventId) {
+        await revisionCoordinator.acknowledgeDraftSave({
+          content: result.content,
+          eventId: stableEventId,
+          publishedRevision: eventWebsiteData.publishedRevision,
+          savedAt: result.savedAt,
+          savedRevision: result.savedRevision,
+        });
+      }
       if (stableEventId) {
         emitDashboardSyncEvent({
           eventId: stableEventId,
@@ -235,7 +246,7 @@ function EnabledEventWebsiteWorkspace({
       }
       invalidateEventWebsiteQueries(queryClient);
     },
-    [queryClient, stableEventId],
+    [eventWebsiteData.publishedRevision, queryClient, revisionCoordinator, stableEventId],
   );
   const replaceDraftFromServer = useCallback(
     (nextContent: typeof savedContent) => {
@@ -260,6 +271,10 @@ function EnabledEventWebsiteWorkspace({
     onSaved: handleDraftSaved,
   });
   const isDirty = autosave.isDirty;
+  useEffect(() => {
+    if (!stableEventId) return;
+    return revisionCoordinator.registerFlush(stableEventId, autosave.flush);
+  }, [autosave.flush, revisionCoordinator, stableEventId]);
   useEffect(() => {
     if (eventWebsiteData.eventId === stableEventId || eventTransitionHandledRef.current) {
       return;
@@ -489,11 +504,9 @@ function EnabledEventWebsiteWorkspace({
         />
         <EventWebsiteConflictDialog
           conflictDetails={autosave.conflictDetails}
-          open={autosave.persistenceState === "conflict"}
+          open={autosave.persistenceState === "conflict" && Boolean(autosave.conflictDetails?.overlappingPaths.length)}
           onAdoptLatest={() => void autosave.adoptLatest()}
           onKeepLocal={() => void autosave.keepLocalChanges()}
-          onReview={() => void autosave.reviewConflict()}
-          onMergeNonOverlapping={() => void autosave.mergeNonOverlappingConflict()}
         />
       </div>
     );
@@ -503,11 +516,9 @@ function EnabledEventWebsiteWorkspace({
     <div className="event-website-responsive-shell">
       <EventWebsiteConflictDialog
         conflictDetails={autosave.conflictDetails}
-        open={autosave.persistenceState === "conflict"}
+        open={autosave.persistenceState === "conflict" && Boolean(autosave.conflictDetails?.overlappingPaths.length)}
         onAdoptLatest={() => void autosave.adoptLatest()}
         onKeepLocal={() => void autosave.keepLocalChanges()}
-        onReview={() => void autosave.reviewConflict()}
-        onMergeNonOverlapping={() => void autosave.mergeNonOverlappingConflict()}
       />
       <EventWebsiteStatusCard
         autoSaveEnabled={autoSaveEnabled}
@@ -626,15 +637,11 @@ function EventWebsiteConflictDialog({
   conflictDetails,
   onAdoptLatest,
   onKeepLocal,
-  onMergeNonOverlapping,
-  onReview,
   open,
 }: {
   conflictDetails: { overlappingPaths: readonly unknown[] } | null;
   onAdoptLatest: () => void;
   onKeepLocal: () => void;
-  onMergeNonOverlapping: () => void;
-  onReview: () => void;
   open: boolean;
 }) {
   const [confirmKeepLocal, setConfirmKeepLocal] = useState(false);
@@ -648,9 +655,9 @@ function EventWebsiteConflictDialog({
     <Dialog open={open} onOpenChange={() => undefined}>
       <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Another saved version was found</DialogTitle>
+          <DialogTitle>This information was edited somewhere else</DialogTitle>
           <DialogDescription>
-            Your draft is preserved. Review the saved version before choosing how to continue.
+            Choose which version you want to keep. Your unsaved work is preserved until you decide.
           </DialogDescription>
         </DialogHeader>
         {conflictDetails ? (
@@ -677,16 +684,8 @@ function EventWebsiteConflictDialog({
             </>
           ) : (
             <>
-              <Button type="button" variant="outline" onClick={onReview}>
-                Review changes
-              </Button>
-              {conflictDetails && !hasOverlap ? (
-                <Button type="button" variant="outline" onClick={onMergeNonOverlapping}>
-                  Merge saved changes
-                </Button>
-              ) : null}
               <Button type="button" variant="outline" onClick={onAdoptLatest}>
-                Load latest saved version
+                Use latest saved version
               </Button>
               <Button type="button" onClick={() => setConfirmKeepLocal(true)}>
                 Keep my changes

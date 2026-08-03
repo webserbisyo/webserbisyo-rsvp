@@ -15,14 +15,12 @@ import {
 type WebsiteAccessControlsProps = {
   eventId: string;
   publishState: WebsiteAccessData["publishState"];
-  savedRevision: number;
   workflowStatus: WebsiteAccessData["workflowStatus"];
 };
 
 export function WebsiteAccessControls({
   eventId,
   publishState,
-  savedRevision,
   workflowStatus,
 }: WebsiteAccessControlsProps) {
   const queryClient = useQueryClient();
@@ -32,7 +30,6 @@ export function WebsiteAccessControls({
     startTransition(async () => {
       const result = await publishEventWebsiteAction({
         eventId,
-        expectedSavedRevision: savedRevision,
       });
 
       if (!result.ok) {

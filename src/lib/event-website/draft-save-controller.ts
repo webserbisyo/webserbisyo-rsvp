@@ -42,12 +42,13 @@ type DraftSaveControllerOptions<T> = {
   initialSavedAt: string | null;
   initialSavedRevision: number;
   onChange?: () => void;
-  onSaved?: (content: T, savedAt: string, savedRevision: number) => void;
+  onSaved?: (content: T, savedAt: string, savedRevision: number) => void | Promise<void>;
   persist: (input: {
     content: T;
     expectedRevision: number;
     reason: DraftSaveReason;
     saveAttemptId: number;
+    mutationId: string;
   }) => Promise<DraftSaveResponse<T>>;
   scheduler?: TimerScheduler;
 };
@@ -243,8 +244,9 @@ export class DraftSaveController<T> {
         let retries = 0;
         do {
           response = await this.options.persist({
-            content: snapshot,
-            expectedRevision,
+          content: snapshot,
+          expectedRevision,
+          mutationId: createMutationId(),
             reason,
             saveAttemptId: attemptId,
           });
@@ -272,7 +274,8 @@ export class DraftSaveController<T> {
         this.savedAt = response.savedAt;
         this.conflictRevision = null;
         this.errorMessage = null;
-        this.options.onSaved?.(clone(snapshot), response.savedAt, response.savedRevision);
+        const saved = this.options.onSaved?.(clone(snapshot), response.savedAt, response.savedRevision);
+        if (saved) await saved;
 
         const pending = this.pendingReason;
         this.pendingReason = null;
@@ -304,6 +307,12 @@ export class DraftSaveController<T> {
   private emit() {
     this.options.onChange?.();
   }
+}
+
+function createMutationId() {
+  return typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function clone<T>(value: T): T {

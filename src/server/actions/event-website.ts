@@ -20,6 +20,7 @@ const SaveEventWebsiteActionSchema = z.object({
   content: z.unknown(),
   eventId: z.uuid(),
   expectedRevision: z.number().int().nonnegative(),
+  mutationId: z.string().uuid(),
 });
 
 const GetLatestEventWebsiteDraftActionSchema = z.object({
@@ -106,7 +107,7 @@ export async function saveEventWebsiteAction(input: unknown) {
       returnedRevision: result.savedRevision,
       stage: "succeeded",
     });
-    return actionSuccess(result);
+    return actionSuccess({ ...result, mutationId: payload.mutationId });
   } catch (error) {
     const failure = classifyDraftSaveFailure(error);
     logEventWebsiteOperation("error", {

@@ -90,7 +90,6 @@ export type PublishEventWebsiteInput = {
   clientId: string;
   confirmWarnings?: boolean;
   eventId: string;
-  expectedSavedRevision: number;
 };
 
 export type PublishEventWebsiteResult = {
@@ -102,6 +101,7 @@ export type PublishEventWebsiteResult = {
   publishedSlug: string;
   publishedSubdomain: string | null;
   publishedVisibility: "private" | "public" | "unlisted";
+  savedRevision: number;
   state: "published";
 };
 
@@ -319,6 +319,10 @@ export async function publishEventWebsite(
     : eventRecord.event_content;
 
   assertServiceData(eventContent, "The Event Website draft content is missing.");
+  const expectedSavedRevision = eventContent.saved_revision;
+  if (typeof expectedSavedRevision !== "number") {
+    throw new ServiceError("The current Event Website draft revision could not be resolved.");
+  }
 
   try {
     const parsedDraftContent = parseEventWebsiteContentJson(eventContent.content_json);
@@ -363,7 +367,7 @@ export async function publishEventWebsite(
       p_actor_user_id: input.actorUserId,
       p_client_id: input.clientId,
       p_event_id: input.eventId,
-      p_expected_saved_revision: input.expectedSavedRevision,
+      p_expected_saved_revision: expectedSavedRevision,
       ...(privateAccessToken ? { p_private_access_token: privateAccessToken } : {}),
     },
   );
@@ -422,6 +426,7 @@ function parsePublishResult(
     publishedSubdomain:
       typeof value.publishedSubdomain === "string" ? value.publishedSubdomain : null,
     publishedVisibility: value.publishedVisibility as "private" | "public" | "unlisted",
+    savedRevision: value.publishedRevision,
     state: "published",
   };
 }

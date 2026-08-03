@@ -158,6 +158,7 @@ export function EventWebsiteStatusCard({
 
       <div className="event-status-card-action-row flex items-center justify-between gap-2">
         <Button
+          hidden
           type="button"
           variant="ghost"
           size="sm"

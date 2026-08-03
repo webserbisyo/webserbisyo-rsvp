@@ -28,6 +28,7 @@ import {
 } from "@/lib/public-rsvp-url";
 import { emitDashboardSyncEvent, useDashboardRefresh } from "@/lib/dashboard/dashboard-sync";
 import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
+import { useEventWebsiteRevisionCoordinator } from "@/lib/dashboard/event-website-revision-coordinator";
 import { useEventWebsiteDraftSavePending } from "@/lib/event-website/draft-save-coordination";
 import {
   publishEventWebsiteAction,
@@ -84,6 +85,7 @@ function resolveLiveWebsiteLinks(state: WebsiteAccessInitialData) {
 export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
+  const revisionCoordinator = useEventWebsiteRevisionCoordinator();
   const [serverState, setServerState] = useState(initialData);
   const isDraftSavePending = useEventWebsiteDraftSavePending(serverState.eventId);
   const [draftVisibility, setDraftVisibility] = useState<VisibilityMode>(
@@ -364,7 +366,8 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
   }
 
   function publishLatestChanges() {
-    if (!serverState.eventId) {
+    const eventId = serverState.eventId;
+    if (!eventId) {
       toast.error("The current event could not be resolved.");
       return;
     }
@@ -375,9 +378,12 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
     }
 
     startTransition(async () => {
+      if (!(await revisionCoordinator.waitForSave(eventId))) {
+        toast.error("Your Event Website draft could not be saved. Please retry before publishing.");
+        return;
+      }
       const result = await publishEventWebsiteAction({
-        eventId: serverState.eventId,
-        expectedSavedRevision: serverState.savedRevision,
+        eventId,
       });
 
       if (!result.ok) {
@@ -386,6 +392,14 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
       }
 
       toast.success(isPublished ? "Latest website changes published." : "Website published.");
+      if (result.data.publishedAt) {
+        revisionCoordinator.acknowledgePublish({
+          eventId,
+          publishedAt: result.data.publishedAt,
+          publishedRevision: result.data.publishedRevision,
+          savedRevision: result.data.savedRevision,
+        });
+      }
       const publishedVisibility = mapDbVisibilityToApp(result.data.publishedVisibility);
       persistedDraftSubdomainRef.current = result.data.publishedSubdomain ?? "";
       setDraftVisibility(publishedVisibility);
@@ -405,6 +419,7 @@ export function useWebsiteAccessState(initialData: WebsiteAccessInitialData) {
         publishState: "published",
         publishedAt: result.data.publishedAt,
         publishedRevision: result.data.publishedRevision,
+        savedRevision: result.data.savedRevision,
         publishedSlug: result.data.publishedSlug,
         publishedSubdomain: result.data.publishedSubdomain,
         publishedVisibility,
