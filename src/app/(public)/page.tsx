@@ -21,6 +21,7 @@ import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
 import { getMarketingJsonLd } from "@/lib/seo/json-ld";
 import { marketingHero } from "@/config/marketing-hero";
+import { getVersionedSocialImage } from "@/config/social-previews";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { resolvePublicEventWebsiteBySubdomain } from "@/server/services/resolve-public-event-website";
@@ -36,7 +37,7 @@ const landingMetadata: Metadata = {
       {
         alt: marketingHero.social.alt,
         height: 630,
-        url: `${marketingHero.social.imagePath}?v=${marketingHero.social.version}`,
+        url: getVersionedSocialImage(marketingHero.social),
         width: 1200,
       },
     ],
@@ -55,7 +56,7 @@ const landingMetadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     description: marketingHero.social.description,
-    images: [`${marketingHero.social.imagePath}?v=${marketingHero.social.version}`],
+    images: [getVersionedSocialImage(marketingHero.social)],
     title: marketingHero.social.title,
   },
 };

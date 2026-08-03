@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/components/layout/app-providers";
+import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,35 +20,10 @@ export const metadata: Metadata = {
     default: "WebSerbisyo RSVP",
     template: "%s | WebSerbisyo RSVP",
   },
-  description:
-    "Premium digital RSVP websites for Filipino couples. Preview your wedding website first before paying.",
+  description: SOCIAL_PREVIEWS.neutral.description,
   applicationName: "WebSerbisyo RSVP",
   creator: "WebSerbisyo",
   publisher: "WebSerbisyo",
-  openGraph: {
-    description:
-      "Premium digital RSVP websites for Filipino couples. Preview your wedding website first before paying.",
-    images: [
-      {
-        alt: "WebSerbisyo RSVP premium digital RSVP websites",
-        height: 630,
-        url: "/opengraph-image",
-        width: 1200,
-      },
-    ],
-    locale: "en_PH",
-    siteName: "WebSerbisyo RSVP",
-    title: "WebSerbisyo RSVP",
-    type: "website",
-    url: "https://rsvp.webserbisyo.com",
-  },
-  twitter: {
-    card: "summary_large_image",
-    description:
-      "Premium digital RSVP websites for Filipino couples. Preview your wedding website first before paying.",
-    images: ["/opengraph-image"],
-    title: "WebSerbisyo RSVP",
-  },
   icons: {
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
     icon: [

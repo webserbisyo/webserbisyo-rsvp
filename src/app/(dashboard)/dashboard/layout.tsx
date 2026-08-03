@@ -1,12 +1,29 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { DashboardShell } from "@/components/dashboard/shell";
+import type { Metadata } from "next";
+import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { getSafeNextPath } from "@/lib/auth/redirects";
 import { AuthenticationError, PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
+};
+
+export const metadata: Metadata = {
+  description: SOCIAL_PREVIEWS.neutral.description,
+  openGraph: {
+    images: [],
+  },
+  robots: {
+    follow: false,
+    index: false,
+  },
+  title: `Dashboard | ${SOCIAL_PREVIEWS.neutral.title}`,
+  twitter: {
+    images: [],
+  },
 };
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {

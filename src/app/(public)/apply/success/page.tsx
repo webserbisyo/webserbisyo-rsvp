@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ApplySuccess } from "@/components/apply/apply-success";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { isApplicationReferenceCode } from "@/lib/apply/reference";
 import {
   getPublicApplyConfig,
@@ -14,14 +15,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://rsvp.webserbisyo.com/apply/success",
   },
-  description:
-    "Your WebSerbisyo RSVP application has been received. Save your reference code and continue through Messenger for the next steps.",
+  description: "Your WebSerbisyo RSVP application has been received.",
+  openGraph: {
+    images: [],
+  },
   robots: {
     follow: false,
     index: false,
   },
   title: {
-    absolute: "Application Received | WebSerbisyo RSVP",
+    absolute: `Application Received | ${SOCIAL_PREVIEWS.neutral.title}`,
+  },
+  twitter: {
+    images: [],
   },
 };
 

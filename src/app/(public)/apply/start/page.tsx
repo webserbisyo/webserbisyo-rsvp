@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ApplyForm } from "@/components/apply/apply-form";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 
@@ -10,14 +11,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://rsvp.webserbisyo.com/apply/start",
   },
-  description:
-    "Tell WebSerbisyo about your wedding date, venue, guest count, and theme so the team can prepare your RSVP website preview.",
+  description: "Provide your wedding details to begin your WebSerbisyo RSVP application.",
+  openGraph: {
+    images: [],
+  },
   robots: {
-    follow: true,
+    follow: false,
     index: false,
   },
   title: {
-    absolute: "Start Your RSVP Website Application | WebSerbisyo RSVP",
+    absolute: `Start Your Application | ${SOCIAL_PREVIEWS.neutral.title}`,
+  },
+  twitter: {
+    images: [],
   },
 };
 

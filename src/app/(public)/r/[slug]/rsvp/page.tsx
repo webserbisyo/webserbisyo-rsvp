@@ -5,8 +5,8 @@ import { PublicRsvpResponseForm } from "@/components/public-rsvp/public-rsvp-res
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { formatEventWebsiteDate, formatEventWebsiteTime } from "@/lib/event-website/formatting";
 import { type PublicEventDto } from "@/lib/event-website/public-event";
+import { buildStandalonePublicRsvpMetadata } from "@/lib/event-website/public-event-metadata";
 import { normalizePrivateAccessToken } from "@/lib/private-access";
-import { buildOfficialPublicRsvpStandaloneUrl } from "@/lib/public-rsvp-url";
 import type { PublicMetaPixelConfig } from "@/server/queries/public-meta-pixels";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { resolvePublicEventWebsite } from "@/server/services/resolve-public-event-website";
@@ -35,33 +35,7 @@ export async function generateMetadata({
     };
   }
 
-  const displayName = event.renderModel.coupleInfo.displayAs.trim() || event.eventTitle;
-  const summaryParts = [
-    formatPublicDate(event.eventDate),
-    formatPublicTime(event.eventTime),
-    event.venueName,
-  ].filter(Boolean);
-
-  return {
-    alternates:
-      event.visibility === "private"
-        ? undefined
-        : {
-            canonical: buildOfficialPublicRsvpStandaloneUrl(event.eventSlug),
-          },
-    description:
-      summaryParts.length > 0
-        ? `RSVP for ${displayName}. ${summaryParts.join(" • ")}`
-        : `RSVP for ${displayName}.`,
-    robots:
-      event.visibility === "private"
-        ? {
-            follow: false,
-            index: false,
-          }
-        : undefined,
-    title: `RSVP | ${displayName}`,
-  };
+  return buildStandalonePublicRsvpMetadata(event);
 }
 
 export default async function PublicStandaloneRsvpPage({

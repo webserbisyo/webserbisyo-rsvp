@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/app-shell/admin-shell";
 import { AdminQueryProvider } from "@/components/providers/admin-query-provider";
+import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { AuthenticationError, PermissionError, requireAdmin } from "@/lib/permissions";
 
 type AdminLayoutProps = {
@@ -9,6 +10,10 @@ type AdminLayoutProps = {
 };
 
 export const metadata: Metadata = {
+  description: SOCIAL_PREVIEWS.neutral.description,
+  openGraph: {
+    images: [],
+  },
   title: {
     default: "Admin · RSVP Admin",
     template: "%s · RSVP Admin",
@@ -16,6 +21,9 @@ export const metadata: Metadata = {
   robots: {
     follow: false,
     index: false,
+  },
+  twitter: {
+    images: [],
   },
 };
 

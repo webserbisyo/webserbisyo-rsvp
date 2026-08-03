@@ -1,30 +1,31 @@
 import type { Metadata } from "next";
 import { ApplyLanding } from "@/components/apply/apply-landing";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { getVersionedSocialImage, SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 
 export const dynamic = "force-dynamic";
 
+const socialPreview = SOCIAL_PREVIEWS.apply;
+
 export const metadata: Metadata = {
   alternates: {
     canonical: "https://rsvp.webserbisyo.com/apply",
   },
-  description:
-    "Choose your WebSerbisyo RSVP package. Start with PRO or upgrade to MAX for a more premium digital wedding RSVP website experience.",
+  description: socialPreview.description,
   openGraph: {
-    description:
-      "Choose your WebSerbisyo RSVP package. Start with PRO or upgrade to MAX for a more premium digital wedding RSVP website experience.",
+    description: socialPreview.description,
     images: [
       {
-        alt: "WebSerbisyo RSVP premium digital RSVP websites",
+        alt: socialPreview.alt,
         height: 630,
-        url: "/opengraph-image",
+        url: getVersionedSocialImage(socialPreview),
         width: 1200,
       },
     ],
     siteName: "WebSerbisyo RSVP",
-    title: "Pricing Plans | WebSerbisyo RSVP",
+    title: socialPreview.title,
     type: "website",
     url: "https://rsvp.webserbisyo.com/apply",
   },
@@ -33,14 +34,13 @@ export const metadata: Metadata = {
     index: true,
   },
   title: {
-    absolute: "Pricing Plans | WebSerbisyo RSVP",
+    absolute: socialPreview.title,
   },
   twitter: {
     card: "summary_large_image",
-    description:
-      "Choose your WebSerbisyo RSVP package. Start with PRO or upgrade to MAX for a more premium digital wedding RSVP website experience.",
-    images: ["/opengraph-image"],
-    title: "Pricing Plans | WebSerbisyo RSVP",
+    description: socialPreview.description,
+    images: [getVersionedSocialImage(socialPreview)],
+    title: socialPreview.title,
   },
 };
 
