@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { ArrowRight, Check } from "lucide-react";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
-import { PROMO_CONFIG } from "@/lib/promotion-config";
+import { marketingHero } from "@/config/marketing-hero";
 import SideRays from "./effects/SideRays";
 
 export function LandingVisualHero() {
@@ -43,28 +43,29 @@ export function LandingVisualHero() {
           {/* Left Pane */}
           <div className="flex max-w-3xl flex-col items-start sm:mx-auto sm:items-center lg:mx-0 lg:items-start">
             {/* Promo pill */}
-            {PROMO_CONFIG.isActive && (
+            {marketingHero.promotion.isActive && (
               <div className="mb-4 inline-flex items-center rounded-full bg-white/[0.03] px-3.5 py-1 text-xs font-semibold tracking-wide text-[var(--landing-text)] ring-1 ring-[var(--landing-border)] transition-colors ring-inset hover:bg-white/5 sm:self-center sm:text-sm lg:self-auto">
                 <span className="mr-1.5 font-extrabold text-[#ff8a5c]">
-                  {PROMO_CONFIG.discountLabel}
+                  {marketingHero.promotion.discountLabel}
                 </span>
                 <span className="mr-1.5 text-white/30">·</span>
-                <span>{PROMO_CONFIG.offerLabel}</span>
+                <span>{marketingHero.promotion.offerLabel}</span>
               </div>
             )}
 
             {/* Headline */}
             <h1 className="max-w-2xl text-4xl leading-[1.06] font-bold tracking-tight text-[var(--landing-text)] sm:mx-auto sm:text-center sm:text-5xl lg:mx-0 lg:text-left lg:text-6xl">
-              Beautiful RSVP websites for Filipino weddings
+              {marketingHero.headline}
             </h1>
 
             {/* Emphasized Trust Block */}
             <div className="mt-5 w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:max-w-[480px] sm:px-5 sm:py-4 lg:text-left">
               <p className="text-base font-bold tracking-wide text-white sm:text-lg">
-                Website muna, bago bayad <span aria-hidden="true">😊</span>
+                {marketingHero.trust.title}{" "}
+                <span aria-hidden="true">{marketingHero.trust.emoji}</span>
               </p>
               <p className="mt-1 text-xs leading-relaxed font-normal text-[rgba(248,248,248,0.78)] sm:text-sm">
-                See your website preview first, then decide.
+                {marketingHero.trust.description}
               </p>
             </div>
 
@@ -80,43 +81,45 @@ export function LandingVisualHero() {
                   source: "hero",
                 }}
               >
-                Create my wedding website
+                {marketingHero.cta}
                 <ArrowRight className="size-4 transition-transform duration-200 group-hover/hero-cta:translate-x-0.5" />
               </TrackedLink>
             </div>
 
             {/* Compact Social-Proof Row */}
             <div className="mt-4 flex w-full flex-row items-center justify-center gap-1.5 text-xs font-medium tracking-wide select-none sm:text-sm lg:justify-start">
-              <span className="font-semibold text-white">100+ websites created</span>
+              <span className="font-semibold text-white">{marketingHero.proof.summary}</span>
               <span className="text-white/30" aria-hidden="true">
                 ·
               </span>
               <span className="sr-only">Five-star feedback from happy couples.</span>
               <span className="font-bold tracking-wider text-amber-400" aria-hidden="true">
-                ★★★★★
+                {marketingHero.proof.rating}
               </span>
-              <span className="text-[var(--landing-muted)]">happy couples</span>
+              <span className="text-[var(--landing-muted)]">
+                {marketingHero.proof.supportingText}
+              </span>
             </div>
 
             {/* Trust Items */}
             <div className="mt-4 flex w-full flex-col items-center justify-center gap-2.5 text-xs font-medium text-[rgba(248,248,248,0.78)] sm:flex-row sm:gap-5 sm:text-sm lg:justify-start">
               <div className="flex items-center gap-1.5">
                 <Check className="size-3.5 shrink-0 text-[#ff8a5c]" aria-hidden="true" />
-                <span>No payment required upon application</span>
+                <span>{marketingHero.reassurance[0]}</span>
               </div>
               <div className="hidden text-white/20 sm:inline" aria-hidden="true">
                 ·
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="size-3.5 shrink-0 text-[#ff8a5c]" aria-hidden="true" />
-                <span>No monthly website subscription</span>
+                <span>{marketingHero.reassurance[1]}</span>
               </div>
             </div>
 
             {/* Mobile Stacked Asset */}
             <div className="mt-10 flex w-full justify-center sm:mt-8 lg:hidden" aria-hidden="true">
               <Image
-                src="/images/rsvp.webp"
+                src={marketingHero.artwork}
                 alt="Digital RSVP invitation and phone preview"
                 width={1122}
                 height={1402}
@@ -134,7 +137,7 @@ export function LandingVisualHero() {
             <div className="relative w-full max-w-[500px]">
               <div className="absolute inset-8 rounded-full bg-[var(--landing-cta-glow)] opacity-20 blur-3xl" />
               <Image
-                src="/images/rsvp.webp"
+                src={marketingHero.artwork}
                 alt="Digital RSVP invitation and phone preview"
                 width={1122}
                 height={1402}

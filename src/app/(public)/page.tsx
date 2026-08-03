@@ -20,6 +20,7 @@ import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
 import { getMarketingJsonLd } from "@/lib/seo/json-ld";
+import { marketingHero } from "@/config/marketing-hero";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { resolvePublicEventWebsiteBySubdomain } from "@/server/services/resolve-public-event-website";
@@ -28,21 +29,19 @@ const landingMetadata: Metadata = {
   alternates: {
     canonical: "https://rsvp.webserbisyo.com",
   },
-  description:
-    "Create a beautiful digital wedding RSVP website with guest management, hosting, support, and a preview-first process. Website muna, bago bayad.",
+  description: marketingHero.social.description,
   openGraph: {
-    description:
-      "Create a beautiful digital wedding RSVP website with guest management, hosting, support, and a preview-first process. Website muna, bago bayad.",
+    description: marketingHero.social.description,
     images: [
       {
-        alt: "WebSerbisyo RSVP premium digital RSVP websites",
+        alt: marketingHero.social.alt,
         height: 630,
-        url: "/opengraph-image",
+        url: `${marketingHero.social.imagePath}?v=${marketingHero.social.version}`,
         width: 1200,
       },
     ],
     siteName: "WebSerbisyo RSVP",
-    title: "WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples",
+    title: marketingHero.social.title,
     type: "website",
     url: "https://rsvp.webserbisyo.com",
   },
@@ -51,14 +50,13 @@ const landingMetadata: Metadata = {
     index: true,
   },
   title: {
-    absolute: "WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples",
+    absolute: marketingHero.social.title,
   },
   twitter: {
     card: "summary_large_image",
-    description:
-      "Create a beautiful digital wedding RSVP website with guest management, hosting, support, and a preview-first process. Website muna, bago bayad.",
-    images: ["/opengraph-image"],
-    title: "WebSerbisyo RSVP — Premium Digital RSVP Websites for Filipino Couples",
+    description: marketingHero.social.description,
+    images: [`${marketingHero.social.imagePath}?v=${marketingHero.social.version}`],
+    title: marketingHero.social.title,
   },
 };
 
