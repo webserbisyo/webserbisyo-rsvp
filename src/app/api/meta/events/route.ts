@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     null;
   const clientUserAgent = request.headers.get("user-agent") ?? null;
 
-  void sendMetaCapiAcquisitionEvent({
+  await sendMetaCapiAcquisitionEvent({
     ...parsed.data,
     clientIpAddress,
     clientUserAgent,
