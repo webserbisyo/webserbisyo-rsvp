@@ -39,8 +39,6 @@ function isValidCalendarDate(value: string) {
   );
 }
 
-
-
 function buildSelectionSchema<TValue extends string>(
   values: readonly TValue[],
   missingMessage: string,
@@ -107,8 +105,8 @@ const ApplicationEnabledEventTypeSchema = buildSelectionSchema(
 const EventDateSchema = z
   .string()
   .trim()
-  .min(1, "Wedding date is required.")
-  .refine(isValidCalendarDate, "Wedding date is required.");
+  .min(1, "Event date is required.")
+  .refine(isValidCalendarDate, "Event date is required.");
 
 const EventLocationSchema = z
   .string()
@@ -119,7 +117,7 @@ const EventLocationSchema = z
 const MessageSchema = z
   .string()
   .trim()
-  .min(1, "Tell us your wedding theme, request, or design inspiration.")
+  .min(1, "Tell us about your event theme, request, or design inspiration.")
   .max(500, "Message must be 500 characters or fewer.");
 
 const EstimatedGuestCountSchema = z

@@ -137,45 +137,48 @@ export function ApplySuccess({
   );
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="flex w-full flex-col items-center">
       {/* Confetti particles */}
-      <div className="as-confetti opacity-20 pointer-events-none" aria-hidden="true">
+      <div className="as-confetti pointer-events-none opacity-20" aria-hidden="true">
         {Array.from({ length: 20 }).map((_, i) => (
           <div key={i} className={`as-confetti-piece as-confetti-piece--${(i % 5) + 1}`} />
         ))}
       </div>
 
       {/* ── Main card ── */}
-      <div className="w-full max-w-xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/40 flex flex-col">
+      <div className="flex w-full max-w-xl flex-col rounded-3xl border border-white/[0.08] bg-white/[0.02] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:p-10">
         {/* Coral/orange checkmark circle icon */}
-        <div className="flex justify-center mb-6">
-          <div className="size-12 sm:size-14 rounded-full bg-[#ff8a5c]/10 border border-[#ff8a5c]/25 flex items-center justify-center text-[#ff8a5c] shadow-lg shadow-orange-950/20">
-            <span className="text-xl sm:text-2xl font-black">✓</span>
+        <div className="mb-6 flex justify-center">
+          <div className="flex size-12 items-center justify-center rounded-full border border-[#ff8a5c]/25 bg-[#ff8a5c]/10 text-[#ff8a5c] shadow-lg shadow-orange-950/20 sm:size-14">
+            <span className="text-xl font-black sm:text-2xl">✓</span>
           </div>
         </div>
 
         {/* Heading */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-wide mb-3">
+        <div className="mb-8 text-center">
+          <h1 className="mb-3 text-2xl font-extrabold tracking-wide text-white sm:text-3xl">
             Application received
           </h1>
-          <p className="text-sm text-white/70 leading-relaxed max-w-md mx-auto">
-            Your RSVP wedding website preview request has been submitted. Save your reference code and continue on Messenger so we can confirm your{" "}
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-white/70">
+            Your RSVP event website preview request has been submitted. Save your reference code and
+            continue on Messenger so we can confirm your{" "}
             {planLabel ? `${planLabel} details` : "details"} and next steps.
           </p>
         </div>
 
         {/* Reference code box */}
-        <div className="bg-[#050505]/40 border border-white/[0.06] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-inner">
+        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/[0.06] bg-[#050505]/40 p-4 shadow-inner sm:flex-row sm:items-center">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-bold tracking-wider uppercase text-white/40">YOUR REFERENCE CODE</span>
-            <span className="text-base sm:text-lg font-extrabold text-[#ff8a5c] font-mono tracking-wider">
+            <span className="text-[9px] font-bold tracking-wider text-white/40 uppercase">
+              YOUR REFERENCE CODE
+            </span>
+            <span className="font-mono text-base font-extrabold tracking-wider text-[#ff8a5c] sm:text-lg">
               {referenceCode ?? "Not available"}
             </span>
           </div>
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#ff8a5c]/20 bg-[#ff8a5c]/10 hover:bg-[#ff8a5c]/20 px-3.5 py-1.5 text-xs font-bold text-[#ff8a5c] transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#ff8a5c]/20 bg-[#ff8a5c]/10 px-3.5 py-1.5 text-xs font-bold text-[#ff8a5c] transition-all duration-200 hover:bg-[#ff8a5c]/20 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => void copyReference()}
             disabled={!referenceCode}
             aria-label="Copy reference code"
@@ -184,22 +187,26 @@ export function ApplySuccess({
             Copy code
           </button>
         </div>
-        <p className="text-[10px] text-white/35 mt-2 mb-6">
+        <p className="mt-2 mb-6 text-[10px] text-white/35">
           Save this code. You&apos;ll need it when messaging WebSerbisyo.
         </p>
 
         {/* Plan / Payment Summary Metadata Row */}
         {(planLabel || paymentLabel) && (
-          <div className="grid grid-cols-2 gap-4 border-t border-b border-white/[0.06] py-5 my-2">
+          <div className="my-2 grid grid-cols-2 gap-4 border-t border-b border-white/[0.06] py-5">
             {planLabel && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[9px] font-bold tracking-wider uppercase text-white/40">Selected Plan</span>
+                <span className="text-[9px] font-bold tracking-wider text-white/40 uppercase">
+                  Selected Plan
+                </span>
                 <span className="text-sm font-semibold text-white">{planLabel}</span>
               </div>
             )}
             {paymentLabel && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[9px] font-bold tracking-wider uppercase text-white/40">Payment Option</span>
+                <span className="text-[9px] font-bold tracking-wider text-white/40 uppercase">
+                  Payment Option
+                </span>
                 <span className="text-sm font-semibold text-white">{paymentLabel}</span>
               </div>
             )}
@@ -208,41 +215,47 @@ export function ApplySuccess({
 
         {/* What happens next */}
         <div className="my-6">
-          <p className="text-[10px] font-bold tracking-widest text-[#ff8a5c] uppercase mb-4">WHAT HAPPENS NEXT</p>
+          <p className="mb-4 text-[10px] font-bold tracking-widest text-[#ff8a5c] uppercase">
+            WHAT HAPPENS NEXT
+          </p>
           <ol className="space-y-4">
-            <li className="flex items-start gap-3 text-xs text-white/70 leading-relaxed">
-              <span className="size-5 rounded-full bg-[#ff8a5c]/10 border border-[#ff8a5c]/25 flex items-center justify-center text-[10px] font-bold text-[#ff8a5c] shrink-0 mt-0.5">
+            <li className="flex items-start gap-3 text-xs leading-relaxed text-white/70">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-[#ff8a5c]/25 bg-[#ff8a5c]/10 text-[10px] font-bold text-[#ff8a5c]">
                 1
               </span>
               <span>Copy your reference message.</span>
             </li>
-            <li className="flex items-start gap-3 text-xs text-white/70 leading-relaxed">
-              <span className="size-5 rounded-full bg-[#ff8a5c]/10 border border-[#ff8a5c]/25 flex items-center justify-center text-[10px] font-bold text-[#ff8a5c] shrink-0 mt-0.5">
+            <li className="flex items-start gap-3 text-xs leading-relaxed text-white/70">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-[#ff8a5c]/25 bg-[#ff8a5c]/10 text-[10px] font-bold text-[#ff8a5c]">
                 2
               </span>
               <span>Continue on Messenger and send it to WebSerbisyo.</span>
             </li>
-            <li className="flex items-start gap-3 text-xs text-white/70 leading-relaxed">
-              <span className="size-5 rounded-full bg-[#ff8a5c]/10 border border-[#ff8a5c]/25 flex items-center justify-center text-[10px] font-bold text-[#ff8a5c] shrink-0 mt-0.5">
+            <li className="flex items-start gap-3 text-xs leading-relaxed text-white/70">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-[#ff8a5c]/25 bg-[#ff8a5c]/10 text-[10px] font-bold text-[#ff8a5c]">
                 3
               </span>
-              <span>We&apos;ll confirm your details, payment option, and website preview process.</span>
+              <span>
+                We&apos;ll confirm your details, payment option, and website preview process.
+              </span>
             </li>
           </ol>
         </div>
 
         {/* Copyable follow-up message block */}
-        <div className="border-t border-white/[0.06] pt-6 mt-4 mb-6">
-          <p className="text-[10px] font-bold tracking-wider uppercase text-white/40 mb-1">REFERENCE MESSAGE FOR MESSENGER</p>
-          <p className="text-[11px] text-white/50 leading-normal mb-3">
+        <div className="mt-4 mb-6 border-t border-white/[0.06] pt-6">
+          <p className="mb-1 text-[10px] font-bold tracking-wider text-white/40 uppercase">
+            REFERENCE MESSAGE FOR MESSENGER
+          </p>
+          <p className="mb-3 text-[11px] leading-normal text-white/50">
             Copy this message before opening Messenger so your application is easy to find.
           </p>
-          <pre className="bg-[#050505]/40 border border-white/[0.06] rounded-2xl p-4 text-xs font-mono text-white/70 whitespace-pre-wrap break-words overflow-visible leading-relaxed shadow-inner">
+          <pre className="overflow-visible rounded-2xl border border-white/[0.06] bg-[#050505]/40 p-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-white/70 shadow-inner">
             {followupMessage}
           </pre>
           <button
             type="button"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] px-4 py-3 text-xs font-bold text-white transition-all mt-3 cursor-pointer"
+            className="mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs font-bold text-white transition-all hover:bg-white/[0.08]"
             onClick={() => void copyFollowupMessage()}
             aria-label="Copy reference message"
           >
@@ -255,7 +268,7 @@ export function ApplySuccess({
         {messengerUrl ? (
           <button
             type="button"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0084FF] hover:bg-[#0074e0] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0084FF]/10 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0084FF]/50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0084FF] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0084FF]/10 transition-all duration-200 hover:bg-[#0074e0] focus-visible:ring-2 focus-visible:ring-[#0084FF]/50 focus-visible:outline-none"
             onClick={() => void handleContinueOnMessenger()}
           >
             <MessageCircleMore className="size-4" />
@@ -264,15 +277,18 @@ export function ApplySuccess({
         ) : null}
 
         {/* Back link */}
-        <div className="text-center mt-6">
-          <Link href="/apply" className="text-xs font-semibold text-white/40 hover:text-white transition-colors">
+        <div className="mt-6 text-center">
+          <Link
+            href="/apply"
+            className="text-xs font-semibold text-white/40 transition-colors hover:text-white"
+          >
             ← Back to packages
           </Link>
         </div>
       </div>
 
       {/* Footer */}
-      <p className="text-center text-[10px] text-white/30 tracking-wider mt-12 pb-6">
+      <p className="mt-12 pb-6 text-center text-[10px] tracking-wider text-white/30">
         © 2024 WebSerbisyo RSVP · Made with love for Filipino couples
       </p>
     </div>

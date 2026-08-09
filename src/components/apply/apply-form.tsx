@@ -125,8 +125,6 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const watchedLocation = useWatch({ control, name: "eventLocation" }) ?? "";
   const watchedMessage = useWatch({ control, name: "message" }) ?? "";
 
-
-
   const planKey = (selectedPlan ?? initialPlan) as keyof typeof PLAN_DETAILS;
   const planDetails = PLAN_DETAILS[planKey] ?? PLAN_DETAILS.pro;
   const PlanIcon = planDetails.icon;
@@ -140,7 +138,8 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
         field === "email" &&
         (msg.includes("already registered") || msg.includes("already linked"))
       ) {
-        msg = "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.";
+        msg =
+          "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.";
       }
       setError(field as keyof ApplicationFormInput, { message: msg, type: "server" });
     });
@@ -175,7 +174,10 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 
         const firstError = errorFields.find((field) => {
           const input = document.getElementById(field);
-          return input?.getAttribute("aria-invalid") === "true" || input?.parentElement?.querySelector(".text-red-400");
+          return (
+            input?.getAttribute("aria-invalid") === "true" ||
+            input?.parentElement?.querySelector(".text-red-400")
+          );
         });
 
         if (firstError) {
@@ -227,7 +229,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
           ] as const;
 
           const hasStep1Error = Object.keys(result.fieldErrors!).some((field) =>
-            step1Fields.includes(field as typeof step1Fields[number])
+            step1Fields.includes(field as (typeof step1Fields)[number]),
           );
 
           if (hasStep1Error) {
@@ -293,117 +295,138 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   return (
     <div className="w-full">
       {/* ── Top navbar ── */}
-      <header className="flex w-full items-center justify-between gap-4 pb-6 pt-4">
+      <header className="flex w-full items-center justify-between gap-4 pt-4 pb-6">
         <span className="text-[11px] font-bold tracking-[0.2em] text-[#ff8a5c]">
-          WEBSERBISYO <span className="text-white/40 font-medium">RSVP</span>
+          WEBSERBISYO <span className="font-medium text-white/40">RSVP</span>
         </span>
-        <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] border border-white/[0.08] px-3.5 py-1.5 text-xs font-semibold backdrop-blur-md shadow-md">
-          <PlanIcon className="size-3.5 text-[#ff8a5c] shrink-0" />
-          <span className="text-white font-medium">
-            {planDetails.label} · <span className="text-[#ff8a5c] font-bold">{planDetails.price}</span>
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3.5 py-1.5 text-xs font-semibold shadow-md backdrop-blur-md">
+          <PlanIcon className="size-3.5 shrink-0 text-[#ff8a5c]" />
+          <span className="font-medium text-white">
+            {planDetails.label} ·{" "}
+            <span className="font-bold text-[#ff8a5c]">{planDetails.price}</span>
           </span>
-          <span className="text-white/40 line-through text-[10px] ml-1">{planDetails.originalPrice}</span>
+          <span className="ml-1 text-[10px] text-white/40 line-through">
+            {planDetails.originalPrice}
+          </span>
         </div>
       </header>
 
       {/* ── 3-step stepper ── */}
-      <div className="flex items-center justify-between w-full max-w-xl mx-auto my-6 px-2">
+      <div className="mx-auto my-6 flex w-full max-w-xl items-center justify-between px-2">
         {/* Step 1 */}
-        <div className="flex flex-col items-center gap-2 z-10">
-          <div className={`size-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-            step > 1 
-              ? "bg-[#ff8a5c] text-white" 
-              : "bg-gradient-to-r from-[#ff8a5c] to-amber-500 text-white shadow-lg shadow-orange-950/20"
-          }`}>
+        <div className="z-10 flex flex-col items-center gap-2">
+          <div
+            className={`flex size-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
+              step > 1
+                ? "bg-[#ff8a5c] text-white"
+                : "bg-gradient-to-r from-[#ff8a5c] to-amber-500 text-white shadow-lg shadow-orange-950/20"
+            }`}
+          >
             {step > 1 ? "✓" : "1"}
           </div>
-          <span className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
-            step >= 1 ? "text-white/90" : "text-white/40"
-          }`}>
+          <span
+            className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
+              step >= 1 ? "text-white/90" : "text-white/40"
+            }`}
+          >
             Your Details
           </span>
         </div>
 
         {/* Line 1 -> 2 */}
-        <div className="flex-1 h-[2px] mx-4 -mt-6 bg-white/10 relative">
-          <div 
-            className="absolute inset-0 bg-gradient-to-r from-[#ff8a5c] to-amber-500 transition-all duration-500" 
-            style={{ width: step > 1 ? "100%" : "0%" }} 
+        <div className="relative mx-4 -mt-6 h-[2px] flex-1 bg-white/10">
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-[#ff8a5c] to-amber-500 transition-all duration-500"
+            style={{ width: step > 1 ? "100%" : "0%" }}
           />
         </div>
 
         {/* Step 2 */}
-        <div className="flex flex-col items-center gap-2 z-10">
-          <div className={`size-8 rounded-full border flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-            step === 2
-              ? "bg-gradient-to-r from-[#ff8a5c] to-amber-500 border-none text-white shadow-lg shadow-orange-950/20"
-              : step > 2
-                ? "bg-[#ff8a5c] text-white"
-                : "border-white/10 bg-white/[0.02] text-white/40"
-          }`}>
+        <div className="z-10 flex flex-col items-center gap-2">
+          <div
+            className={`flex size-8 items-center justify-center rounded-full border text-xs font-bold transition-all duration-300 ${
+              step === 2
+                ? "border-none bg-gradient-to-r from-[#ff8a5c] to-amber-500 text-white shadow-lg shadow-orange-950/20"
+                : step > 2
+                  ? "bg-[#ff8a5c] text-white"
+                  : "border-white/10 bg-white/[0.02] text-white/40"
+            }`}
+          >
             2
           </div>
-          <span className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
-            step >= 2 ? "text-white/90" : "text-white/40"
-          }`}>
+          <span
+            className={`text-[10px] font-bold tracking-wider uppercase transition-colors duration-300 ${
+              step >= 2 ? "text-white/90" : "text-white/40"
+            }`}
+          >
             Review Application
           </span>
         </div>
 
         {/* Line 2 -> 3 */}
-        <div className="flex-1 h-[2px] mx-4 -mt-6 bg-white/10 relative">
-          <div 
-            className="absolute inset-0 bg-gradient-to-r from-[#ff8a5c] to-amber-500 transition-all duration-500" 
-            style={{ width: step > 2 ? "100%" : "0%" }} 
+        <div className="relative mx-4 -mt-6 h-[2px] flex-1 bg-white/10">
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-[#ff8a5c] to-amber-500 transition-all duration-500"
+            style={{ width: step > 2 ? "100%" : "0%" }}
           />
         </div>
 
         {/* Step 3 */}
-        <div className="flex flex-col items-center gap-2 z-10">
-          <div className="size-8 rounded-full border border-white/10 bg-white/[0.02] text-white/40 flex items-center justify-center text-xs font-bold">
+        <div className="z-10 flex flex-col items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.02] text-xs font-bold text-white/40">
             3
           </div>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/40">
+          <span className="text-[10px] font-bold tracking-wider text-white/40 uppercase">
             Confirmed
           </span>
         </div>
       </div>
 
       {/* ── Form card ── */}
-      <div className="w-full bg-white/[0.02] border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/40">
+      <div className="w-full rounded-3xl border border-white/[0.08] bg-white/[0.02] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:p-10">
         <form onSubmit={submit}>
           {/* ══ STEP 1: Your Details ══ */}
           {step === 1 && (
             <>
               <div className="mb-8">
-                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide mb-2">
-                  Tell us about your wedding
+                <h1 className="mb-2 text-xl font-extrabold tracking-wide text-white sm:text-2xl">
+                  Tell us about your event
                 </h1>
-                <p className="text-sm text-white/60 leading-relaxed">
+                <p className="text-sm leading-relaxed text-white/60">
                   We&apos;ll use these details to personalize your RSVP website preview.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Full Name */}
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="fullName" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
-                    Full Name <span className="text-[#ff8a5c] font-black">*</span>
+                  <Label
+                    htmlFor="fullName"
+                    className="text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                  >
+                    Full Name <span className="font-black text-[#ff8a5c]">*</span>
                   </Label>
                   <Input
                     id="fullName"
                     placeholder="e.g. Maria & Juan Santos"
-                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("fullName")}
                     disabled={isPending}
                   />
-                  {errors.fullName?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.fullName.message}</p>}
+                  {errors.fullName?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">
+                      {errors.fullName.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Email */}
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="email" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
-                    Email Address <span className="text-[#ff8a5c] font-black">*</span>
+                  <Label
+                    htmlFor="email"
+                    className="text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                  >
+                    Email Address <span className="font-black text-[#ff8a5c]">*</span>
                   </Label>
                   <Input
                     id="email"
@@ -411,33 +434,45 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     placeholder="you@example.com"
                     autoComplete="email"
                     inputMode="email"
-                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("email")}
                     disabled={isPending}
                   />
-                  {errors.email?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.email.message}</p>}
+                  {errors.email?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">{errors.email.message}</p>
+                  )}
                 </div>
 
                 {/* Phone */}
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="phone" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
-                    Phone Number <span className="text-[#ff8a5c] font-black">*</span>
+                  <Label
+                    htmlFor="phone"
+                    className="text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                  >
+                    Phone Number <span className="font-black text-[#ff8a5c]">*</span>
                   </Label>
                   <Input
                     id="phone"
                     autoComplete="tel"
                     inputMode="tel"
                     placeholder="09171234567"
-                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("phone")}
                     disabled={isPending}
                   />
-                  {errors.phone?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.phone.message}</p>}
+                  {errors.phone?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">{errors.phone.message}</p>
+                  )}
                 </div>
 
                 {/* Event Type */}
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="eventType" className="text-[10px] font-bold tracking-wider uppercase text-white/70">Event Type</Label>
+                  <Label
+                    htmlFor="eventType"
+                    className="text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                  >
+                    Event Type
+                  </Label>
                   <div className="flex items-center gap-3">
                     <Select
                       value={selectedEventType}
@@ -449,13 +484,16 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                       }
                       disabled={isPending}
                     >
-                      <SelectTrigger id="eventType" className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white focus:ring-2 focus:ring-[#ff8a5c]/50 flex items-center justify-between w-full px-3">
+                      <SelectTrigger
+                        id="eventType"
+                        className="flex h-11 w-full items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-sm text-white focus:ring-2 focus:ring-[#ff8a5c]/50"
+                      >
                         <div className="flex items-center gap-2">
-                          <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                          <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
                           <SelectValue placeholder="Select event type" />
                         </div>
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0b0b0b] border border-white/10 text-white">
+                      <SelectContent className="border border-white/10 bg-[#0b0b0b] text-white">
                         {applicationEventTypeOptions.map((eventType) => (
                           <SelectItem
                             key={eventType.eventType}
@@ -470,40 +508,58 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <span className="bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">Available</span>
+                    <span className="shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                      Available
+                    </span>
                   </div>
-                  <p className="text-[11px] text-white/40 mt-0.5">
-                    Wedding is available now. More types coming soon.
+                  <p className="mt-0.5 text-[11px] text-white/40">
+                    Wedding is available now. More celebration types are coming soon.
                   </p>
-                  {errors.eventType?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.eventType.message}</p>}
+                  {errors.eventType?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">
+                      {errors.eventType.message}
+                    </p>
+                  )}
                 </div>
 
-                {/* Wedding Date */}
+                {/* Event Date */}
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="eventDate" className="text-[10px] font-bold tracking-wider uppercase text-white/70 flex items-center gap-1.5">
+                  <Label
+                    htmlFor="eventDate"
+                    className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                  >
                     <CalendarDays className="size-3.5 text-white/50" />
-                    Wedding Date <span className="text-[#ff8a5c] font-black">*</span>
+                    Event Date <span className="font-black text-[#ff8a5c]">*</span>
                   </Label>
                   <Input
                     id="eventDate"
                     type="date"
-                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 [color-scheme:dark]"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 [color-scheme:dark] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("eventDate")}
                     disabled={isPending}
                   />
-                  {errors.eventDate?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.eventDate.message}</p>}
+                  {errors.eventDate?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">
+                      {errors.eventDate.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Venue / Location */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="eventLocation" className="text-[10px] font-bold tracking-wider uppercase text-white/70 flex items-center gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="eventLocation"
+                      className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                    >
                       <MapPin className="size-3.5 text-white/50" />
-                      Venue / Location <span className="text-[#ff8a5c] font-black">*</span>
+                      Venue / Location <span className="font-black text-[#ff8a5c]">*</span>
                     </Label>
-                    <span className={`text-[10px] font-semibold ${
-                      watchedLocation.length >= 300 ? "text-red-400 font-bold" : "text-white/40"
-                    }`}>
+                    <span
+                      className={`text-[10px] font-semibold ${
+                        watchedLocation.length >= 300 ? "font-bold text-red-400" : "text-white/40"
+                      }`}
+                    >
                       {watchedLocation.length}/300
                     </span>
                   </div>
@@ -511,18 +567,25 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     id="eventLocation"
                     placeholder="e.g. Batangas, Philippines"
                     maxLength={300}
-                    className="h-11 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("eventLocation")}
                     disabled={isPending}
                   />
-                  {errors.eventLocation?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.eventLocation.message}</p>}
+                  {errors.eventLocation?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">
+                      {errors.eventLocation.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Estimated Guest Count */}
                 <div className="flex flex-col gap-2 md:col-span-2">
-                  <Label htmlFor="estimatedGuestCount" className="text-[10px] font-bold tracking-wider uppercase text-white/70 flex items-center gap-1.5">
+                  <Label
+                    htmlFor="estimatedGuestCount"
+                    className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                  >
                     <Users className="size-3.5 text-white/50" />
-                    Estimated Guest Count <span className="text-[#ff8a5c] font-black">*</span>
+                    Estimated Guest Count <span className="font-black text-[#ff8a5c]">*</span>
                   </Label>
                   <Input
                     id="estimatedGuestCount"
@@ -531,24 +594,32 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     max={1000}
                     step={1}
                     placeholder="e.g. 150"
-                    className="h-11 max-w-[200px] rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent"
+                    className="h-11 max-w-[200px] rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("estimatedGuestCount")}
                     disabled={isPending}
                   />
                   {errors.estimatedGuestCount?.message && (
-                    <p className="text-xs text-red-400 mt-1 font-medium">{errors.estimatedGuestCount.message}</p>
+                    <p className="mt-1 text-xs font-medium text-red-400">
+                      {errors.estimatedGuestCount.message}
+                    </p>
                   )}
                 </div>
 
                 {/* Message */}
                 <div className="flex flex-col gap-2 md:col-span-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="message" className="text-[10px] font-bold tracking-wider uppercase text-white/70">
-                      Message / theme inspiration <span className="text-[#ff8a5c] font-black">*</span>
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="message"
+                      className="text-[10px] font-bold tracking-wider text-white/70 uppercase"
+                    >
+                      Message / theme inspiration{" "}
+                      <span className="font-black text-[#ff8a5c]">*</span>
                     </Label>
-                    <span className={`text-[10px] font-semibold ${
-                      watchedMessage.length >= 500 ? "text-red-400 font-bold" : "text-white/40"
-                    }`}>
+                    <span
+                      className={`text-[10px] font-semibold ${
+                        watchedMessage.length >= 500 ? "font-bold text-red-400" : "text-white/40"
+                      }`}
+                    >
                       {watchedMessage.length}/500
                     </span>
                   </div>
@@ -557,22 +628,27 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     rows={4}
                     placeholder="e.g. Romantic garden theme, champagne and gold motif, minimalist layout, timing notes, or special requests..."
                     maxLength={500}
-                    className="rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:border-transparent resize-y"
+                    className="resize-y rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("message")}
                     disabled={isPending}
                   />
-                  <p className="text-[11px] text-white/40 mt-0.5">
-                    Special requests, timing, theme, motif, design inspiration, or anything we should know.
+                  <p className="mt-0.5 text-[11px] text-white/40">
+                    Special requests, timing, theme, motif, design inspiration, or anything we
+                    should know.
                   </p>
-                  {errors.message?.message && <p className="text-xs text-red-400 mt-1 font-medium">{errors.message.message}</p>}
+                  {errors.message?.message && (
+                    <p className="mt-1 text-xs font-medium text-red-400">
+                      {errors.message.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Continue button */}
-              <div className="flex justify-end mt-8">
+              <div className="mt-8 flex justify-end">
                 <button
                   type="button"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => void handleContinueToReview()}
                   disabled={isPending}
                 >
@@ -580,8 +656,11 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 </button>
               </div>
 
-              <div className="text-center mt-6">
-                <Link href="/apply" className="text-xs font-semibold text-[#ff8a5c] hover:underline transition-all">
+              <div className="mt-6 text-center">
+                <Link
+                  href="/apply"
+                  className="text-xs font-semibold text-[#ff8a5c] transition-all hover:underline"
+                >
                   ← Back to packages
                 </Link>
               </div>
@@ -592,33 +671,39 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
           {step === 2 && (
             <>
               <div className="mb-8">
-                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide mb-2">Review &amp; Payment</h1>
-                <p className="text-sm text-white/60 leading-relaxed">
+                <h1 className="mb-2 text-xl font-extrabold tracking-wide text-white sm:text-2xl">
+                  Review &amp; Payment
+                </h1>
+                <p className="text-sm leading-relaxed text-white/60">
                   Confirm your plan and choose your preferred payment method.
                 </p>
               </div>
 
               {/* Selected plan summary card */}
-              <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 mb-8 shadow-inner shadow-black/20">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4 mb-4">
+              <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 shadow-inner shadow-black/20">
+                <div className="mb-4 flex flex-col items-start justify-between gap-4 border-b border-white/[0.08] pb-4 sm:flex-row sm:items-center">
                   <div className="flex items-start gap-3">
-                    <div className="size-10 rounded-xl bg-[#ff8a5c]/10 border border-[#ff8a5c]/35 flex items-center justify-center text-[#ff8a5c] shrink-0">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#ff8a5c]/35 bg-[#ff8a5c]/10 text-[#ff8a5c]">
                       <PlanIcon className="size-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black tracking-widest text-[#ff8a5c] uppercase">{planDetails.label}</p>
-                      <p className="text-sm text-white/70 mt-0.5">{planDetails.description}</p>
+                      <p className="text-xs font-black tracking-widest text-[#ff8a5c] uppercase">
+                        {planDetails.label}
+                      </p>
+                      <p className="mt-0.5 text-sm text-white/70">{planDetails.description}</p>
                     </div>
                   </div>
-                  <div className="sm:text-right flex items-baseline sm:flex-col gap-2 sm:gap-0 shrink-0">
+                  <div className="flex shrink-0 items-baseline gap-2 sm:flex-col sm:gap-0 sm:text-right">
                     <span className="text-2xl font-extrabold text-white">{planDetails.price}</span>
-                    <span className="text-sm text-white/40 line-through">{planDetails.originalPrice}</span>
+                    <span className="text-sm text-white/40 line-through">
+                      {planDetails.originalPrice}
+                    </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {planDetails.features.map((f: string) => (
                     <div key={f} className="flex items-center gap-2 text-xs text-white/70">
-                      <span className="text-[#ff8a5c] font-bold">✓</span>
+                      <span className="font-bold text-[#ff8a5c]">✓</span>
                       <span>{f}</span>
                     </div>
                   ))}
@@ -626,22 +711,26 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
               </div>
 
               {/* Trust callout card */}
-              <div className="mb-6 rounded-2xl border border-[#ff8a5c]/25 bg-[#ff8a5c]/[0.06] p-4 sm:p-5 text-center">
-                <p className="text-xs sm:text-sm font-extrabold tracking-widest text-[#ff8a5c] uppercase mb-1.5">
+              <div className="mb-6 rounded-2xl border border-[#ff8a5c]/25 bg-[#ff8a5c]/[0.06] p-4 text-center sm:p-5">
+                <p className="mb-1.5 text-xs font-extrabold tracking-widest text-[#ff8a5c] uppercase sm:text-sm">
                   WEBSITE MUNA, BAGO BAYAD.
                 </p>
-                <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-md mx-auto">
+                <p className="mx-auto max-w-md text-xs leading-relaxed text-white/80 sm:text-sm">
                   This step only confirms your preferred payment method.{" "}
-                  <span className="font-semibold text-white">No payment is required now.</span> We’ll message you on Messenger once your website preview is ready.
+                  <span className="font-semibold text-white">No payment is required now.</span>{" "}
+                  We’ll message you on Messenger once your website preview is ready.
                 </p>
               </div>
 
               {/* Payment method */}
               {hasPaymentOptions ? (
                 <div className="mb-8">
-                  <p className="text-[10px] font-bold tracking-wider uppercase text-white/70 mb-1.5">PAYMENT METHOD</p>
-                  <p className="text-xs text-white/50 leading-relaxed mb-4">
-                    We&apos;ll confirm the final payment details on Messenger. Choose your preferred option below.
+                  <p className="mb-1.5 text-[10px] font-bold tracking-wider text-white/70 uppercase">
+                    PAYMENT METHOD
+                  </p>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">
+                    We&apos;ll confirm the final payment details on Messenger. Choose your preferred
+                    option below.
                   </p>
                   <PaymentOptionPicker
                     options={config.paymentOptions}
@@ -657,18 +746,21 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 </div>
               ) : (
                 <div className="mb-8">
-                  <p className="text-[10px] font-bold tracking-wider uppercase text-white/70 mb-1.5">PAYMENT METHOD</p>
-                  <p className="text-xs text-white/50 leading-relaxed mb-4">
-                    No payment required now — we&apos;ll reach out on Messenger to confirm your slot and send payment instructions.
+                  <p className="mb-1.5 text-[10px] font-bold tracking-wider text-white/70 uppercase">
+                    PAYMENT METHOD
+                  </p>
+                  <p className="mb-4 text-xs leading-relaxed text-white/50">
+                    No payment required now — we&apos;ll reach out on Messenger to confirm your slot
+                    and send payment instructions.
                   </p>
                 </div>
               )}
 
               {/* Step 2 actions */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+              <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
                 <button
                   type="button"
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3.5 text-sm font-semibold text-white/80 transition-all duration-200 hover:bg-white/[0.08] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3.5 text-sm font-semibold text-white/80 transition-all duration-200 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   onClick={() => setStep(1)}
                   disabled={isPending}
                 >
@@ -676,7 +768,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed max-w-[280px]"
+                  className="inline-flex w-full max-w-[280px] flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff8a5c] to-[#ff6b3b] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   disabled={isPending}
                 >
                   {isPending ? (
@@ -688,7 +780,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                 </button>
               </div>
 
-              <p className="text-center text-[11px] text-white/40 leading-relaxed mt-6">
+              <p className="mt-6 text-center text-[11px] leading-relaxed text-white/40">
                 No payment will be collected upon submission.
               </p>
             </>
@@ -697,7 +789,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
       </div>
 
       {/* Footer */}
-      <p className="text-center text-[10px] text-white/30 tracking-wider mt-12 pb-6">
+      <p className="mt-12 pb-6 text-center text-[10px] tracking-wider text-white/30">
         © 2024 WebSerbisyo RSVP · Made with love for Filipino couples
       </p>
     </div>
@@ -707,9 +799,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 function getCookieValue(name: string): string | null {
   if (typeof document === "undefined") return null;
 
-  const match = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(`${name}=`));
+  const match = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`));
 
   return match ? decodeURIComponent(match.split("=").slice(1).join("=")) : null;
 }
