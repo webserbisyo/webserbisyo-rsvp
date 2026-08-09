@@ -87,3 +87,60 @@ test("Lead keeps its deterministic browser/server event ID contract", () => {
   assert.match(successSource, /`Lead:\$\{referenceCode\}`/);
   assert.match(leadSource, /action_source: "website"/);
 });
+
+test("Purchase delivery migration has one atomic logical-delivery identity and recovery states", () => {
+  const migration = readFileSync(
+    new URL(
+      "../supabase/migrations/20260810120000_create_meta_capi_deliveries.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(migration, /unique \(provider, event_name, event_id\)/);
+  assert.match(migration, /status in \('pending', 'sending', 'sent', 'failed'\)/);
+  assert.match(migration, /on conflict \(provider, event_name, event_id\) do update/);
+  assert.match(migration, /status = 'failed'/);
+  assert.match(migration, /status = 'sending'/);
+  assert.match(migration, /claim_token/);
+  assert.match(migration, /enable row level security/);
+});
+
+test("Purchase uses manual-payment source semantics without administrator browser context", () => {
+  const purchaseSource = readFileSync(
+    new URL("../src/server/services/send-meta-capi-purchase.ts", import.meta.url),
+    "utf8",
+  );
+  const clientActionSource = readFileSync(
+    new URL("../src/server/actions/admin-clients.ts", import.meta.url),
+    "utf8",
+  );
+  const salesActionSource = readFileSync(
+    new URL("../src/server/actions/admin-sales.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(purchaseSource, /const eventId = `Purchase:\$\{input\.paymentId\}`/);
+  assert.match(purchaseSource, /actionSource: "other"/);
+  assert.match(purchaseSource, /currency: input\.currency/);
+  assert.doesNotMatch(purchaseSource, /clientIpAddress|clientUserAgent|sourceUrl/);
+  assert.doesNotMatch(clientActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
+  assert.doesNotMatch(salesActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
+});
+
+test("Purchase flag and delivery completion remain separate from payment business errors", () => {
+  const purchaseSource = readFileSync(
+    new URL("../src/server/services/send-meta-capi-purchase.ts", import.meta.url),
+    "utf8",
+  );
+  const paymentSource = readFileSync(
+    new URL("../src/server/services/admin-workflow/payments.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(purchaseSource, /if \(!config\.purchaseEnabled\)/);
+  assert.match(purchaseSource, /claimMetaCapiPurchaseDelivery/);
+  assert.match(purchaseSource, /completeMetaCapiPurchaseDelivery/);
+  assert.match(purchaseSource, /meta_capi_purchase_claimed/);
+  assert.match(paymentSource, /CAPI telemetry must never fail the payment confirmation/);
+});

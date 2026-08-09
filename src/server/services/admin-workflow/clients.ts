@@ -110,7 +110,6 @@ export async function archiveClient(input: ArchiveClientInput, actorUserId: stri
 export async function markClientAsPaid(
   input: MarkClientPaidInput,
   actorUserId: string,
-  context?: { clientIpAddress?: string | null; clientUserAgent?: string | null },
 ): Promise<ClientActionResult<ClientPaymentResult>> {
   const supabase = createAdminClient();
   const warnings: string[] = [];
@@ -241,13 +240,11 @@ export async function markClientAsPaid(
     warnings.push(auditWarning);
   }
 
-  const capiSourceUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://webserbisyo-rsvp.vercel.app"}/apply/success`;
   const capiWarning = await safeSendMetaCapiPurchase({
     actorUserId,
     amount: payment.amount_paid,
     clientId: client.id,
-    clientIpAddress: context?.clientIpAddress ?? null,
-    clientUserAgent: context?.clientUserAgent ?? null,
+    currency: payment.currency,
     customerEmail: application.email,
     customerFullName: application.full_name,
     customerPhone: application.phone,
@@ -256,7 +253,6 @@ export async function markClientAsPaid(
     fbc: application.fb_fbc,
     fbp: application.fb_fbp,
     paymentId: payment.id,
-    sourceUrl: capiSourceUrl,
   });
 
   if (capiWarning) {

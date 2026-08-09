@@ -1,18 +1,21 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/admin";
-import type { Json } from "@/lib/supabase/types";
 import { getMetaCapiRuntimeConfig } from "@/lib/meta/capi-config";
 import { sendMetaCapiEvent } from "@/lib/meta";
 import { resolveMetaPixelForContext } from "@/lib/meta/pixel-resolution";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/supabase/types";
+import {
+  claimMetaCapiPurchaseDelivery,
+  completeMetaCapiPurchaseDelivery,
+} from "./meta-capi-delivery";
 import { writeAuditLog } from "./write-audit-log";
 
 export type SendMetaCapiPurchaseInput = {
   actorUserId: string;
   amount: number;
   clientId: string;
-  clientIpAddress?: string | null;
-  clientUserAgent?: string | null;
+  currency: string;
   customerEmail?: string | null;
   customerFullName?: string | null;
   customerPhone?: string | null;
@@ -21,39 +24,57 @@ export type SendMetaCapiPurchaseInput = {
   fbc?: string | null;
   fbp?: string | null;
   paymentId: string;
-  sourceUrl?: string | null;
 };
 
 export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
   const config = getMetaCapiRuntimeConfig();
-  const pixelId = await getMetaCapiPixelId();
   const eventId = `Purchase:${input.paymentId}`;
 
   if (!config.purchaseEnabled) {
-    const result = {
+    return recordPurchaseResult(input, {
       eventId,
       reason: "disabled",
       status: "skipped" as const,
-    };
-
-    await safeWriteAuditLog({
-      action: `meta_capi_purchase_${result.status}`,
-      actorUserId: input.actorUserId,
-      clientId: input.clientId,
-      entityId: input.paymentId,
-      entityType: "payments",
-      eventId: input.eventId,
-      metadata: toAuditMetadata(result),
     });
-
-    return result;
   }
 
+  const claim = await claimMetaCapiPurchaseDelivery({
+    eventId,
+    paymentId: input.paymentId,
+  });
+
+  if (claim.state !== "claimed") {
+    return recordPurchaseResult(
+      input,
+      {
+        eventId,
+        reason: claim.state,
+        status: "skipped" as const,
+      },
+      claim,
+    );
+  }
+
+  await safeWriteAuditLog({
+    action: "meta_capi_purchase_claimed",
+    actorUserId: input.actorUserId,
+    clientId: input.clientId,
+    entityId: input.paymentId,
+    entityType: "payments",
+    eventId: input.eventId,
+    metadata: {
+      delivery_attempt: claim.attempts,
+      delivery_state: "claimed",
+      event_id: eventId,
+      event_name: "Purchase",
+      provider: "meta",
+    },
+  });
+
   const result = await sendMetaCapiEvent({
+    actionSource: "other",
     amount: input.amount,
-    clientIpAddress: input.clientIpAddress,
-    clientUserAgent: input.clientUserAgent,
-    currency: "PHP",
+    currency: input.currency,
     email: input.customerEmail,
     eventId,
     eventName: "Purchase",
@@ -62,10 +83,31 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     fbp: input.fbp,
     fullName: input.customerFullName,
     phone: input.customerPhone,
-    pixelId,
-    sourceUrl: input.sourceUrl,
+    pixelId: await getMetaCapiPixelId(),
   });
 
+  try {
+    await completeMetaCapiPurchaseDelivery({
+      claimToken: claim.claimToken,
+      deliveryId: claim.deliveryId,
+      outcome: result.status === "sent" ? "sent" : "failed",
+    });
+  } catch {
+    // A later stale-claim retry retains the deterministic Meta event ID.
+  }
+
+  return recordPurchaseResult(input, result, claim);
+}
+
+async function recordPurchaseResult(
+  input: SendMetaCapiPurchaseInput,
+  result: Awaited<ReturnType<typeof sendMetaCapiEvent>>,
+  claim?: Exclude<Awaited<ReturnType<typeof claimMetaCapiPurchaseDelivery>>, { state: "claimed" }> | {
+    attempts: number;
+    deliveryId: string;
+    state: "claimed";
+  },
+) {
   await safeWriteAuditLog({
     action: `meta_capi_purchase_${result.status}`,
     actorUserId: input.actorUserId,
@@ -73,7 +115,16 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     entityId: input.paymentId,
     entityType: "payments",
     eventId: input.eventId,
-    metadata: toAuditMetadata(result),
+    metadata: {
+      delivery_attempt: claim?.attempts ?? null,
+      delivery_state:
+        claim?.state === "claimed"
+          ? result.status === "sent"
+            ? "sent"
+            : "failed"
+          : (claim?.state ?? "disabled"),
+      result: toAuditMetadata(result),
+    },
   });
 
   return result;

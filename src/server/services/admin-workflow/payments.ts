@@ -25,7 +25,6 @@ import {
 export async function confirmManualPayment(
   input: ConfirmManualPaymentInput,
   actorUserId: string,
-  context?: { clientIpAddress?: string | null; clientUserAgent?: string | null },
 ) {
   const supabase = createAdminClient();
   const payment = await getPaymentForMutation(input.paymentId);
@@ -174,31 +173,25 @@ export async function confirmManualPayment(
     });
   }
 
-  // DELIBERATE BEHAVIORAL CHANGE: Fire CAPI Purchase event to match markClientAsPaid path.
-  // confirmManualPayment is the canonical /admin/sales confirmation flow; previously it did not
-  // send CAPI events, creating an inconsistency. Both paths now fire Purchase.
-  if (shouldWriteConfirmationAudit) {
-    const capiSourceUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://webserbisyo-rsvp.vercel.app"}/apply/success`;
-    try {
-      await sendMetaCapiPurchase({
-        actorUserId,
-        amount: updatedPayment.amount_paid,
-        clientId: client.id,
-        clientIpAddress: context?.clientIpAddress ?? null,
-        clientUserAgent: context?.clientUserAgent ?? null,
-        customerEmail: application.email,
-        customerFullName: application.full_name,
-        customerPhone: application.phone,
-        eventId: eventBundle.event.id,
-        externalId: application.reference_code,
-        fbc: application.fb_fbc,
-        fbp: application.fb_fbp,
-        paymentId: updatedPayment.id,
-        sourceUrl: capiSourceUrl,
-      });
-    } catch {
-      // CAPI telemetry must never fail the payment confirmation.
-    }
+  // Reconfirming an already-paid record safely checks the durable delivery state,
+  // allowing failed or stale claims to recover without changing payment semantics.
+  try {
+    await sendMetaCapiPurchase({
+      actorUserId,
+      amount: updatedPayment.amount_paid,
+      clientId: client.id,
+      currency: updatedPayment.currency,
+      customerEmail: application.email,
+      customerFullName: application.full_name,
+      customerPhone: application.phone,
+      eventId: eventBundle.event.id,
+      externalId: application.reference_code,
+      fbc: application.fb_fbc,
+      fbp: application.fb_fbp,
+      paymentId: updatedPayment.id,
+    });
+  } catch {
+    // CAPI telemetry must never fail the payment confirmation.
   }
 
   return {

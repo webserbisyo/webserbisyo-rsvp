@@ -1,1577 +1,1628 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
-  };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       audit_logs: {
         Row: {
-          action: string;
-          actor_user_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          entity_id: string | null;
-          entity_type: string;
-          event_id: string | null;
-          id: string;
-          ip_address: string | null;
-          metadata: Json;
-          user_agent: string | null;
-        };
+          action: string
+          actor_user_id: string | null
+          client_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          event_id: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json
+          user_agent: string | null
+        }
         Insert: {
-          action: string;
-          actor_user_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          entity_id?: string | null;
-          entity_type: string;
-          event_id?: string | null;
-          id?: string;
-          ip_address?: string | null;
-          metadata?: Json;
-          user_agent?: string | null;
-        };
+          action: string
+          actor_user_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          event_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          user_agent?: string | null
+        }
         Update: {
-          action?: string;
-          actor_user_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          entity_id?: string | null;
-          entity_type?: string;
-          event_id?: string | null;
-          id?: string;
-          ip_address?: string | null;
-          metadata?: Json;
-          user_agent?: string | null;
-        };
+          action?: string
+          actor_user_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          event_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          user_agent?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "audit_logs_actor_user_id_fkey";
-            columns: ["actor_user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "audit_logs_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "audit_logs_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "audit_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "audit_logs_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "audit_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       client_custom_websites: {
         Row: {
-          client_id: string;
-          connected_at: string | null;
-          created_at: string;
-          custom_frontend_enabled: boolean;
-          custom_frontend_origin_url: string | null;
-          disabled_at: string | null;
-          event_id: string;
-          id: string;
-          last_health_checked_at: string | null;
-          last_health_error: string | null;
-          last_health_status: string;
-          last_origin_response_ms: number | null;
-          last_origin_status_code: number | null;
-          last_previewed_at: string | null;
-          notes: string | null;
-          platform_event_slug: string | null;
-          preview_enabled: boolean;
-          status: string;
-          template_id: string;
-          updated_at: string;
-        };
+          client_id: string
+          connected_at: string | null
+          created_at: string
+          custom_frontend_enabled: boolean
+          custom_frontend_origin_url: string | null
+          disabled_at: string | null
+          event_id: string
+          id: string
+          last_health_checked_at: string | null
+          last_health_error: string | null
+          last_health_status: string
+          last_origin_response_ms: number | null
+          last_origin_status_code: number | null
+          last_previewed_at: string | null
+          notes: string | null
+          platform_event_slug: string | null
+          preview_enabled: boolean
+          status: string
+          template_id: string
+          updated_at: string
+        }
         Insert: {
-          client_id: string;
-          connected_at?: string | null;
-          created_at?: string;
-          custom_frontend_enabled?: boolean;
-          custom_frontend_origin_url?: string | null;
-          disabled_at?: string | null;
-          event_id: string;
-          id?: string;
-          last_health_checked_at?: string | null;
-          last_health_error?: string | null;
-          last_health_status?: string;
-          last_origin_response_ms?: number | null;
-          last_origin_status_code?: number | null;
-          last_previewed_at?: string | null;
-          notes?: string | null;
-          platform_event_slug?: string | null;
-          preview_enabled?: boolean;
-          status?: string;
-          template_id?: string;
-          updated_at?: string;
-        };
+          client_id: string
+          connected_at?: string | null
+          created_at?: string
+          custom_frontend_enabled?: boolean
+          custom_frontend_origin_url?: string | null
+          disabled_at?: string | null
+          event_id: string
+          id?: string
+          last_health_checked_at?: string | null
+          last_health_error?: string | null
+          last_health_status?: string
+          last_origin_response_ms?: number | null
+          last_origin_status_code?: number | null
+          last_previewed_at?: string | null
+          notes?: string | null
+          platform_event_slug?: string | null
+          preview_enabled?: boolean
+          status?: string
+          template_id?: string
+          updated_at?: string
+        }
         Update: {
-          client_id?: string;
-          connected_at?: string | null;
-          created_at?: string;
-          custom_frontend_enabled?: boolean;
-          custom_frontend_origin_url?: string | null;
-          disabled_at?: string | null;
-          event_id?: string;
-          id?: string;
-          last_health_checked_at?: string | null;
-          last_health_error?: string | null;
-          last_health_status?: string;
-          last_origin_response_ms?: number | null;
-          last_origin_status_code?: number | null;
-          last_previewed_at?: string | null;
-          notes?: string | null;
-          platform_event_slug?: string | null;
-          preview_enabled?: boolean;
-          status?: string;
-          template_id?: string;
-          updated_at?: string;
-        };
+          client_id?: string
+          connected_at?: string | null
+          created_at?: string
+          custom_frontend_enabled?: boolean
+          custom_frontend_origin_url?: string | null
+          disabled_at?: string | null
+          event_id?: string
+          id?: string
+          last_health_checked_at?: string | null
+          last_health_error?: string | null
+          last_health_status?: string
+          last_origin_response_ms?: number | null
+          last_origin_status_code?: number | null
+          last_previewed_at?: string | null
+          notes?: string | null
+          platform_event_slug?: string | null
+          preview_enabled?: boolean
+          status?: string
+          template_id?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "client_custom_websites_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "client_custom_websites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "client_custom_websites_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: true;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "client_custom_websites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       client_deletion_tombstones: {
         Row: {
-          client_email: string;
-          client_name: string;
-          client_status: string | null;
-          deleted_at: string;
-          deleted_by: string | null;
-          deleted_reason: string | null;
-          event_date: string | null;
-          event_id: string | null;
-          event_slug: string | null;
-          event_type: string | null;
-          id: string;
-          metadata: Json;
-          original_client_id: string | null;
-          payment_status: string | null;
-          payment_summary: Json;
-        };
+          client_email: string
+          client_name: string
+          client_status: string | null
+          deleted_at: string
+          deleted_by: string | null
+          deleted_reason: string | null
+          event_date: string | null
+          event_id: string | null
+          event_slug: string | null
+          event_type: string | null
+          id: string
+          metadata: Json
+          original_client_id: string | null
+          payment_status: string | null
+          payment_summary: Json
+        }
         Insert: {
-          client_email: string;
-          client_name: string;
-          client_status?: string | null;
-          deleted_at?: string;
-          deleted_by?: string | null;
-          deleted_reason?: string | null;
-          event_date?: string | null;
-          event_id?: string | null;
-          event_slug?: string | null;
-          event_type?: string | null;
-          id?: string;
-          metadata?: Json;
-          original_client_id?: string | null;
-          payment_status?: string | null;
-          payment_summary?: Json;
-        };
+          client_email: string
+          client_name: string
+          client_status?: string | null
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_reason?: string | null
+          event_date?: string | null
+          event_id?: string | null
+          event_slug?: string | null
+          event_type?: string | null
+          id?: string
+          metadata?: Json
+          original_client_id?: string | null
+          payment_status?: string | null
+          payment_summary?: Json
+        }
         Update: {
-          client_email?: string;
-          client_name?: string;
-          client_status?: string | null;
-          deleted_at?: string;
-          deleted_by?: string | null;
-          deleted_reason?: string | null;
-          event_date?: string | null;
-          event_id?: string | null;
-          event_slug?: string | null;
-          event_type?: string | null;
-          id?: string;
-          metadata?: Json;
-          original_client_id?: string | null;
-          payment_status?: string | null;
-          payment_summary?: Json;
-        };
+          client_email?: string
+          client_name?: string
+          client_status?: string | null
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_reason?: string | null
+          event_date?: string | null
+          event_id?: string | null
+          event_slug?: string | null
+          event_type?: string | null
+          id?: string
+          metadata?: Json
+          original_client_id?: string | null
+          payment_status?: string | null
+          payment_summary?: Json
+        }
         Relationships: [
           {
-            foreignKeyName: "client_deletion_tombstones_deleted_by_fkey";
-            columns: ["deleted_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "client_deletion_tombstones_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       clients: {
         Row: {
-          archived_at: string | null;
-          cancelled_at: string | null;
-          contact_email: string;
-          contact_name: string | null;
-          contact_phone: string | null;
-          created_at: string;
-          custom_frontend_status: string;
-          custom_frontend_url: string | null;
-          hosting_ends_at: string | null;
-          hosting_starts_at: string | null;
-          id: string;
-          last_activity_at: string;
-          name: string;
-          notes: string | null;
-          plan_type: string;
-          renewal_required_at: string | null;
-          status: string;
-          updated_at: string;
-        };
+          archived_at: string | null
+          cancelled_at: string | null
+          contact_email: string
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          custom_frontend_status: string
+          custom_frontend_url: string | null
+          hosting_ends_at: string | null
+          hosting_starts_at: string | null
+          id: string
+          last_activity_at: string
+          name: string
+          notes: string | null
+          plan_type: string
+          renewal_required_at: string | null
+          status: string
+          updated_at: string
+        }
         Insert: {
-          archived_at?: string | null;
-          cancelled_at?: string | null;
-          contact_email: string;
-          contact_name?: string | null;
-          contact_phone?: string | null;
-          created_at?: string;
-          custom_frontend_status?: string;
-          custom_frontend_url?: string | null;
-          hosting_ends_at?: string | null;
-          hosting_starts_at?: string | null;
-          id?: string;
-          last_activity_at?: string;
-          name: string;
-          notes?: string | null;
-          plan_type: string;
-          renewal_required_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
+          archived_at?: string | null
+          cancelled_at?: string | null
+          contact_email: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          custom_frontend_status?: string
+          custom_frontend_url?: string | null
+          hosting_ends_at?: string | null
+          hosting_starts_at?: string | null
+          id?: string
+          last_activity_at?: string
+          name: string
+          notes?: string | null
+          plan_type: string
+          renewal_required_at?: string | null
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          archived_at?: string | null;
-          cancelled_at?: string | null;
-          contact_email?: string;
-          contact_name?: string | null;
-          contact_phone?: string | null;
-          created_at?: string;
-          custom_frontend_status?: string;
-          custom_frontend_url?: string | null;
-          hosting_ends_at?: string | null;
-          hosting_starts_at?: string | null;
-          id?: string;
-          last_activity_at?: string;
-          name?: string;
-          notes?: string | null;
-          plan_type?: string;
-          renewal_required_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          archived_at?: string | null
+          cancelled_at?: string | null
+          contact_email?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          custom_frontend_status?: string
+          custom_frontend_url?: string | null
+          hosting_ends_at?: string | null
+          hosting_starts_at?: string | null
+          id?: string
+          last_activity_at?: string
+          name?: string
+          notes?: string | null
+          plan_type?: string
+          renewal_required_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
-          application_id: string | null;
-          client_id: string | null;
-          created_at: string;
-          email_type: string;
-          error_message: string | null;
-          event_id: string | null;
-          id: string;
-          provider: string;
-          provider_message_id: string | null;
-          recipient_email: string;
-          recipient_name: string | null;
-          sent_at: string | null;
-          status: string;
-          subject: string | null;
-          updated_at: string;
-        };
+          application_id: string | null
+          client_id: string | null
+          created_at: string
+          email_type: string
+          error_message: string | null
+          event_id: string | null
+          id: string
+          provider: string
+          provider_message_id: string | null
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+        }
         Insert: {
-          application_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          email_type: string;
-          error_message?: string | null;
-          event_id?: string | null;
-          id?: string;
-          provider?: string;
-          provider_message_id?: string | null;
-          recipient_email: string;
-          recipient_name?: string | null;
-          sent_at?: string | null;
-          status?: string;
-          subject?: string | null;
-          updated_at?: string;
-        };
+          application_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          provider?: string
+          provider_message_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
         Update: {
-          application_id?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          email_type?: string;
-          error_message?: string | null;
-          event_id?: string | null;
-          id?: string;
-          provider?: string;
-          provider_message_id?: string | null;
-          recipient_email?: string;
-          recipient_name?: string | null;
-          sent_at?: string | null;
-          status?: string;
-          subject?: string | null;
-          updated_at?: string;
-        };
+          application_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          provider?: string
+          provider_message_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "email_logs_application_id_fkey";
-            columns: ["application_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_applications";
-            referencedColumns: ["id"];
+            foreignKeyName: "email_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_applications"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_logs_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "email_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "email_logs_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "email_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       event_content: {
         Row: {
-          contact_note: string | null;
-          content_json: Json;
-          couple_or_celebrant_names: string | null;
-          created_at: string;
-          dress_code: string | null;
-          event_id: string;
-          event_story: string | null;
-          gift_note: string | null;
-          hero_subtitle: string | null;
-          hero_title: string | null;
-          id: string;
-          published_at: string | null;
-          published_by: string | null;
-          published_content_json: Json | null;
-          published_revision: number;
-          rsvp_note: string | null;
-          saved_at: string | null;
-          saved_revision: number;
-          schedule_note: string | null;
-          theme_key: string | null;
-          updated_at: string;
-          venue_note: string | null;
-        };
+          contact_note: string | null
+          content_json: Json
+          couple_or_celebrant_names: string | null
+          created_at: string
+          dress_code: string | null
+          event_id: string
+          event_story: string | null
+          gift_note: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          published_at: string | null
+          published_by: string | null
+          published_content_json: Json | null
+          published_revision: number
+          rsvp_note: string | null
+          saved_at: string | null
+          saved_revision: number
+          schedule_note: string | null
+          theme_key: string | null
+          updated_at: string
+          venue_note: string | null
+        }
         Insert: {
-          contact_note?: string | null;
-          content_json?: Json;
-          couple_or_celebrant_names?: string | null;
-          created_at?: string;
-          dress_code?: string | null;
-          event_id: string;
-          event_story?: string | null;
-          gift_note?: string | null;
-          hero_subtitle?: string | null;
-          hero_title?: string | null;
-          id?: string;
-          published_at?: string | null;
-          published_by?: string | null;
-          published_content_json?: Json | null;
-          published_revision?: number;
-          rsvp_note?: string | null;
-          saved_at?: string | null;
-          saved_revision?: number;
-          schedule_note?: string | null;
-          theme_key?: string | null;
-          updated_at?: string;
-          venue_note?: string | null;
-        };
+          contact_note?: string | null
+          content_json?: Json
+          couple_or_celebrant_names?: string | null
+          created_at?: string
+          dress_code?: string | null
+          event_id: string
+          event_story?: string | null
+          gift_note?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          published_at?: string | null
+          published_by?: string | null
+          published_content_json?: Json | null
+          published_revision?: number
+          rsvp_note?: string | null
+          saved_at?: string | null
+          saved_revision?: number
+          schedule_note?: string | null
+          theme_key?: string | null
+          updated_at?: string
+          venue_note?: string | null
+        }
         Update: {
-          contact_note?: string | null;
-          content_json?: Json;
-          couple_or_celebrant_names?: string | null;
-          created_at?: string;
-          dress_code?: string | null;
-          event_id?: string;
-          event_story?: string | null;
-          gift_note?: string | null;
-          hero_subtitle?: string | null;
-          hero_title?: string | null;
-          id?: string;
-          published_at?: string | null;
-          published_by?: string | null;
-          published_content_json?: Json | null;
-          published_revision?: number;
-          rsvp_note?: string | null;
-          saved_at?: string | null;
-          saved_revision?: number;
-          schedule_note?: string | null;
-          theme_key?: string | null;
-          updated_at?: string;
-          venue_note?: string | null;
-        };
+          contact_note?: string | null
+          content_json?: Json
+          couple_or_celebrant_names?: string | null
+          created_at?: string
+          dress_code?: string | null
+          event_id?: string
+          event_story?: string | null
+          gift_note?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          published_at?: string | null
+          published_by?: string | null
+          published_content_json?: Json | null
+          published_revision?: number
+          rsvp_note?: string | null
+          saved_at?: string | null
+          saved_revision?: number
+          schedule_note?: string | null
+          theme_key?: string | null
+          updated_at?: string
+          venue_note?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "event_content_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: true;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "event_content_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "event_content_published_by_fkey";
-            columns: ["published_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "event_content_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
+      meta_capi_deliveries: {
+        Row: {
+          attempts: number
+          claim_token: string | null
+          claimed_at: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_id: string
+          event_name: string
+          id: string
+          last_attempt_at: string | null
+          last_error_code: string | null
+          provider: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          claim_token?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_id: string
+          event_name: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error_code?: string | null
+          provider: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          claim_token?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_id?: string
+          event_name?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error_code?: string | null
+          provider?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meta_pixels: {
         Row: {
-          access_token_encrypted: string | null;
-          client_id: string | null;
-          created_at: string;
-          event_id: string | null;
-          id: string;
-          is_active: boolean;
-          name: string;
-          notes: string | null;
-          pixel_id: string;
-          tracking_scope: string;
-          updated_at: string;
-        };
+          access_token_encrypted: string | null
+          client_id: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          pixel_id: string
+          tracking_scope: string
+          updated_at: string
+        }
         Insert: {
-          access_token_encrypted?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          event_id?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name: string;
-          notes?: string | null;
-          pixel_id: string;
-          tracking_scope?: string;
-          updated_at?: string;
-        };
+          access_token_encrypted?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          pixel_id: string
+          tracking_scope?: string
+          updated_at?: string
+        }
         Update: {
-          access_token_encrypted?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          event_id?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name?: string;
-          notes?: string | null;
-          pixel_id?: string;
-          tracking_scope?: string;
-          updated_at?: string;
-        };
+          access_token_encrypted?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          pixel_id?: string
+          tracking_scope?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "meta_pixels_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "meta_pixels_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "meta_pixels_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "meta_pixels_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       notification_preferences: {
         Row: {
-          client_id: string;
-          created_at: string;
-          email_enabled: boolean;
-          event_type: string;
-          id: string;
-          in_app_enabled: boolean;
-          profile_id: string;
-          push_enabled: boolean;
-          updated_at: string;
-        };
+          client_id: string
+          created_at: string
+          email_enabled: boolean
+          event_type: string
+          id: string
+          in_app_enabled: boolean
+          profile_id: string
+          push_enabled: boolean
+          updated_at: string
+        }
         Insert: {
-          client_id: string;
-          created_at?: string;
-          email_enabled?: boolean;
-          event_type: string;
-          id?: string;
-          in_app_enabled?: boolean;
-          profile_id: string;
-          push_enabled?: boolean;
-          updated_at?: string;
-        };
+          client_id: string
+          created_at?: string
+          email_enabled?: boolean
+          event_type: string
+          id?: string
+          in_app_enabled?: boolean
+          profile_id: string
+          push_enabled?: boolean
+          updated_at?: string
+        }
         Update: {
-          client_id?: string;
-          created_at?: string;
-          email_enabled?: boolean;
-          event_type?: string;
-          id?: string;
-          in_app_enabled?: boolean;
-          profile_id?: string;
-          push_enabled?: boolean;
-          updated_at?: string;
-        };
+          client_id?: string
+          created_at?: string
+          email_enabled?: boolean
+          event_type?: string
+          id?: string
+          in_app_enabled?: boolean
+          profile_id?: string
+          push_enabled?: boolean
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "notification_preferences_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "notification_preferences_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notification_preferences_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "notification_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       payment_refunds: {
         Row: {
-          amount: number;
-          client_id: string | null;
-          confirmed_at: string;
-          created_at: string;
-          created_by: string | null;
-          id: string;
-          metadata: Json;
-          method: string | null;
-          payment_id: string;
-          reason_note: string | null;
-          reference_number: string | null;
-        };
+          amount: number
+          client_id: string | null
+          confirmed_at: string
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          method: string | null
+          payment_id: string
+          reason_note: string | null
+          reference_number: string | null
+        }
         Insert: {
-          amount: number;
-          client_id?: string | null;
-          confirmed_at: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          metadata?: Json;
-          method?: string | null;
-          payment_id: string;
-          reason_note?: string | null;
-          reference_number?: string | null;
-        };
+          amount: number
+          client_id?: string | null
+          confirmed_at: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          method?: string | null
+          payment_id: string
+          reason_note?: string | null
+          reference_number?: string | null
+        }
         Update: {
-          amount?: number;
-          client_id?: string | null;
-          confirmed_at?: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          metadata?: Json;
-          method?: string | null;
-          payment_id?: string;
-          reason_note?: string | null;
-          reference_number?: string | null;
-        };
+          amount?: number
+          client_id?: string | null
+          confirmed_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          method?: string | null
+          payment_id?: string
+          reason_note?: string | null
+          reference_number?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "payment_refunds_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "payment_refunds_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payment_refunds_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "payment_refunds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payment_refunds_payment_id_fkey";
-            columns: ["payment_id"];
-            isOneToOne: false;
-            referencedRelation: "payments";
-            referencedColumns: ["id"];
+            foreignKeyName: "payment_refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       payments: {
         Row: {
-          amount_due: number;
-          amount_paid: number;
-          application_id: string;
-          client_id: string | null;
-          confirmed_by: string | null;
-          created_at: string;
-          currency: string;
-          event_id: string | null;
-          hosting_ends_at: string | null;
-          hosting_starts_at: string | null;
-          id: string;
-          notes: string | null;
-          paid_at: string | null;
-          payment_method: string | null;
-          payment_status: string;
-          plan_type: string;
-          reference_number: string | null;
-          renewal_required_at: string | null;
-          updated_at: string;
-        };
+          amount_due: number
+          amount_paid: number
+          application_id: string
+          client_id: string | null
+          confirmed_by: string | null
+          created_at: string
+          currency: string
+          event_id: string | null
+          hosting_ends_at: string | null
+          hosting_starts_at: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_status: string
+          plan_type: string
+          reference_number: string | null
+          renewal_required_at: string | null
+          updated_at: string
+        }
         Insert: {
-          amount_due: number;
-          amount_paid?: number;
-          application_id: string;
-          client_id?: string | null;
-          confirmed_by?: string | null;
-          created_at?: string;
-          currency?: string;
-          event_id?: string | null;
-          hosting_ends_at?: string | null;
-          hosting_starts_at?: string | null;
-          id?: string;
-          notes?: string | null;
-          paid_at?: string | null;
-          payment_method?: string | null;
-          payment_status?: string;
-          plan_type: string;
-          reference_number?: string | null;
-          renewal_required_at?: string | null;
-          updated_at?: string;
-        };
+          amount_due: number
+          amount_paid?: number
+          application_id: string
+          client_id?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          hosting_ends_at?: string | null
+          hosting_starts_at?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          plan_type: string
+          reference_number?: string | null
+          renewal_required_at?: string | null
+          updated_at?: string
+        }
         Update: {
-          amount_due?: number;
-          amount_paid?: number;
-          application_id?: string;
-          client_id?: string | null;
-          confirmed_by?: string | null;
-          created_at?: string;
-          currency?: string;
-          event_id?: string | null;
-          hosting_ends_at?: string | null;
-          hosting_starts_at?: string | null;
-          id?: string;
-          notes?: string | null;
-          paid_at?: string | null;
-          payment_method?: string | null;
-          payment_status?: string;
-          plan_type?: string;
-          reference_number?: string | null;
-          renewal_required_at?: string | null;
-          updated_at?: string;
-        };
+          amount_due?: number
+          amount_paid?: number
+          application_id?: string
+          client_id?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          hosting_ends_at?: string | null
+          hosting_starts_at?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          plan_type?: string
+          reference_number?: string | null
+          renewal_required_at?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "payments_application_id_fkey";
-            columns: ["application_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_applications";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_applications"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_confirmed_by_fkey";
-            columns: ["confirmed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       platform_package_settings: {
         Row: {
-          created_at: string;
-          currency: string;
-          default_amount: number | null;
-          default_hosting_days: number | null;
-          id: string;
-          is_active: boolean;
-          plan_type: string;
-          renewal_notice_days: number | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          created_at: string
+          currency: string
+          default_amount: number | null
+          default_hosting_days: number | null
+          id: string
+          is_active: boolean
+          plan_type: string
+          renewal_notice_days: number | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          created_at?: string;
-          currency?: string;
-          default_amount?: number | null;
-          default_hosting_days?: number | null;
-          id?: string;
-          is_active?: boolean;
-          plan_type: string;
-          renewal_notice_days?: number | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string
+          currency?: string
+          default_amount?: number | null
+          default_hosting_days?: number | null
+          id?: string
+          is_active?: boolean
+          plan_type: string
+          renewal_notice_days?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          created_at?: string;
-          currency?: string;
-          default_amount?: number | null;
-          default_hosting_days?: number | null;
-          id?: string;
-          is_active?: boolean;
-          plan_type?: string;
-          renewal_notice_days?: number | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string
+          currency?: string
+          default_amount?: number | null
+          default_hosting_days?: number | null
+          id?: string
+          is_active?: boolean
+          plan_type?: string
+          renewal_notice_days?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "platform_package_settings_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "platform_package_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       platform_payment_options: {
         Row: {
-          account_name: string | null;
-          account_number: string | null;
-          created_at: string;
-          id: string;
-          is_enabled: boolean;
-          provider: string;
-          qr_image_path: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          account_name: string | null
+          account_number: string | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          provider: string
+          qr_image_path: string | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          account_name?: string | null;
-          account_number?: string | null;
-          created_at?: string;
-          id?: string;
-          is_enabled?: boolean;
-          provider: string;
-          qr_image_path?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          account_name?: string | null
+          account_number?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider: string
+          qr_image_path?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          account_name?: string | null;
-          account_number?: string | null;
-          created_at?: string;
-          id?: string;
-          is_enabled?: boolean;
-          provider?: string;
-          qr_image_path?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          account_name?: string | null
+          account_number?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          provider?: string
+          qr_image_path?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "platform_payment_options_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "platform_payment_options_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       platform_public_settings: {
         Row: {
-          created_at: string;
-          id: string;
-          messenger_page_url: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          created_at: string
+          id: string
+          messenger_page_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          messenger_page_url?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string
+          id?: string
+          messenger_page_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          messenger_page_url?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          created_at?: string
+          id?: string
+          messenger_page_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "platform_public_settings_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "platform_public_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       profiles: {
         Row: {
-          client_id: string | null;
-          created_at: string;
-          email: string;
-          full_name: string | null;
-          id: string;
-          is_active: boolean;
-          role: string;
-          updated_at: string;
-        };
+          client_id: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean
+          role: string
+          updated_at: string
+        }
         Insert: {
-          client_id?: string | null;
-          created_at?: string;
-          email: string;
-          full_name?: string | null;
-          id: string;
-          is_active?: boolean;
-          role: string;
-          updated_at?: string;
-        };
+          client_id?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          is_active?: boolean
+          role: string
+          updated_at?: string
+        }
         Update: {
-          client_id?: string | null;
-          created_at?: string;
-          email?: string;
-          full_name?: string | null;
-          id?: string;
-          is_active?: boolean;
-          role?: string;
-          updated_at?: string;
-        };
+          client_id?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "profiles_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "profiles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       push_subscriptions: {
         Row: {
-          auth: string;
-          client_id: string;
-          created_at: string;
-          enabled: boolean;
-          endpoint: string;
-          id: string;
-          last_seen_at: string | null;
-          p256dh: string;
-          platform: string | null;
-          profile_id: string;
-          revoked_at: string | null;
-          updated_at: string;
-          user_agent: string | null;
-        };
+          auth: string
+          client_id: string
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          id: string
+          last_seen_at: string | null
+          p256dh: string
+          platform: string | null
+          profile_id: string
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+        }
         Insert: {
-          auth: string;
-          client_id: string;
-          created_at?: string;
-          enabled?: boolean;
-          endpoint: string;
-          id?: string;
-          last_seen_at?: string | null;
-          p256dh: string;
-          platform?: string | null;
-          profile_id: string;
-          revoked_at?: string | null;
-          updated_at?: string;
-          user_agent?: string | null;
-        };
+          auth: string
+          client_id: string
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          last_seen_at?: string | null
+          p256dh: string
+          platform?: string | null
+          profile_id: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
         Update: {
-          auth?: string;
-          client_id?: string;
-          created_at?: string;
-          enabled?: boolean;
-          endpoint?: string;
-          id?: string;
-          last_seen_at?: string | null;
-          p256dh?: string;
-          platform?: string | null;
-          profile_id?: string;
-          revoked_at?: string | null;
-          updated_at?: string;
-          user_agent?: string | null;
-        };
+          auth?: string
+          client_id?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          id?: string
+          last_seen_at?: string | null
+          p256dh?: string
+          platform?: string | null
+          profile_id?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "push_subscriptions_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "push_subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "push_subscriptions_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "push_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       rsvp_applications: {
         Row: {
-          approved_at: string | null;
-          approved_client_id: string | null;
-          approved_event_id: string | null;
-          created_at: string;
-          email: string;
-          estimated_guest_count: number | null;
-          event_date: string | null;
-          event_location: string | null;
-          event_type: string;
-          fb_fbc: string | null;
-          fb_fbp: string | null;
-          full_name: string;
-          id: string;
-          message: string | null;
-          phone: string | null;
-          preferred_manual_payment_option: string | null;
-          preferred_plan: string;
-          reference_code: string;
-          rejected_at: string | null;
-          review_notes: string | null;
-          reviewed_at: string | null;
-          status: string;
-          submitted_at: string;
-          updated_at: string;
-        };
+          approved_at: string | null
+          approved_client_id: string | null
+          approved_event_id: string | null
+          created_at: string
+          email: string
+          estimated_guest_count: number | null
+          event_date: string | null
+          event_location: string | null
+          event_type: string
+          fb_fbc: string | null
+          fb_fbp: string | null
+          full_name: string
+          id: string
+          message: string | null
+          phone: string | null
+          preferred_manual_payment_option: string | null
+          preferred_plan: string
+          reference_code: string
+          rejected_at: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+        }
         Insert: {
-          approved_at?: string | null;
-          approved_client_id?: string | null;
-          approved_event_id?: string | null;
-          created_at?: string;
-          email: string;
-          estimated_guest_count?: number | null;
-          event_date?: string | null;
-          event_location?: string | null;
-          event_type: string;
-          fb_fbc?: string | null;
-          fb_fbp?: string | null;
-          full_name: string;
-          id?: string;
-          message?: string | null;
-          phone?: string | null;
-          preferred_manual_payment_option?: string | null;
-          preferred_plan: string;
-          reference_code: string;
-          rejected_at?: string | null;
-          review_notes?: string | null;
-          reviewed_at?: string | null;
-          status?: string;
-          submitted_at?: string;
-          updated_at?: string;
-        };
+          approved_at?: string | null
+          approved_client_id?: string | null
+          approved_event_id?: string | null
+          created_at?: string
+          email: string
+          estimated_guest_count?: number | null
+          event_date?: string | null
+          event_location?: string | null
+          event_type: string
+          fb_fbc?: string | null
+          fb_fbp?: string | null
+          full_name: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          preferred_manual_payment_option?: string | null
+          preferred_plan: string
+          reference_code: string
+          rejected_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
         Update: {
-          approved_at?: string | null;
-          approved_client_id?: string | null;
-          approved_event_id?: string | null;
-          created_at?: string;
-          email?: string;
-          estimated_guest_count?: number | null;
-          event_date?: string | null;
-          event_location?: string | null;
-          event_type?: string;
-          fb_fbc?: string | null;
-          fb_fbp?: string | null;
-          full_name?: string;
-          id?: string;
-          message?: string | null;
-          phone?: string | null;
-          preferred_manual_payment_option?: string | null;
-          preferred_plan?: string;
-          reference_code?: string;
-          rejected_at?: string | null;
-          review_notes?: string | null;
-          reviewed_at?: string | null;
-          status?: string;
-          submitted_at?: string;
-          updated_at?: string;
-        };
+          approved_at?: string | null
+          approved_client_id?: string | null
+          approved_event_id?: string | null
+          created_at?: string
+          email?: string
+          estimated_guest_count?: number | null
+          event_date?: string | null
+          event_location?: string | null
+          event_type?: string
+          fb_fbc?: string | null
+          fb_fbp?: string | null
+          full_name?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          preferred_manual_payment_option?: string | null
+          preferred_plan?: string
+          reference_code?: string
+          rejected_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "rsvp_applications_approved_client_id_fkey";
-            columns: ["approved_client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_applications_approved_client_id_fkey"
+            columns: ["approved_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rsvp_applications_approved_event_id_fkey";
-            columns: ["approved_event_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_applications_approved_event_id_fkey"
+            columns: ["approved_event_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       rsvp_events: {
         Row: {
-          archived_at: string | null;
-          client_id: string;
-          created_at: string;
-          custom_frontend_enabled: boolean;
-          custom_frontend_url: string | null;
-          draft_event_slug: string;
-          draft_subdomain_slug: string | null;
-          draft_visibility: string;
-          event_date: string | null;
-          event_slug: string;
-          event_time: string | null;
-          event_type: string;
-          fallback_page_enabled: boolean;
-          id: string;
-          max_guest_count: number | null;
-          private_access_token: string | null;
-          private_access_token_rotated_at: string | null;
-          published_at: string | null;
-          rsvp_close_at: string | null;
-          rsvp_open_at: string | null;
-          status: string;
-          subdomain_slug: string | null;
-          title: string;
-          updated_at: string;
-          venue_address: string | null;
-          venue_name: string | null;
-          visibility: string;
-          website_access_updated_at: string;
-        };
+          archived_at: string | null
+          client_id: string
+          created_at: string
+          custom_frontend_enabled: boolean
+          custom_frontend_url: string | null
+          draft_event_slug: string
+          draft_subdomain_slug: string | null
+          draft_visibility: string
+          event_date: string | null
+          event_slug: string
+          event_time: string | null
+          event_type: string
+          fallback_page_enabled: boolean
+          id: string
+          max_guest_count: number | null
+          private_access_token: string | null
+          private_access_token_rotated_at: string | null
+          published_at: string | null
+          rsvp_close_at: string | null
+          rsvp_open_at: string | null
+          status: string
+          subdomain_slug: string | null
+          title: string
+          updated_at: string
+          venue_address: string | null
+          venue_name: string | null
+          visibility: string
+          website_access_updated_at: string
+        }
         Insert: {
-          archived_at?: string | null;
-          client_id: string;
-          created_at?: string;
-          custom_frontend_enabled?: boolean;
-          custom_frontend_url?: string | null;
-          draft_event_slug: string;
-          draft_subdomain_slug?: string | null;
-          draft_visibility: string;
-          event_date?: string | null;
-          event_slug: string;
-          event_time?: string | null;
-          event_type: string;
-          fallback_page_enabled?: boolean;
-          id?: string;
-          max_guest_count?: number | null;
-          private_access_token?: string | null;
-          private_access_token_rotated_at?: string | null;
-          published_at?: string | null;
-          rsvp_close_at?: string | null;
-          rsvp_open_at?: string | null;
-          status?: string;
-          subdomain_slug?: string | null;
-          title: string;
-          updated_at?: string;
-          venue_address?: string | null;
-          venue_name?: string | null;
-          visibility?: string;
-          website_access_updated_at?: string;
-        };
+          archived_at?: string | null
+          client_id: string
+          created_at?: string
+          custom_frontend_enabled?: boolean
+          custom_frontend_url?: string | null
+          draft_event_slug: string
+          draft_subdomain_slug?: string | null
+          draft_visibility: string
+          event_date?: string | null
+          event_slug: string
+          event_time?: string | null
+          event_type: string
+          fallback_page_enabled?: boolean
+          id?: string
+          max_guest_count?: number | null
+          private_access_token?: string | null
+          private_access_token_rotated_at?: string | null
+          published_at?: string | null
+          rsvp_close_at?: string | null
+          rsvp_open_at?: string | null
+          status?: string
+          subdomain_slug?: string | null
+          title: string
+          updated_at?: string
+          venue_address?: string | null
+          venue_name?: string | null
+          visibility?: string
+          website_access_updated_at?: string
+        }
         Update: {
-          archived_at?: string | null;
-          client_id?: string;
-          created_at?: string;
-          custom_frontend_enabled?: boolean;
-          custom_frontend_url?: string | null;
-          draft_event_slug?: string;
-          draft_subdomain_slug?: string | null;
-          draft_visibility?: string;
-          event_date?: string | null;
-          event_slug?: string;
-          event_time?: string | null;
-          event_type?: string;
-          fallback_page_enabled?: boolean;
-          id?: string;
-          max_guest_count?: number | null;
-          private_access_token?: string | null;
-          private_access_token_rotated_at?: string | null;
-          published_at?: string | null;
-          rsvp_close_at?: string | null;
-          rsvp_open_at?: string | null;
-          status?: string;
-          subdomain_slug?: string | null;
-          title?: string;
-          updated_at?: string;
-          venue_address?: string | null;
-          venue_name?: string | null;
-          visibility?: string;
-          website_access_updated_at?: string;
-        };
+          archived_at?: string | null
+          client_id?: string
+          created_at?: string
+          custom_frontend_enabled?: boolean
+          custom_frontend_url?: string | null
+          draft_event_slug?: string
+          draft_subdomain_slug?: string | null
+          draft_visibility?: string
+          event_date?: string | null
+          event_slug?: string
+          event_time?: string | null
+          event_type?: string
+          fallback_page_enabled?: boolean
+          id?: string
+          max_guest_count?: number | null
+          private_access_token?: string | null
+          private_access_token_rotated_at?: string | null
+          published_at?: string | null
+          rsvp_close_at?: string | null
+          rsvp_open_at?: string | null
+          status?: string
+          subdomain_slug?: string | null
+          title?: string
+          updated_at?: string
+          venue_address?: string | null
+          venue_name?: string | null
+          visibility?: string
+          website_access_updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "rsvp_events_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       rsvp_response_companions: {
         Row: {
-          age_label: string | null;
-          created_at: string;
-          full_name: string;
-          id: string;
-          response_id: string;
-        };
+          age_label: string | null
+          created_at: string
+          full_name: string
+          id: string
+          response_id: string
+        }
         Insert: {
-          age_label?: string | null;
-          created_at?: string;
-          full_name: string;
-          id?: string;
-          response_id: string;
-        };
+          age_label?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          response_id: string
+        }
         Update: {
-          age_label?: string | null;
-          created_at?: string;
-          full_name?: string;
-          id?: string;
-          response_id?: string;
-        };
+          age_label?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          response_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "rsvp_response_companions_response_id_fkey";
-            columns: ["response_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_responses";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_response_companions_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_responses"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       rsvp_responses: {
         Row: {
-          archived_at: string | null;
-          attendance_status: string;
-          client_id: string;
-          dietary_notes: string | null;
-          email: string | null;
-          event_id: string;
-          guest_name: string;
-          host_confirmation_status: string;
-          host_confirmed_at: string | null;
-          host_confirmed_by: string | null;
-          id: string;
-          message: string | null;
-          message_approved_at: string | null;
-          message_approved_by: string | null;
-          message_public_consent: boolean;
-          message_public_status: string;
-          party_size: number;
-          phone: string | null;
-          review_status: string;
-          source: string | null;
-          submission_id: string | null;
-          submitted_at: string;
-          updated_at: string;
-        };
+          archived_at: string | null
+          attendance_status: string
+          client_id: string
+          dietary_notes: string | null
+          email: string | null
+          event_id: string
+          guest_name: string
+          host_confirmation_status: string
+          host_confirmed_at: string | null
+          host_confirmed_by: string | null
+          id: string
+          message: string | null
+          message_approved_at: string | null
+          message_approved_by: string | null
+          message_public_consent: boolean
+          message_public_status: string
+          party_size: number
+          phone: string | null
+          review_status: string
+          source: string | null
+          submission_id: string | null
+          submitted_at: string
+          updated_at: string
+        }
         Insert: {
-          archived_at?: string | null;
-          attendance_status: string;
-          client_id: string;
-          dietary_notes?: string | null;
-          email?: string | null;
-          event_id: string;
-          guest_name: string;
-          host_confirmation_status?: string;
-          host_confirmed_at?: string | null;
-          host_confirmed_by?: string | null;
-          id?: string;
-          message?: string | null;
-          message_approved_at?: string | null;
-          message_approved_by?: string | null;
-          message_public_consent?: boolean;
-          message_public_status?: string;
-          party_size?: number;
-          phone?: string | null;
-          review_status?: string;
-          source?: string | null;
-          submission_id?: string | null;
-          submitted_at?: string;
-          updated_at?: string;
-        };
+          archived_at?: string | null
+          attendance_status: string
+          client_id: string
+          dietary_notes?: string | null
+          email?: string | null
+          event_id: string
+          guest_name: string
+          host_confirmation_status?: string
+          host_confirmed_at?: string | null
+          host_confirmed_by?: string | null
+          id?: string
+          message?: string | null
+          message_approved_at?: string | null
+          message_approved_by?: string | null
+          message_public_consent?: boolean
+          message_public_status?: string
+          party_size?: number
+          phone?: string | null
+          review_status?: string
+          source?: string | null
+          submission_id?: string | null
+          submitted_at?: string
+          updated_at?: string
+        }
         Update: {
-          archived_at?: string | null;
-          attendance_status?: string;
-          client_id?: string;
-          dietary_notes?: string | null;
-          email?: string | null;
-          event_id?: string;
-          guest_name?: string;
-          host_confirmation_status?: string;
-          host_confirmed_at?: string | null;
-          host_confirmed_by?: string | null;
-          id?: string;
-          message?: string | null;
-          message_approved_at?: string | null;
-          message_approved_by?: string | null;
-          message_public_consent?: boolean;
-          message_public_status?: string;
-          party_size?: number;
-          phone?: string | null;
-          review_status?: string;
-          source?: string | null;
-          submission_id?: string | null;
-          submitted_at?: string;
-          updated_at?: string;
-        };
+          archived_at?: string | null
+          attendance_status?: string
+          client_id?: string
+          dietary_notes?: string | null
+          email?: string | null
+          event_id?: string
+          guest_name?: string
+          host_confirmation_status?: string
+          host_confirmed_at?: string | null
+          host_confirmed_by?: string | null
+          id?: string
+          message?: string | null
+          message_approved_at?: string | null
+          message_approved_by?: string | null
+          message_public_consent?: boolean
+          message_public_status?: string
+          party_size?: number
+          phone?: string | null
+          review_status?: string
+          source?: string | null
+          submission_id?: string | null
+          submitted_at?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "rsvp_responses_client_id_fkey";
-            columns: ["client_id"];
-            isOneToOne: false;
-            referencedRelation: "clients";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_responses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rsvp_responses_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "rsvp_events";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_responses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_events"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rsvp_responses_host_confirmed_by_fkey";
-            columns: ["host_confirmed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_responses_host_confirmed_by_fkey"
+            columns: ["host_confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rsvp_responses_message_approved_by_fkey";
-            columns: ["message_approved_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "rsvp_responses_message_approved_by_fkey"
+            columns: ["message_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
       admin_purge_client_permanently: {
-        Args: { p_client_id: string; p_profile_ids?: string[] };
-        Returns: Json;
-      };
+        Args: { p_client_id: string; p_profile_ids?: string[] }
+        Returns: Json
+      }
       approve_rsvp_response_with_capacity_check: {
-        Args: { p_client_id: string; p_response_id: string };
+        Args: { p_client_id: string; p_response_id: string }
         Returns: {
-          archived_at: string | null;
-          attendance_status: string;
-          client_id: string;
-          dietary_notes: string | null;
-          email: string | null;
-          event_id: string;
-          guest_name: string;
-          host_confirmation_status: string;
-          host_confirmed_at: string | null;
-          host_confirmed_by: string | null;
-          id: string;
-          message: string | null;
-          message_approved_at: string | null;
-          message_approved_by: string | null;
-          message_public_consent: boolean;
-          message_public_status: string;
-          party_size: number;
-          phone: string | null;
-          review_status: string;
-          source: string | null;
-          submission_id: string | null;
-          submitted_at: string;
-          updated_at: string;
-        };
+          archived_at: string | null
+          attendance_status: string
+          client_id: string
+          dietary_notes: string | null
+          email: string | null
+          event_id: string
+          guest_name: string
+          host_confirmation_status: string
+          host_confirmed_at: string | null
+          host_confirmed_by: string | null
+          id: string
+          message: string | null
+          message_approved_at: string | null
+          message_approved_by: string | null
+          message_public_consent: boolean
+          message_public_status: string
+          party_size: number
+          phone: string | null
+          review_status: string
+          source: string | null
+          submission_id: string | null
+          submitted_at: string
+          updated_at: string
+        }
         SetofOptions: {
-          from: "*";
-          to: "rsvp_responses";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
+          from: "*"
+          to: "rsvp_responses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      claim_meta_capi_delivery: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_event_id: string
+          p_event_name: string
+          p_provider: string
+          p_stale_after_seconds?: number
+        }
+        Returns: {
+          attempt_count: number
+          claim_acquired: boolean
+          claim_token: string
+          delivery_id: string
+          delivery_status: string
+        }[]
+      }
       provision_application_atomic: {
         Args: {
-          p_actor_user_id: string;
-          p_application_id: string;
-          p_auth_user_id: string;
-        };
-        Returns: Json;
-      };
+          p_actor_user_id: string
+          p_application_id: string
+          p_auth_user_id: string
+        }
+        Returns: Json
+      }
       publish_event_website_revision: {
         Args: {
-          p_actor_user_id: string;
-          p_client_id: string;
-          p_event_id: string;
-          p_expected_saved_revision: number;
-          p_private_access_token?: string;
-        };
-        Returns: Json;
-      };
+          p_actor_user_id: string
+          p_client_id: string
+          p_event_id: string
+          p_expected_saved_revision: number
+          p_private_access_token?: string
+        }
+        Returns: Json
+      }
       save_event_website_draft_revision: {
         Args: {
-          p_actor_user_id: string;
-          p_canonical_event_patch: Json;
-          p_client_id: string;
-          p_client_sequence: number;
-          p_content: Json;
-          p_event_id: string;
-          p_expected_revision: number;
-        };
-        Returns: Json;
-      };
+          p_actor_user_id: string
+          p_canonical_event_patch: Json
+          p_client_id: string
+          p_client_sequence: number
+          p_content: Json
+          p_event_id: string
+          p_expected_revision: number
+        }
+        Returns: Json
+      }
       submit_rsvp_response_with_capacity_check: {
         Args: {
-          p_attendance_status: string;
-          p_client_id: string;
-          p_dietary_notes: string;
-          p_email: string;
-          p_event_id: string;
-          p_guest_name: string;
-          p_message: string;
-          p_message_public_status: string;
-          p_party_size: number;
-          p_phone: string;
-          p_source: string;
-        };
+          p_attendance_status: string
+          p_client_id: string
+          p_dietary_notes: string
+          p_email: string
+          p_event_id: string
+          p_guest_name: string
+          p_message: string
+          p_message_public_status: string
+          p_party_size: number
+          p_phone: string
+          p_source: string
+        }
         Returns: {
-          archived_at: string | null;
-          attendance_status: string;
-          client_id: string;
-          dietary_notes: string | null;
-          email: string | null;
-          event_id: string;
-          guest_name: string;
-          host_confirmation_status: string;
-          host_confirmed_at: string | null;
-          host_confirmed_by: string | null;
-          id: string;
-          message: string | null;
-          message_approved_at: string | null;
-          message_approved_by: string | null;
-          message_public_consent: boolean;
-          message_public_status: string;
-          party_size: number;
-          phone: string | null;
-          review_status: string;
-          source: string | null;
-          submission_id: string | null;
-          submitted_at: string;
-          updated_at: string;
-        };
+          archived_at: string | null
+          attendance_status: string
+          client_id: string
+          dietary_notes: string | null
+          email: string | null
+          event_id: string
+          guest_name: string
+          host_confirmation_status: string
+          host_confirmed_at: string | null
+          host_confirmed_by: string | null
+          id: string
+          message: string | null
+          message_approved_at: string | null
+          message_approved_by: string | null
+          message_public_consent: boolean
+          message_public_status: string
+          party_size: number
+          phone: string | null
+          review_status: string
+          source: string | null
+          submission_id: string | null
+          submitted_at: string
+          updated_at: string
+        }
         SetofOptions: {
-          from: "*";
-          to: "rsvp_responses";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
+          from: "*"
+          to: "rsvp_responses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       submit_rsvp_response_with_capacity_check_v2: {
         Args: {
-          p_attendance_status: string;
-          p_client_id: string;
-          p_companions?: Json;
-          p_dietary_notes: string;
-          p_email: string;
-          p_event_id: string;
-          p_guest_name: string;
-          p_message: string;
-          p_message_public_status: string;
-          p_party_size: number;
-          p_phone: string;
-          p_source: string;
-          p_submission_id: string;
-        };
+          p_attendance_status: string
+          p_client_id: string
+          p_companions?: Json
+          p_dietary_notes: string
+          p_email: string
+          p_event_id: string
+          p_guest_name: string
+          p_message: string
+          p_message_public_status: string
+          p_party_size: number
+          p_phone: string
+          p_source: string
+          p_submission_id: string
+        }
         Returns: {
-          created: boolean;
-          response_id: string;
-        }[];
-      };
-    };
+          created: boolean
+          response_id: string
+        }[]
+      }
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
+      Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
       }
       ? R
       : never
-    : never;
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+      Insert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
+        Insert: infer I
       }
       ? I
       : never
-    : never;
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+      Update: infer U
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
+        Update: infer U
       }
       ? U
       : never
-    : never;
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
-} as const;
+} as const

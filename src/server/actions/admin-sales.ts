@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/permissions";
 import {
@@ -17,13 +16,7 @@ export async function confirmManualPaymentAction(input: unknown) {
   try {
     const admin = await requireAdmin();
     const payload = parseActionInput(ConfirmManualPaymentSchema, input);
-    const requestHeaders = await headers();
-    const clientIpAddress =
-      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      requestHeaders.get("x-real-ip") ??
-      null;
-    const clientUserAgent = requestHeaders.get("user-agent") ?? null;
-    const result = await confirmManualPayment(payload, admin.id, { clientIpAddress, clientUserAgent });
+    const result = await confirmManualPayment(payload, admin.id);
 
     revalidatePaymentRoutes(result.client.id);
 

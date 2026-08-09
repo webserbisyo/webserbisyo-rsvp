@@ -4,10 +4,11 @@ import { createHash } from "node:crypto";
 import { getMetaCapiRuntimeConfig } from "./capi-config";
 
 export type MetaCapiEventInput = {
+  actionSource?: "other" | "website";
   amount: number;
   clientIpAddress?: string | null;
   clientUserAgent?: string | null;
-  currency: "PHP";
+  currency: string;
   email?: string | null;
   eventId: string;
   eventName?: "Purchase";
@@ -49,7 +50,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
   const body = {
     data: [
       {
-        action_source: "website" as const,
+        action_source: input.actionSource ?? "website",
         custom_data: {
           currency: input.currency,
           order_id: input.eventId,
