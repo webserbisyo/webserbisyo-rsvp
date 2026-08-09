@@ -73,6 +73,19 @@ test("CAPI test code requires explicit test mode and warnings never include the 
   assert.deepEqual(active.warnings, []);
 });
 
+test("Lead, Purchase, and test-mode controls remain independent", () => {
+  const config = resolveMetaCapiRuntimeConfig({
+    META_CAPI_LEAD_ENABLED: "true",
+    META_CAPI_PURCHASE_ENABLED: "false",
+    META_CAPI_TEST_EVENT_CODE: "test-code",
+    META_CAPI_TEST_MODE: "true",
+  });
+
+  assert.equal(config.leadEnabled, true);
+  assert.equal(config.purchaseEnabled, false);
+  assert.equal(config.testEventCode, "test-code");
+});
+
 test("Lead keeps its deterministic browser/server event ID contract", () => {
   const leadSource = readFileSync(
     new URL("../src/server/services/send-meta-capi-lead.ts", import.meta.url),
@@ -143,4 +156,17 @@ test("Purchase flag and delivery completion remain separate from payment busines
   assert.match(purchaseSource, /completeMetaCapiPurchaseDelivery/);
   assert.match(purchaseSource, /meta_capi_purchase_claimed/);
   assert.match(paymentSource, /CAPI telemetry must never fail the payment confirmation/);
+});
+
+test("Admin Meta diagnostics expose durable Purchase delivery state without secret values", () => {
+  const adminQuerySource = readFileSync(
+    new URL("../src/server/queries/admin-pixels.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(adminQuerySource, /from\("meta_capi_deliveries"\)/);
+  assert.match(adminQuerySource, /case "sending":/);
+  assert.match(adminQuerySource, /purchaseEnabled/);
+  assert.match(adminQuerySource, /configurationWarnings/);
+  assert.doesNotMatch(adminQuerySource, /META_CAPI_TEST_EVENT_CODE/);
 });

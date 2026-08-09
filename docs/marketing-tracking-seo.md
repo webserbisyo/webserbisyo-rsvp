@@ -117,11 +117,11 @@ The app intentionally does not track hovers, accordion opens, scroll depth, deco
 
 ## CAPI Status
 
-Server-side Purchase CAPI is preserved and untouched by this marketing foundation work.
+### Protected Lead baseline
 
-Server-side Lead CAPI is implemented behind the server-only `META_CAPI_LEAD_ENABLED`
-feature flag. If the flag is missing or is not exactly `true`, server Lead CAPI is skipped
-safely and the browser Pixel Lead remains active.
+Server-side Lead CAPI is the protected, proven Pixel+CAPI implementation. It remains behind the
+server-only `META_CAPI_LEAD_ENABLED` feature flag. If the flag is missing or is not exactly
+`true`, server Lead CAPI is skipped safely and the browser Pixel Lead remains active.
 
 Lead browser/server deduplication uses the existing public application reference code:
 
@@ -133,9 +133,6 @@ Lead browser/server deduplication uses the existing public application reference
 `/apply/success?ref=RSVP-...` reuses the same deterministic Lead event ID on refresh. If the
 reference code is missing or invalid, the browser events keep their existing params-only behavior
 and no random deduplication ID is generated.
-
-Server-side CompleteRegistration CAPI is intentionally not implemented yet. The existing browser
-CompleteRegistration event remains browser-only.
 
 Lead CAPI writes sanitized audit log actions without blocking application submission:
 
@@ -151,17 +148,73 @@ request payloads.
 No Supabase migration is used for Lead CAPI. The application `reference_code` supplies the stable
 deduplication ID, and `audit_logs.metadata` stores sanitized delivery status.
 
+### Server-only manual Purchase
+
+Purchase is server-only and remains secondary to the payment-confirmation workflow. The temporary
+manual process is external: a customer pays through GCash or bank transfer, staff verifies it,
+and a super admin marks the payment paid. Accordingly, the Purchase event uses:
+
+- deterministic event ID `Purchase:${payment_id}`;
+- the stored payment amount and currency;
+- `action_source: other`, because the economic conversion did not occur on a WebSerbisyo checkout;
+- matching data legitimately collected with the application, including persisted `_fbp` and `_fbc`
+  when available;
+- no super-admin request IP address or user agent; and
+- no fictional `/apply/success` event-source URL.
+
+`META_CAPI_PURCHASE_ENABLED` is independent from Lead. It is backward-compatible during rollout:
+Purchase stays enabled when the variable is unset, while an explicit `false` disables only Purchase
+CAPI. Set it explicitly to `true` after validating the deployed environment so the operating state
+is obvious. A CAPI failure, disabled configuration, duplicate event, or active delivery claim must
+never undo payment confirmation.
+
+Purchase uses the additive `meta_capi_deliveries` delivery ledger. Its unique identity is
+`(provider, event_name, event_id)`, and the server atomically claims a delivery before calling
+Meta. States record pending, sending, sent, or failed delivery without storing PII, tokens, raw
+browser identifiers, or raw CAPI payloads. Failed or stale claims can be recovered by a later
+authorized manual confirmation; if Meta accepted a request but the local sent update failed, the
+same deterministic event ID provides Meta-side deduplication as a secondary safeguard. This is
+durable at-least-once delivery control, not a claim of mathematically exactly-once external HTTP
+delivery.
+
+When a real payment gateway or webhook is introduced, revisit Purchase event time, source context,
+and customer browser context using the gateway's authoritative transaction information.
+
+### CAPI test mode
+
+`META_CAPI_TEST_EVENT_CODE` applies only to server CAPI requests. It does not make browser `fbq`
+traffic test-only. A server event includes the test code only when both of these are configured:
+
+- `META_CAPI_TEST_MODE=true`
+- a non-empty `META_CAPI_TEST_EVENT_CODE`
+
+This supports controlled testing against the deployed production application without changing the
+live Pixel ID or CAPI token. A test code present while test mode is disabled is ignored and emits a
+sanitized configuration warning; test mode enabled without a code also emits a sanitized warning
+and sends ordinary server traffic. Never log the test code. After a test window, set
+`META_CAPI_TEST_MODE=false` (or remove the mode/code variables) and redeploy. Event feature flags
+remain independent from test mode.
+
 To test in Meta Events Manager, enable `META_CAPI_LEAD_ENABLED=true` in the target environment and
-use `META_CAPI_TEST_EVENT_CODE` only during a safe test window. Confirm that browser Lead and
-server Lead arrive with the same event ID and are deduplicated. Confirm that Purchase CAPI still
-works independently.
+enable explicit test mode only during a safe test window. Confirm that browser Lead and server Lead
+arrive with the same event ID and are deduplicated. Confirm that Purchase CAPI remains independent.
 
 For DevTools verification, filter Network requests by `facebook.com/tr`. Browser Lead is present
 when the request includes `ev=Lead`; browser/server dedup is configured when the same request
 includes `eid=Lead%3ARSVP-...`.
 
-Rollback is operational: set `META_CAPI_LEAD_ENABLED=false` and redeploy. Browser Pixel Lead,
-browser CompleteRegistration, and server Purchase CAPI remain unchanged.
+### Deferred CAPI expansion and rollback
+
+Server CAPI counterparts for InitiateCheckout, SelectPlan, ViewContent, StartApplicationClick,
+CompleteRegistration, Contact, and PageView are intentionally deferred. Do not add them without a
+separate Meta Test Events validation phase.
+
+For an emergency code rollback, use `git revert` on the Meta foundation commits in newest-first
+order and push the resulting normal history. The additive `meta_capi_deliveries` table and claim
+functions should remain unused if code is reverted; do not drop them as part of an urgent rollback.
+Operationally, Lead can be disabled independently with `META_CAPI_LEAD_ENABLED=false`, and Purchase
+can be disabled independently with `META_CAPI_PURCHASE_ENABLED=false`. Browser Pixel events remain
+separate from both server flags.
 
 ## Environment Variables
 
@@ -175,8 +228,10 @@ Relevant environment variable names:
 - `APP_BASE_URL`
 - `META_PIXEL_ID`
 - `META_CAPI_LEAD_ENABLED`
+- `META_CAPI_PURCHASE_ENABLED`
 - `META_CAPI_ACCESS_TOKEN`
 - `META_CAPI_API_VERSION`
+- `META_CAPI_TEST_MODE`
 - `META_CAPI_TEST_EVENT_CODE`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
@@ -194,7 +249,8 @@ absolute URLs:
 
 Vercel environment changes require a redeploy. Server-side Lead CAPI now prefers non-Vercel
 configured origins and falls back to `https://rsvp.webserbisyo.com` in Vercel Production. Purchase
-CAPI remains untouched and should be verified separately after any URL environment cleanup.
+CAPI is server-only for the current external manual-payment workflow and therefore does not use a
+fictional website conversion URL.
 
 ## Manual QA Checklist
 

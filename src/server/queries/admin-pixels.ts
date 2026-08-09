@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getMetaCapiRuntimeConfig } from "@/lib/meta/capi-config";
 import { requireAdmin } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -34,7 +35,7 @@ export type AdminMetaPixelEventOption = {
 export type AdminMetaConversionItem = {
   amount: number;
   capiDetail: string;
-  capiStatus: "failed" | "not_configured" | "sent" | "skipped" | "unknown";
+  capiStatus: "failed" | "not_configured" | "pending" | "sent" | "skipped" | "unknown";
   capiStatusLabel: string;
   clientName: string;
   confirmedAt: string;
@@ -47,9 +48,11 @@ export type AdminMetaConversionItem = {
 };
 
 export type AdminMetaPixelsCapiSummary = {
+  configurationWarnings: string[];
   hasAccessToken: boolean;
   hasEligiblePixelSource: boolean;
   isReady: boolean;
+  purchaseEnabled: boolean;
 };
 
 export type AdminMetaPixelsResult = {
@@ -63,7 +66,7 @@ export type AdminMetaPixelsResult = {
 export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
   await requireAdmin();
   const supabase = await createServerSupabaseClient();
-  const [pixelsResult, eventsResult, paymentsResult, clientsResult, auditLogsResult] =
+  const [pixelsResult, eventsResult, paymentsResult, clientsResult, auditLogsResult, deliveriesResult] =
     await Promise.all([
       supabase
         .from("meta_pixels")
@@ -95,6 +98,14 @@ export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
         ])
         .order("created_at", { ascending: false })
         .limit(100),
+      supabase
+        .from("meta_capi_deliveries")
+        .select("entity_id, status, last_attempt_at, sent_at, updated_at")
+        .eq("entity_type", "payments")
+        .eq("event_name", "Purchase")
+        .eq("provider", "meta")
+        .order("updated_at", { ascending: false })
+        .limit(100),
     ]);
 
   if (pixelsResult.error) {
@@ -115,6 +126,10 @@ export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
 
   if (auditLogsResult.error) {
     throw auditLogsResult.error;
+  }
+
+  if (deliveriesResult.error) {
+    throw deliveriesResult.error;
   }
 
   const eventOptions = (eventsResult.data ?? []).map((event) => ({
@@ -143,6 +158,18 @@ export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
       });
     }
   }
+  const latestDeliveryByPaymentId = new Map<
+    string,
+    { last_attempt_at: string | null; sent_at: string | null; status: string; updated_at: string }
+  >();
+
+  for (const delivery of deliveriesResult.data ?? []) {
+    if (!delivery.entity_id || latestDeliveryByPaymentId.has(delivery.entity_id)) {
+      continue;
+    }
+
+    latestDeliveryByPaymentId.set(delivery.entity_id, delivery);
+  }
   const pixels = (pixelsResult.data ?? []).map((pixel) => ({
     createdAt: pixel.created_at,
     eventId: pixel.event_id,
@@ -165,11 +192,14 @@ export async function getAdminPixels(): Promise<AdminMetaPixelsResult> {
     generatedAt: new Date().toISOString(),
     paidConversions: (paymentsResult.data ?? []).map((payment) => {
       const capiAudit = latestCapiAuditByPaymentId.get(payment.id);
-      const capiStatus = getCapiStatus(capiAudit?.action ?? null, capi.isReady);
+      const delivery = latestDeliveryByPaymentId.get(payment.id);
+      const capiStatus = getCapiStatus(delivery?.status ?? null, capiAudit?.action ?? null, capi.isReady);
+      const statusTimestamp =
+        delivery?.sent_at ?? delivery?.last_attempt_at ?? delivery?.updated_at ?? capiAudit?.created_at ?? null;
 
       return {
         amount: Number(payment.amount_paid ?? 0),
-        capiDetail: getCapiDetail(capiStatus, capiAudit?.created_at ?? null),
+        capiDetail: getCapiDetail(capiStatus, statusTimestamp),
         capiStatus,
         capiStatusLabel: formatCapiStatusLabel(capiStatus),
         clientName: clientNameById.get(payment.client_id ?? "") ?? "Client record",
@@ -270,26 +300,40 @@ function formatPaymentStatusLabel(status: string) {
 function getCapiSummary(
   pixels: Array<{ is_active: boolean; tracking_scope: string }>,
 ): AdminMetaPixelsCapiSummary {
-  const hasAccessToken = Boolean(process.env.META_CAPI_ACCESS_TOKEN);
+  const config = getMetaCapiRuntimeConfig();
+  const hasAccessToken = Boolean(config.accessToken);
   const hasEligiblePixelSource =
     Boolean(process.env.META_PIXEL_ID) ||
     pixels.some(
       (pixel) =>
         pixel.is_active &&
-        ["application", "global_public", "rsvp_submit"].includes(pixel.tracking_scope),
+        ["application", "global_public"].includes(pixel.tracking_scope),
     );
 
   return {
+    configurationWarnings: config.warnings,
     hasAccessToken,
     hasEligiblePixelSource,
-    isReady: hasAccessToken && hasEligiblePixelSource,
+    isReady: hasAccessToken && hasEligiblePixelSource && config.purchaseEnabled,
+    purchaseEnabled: config.purchaseEnabled,
   };
 }
 
 function getCapiStatus(
+  deliveryStatus: string | null,
   action: string | null,
   isCapiReady: boolean,
 ): AdminMetaConversionItem["capiStatus"] {
+  switch (deliveryStatus) {
+    case "sent":
+      return "sent";
+    case "failed":
+      return "failed";
+    case "pending":
+    case "sending":
+      return "pending";
+  }
+
   switch (action) {
     case "meta_capi_purchase_sent":
       return "sent";
@@ -308,6 +352,8 @@ function formatCapiStatusLabel(status: AdminMetaConversionItem["capiStatus"]) {
       return "Sent";
     case "failed":
       return "Failed";
+    case "pending":
+      return "In progress";
     case "skipped":
       return "Not sent";
     case "not_configured":
@@ -324,6 +370,8 @@ function getCapiDetail(status: AdminMetaConversionItem["capiStatus"], createdAt:
       return createdAt ? `Logged ${createdAt}` : "Delivery logged in audit trail.";
     case "failed":
       return createdAt ? `Failed ${createdAt}` : "Latest server-side send failed.";
+    case "pending":
+      return createdAt ? `Claimed ${createdAt}` : "Delivery is currently claimed by the server.";
     case "skipped":
       return createdAt ? `Skipped ${createdAt}` : "Server-side send was skipped.";
     case "not_configured":

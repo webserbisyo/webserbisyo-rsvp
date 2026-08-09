@@ -324,7 +324,7 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
             <p className="text-muted-foreground mt-2 text-sm leading-6">
               Mark as Paid does not use the browser Pixel. After a successful payment confirmation,
               the server can send a Meta CAPI Purchase event using the confirmed payment amount in
-              PHP.
+              the payment record's currency.
             </p>
           </div>
           <div className="rounded-xl border p-4">
@@ -347,14 +347,21 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
               <StatusBadge tone={capi.hasEligiblePixelSource ? "success" : "muted"}>
                 {capi.hasEligiblePixelSource ? "Pixel source available" : "No Pixel source"}
               </StatusBadge>
+              <StatusBadge tone={capi.purchaseEnabled ? "success" : "muted"}>
+                {capi.purchaseEnabled ? "Purchase CAPI enabled" : "Purchase CAPI disabled"}
+              </StatusBadge>
               <StatusBadge tone={capi.isReady ? "success" : "warning"}>
                 {capi.isReady ? "Ready for server-side Purchase" : "Not configured for Purchase"}
               </StatusBadge>
+              {capi.configurationWarnings.length > 0 ? (
+                <StatusBadge tone="warning">CAPI configuration warning</StatusBadge>
+              ) : null}
             </div>
           </div>
           <div className="text-muted-foreground space-y-1 text-sm leading-6">
             <p>Browser Pixel Scope controls public-page script injection only.</p>
             <p>Mark as Paid conversions are handled server-side through CAPI.</p>
+            <p>Delivery status is durable; failed manual-payment sends can be retried safely.</p>
             <p>CAPI tokens remain server-only and are never exposed in browser code.</p>
           </div>
         </div>
@@ -667,6 +674,8 @@ function getCapiTone(
       return "success";
     case "failed":
       return "danger";
+    case "pending":
+      return "warning";
     case "not_configured":
       return "muted";
     case "skipped":
