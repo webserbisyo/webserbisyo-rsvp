@@ -33,7 +33,7 @@ export async function getDashboardResponses(): Promise<DashboardResponsesData> {
   const { data: responseRows, error: responseError } = await supabase
     .from("rsvp_responses")
     .select(
-      "id, client_id, event_id, guest_name, email, phone, attendance_status, party_size, dietary_notes, message, message_public_status, message_public_consent, message_approved_at, message_approved_by, source, submitted_at, updated_at, archived_at, review_status",
+      "id, client_id, event_id, guest_name, email, phone, attendance_status, party_size, dietary_notes, message, message_public_status, message_public_consent, message_approved_at, message_approved_by, host_confirmation_status, host_confirmed_at, host_confirmed_by, source, submitted_at, updated_at, archived_at, review_status",
     )
     .eq("client_id", clientId)
     .eq("event_id", currentEvent.id)
@@ -81,6 +81,9 @@ export async function getDashboardResponses(): Promise<DashboardResponsesData> {
       messageApprovedBy: response.message_approved_by,
       messagePublicConsent: response.message_public_consent,
       messagePublicStatus: normalizeMessagePublicStatus(response.message_public_status),
+      hostConfirmationStatus: normalizeHostConfirmationStatus(response.host_confirmation_status),
+      hostConfirmedAt: response.host_confirmed_at,
+      hostConfirmedBy: response.host_confirmed_by,
       partySize: response.party_size,
       phone: response.phone,
       reviewStatus: normalizeReviewStatus(response.review_status),
@@ -168,6 +171,12 @@ function normalizeResponseStatus(status: string): RsvpResponseRecord["status"] {
 
 function normalizeReviewStatus(status: string | null): RsvpResponseRecord["reviewStatus"] {
   return status === "rejected" ? "rejected" : "approved";
+}
+
+function normalizeHostConfirmationStatus(
+  status: string | null,
+): RsvpResponseRecord["hostConfirmationStatus"] {
+  return status === "confirmed" ? "confirmed" : "pending";
 }
 
 function normalizeMessagePublicStatus(

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   hasResponseMessage,
+  isConfirmedGuest,
   type RsvpResponseGuestbookStatus,
   type RsvpResponseRecord,
 } from "./rsvp-responses-types";
@@ -107,11 +108,26 @@ export function RsvpResponseGuestbookBadge({ status }: { status: RsvpResponseGue
   );
 }
 
+export function RsvpResponseConfirmationBadge({ response }: { response: RsvpResponseRecord }) {
+  if (!isConfirmedGuest(response)) {
+    return null;
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200">
+      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+      Confirmed
+    </span>
+  );
+}
+
 export function RsvpResponseRowActions({
   actionLabelMode = "compact",
   align = "end",
   isModerating,
   onOpenResponse,
+  onConfirmResponse,
+  onUnconfirmResponse,
   onRemoveFromGuestbook,
   onShowInGuestbook,
   pendingResponseIds,
@@ -121,8 +137,10 @@ export function RsvpResponseRowActions({
   align?: "start" | "end";
   isModerating: boolean;
   onOpenResponse: (response: RsvpResponseRecord) => void;
+  onConfirmResponse: (responseId: string) => void;
   onRemoveFromGuestbook: (responseId: string) => void;
   onShowInGuestbook: (responseId: string) => void;
+  onUnconfirmResponse: (responseId: string) => void;
   pendingResponseIds: Set<string>;
   response: RsvpResponseRecord;
 }) {
@@ -131,6 +149,8 @@ export function RsvpResponseRowActions({
   const isPending = pendingResponseIds.has(response.id);
   const isDisabled = isModerating || isPending;
   const isRejected = response.reviewStatus === "rejected";
+  const canConfirm = response.status === "attending" && !isRejected;
+  const isConfirmed = response.hostConfirmationStatus === "confirmed";
 
   const guestbookActionLabel =
     actionLabelMode === "full"
@@ -154,6 +174,40 @@ export function RsvpResponseRowActions({
         align === "end" ? "justify-end" : "justify-start",
       )}
     >
+      {canConfirm ? (
+        <Button
+          type="button"
+          variant={isConfirmed ? "outline" : "default"}
+          size="sm"
+          disabled={isDisabled}
+          title={isConfirmed ? "Unconfirm guest" : "Confirm guest"}
+          aria-label={isConfirmed ? "Unconfirm guest" : "Confirm guest"}
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold",
+            actionLabelMode === "mobile" ? "h-8" : "h-9",
+            isConfirmed
+              ? "border border-sky-200 bg-white text-sky-700 hover:bg-sky-50"
+              : "bg-sky-600 text-white hover:bg-sky-700",
+          )}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (isConfirmed) {
+              onUnconfirmResponse(response.id);
+              return;
+            }
+            onConfirmResponse(response.id);
+          }}
+        >
+          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+          {actionLabelMode === "mobile"
+            ? isConfirmed
+              ? "Undo"
+              : "Confirm"
+            : isConfirmed
+              ? "Unconfirm"
+              : "Confirm Guest"}
+        </Button>
+      ) : null}
       {hasMessage && !isRejected ? (
         <Button
           type="button"

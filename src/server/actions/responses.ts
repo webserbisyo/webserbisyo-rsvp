@@ -7,6 +7,7 @@ import { normalizePrivateAccessToken } from "@/lib/private-access";
 import { requireTenantMember } from "@/lib/permissions";
 import { moderateResponseGuestbookMessages } from "@/server/services/moderate-response-guestbook";
 import { moderateRsvpResponses } from "@/server/services/moderate-rsvp-response";
+import { confirmRsvpResponses } from "@/server/services/confirm-rsvp-responses";
 import { submitRsvpResponse } from "@/server/services/submit-rsvp-response";
 import { actionFailure, actionSuccess, parseActionInput, toPlainInput } from "./action-utils";
 
@@ -16,6 +17,11 @@ const ResponseGuestbookModerationSchema = z.object({
 
 const RsvpModerationSchema = z.object({
   mode: z.enum(["approve", "reject"]),
+  responseIds: z.array(z.string().uuid()).min(1).max(100),
+});
+
+const RsvpConfirmationSchema = z.object({
+  mode: z.enum(["confirm", "unconfirm"]),
   responseIds: z.array(z.string().uuid()).min(1).max(100),
 });
 
@@ -57,6 +63,26 @@ export async function moderateRsvpResponsesAction(input: unknown) {
     const profile = await requireTenantMember();
     const payload = parseActionInput(RsvpModerationSchema, input);
     const result = await moderateRsvpResponses({
+      actorUserId: profile.id,
+      clientId: profile.client_id ?? "",
+      mode: payload.mode,
+      responseIds: payload.responseIds,
+    });
+
+    revalidatePath("/dashboard/responses");
+    revalidatePath("/dashboard");
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function confirmRsvpResponsesAction(input: unknown) {
+  try {
+    const profile = await requireTenantMember();
+    const payload = parseActionInput(RsvpConfirmationSchema, input);
+    const result = await confirmRsvpResponses({
       actorUserId: profile.id,
       clientId: profile.client_id ?? "",
       mode: payload.mode,

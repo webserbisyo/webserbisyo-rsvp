@@ -17,6 +17,7 @@ import {
 import { emitDashboardSyncEvent, useDashboardRefresh } from "@/lib/dashboard/dashboard-sync";
 import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import {
+  confirmRsvpResponsesAction,
   moderateRsvpResponsesAction,
   removeResponseMessagesFromGuestbookAction,
   showResponseMessagesInGuestbookAction,
@@ -29,6 +30,7 @@ import { RsvpResponsesTable } from "./rsvp-responses-table";
 import {
   matchesResponseSearch,
   matchesResponseTab,
+  isConfirmedGuest,
   type RsvpResponseRecord,
   type RsvpResponsesTab,
 } from "./rsvp-responses-types";
@@ -116,6 +118,12 @@ export function RsvpResponsesPage({
   const totalPartySize = allResponses
     .filter((response) => response.status === "attending" && response.reviewStatus === "approved")
     .reduce((total, response) => total + response.partySize, 0);
+  const confirmedResponses = allResponses.filter(isConfirmedGuest);
+  const confirmedCount = confirmedResponses.length;
+  const confirmedPartySize = confirmedResponses.reduce(
+    (total, response) => total + response.partySize,
+    0,
+  );
   const canRenderResponses = !errorMessage && hasCurrentEvent;
 
   return (
@@ -139,10 +147,12 @@ export function RsvpResponsesPage({
             onActiveTabChange={setActiveTab}
             isModerating={isModerating}
             onExportClick={() => setIsExportOpen(true)}
+            onConfirmResponses={handleConfirmResponses}
             onGuestbookModeration={handleGuestbookModeration}
             onOpenResponse={setSelectedResponse}
             onRejectResponses={handleBulkReject}
             onRestoreResponses={handleBulkRestore}
+            onUnconfirmResponses={handleUnconfirmResponses}
             pendingResponseIds={pendingResponseIds}
             responses={scopedResponses}
             searchQuery={searchQuery}
@@ -166,6 +176,9 @@ export function RsvpResponsesPage({
               <RsvpResponseExportDialog
                 allResponses={allResponses}
                 allResponsesCount={totalResponses}
+                confirmedPartySize={confirmedPartySize}
+                confirmedResponses={confirmedResponses}
+                confirmedResponsesCount={confirmedCount}
                 currentViewResponses={currentViewResponses}
                 currentViewCount={currentViewCount}
                 eventSlug={eventSlug}
@@ -278,6 +291,88 @@ export function RsvpResponsesPage({
     setBulkRestoreIds(responseIds);
   }
 
+  function handleConfirmResponses(responseIds: string[]) {
+    updateConfirmation("confirm", responseIds);
+  }
+
+  function handleUnconfirmResponses(responseIds: string[]) {
+    updateConfirmation("unconfirm", responseIds);
+  }
+
+  function updateConfirmation(mode: "confirm" | "unconfirm", responseIds: string[]) {
+    const uniqueIds = Array.from(new Set(responseIds));
+    if (
+      uniqueIds.length === 0 ||
+      isModerating ||
+      pendingResponseIds.some((id) => uniqueIds.includes(id))
+    ) {
+      return;
+    }
+
+    const snapshot = responses;
+    const now = new Date().toISOString();
+    setPendingResponseIds((current) => [...current, ...uniqueIds]);
+    setResponses((current) =>
+      current.map((response) => {
+        if (!uniqueIds.includes(response.id)) return response;
+        return mode === "confirm"
+          ? { ...response, hostConfirmationStatus: "confirmed", hostConfirmedAt: now }
+          : {
+              ...response,
+              hostConfirmationStatus: "pending",
+              hostConfirmedAt: null,
+              hostConfirmedBy: null,
+            };
+      }),
+    );
+
+    startModerationTransition(async () => {
+      try {
+        const result = await confirmRsvpResponsesAction({ mode, responseIds: uniqueIds });
+        if (!result.ok) {
+          setResponses(snapshot);
+          toast.error(result.error);
+          return;
+        }
+
+        setResponses((current) =>
+          current.map((response) => {
+            const updated = result.data.updated.find((item) => item.id === response.id);
+            return updated
+              ? {
+                  ...response,
+                  hostConfirmationStatus: updated.hostConfirmationStatus,
+                  hostConfirmedAt: updated.hostConfirmedAt,
+                  hostConfirmedBy: updated.hostConfirmedBy,
+                  updatedAt: updated.updatedAt,
+                }
+              : response;
+          }),
+        );
+        setSelectedResponse((current) => {
+          const updated = current && result.data.updated.find((item) => item.id === current.id);
+          return current && updated
+            ? {
+                ...current,
+                hostConfirmationStatus: updated.hostConfirmationStatus,
+                hostConfirmedAt: updated.hostConfirmedAt,
+                hostConfirmedBy: updated.hostConfirmedBy,
+                updatedAt: updated.updatedAt,
+              }
+            : current;
+        });
+        toast.success(
+          mode === "confirm"
+            ? `Confirmed ${result.data.updatedCount} guest${result.data.updatedCount === 1 ? "" : "s"}.`
+            : `Unconfirmed ${result.data.updatedCount} guest${result.data.updatedCount === 1 ? "" : "s"}.`,
+        );
+        invalidateResponseQueries(queryClient);
+      } finally {
+        setPendingResponseIds((current) => current.filter((id) => !uniqueIds.includes(id)));
+      }
+    });
+  }
+
   function confirmBulkReject(responseIds: string[]) {
     const uniqueIds = Array.from(new Set(responseIds));
     if (
@@ -304,11 +399,27 @@ export function RsvpResponsesPage({
 
         toast.success(`Rejected ${result.data.count} RSVP${result.data.count === 1 ? "" : "s"}.`);
         setResponses((current) =>
-          current.map((r) => (uniqueIds.includes(r.id) ? { ...r, reviewStatus: "rejected" } : r)),
+          current.map((r) =>
+            uniqueIds.includes(r.id)
+              ? {
+                  ...r,
+                  hostConfirmationStatus: "pending",
+                  hostConfirmedAt: null,
+                  hostConfirmedBy: null,
+                  reviewStatus: "rejected",
+                }
+              : r,
+          ),
         );
         setSelectedResponse((current) =>
           current && uniqueIds.includes(current.id)
-            ? { ...current, reviewStatus: "rejected" }
+            ? {
+                ...current,
+                hostConfirmationStatus: "pending",
+                hostConfirmedAt: null,
+                hostConfirmedBy: null,
+                reviewStatus: "rejected",
+              }
             : current,
         );
         invalidateResponseQueries(queryClient);
@@ -390,10 +501,28 @@ export function RsvpResponsesPage({
 
         toast.success("RSVP rejected.");
         setResponses((current) =>
-          current.map((r) => (r.id === responseId ? { ...r, reviewStatus: "rejected" } : r)),
+          current.map((r) =>
+            r.id === responseId
+              ? {
+                  ...r,
+                  hostConfirmationStatus: "pending",
+                  hostConfirmedAt: null,
+                  hostConfirmedBy: null,
+                  reviewStatus: "rejected",
+                }
+              : r,
+          ),
         );
         setSelectedResponse((current) =>
-          current?.id === responseId ? { ...current, reviewStatus: "rejected" } : current,
+          current?.id === responseId
+            ? {
+                ...current,
+                hostConfirmationStatus: "pending",
+                hostConfirmedAt: null,
+                hostConfirmedBy: null,
+                reviewStatus: "rejected",
+              }
+            : current,
         );
         invalidateResponseQueries(queryClient);
       } finally {

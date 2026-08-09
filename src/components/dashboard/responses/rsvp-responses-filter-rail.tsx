@@ -13,6 +13,7 @@ export const RSVP_RESPONSE_FILTERS: Array<{
   { label: "All", value: "all" },
   { label: "Attending", value: "attending" },
   { label: "Not attending", value: "not_attending" },
+  { label: "Confirmed", value: "confirmed" },
   { label: "Messages", value: "messages" },
   { label: "Guestbook", value: "guestbook" },
   { label: "Needs review", value: "needs_review" },

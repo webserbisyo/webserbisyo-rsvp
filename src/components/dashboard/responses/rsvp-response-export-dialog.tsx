@@ -35,6 +35,9 @@ import type {
 type RsvpResponseExportDialogProps = {
   allResponses: RsvpResponseRecord[];
   allResponsesCount: number;
+  confirmedPartySize: number;
+  confirmedResponses: RsvpResponseRecord[];
+  confirmedResponsesCount: number;
   currentViewResponses: RsvpResponseRecord[];
   currentViewCount: number;
   eventSlug?: string | null;
@@ -53,6 +56,9 @@ const EXPORT_INCLUDES: Array<{ id: RsvpResponsesExportInclude; label: string }> 
 export function RsvpResponseExportDialog({
   allResponses,
   allResponsesCount,
+  confirmedPartySize,
+  confirmedResponses,
+  confirmedResponsesCount,
   currentViewResponses,
   currentViewCount,
   eventSlug,
@@ -62,7 +68,7 @@ export function RsvpResponseExportDialog({
 }: RsvpResponseExportDialogProps) {
   const isMobile = useIsMobile();
   const [format, setFormat] = useState<RsvpResponsesExportFormat>("csv");
-  const [rows, setRows] = useState<RsvpResponsesExportRows>("current_view");
+  const [rows, setRows] = useState<RsvpResponsesExportRows>("all_responses");
   const [includes, setIncludes] = useState<Record<RsvpResponsesExportInclude, boolean>>({
     contact_details: true,
     companions: true,
@@ -72,13 +78,21 @@ export function RsvpResponseExportDialog({
   const metadata: RsvpResponsesExportMetadata = {
     eventSlug,
     eventTitle,
+    exportTitle: rows === "confirmed_guest_list" ? "Confirmed Guest List" : undefined,
   };
 
-  const exportCount = rows === "current_view" ? currentViewCount : allResponsesCount;
+  const exportCount =
+    rows === "current_view"
+      ? currentViewCount
+      : rows === "confirmed_guest_list"
+        ? confirmedResponsesCount
+        : allResponsesCount;
 
   const content = (
     <RsvpResponseExportContent
       allResponsesCount={allResponsesCount}
+      confirmedPartySize={confirmedPartySize}
+      confirmedResponsesCount={confirmedResponsesCount}
       currentViewCount={currentViewCount}
       exportCount={exportCount}
       format={format}
@@ -89,6 +103,7 @@ export function RsvpResponseExportDialog({
         try {
           await exportRsvpResponses({
             allResponses,
+            confirmedResponses,
             currentViewResponses,
             format,
             includes,
@@ -140,6 +155,8 @@ export function RsvpResponseExportDialog({
 
 function RsvpResponseExportContent({
   allResponsesCount,
+  confirmedPartySize,
+  confirmedResponsesCount,
   currentViewCount,
   exportCount,
   format,
@@ -153,6 +170,8 @@ function RsvpResponseExportContent({
   rows,
 }: {
   allResponsesCount: number;
+  confirmedPartySize: number;
+  confirmedResponsesCount: number;
   currentViewCount: number;
   exportCount: number;
   format: RsvpResponsesExportFormat;
@@ -175,6 +194,11 @@ function RsvpResponseExportContent({
   const scopes = [
     { id: "current_view", label: "Current view", note: `${currentViewCount} filtered responses` },
     { id: "all_responses", label: "All responses", note: `${allResponsesCount} total responses` },
+    {
+      id: "confirmed_guest_list",
+      label: "Confirmed guest list",
+      note: `${confirmedResponsesCount} confirmed · ${confirmedPartySize} guests`,
+    },
   ];
 
   return (

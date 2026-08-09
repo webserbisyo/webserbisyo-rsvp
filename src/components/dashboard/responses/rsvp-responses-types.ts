@@ -1,5 +1,6 @@
 export type RsvpResponseStatus = "attending" | "not_attending";
 export type RsvpResponseReviewStatus = "approved" | "rejected";
+export type RsvpResponseHostConfirmationStatus = "pending" | "confirmed";
 export type RsvpResponseGuestbookStatus = "approved" | "hidden" | "pending_review" | "private";
 
 export type RsvpResponseSource = string | null;
@@ -21,6 +22,9 @@ export type RsvpResponseRecord = {
   messageApprovedBy: string | null;
   messagePublicConsent: boolean;
   messagePublicStatus: RsvpResponseGuestbookStatus;
+  hostConfirmationStatus: RsvpResponseHostConfirmationStatus;
+  hostConfirmedAt: string | null;
+  hostConfirmedBy: string | null;
   reviewStatus: RsvpResponseReviewStatus;
   submittedAt: string;
   updatedAt: string;
@@ -33,13 +37,14 @@ export type RsvpResponsesTab =
   | "all"
   | "attending"
   | "not_attending"
+  | "confirmed"
   | "messages"
   | "guestbook"
   | "needs_review"
   | "rejected";
 
 export type RsvpResponsesExportFormat = "csv" | "pdf_summary";
-export type RsvpResponsesExportRows = "current_view" | "all_responses";
+export type RsvpResponsesExportRows = "current_view" | "all_responses" | "confirmed_guest_list";
 export type RsvpResponsesExportInclude =
   | "contact_details"
   | "companions"
@@ -85,23 +90,17 @@ export function getResponseSourceLabel(source: RsvpResponseSource) {
 export function matchesResponseTab(record: RsvpResponseRecord, tab: RsvpResponsesTab) {
   switch (tab) {
     case "attending":
-      return record.status === "attending" && record.reviewStatus === "approved";
+      return isActiveResponse(record) && record.status === "attending";
     case "not_attending":
-      return record.status === "not_attending" && record.reviewStatus === "approved";
+      return isActiveResponse(record) && record.status === "not_attending";
+    case "confirmed":
+      return isConfirmedGuest(record);
     case "messages":
-      return hasResponseMessage(record) && record.reviewStatus === "approved";
+      return hasResponseMessage(record) && isActiveResponse(record);
     case "guestbook":
-      return (
-        hasResponseMessage(record) &&
-        record.messagePublicStatus === "approved" &&
-        record.reviewStatus === "approved"
-      );
+      return isGuestbookPublished(record);
     case "needs_review":
-      return (
-        hasResponseMessage(record) &&
-        record.messagePublicStatus !== "approved" &&
-        record.reviewStatus === "approved"
-      );
+      return needsGuestbookReview(record);
     case "rejected":
       return record.reviewStatus === "rejected";
     default:
@@ -111,6 +110,42 @@ export function matchesResponseTab(record: RsvpResponseRecord, tab: RsvpResponse
 
 export function hasResponseMessage(record: RsvpResponseRecord) {
   return Boolean(record.message?.trim());
+}
+
+export function isActiveResponse(record: RsvpResponseRecord) {
+  return record.archivedAt === null && record.reviewStatus === "approved";
+}
+
+export function isRejectedResponse(record: RsvpResponseRecord) {
+  return record.reviewStatus === "rejected";
+}
+
+export function isAttendingResponse(record: RsvpResponseRecord) {
+  return record.status === "attending";
+}
+
+export function isConfirmedGuest(record: RsvpResponseRecord) {
+  return (
+    isActiveResponse(record) &&
+    isAttendingResponse(record) &&
+    record.hostConfirmationStatus === "confirmed"
+  );
+}
+
+export function isGuestbookPublished(record: RsvpResponseRecord) {
+  return (
+    hasResponseMessage(record) &&
+    isActiveResponse(record) &&
+    record.messagePublicStatus === "approved"
+  );
+}
+
+export function needsGuestbookReview(record: RsvpResponseRecord) {
+  return (
+    hasResponseMessage(record) &&
+    isActiveResponse(record) &&
+    record.messagePublicStatus !== "approved"
+  );
 }
 
 export function matchesResponseSearch(record: RsvpResponseRecord, query: string) {

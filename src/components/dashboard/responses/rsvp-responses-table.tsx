@@ -42,6 +42,7 @@ import { RsvpResponsesEmptyState } from "./rsvp-responses-empty-state";
 import { RsvpResponsesFilterRail } from "./rsvp-responses-filter-rail";
 import {
   hasResponseMessage,
+  isConfirmedGuest,
   matchesResponseSearch,
   type RsvpResponseRecord,
   type RsvpResponsesTab,
@@ -53,10 +54,12 @@ type RsvpResponsesTableProps = {
   isModerating: boolean;
   onActiveTabChange: (value: RsvpResponsesTab) => void;
   onExportClick: () => void;
+  onConfirmResponses: (responseIds: string[]) => void;
   onGuestbookModeration: (mode: "approve" | "remove", responseIds: string[]) => void;
   onOpenResponse: (response: RsvpResponseRecord) => void;
   onRejectResponses: (responseIds: string[]) => void;
   onRestoreResponses: (responseIds: string[]) => void;
+  onUnconfirmResponses: (responseIds: string[]) => void;
   pendingResponseIds: string[];
   responses: RsvpResponseRecord[];
   searchQuery: string;
@@ -69,10 +72,12 @@ export function RsvpResponsesTable({
   isModerating,
   onActiveTabChange,
   onExportClick,
+  onConfirmResponses,
   onGuestbookModeration,
   onOpenResponse,
   onRejectResponses,
   onRestoreResponses,
+  onUnconfirmResponses,
   pendingResponseIds,
   responses,
   searchQuery,
@@ -94,12 +99,21 @@ export function RsvpResponsesTable({
     () =>
       getRsvpResponseColumns({
         isModerating,
+        onConfirmResponse: (responseId) => onConfirmResponses([responseId]),
         onOpenResponse,
         onRemoveFromGuestbook: (responseId) => onGuestbookModeration("remove", [responseId]),
         onShowInGuestbook: (responseId) => onGuestbookModeration("approve", [responseId]),
+        onUnconfirmResponse: (responseId) => onUnconfirmResponses([responseId]),
         pendingResponseIds: pendingResponseIdSet,
       }),
-    [isModerating, onGuestbookModeration, onOpenResponse, pendingResponseIdSet],
+    [
+      isModerating,
+      onConfirmResponses,
+      onGuestbookModeration,
+      onOpenResponse,
+      onUnconfirmResponses,
+      pendingResponseIdSet,
+    ],
   );
 
   // TanStack Table exposes an instance API that React Compiler intentionally flags.
@@ -240,6 +254,53 @@ export function RsvpResponsesTable({
                   </Button>
                 )}
 
+                {selectedResponses.some(
+                  (response) =>
+                    response.status === "attending" &&
+                    response.reviewStatus === "approved" &&
+                    !isConfirmedGuest(response),
+                ) ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isModerating}
+                    className="w-full rounded-xl bg-sky-600 px-3 hover:bg-sky-700 sm:w-auto"
+                    onClick={() =>
+                      onConfirmResponses(
+                        selectedResponses
+                          .filter(
+                            (response) =>
+                              response.status === "attending" &&
+                              response.reviewStatus === "approved" &&
+                              !isConfirmedGuest(response),
+                          )
+                          .map((response) => response.id),
+                      )
+                    }
+                  >
+                    Confirm selected
+                  </Button>
+                ) : null}
+
+                {selectedResponses.some((response) => isConfirmedGuest(response)) ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isModerating}
+                    variant="outline"
+                    className="w-full rounded-xl border-sky-200 px-3 text-sky-700 hover:bg-sky-50 sm:w-auto"
+                    onClick={() =>
+                      onUnconfirmResponses(
+                        selectedResponses
+                          .filter((response) => isConfirmedGuest(response))
+                          .map((response) => response.id),
+                      )
+                    }
+                  >
+                    Unconfirm selected
+                  </Button>
+                ) : null}
+
                 {hasEligibleSelection &&
                 selectedResponses.every((r) => r.reviewStatus === "approved") ? (
                   <Button
@@ -290,8 +351,10 @@ export function RsvpResponsesTable({
             <RsvpResponseCardList
               isModerating={isModerating}
               onOpenResponse={onOpenResponse}
+              onConfirmResponse={(responseId) => onConfirmResponses([responseId])}
               onRemoveFromGuestbook={(responseId) => onGuestbookModeration("remove", [responseId])}
               onShowInGuestbook={(responseId) => onGuestbookModeration("approve", [responseId])}
+              onUnconfirmResponse={(responseId) => onUnconfirmResponses([responseId])}
               pendingResponseIds={pendingResponseIdSet}
               rows={pageRows}
             />

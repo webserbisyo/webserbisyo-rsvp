@@ -42,6 +42,7 @@ export default function DashboardResponsesView({ searchParams }: DashboardClient
 function normalizeResponsesTab(tab: string | undefined): RsvpResponsesTab {
   switch (tab) {
     case "attending":
+    case "confirmed":
     case "guestbook":
     case "messages":
     case "needs_review":

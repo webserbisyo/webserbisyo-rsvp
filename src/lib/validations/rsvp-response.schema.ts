@@ -164,6 +164,7 @@ export const PublicRsvpResponseFieldsSchema = z.object({
     `Message must be ${PUBLIC_RSVP_MESSAGE_MAX_LENGTH} characters or fewer.`,
   ),
   phone: OptionalPhoneSchema,
+  submissionId: z.uuid().optional(),
 });
 
 export const PublicRsvpResponseSchema = PublicRsvpResponseFieldsSchema.extend({

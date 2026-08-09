@@ -18,6 +18,9 @@ export async function moderateRsvpResponses(input: ModerateRsvpResponseInput) {
     const { data: results, error } = await supabase
       .from("rsvp_responses")
       .update({
+        host_confirmation_status: "pending",
+        host_confirmed_at: null,
+        host_confirmed_by: null,
         review_status: "rejected",
         updated_at: new Date().toISOString(),
       })
@@ -37,6 +40,7 @@ export async function moderateRsvpResponses(input: ModerateRsvpResponseInput) {
             entityId: row.id,
             entityType: "rsvp_responses",
             eventId: row.event_id,
+            metadata: { confirmation_cleared: true },
           }),
         ),
       );

@@ -249,6 +249,17 @@ function RsvpResponseDetailContent({
             value={`${response.partySize} guest${response.partySize > 1 ? "s" : ""}`}
           />
           <ModalInfo
+            icon={CheckCircle2}
+            label="Final guest list"
+            value={
+              response.hostConfirmationStatus === "confirmed"
+                ? response.hostConfirmedAt
+                  ? `Confirmed · ${formatResponseSubmittedAt(response.hostConfirmedAt)}`
+                  : "Confirmed"
+                : "Pending"
+            }
+          />
+          <ModalInfo
             icon={ExternalLink}
             label="Source"
             value={getResponseSourceLabel(response.source)}

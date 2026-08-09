@@ -11,6 +11,7 @@ import {
 } from "./rsvp-responses-types";
 import {
   RsvpResponseMessageBadge,
+  RsvpResponseConfirmationBadge,
   RsvpResponsePartySizeBadge,
   RsvpResponseRowActions,
   RsvpResponseStatusBadge,
@@ -19,15 +20,19 @@ import {
 export function RsvpResponseCardList({
   isModerating,
   onOpenResponse,
+  onConfirmResponse,
   onRemoveFromGuestbook,
   onShowInGuestbook,
+  onUnconfirmResponse,
   pendingResponseIds,
   rows,
 }: {
   isModerating: boolean;
   onOpenResponse: (response: RsvpResponseRecord) => void;
+  onConfirmResponse: (responseId: string) => void;
   onRemoveFromGuestbook: (responseId: string) => void;
   onShowInGuestbook: (responseId: string) => void;
+  onUnconfirmResponse: (responseId: string) => void;
   pendingResponseIds: Set<string>;
   rows: Array<Row<RsvpResponseRecord>>;
 }) {
@@ -85,6 +90,7 @@ export function RsvpResponseCardList({
                 status={response.status}
               />
               <RsvpResponsePartySizeBadge partySize={response.partySize} />
+              <RsvpResponseConfirmationBadge response={response} />
               {hasMessage ? <RsvpResponseMessageBadge response={response} /> : null}
               {response.messagePublicStatus === "approved" ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
@@ -114,8 +120,10 @@ export function RsvpResponseCardList({
                 align="end"
                 isModerating={isModerating}
                 onOpenResponse={onOpenResponse}
+                onConfirmResponse={onConfirmResponse}
                 onRemoveFromGuestbook={onRemoveFromGuestbook}
                 onShowInGuestbook={onShowInGuestbook}
+                onUnconfirmResponse={onUnconfirmResponse}
                 pendingResponseIds={pendingResponseIds}
                 response={response}
               />

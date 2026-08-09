@@ -63,6 +63,7 @@ export function PublicRsvpResponseForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[] | undefined>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submissionId, setSubmissionId] = useState(() => crypto.randomUUID());
   const shouldShowCompanions =
     attendanceStatus === "attending" && settings.plusOneEnabled && settings.companionLimit > 0;
   const shouldShowEmail = settings.emailEnabled;
@@ -92,6 +93,7 @@ export function PublicRsvpResponseForm({
     setErrorMessage(null);
     setFieldErrors({});
     setIsSubmitted(false);
+    setSubmissionId(crypto.randomUUID());
   }
 
   function submitResponse(event: React.FormEvent<HTMLFormElement>) {
@@ -111,6 +113,7 @@ export function PublicRsvpResponseForm({
         guestName: formData.get("guestName")?.toString() ?? "",
         message: formData.get("message")?.toString() ?? "",
         phone: formData.get("phone")?.toString() ?? "",
+        submissionId,
       };
       const result = await submitRsvpResponseAction({
         accessToken,

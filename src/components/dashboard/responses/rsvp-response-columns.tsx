@@ -10,6 +10,7 @@ import {
 } from "./rsvp-responses-types";
 import {
   RsvpResponseMessageBadge,
+  RsvpResponseConfirmationBadge,
   RsvpResponsePartySizeBadge,
   RsvpResponseRowActions,
   RsvpResponseStatusBadge,
@@ -18,16 +19,20 @@ import {
 type GetRsvpResponseColumnsOptions = {
   isModerating: boolean;
   onOpenResponse: (response: RsvpResponseRecord) => void;
+  onConfirmResponse: (responseId: string) => void;
   onRemoveFromGuestbook: (responseId: string) => void;
   onShowInGuestbook: (responseId: string) => void;
+  onUnconfirmResponse: (responseId: string) => void;
   pendingResponseIds: Set<string>;
 };
 
 export function getRsvpResponseColumns({
   isModerating,
   onOpenResponse,
+  onConfirmResponse,
   onRemoveFromGuestbook,
   onShowInGuestbook,
+  onUnconfirmResponse,
   pendingResponseIds,
 }: GetRsvpResponseColumnsOptions): ColumnDef<RsvpResponseRecord>[] {
   return [
@@ -73,6 +78,9 @@ export function getRsvpResponseColumns({
               >
                 {response.email ?? "No email added"}
               </p>
+              <div className="mt-1">
+                <RsvpResponseConfirmationBadge response={response} />
+              </div>
             </div>
           </div>
         );
@@ -153,8 +161,10 @@ export function getRsvpResponseColumns({
           align="end"
           isModerating={isModerating}
           onOpenResponse={onOpenResponse}
+          onConfirmResponse={onConfirmResponse}
           onRemoveFromGuestbook={onRemoveFromGuestbook}
           onShowInGuestbook={onShowInGuestbook}
+          onUnconfirmResponse={onUnconfirmResponse}
           pendingResponseIds={pendingResponseIds}
           response={row.original}
         />

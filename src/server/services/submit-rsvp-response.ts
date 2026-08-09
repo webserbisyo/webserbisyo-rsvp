@@ -3,7 +3,7 @@ import "server-only";
 import { isPublicRenderingEventTypeEnabled } from "@/config/event-type-availability";
 import { hasPublishedPrivateAccess, normalizePrivateAccessToken } from "@/lib/private-access";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Tables, TablesInsert } from "@/lib/supabase/types";
+import type { Tables } from "@/lib/supabase/types";
 import {
   EventSlugSchema,
   createPublicRsvpResponseSchema,
@@ -78,6 +78,7 @@ export async function submitRsvpResponse(
   const companionRows = buildCompanionRows(payload, rsvpSettings);
   const partySize = payload.attendanceStatus === "attending" ? 1 + payload.companionCount : 1;
   const trimmedMessage = rsvpSettings.messageToHostEnabled ? (payload.message?.trim() ?? "") : "";
+  const submissionId = payload.submissionId ?? crypto.randomUUID();
   const responsePayload = {
     p_attendance_status: payload.attendanceStatus,
     p_client_id: event.client_id,
@@ -90,10 +91,15 @@ export async function submitRsvpResponse(
     p_party_size: partySize,
     p_phone: rsvpSettings.phoneEnabled ? (payload.phone ?? "") : "",
     p_source: options?.source ?? "public_fallback_page",
+    p_submission_id: submissionId,
+    p_companions: companionRows.map((companion) => ({
+      age_label: companion.ageLabel ?? null,
+      full_name: companion.fullName,
+    })),
   };
 
-  const { data: response, error: responseError } = await supabase.rpc(
-    "submit_rsvp_response_with_capacity_check",
+  const { data: submissionResult, error: responseError } = await supabase.rpc(
+    "submit_rsvp_response_with_capacity_check_v2",
     responsePayload,
   );
 
@@ -107,34 +113,41 @@ export async function submitRsvpResponse(
     assertServiceSuccess(responseError, "Failed to submit RSVP response.");
   }
 
-  if (!response) {
+  const result = submissionResult?.[0];
+
+  if (!result) {
     throw new ServiceError("RSVP response insert returned no row.");
   }
 
-  if (companionRows.length > 0) {
-    const { error: companionsError } = await supabase.from("rsvp_response_companions").insert(
-      companionRows.map((companion) => ({
-        ...companion,
-        response_id: response.id,
-      })),
-    );
+  const { data: response, error: responseLoadError } = await supabase
+    .from("rsvp_responses")
+    .select("id, attendance_status, event_id, party_size, source, submitted_at")
+    .eq("id", result.response_id)
+    .eq("client_id", event.client_id)
+    .eq("event_id", event.id)
+    .single();
 
-    assertServiceSuccess(companionsError, "Failed to save RSVP companions.");
+  assertServiceSuccess(responseLoadError, "Failed to load RSVP submission.");
+
+  if (!response) {
+    throw new ServiceError("RSVP submission could not be loaded after saving.");
   }
 
-  await writeAuditLog({
-    action: "rsvp_response_submitted",
-    clientId: event.client_id,
-    entityId: response.id,
-    entityType: "rsvp_responses",
-    eventId: event.id,
-    metadata: {
-      attendance_status: response.attendance_status,
-      companion_count: companionRows.length,
-      party_size: response.party_size,
-      source: response.source,
-    },
-  });
+  if (result.created) {
+    await writeAuditLog({
+      action: "rsvp_response_submitted",
+      clientId: event.client_id,
+      entityId: response.id,
+      entityType: "rsvp_responses",
+      eventId: event.id,
+      metadata: {
+        attendance_status: response.attendance_status,
+        companion_count: companionRows.length,
+        party_size: response.party_size,
+        source: response.source,
+      },
+    });
+  }
 
   return response;
 }
@@ -220,7 +233,7 @@ function buildCompanionRows(
     companionNameEnabled: boolean;
     plusOneEnabled: boolean;
   },
-): Omit<TablesInsert<"rsvp_response_companions">, "response_id">[] {
+): Array<{ ageLabel: string | null; fullName: string }> {
   if (payload.attendanceStatus === "not_attending") {
     return [];
   }
@@ -242,7 +255,7 @@ function buildCompanionRows(
   }
 
   const companions = payload.companions ?? [];
-  const rows: Omit<TablesInsert<"rsvp_response_companions">, "response_id">[] = [];
+  const rows: Array<{ ageLabel: string | null; fullName: string }> = [];
 
   for (let index = 0; index < payload.companionCount; index += 1) {
     const companion = companions[index];
@@ -253,8 +266,8 @@ function buildCompanionRows(
     }
 
     rows.push({
-      age_label: settings.companionAgeEnabled ? (companion.ageLabel ?? null) : null,
-      full_name: fullName,
+      ageLabel: settings.companionAgeEnabled ? (companion.ageLabel ?? null) : null,
+      fullName,
     });
   }
 

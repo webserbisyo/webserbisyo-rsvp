@@ -42,6 +42,7 @@ type ExportIncludeState = Record<RsvpResponsesExportInclude, boolean>;
 
 type ExportRowsInput = {
   allResponses: RsvpResponseRecord[];
+  confirmedResponses: RsvpResponseRecord[];
   currentViewResponses: RsvpResponseRecord[];
   rows: RsvpResponsesExportRows;
 };
@@ -55,6 +56,7 @@ type ExportOptions = ExportRowsInput & {
 export type RsvpResponsesExportMetadata = {
   eventSlug?: string | null;
   eventTitle?: string | null;
+  exportTitle?: string;
 };
 
 type JsPdfConstructor = typeof import("jspdf").jsPDF;
@@ -74,8 +76,15 @@ type NotesColumn = {
   render: (row: RsvpResponseRecord) => string;
 };
 
-export function getExportRows({ allResponses, currentViewResponses, rows }: ExportRowsInput) {
-  return rows === "current_view" ? currentViewResponses : allResponses;
+export function getExportRows({
+  allResponses,
+  confirmedResponses,
+  currentViewResponses,
+  rows,
+}: ExportRowsInput) {
+  if (rows === "current_view") return currentViewResponses;
+  if (rows === "confirmed_guest_list") return confirmedResponses;
+  return allResponses;
 }
 
 export async function exportRsvpResponses(options: ExportOptions) {
@@ -101,7 +110,14 @@ export function buildRsvpResponsesExportFilename(
 }
 
 function buildRsvpResponsesCsv(rows: RsvpResponseRecord[], includes: ExportIncludeState) {
-  const headers = ["Guest", "Status", "Party size", "Submitted"];
+  const headers = [
+    "Guest",
+    "Status",
+    "Party size",
+    "Host confirmation",
+    "Confirmed at",
+    "Submitted",
+  ];
 
   if (includes.contact_details) {
     headers.push("Email", "Phone");
@@ -124,6 +140,8 @@ function buildRsvpResponsesCsv(rows: RsvpResponseRecord[], includes: ExportInclu
       row.guestName,
       getResponseStatusLabel(row.status, row.reviewStatus),
       String(row.partySize),
+      row.hostConfirmationStatus === "confirmed" ? "Confirmed" : "Pending",
+      row.hostConfirmedAt ? formatResponseSubmittedTable(row.hostConfirmedAt) : "",
       formatResponseSubmittedTable(row.submittedAt),
     ];
 
@@ -435,7 +453,11 @@ function drawLandscapeHeader(
 
   doc.setTextColor(...LANDSCAPE_COLORS.foreground);
   doc.setFontSize(24);
-  doc.text(metadata.eventTitle?.trim() || DEFAULT_EXPORT_TITLE, x, marginTop + 52);
+  doc.text(
+    metadata.exportTitle ?? metadata.eventTitle?.trim() ?? DEFAULT_EXPORT_TITLE,
+    x,
+    marginTop + 52,
+  );
 
   doc.setTextColor(...LANDSCAPE_COLORS.muted);
   doc.setFont("helvetica", "normal");
@@ -499,7 +521,7 @@ function buildLandscapeColumns(
         header: "Status",
         key: "status",
         width: contentWidth * 0.11,
-        render: (row) => getResponseStatusLabel(row.status),
+        render: (row) => getResponseStatusLabel(row.status, row.reviewStatus),
       },
       {
         header: "Party",
