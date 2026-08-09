@@ -115,7 +115,7 @@ function SectionRouter({
         className={cn("event-preview-section-anchor", isActive && "is-active-preview")}
         data-preview-section={sectionKey}
       >
-        {sectionKey === "host_info" ? <CoupleInfoSection draft={draft} /> : null}
+        {sectionKey === "host_info" ? <HostInfoSection draft={draft} /> : null}
         {sectionKey === "countdown" ? <CountdownSection draft={draft} /> : null}
         {sectionKey === "music_effects" ? <MusicSection draft={draft} /> : null}
         {sectionKey === "main_event" ? <CeremonySection draft={draft} /> : null}
@@ -135,13 +135,51 @@ function SectionRouter({
         ) : null}
         {sectionKey === "story_message" ? <LoveStorySection draft={draft} /> : null}
         {sectionKey === "contact_socials" ? <ContactSocialsSection draft={draft} /> : null}
+        {sectionKey === "eighteen_roses_candles" ? <TraditionsSection draft={draft} /> : null}
+        {sectionKey === "debut_court" ? (
+          <NamedGroupsSection title="Debut Court" groups={draft.debutCourt.groups} />
+        ) : null}
+        {sectionKey === "godparents" ? (
+          <NamedGroupsSection title="Godparents" groups={draft.godparents.groups} />
+        ) : null}
       </div>
     </>
   );
 }
 
-function CoupleInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
-  const coupleInfo = draft.coupleInfo;
+function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const hostInfo = draft.hostInfo;
+  if (hostInfo.kind !== "wedding") {
+    const primary =
+      hostInfo.kind === "birthday"
+        ? hostInfo.celebrantName
+        : hostInfo.kind === "debut"
+          ? hostInfo.debutantName
+          : hostInfo.childName;
+    const label =
+      hostInfo.kind === "birthday"
+        ? "Celebrant Info"
+        : hostInfo.kind === "debut"
+          ? "Debutant Info"
+          : "Child & Parents";
+    const supporting = hostInfo.kind === "baptism" ? hostInfo.parentNames : hostInfo.milestone;
+    return (
+      <section className="event-preview-section event-preview-section--hero">
+        <Badge variant="outline" className="event-preview-section-label">
+          {label}
+        </Badge>
+        {hostInfo.hostLine.trim() ? (
+          <p className="event-preview-host-line">{hostInfo.hostLine}</p>
+        ) : null}
+        <h2>{hostInfo.displayAs.trim() || primary}</h2>
+        {supporting ? <p className="event-preview-copy">{supporting}</p> : null}
+        {hostInfo.shortHostMessage.trim() ? (
+          <p className="event-preview-copy">{hostInfo.shortHostMessage}</p>
+        ) : null}
+      </section>
+    );
+  }
+  const coupleInfo = hostInfo;
   const groomName = withFallback(coupleInfo.groomName, previewDefaultDraft.coupleInfo.groomName);
   const brideName = withFallback(coupleInfo.brideName, previewDefaultDraft.coupleInfo.brideName);
   const displayAs = coupleInfo.displayAs.trim() || `${groomName} & ${brideName}`;
@@ -167,6 +205,53 @@ function CoupleInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
           {brideName}
         </span>
       </div>
+    </section>
+  );
+}
+
+function TraditionsSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  return (
+    <section className="event-preview-section">
+      <Badge variant="outline" className="event-preview-section-label">
+        18 Traditions
+      </Badge>
+      <h3>18 Traditions</h3>
+      {draft.eighteenRosesCandles.groups.map((group) => (
+        <div key={group.id} className="event-preview-party-card">
+          <strong>{group.title || group.kind}</strong>
+          {group.entries.map((entry) => (
+            <p key={entry.id}>
+              {entry.name}
+              {entry.message ? ` — ${entry.message}` : ""}
+            </p>
+          ))}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function NamedGroupsSection({
+  title,
+  groups,
+}: {
+  title: string;
+  groups: EventWebsiteRenderModel["debutCourt"]["groups"];
+}) {
+  return (
+    <section className="event-preview-section">
+      <Badge variant="outline" className="event-preview-section-label">
+        {title}
+      </Badge>
+      <h3>{title}</h3>
+      {groups.map((group) => (
+        <div key={group.id} className="event-preview-party-card">
+          <strong>{group.title}</strong>
+          {group.names.map((entry) => (
+            <p key={entry.id}>{entry.name}</p>
+          ))}
+        </div>
+      ))}
     </section>
   );
 }

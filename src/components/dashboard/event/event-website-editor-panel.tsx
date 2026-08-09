@@ -19,7 +19,11 @@ import {
   OptionalReceptionPanel,
   OptionalTimelinePanel,
 } from "@/components/dashboard/event/event-website-optional-panels";
-import type { EventWebsitePreviewDraft } from "@/components/dashboard/event/event-website-preview-data";
+import {
+  createEventWebsiteDraftItemId,
+  type EventWebsitePreviewDraft,
+} from "@/components/dashboard/event/event-website-preview-data";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,6 +183,18 @@ export function EventWebsiteEditorPanel({
   }
 
   if (!requiredSectionKeys.has(selectedSectionId)) {
+    if (["eighteen_roses_candles", "debut_court", "godparents"].includes(selectedSectionId)) {
+      return (
+        <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
+          <TargetSpecialSectionForm
+            previewDraft={previewDraft}
+            sectionId={selectedSectionId as "eighteen_roses_candles" | "debut_court" | "godparents"}
+            onPreviewDraftChange={onPreviewDraftChange}
+            saveButtonProps={saveButtonProps}
+          />
+        </section>
+      );
+    }
     if (
       resolvedSections.eventType === "wedding" &&
       implementedWeddingOptionalSectionKeys.has(selectedSectionId)
@@ -219,6 +235,238 @@ export function EventWebsiteEditorPanel({
         saveButtonProps={saveButtonProps}
       />
     </section>
+  );
+}
+
+function TargetSpecialSectionForm({
+  previewDraft,
+  sectionId,
+  onPreviewDraftChange,
+  saveButtonProps,
+}: {
+  previewDraft: EventWebsitePreviewDraft;
+  sectionId: "eighteen_roses_candles" | "debut_court" | "godparents";
+  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
+  saveButtonProps: EventWebsiteSaveButtonProps;
+}) {
+  const isTraditions = sectionId === "eighteen_roses_candles";
+  const section = isTraditions
+    ? previewDraft.eighteenRosesCandles
+    : sectionId === "debut_court"
+      ? previewDraft.debutCourt
+      : previewDraft.godparents;
+  const title = isTraditions
+    ? "18 Traditions"
+    : sectionId === "debut_court"
+      ? "Debut Court"
+      : "Godparents";
+  const setSection = (next: typeof section) =>
+    onPreviewDraftChange({
+      ...previewDraft,
+      ...(isTraditions
+        ? { eighteenRosesCandles: next }
+        : sectionId === "debut_court"
+          ? { debutCourt: next }
+          : { godparents: next }),
+    } as EventWebsitePreviewDraft);
+  const addGroup = () =>
+    setSection({
+      ...section,
+      groups: [
+        ...section.groups,
+        isTraditions
+          ? {
+              id: createEventWebsiteDraftItemId("tradition"),
+              title: "",
+              kind: "roses" as const,
+              entries: [],
+            }
+          : { id: createEventWebsiteDraftItemId("group"), title: "", names: [] },
+      ],
+    } as typeof section);
+
+  return (
+    <EditorShell
+      title={title}
+      description="Add only the groups and people that belong in your celebration."
+    >
+      <div className="space-y-4">
+        {section.groups.map((group, groupIndex) => (
+          <div key={group.id} className="space-y-3 rounded-lg border p-3">
+            <div className="flex gap-2">
+              <Input
+                value={group.title}
+                placeholder={isTraditions ? "Tradition title" : "Group label"}
+                onChange={(event) => {
+                  const groups = section.groups.map((item, index) =>
+                    index === groupIndex ? { ...item, title: event.target.value } : item,
+                  );
+                  setSection({ ...section, groups } as typeof section);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setSection({
+                    ...section,
+                    groups: section.groups.filter((_, index) => index !== groupIndex),
+                  } as typeof section)
+                }
+              >
+                Remove
+              </Button>
+            </div>
+            {isTraditions ? (
+              <Select
+                value={(group as (typeof previewDraft.eighteenRosesCandles.groups)[number]).kind}
+                onValueChange={(kind) => {
+                  const groups = section.groups.map((item, index) =>
+                    index === groupIndex ? { ...item, kind } : item,
+                  );
+                  setSection({ ...section, groups } as typeof section);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["roses", "candles", "treasures", "custom"].map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {kind}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            {(isTraditions
+              ? (group as (typeof previewDraft.eighteenRosesCandles.groups)[number]).entries
+              : (group as (typeof previewDraft.debutCourt.groups)[number]).names
+            ).map((entry, entryIndex) => (
+              <div key={entry.id} className="flex gap-2">
+                <Input
+                  value={entry.name}
+                  placeholder="Name"
+                  onChange={(event) => {
+                    const groups = section.groups.map((item, index) => {
+                      if (index !== groupIndex) return item;
+                      if (isTraditions) {
+                        const tradition =
+                          item as (typeof previewDraft.eighteenRosesCandles.groups)[number];
+                        return {
+                          ...tradition,
+                          entries: tradition.entries.map((value, i) =>
+                            i === entryIndex ? { ...value, name: event.target.value } : value,
+                          ),
+                        };
+                      }
+                      const namedGroup = item as (typeof previewDraft.debutCourt.groups)[number];
+                      return {
+                        ...namedGroup,
+                        names: namedGroup.names.map((value, i) =>
+                          i === entryIndex ? { ...value, name: event.target.value } : value,
+                        ),
+                      };
+                    });
+                    setSection({ ...section, groups } as typeof section);
+                  }}
+                />
+                {isTraditions ? (
+                  <Input
+                    value={
+                      (
+                        entry as (typeof previewDraft.eighteenRosesCandles.groups)[number]["entries"][number]
+                      ).message
+                    }
+                    placeholder="Optional message"
+                    onChange={(event) => {
+                      const groups = section.groups.map((item, index) =>
+                        index === groupIndex
+                          ? {
+                              ...item,
+                              entries: (
+                                item as (typeof previewDraft.eighteenRosesCandles.groups)[number]
+                              ).entries.map((value, i) =>
+                                i === entryIndex
+                                  ? { ...value, message: event.target.value }
+                                  : value,
+                              ),
+                            }
+                          : item,
+                      );
+                      setSection({ ...section, groups } as typeof section);
+                    }}
+                  />
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    const groups = section.groups.map((item, index) =>
+                      index === groupIndex
+                        ? isTraditions
+                          ? {
+                              ...item,
+                              entries: (
+                                item as (typeof previewDraft.eighteenRosesCandles.groups)[number]
+                              ).entries.filter((_, i) => i !== entryIndex),
+                            }
+                          : {
+                              ...item,
+                              names: (
+                                item as (typeof previewDraft.debutCourt.groups)[number]
+                              ).names.filter((_, i) => i !== entryIndex),
+                            }
+                        : item,
+                    );
+                    setSection({ ...section, groups } as typeof section);
+                  }}
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const groups = section.groups.map((item, index) =>
+                  index === groupIndex
+                    ? isTraditions
+                      ? {
+                          ...item,
+                          entries: [
+                            ...(item as (typeof previewDraft.eighteenRosesCandles.groups)[number])
+                              .entries,
+                            {
+                              id: createEventWebsiteDraftItemId("tradition-entry"),
+                              name: "",
+                              message: "",
+                            },
+                          ],
+                        }
+                      : {
+                          ...item,
+                          names: [
+                            ...(item as (typeof previewDraft.debutCourt.groups)[number]).names,
+                            { id: createEventWebsiteDraftItemId("named-entry"), name: "" },
+                          ],
+                        }
+                    : item,
+                );
+                setSection({ ...section, groups } as typeof section);
+              }}
+            >
+              Add person
+            </Button>
+          </div>
+        ))}
+        <Button type="button" variant="outline" onClick={addGroup}>
+          Add group
+        </Button>
+      </div>
+      <EditorSaveButton {...saveButtonProps} />
+    </EditorShell>
   );
 }
 
@@ -442,8 +690,7 @@ function HostInfoForm({
 }) {
   const model = getHostInfoModel(eventType);
   const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
-  const [localValues, setLocalValues] = useState(() => buildInitialHostValues(model, eventData));
-  const values: Record<string, string> = isWedding ? previewDraft.coupleInfo : localValues;
+  const values = previewDraft.hostInfo as unknown as Record<string, string>;
   const displayOptions = isWedding
     ? getWeddingDisplayOptions(values.groomName, values.brideName)
     : model.displayOptions;
@@ -469,21 +716,21 @@ function HostInfoForm({
       return next;
     };
 
-    if (!isWedding) {
-      setLocalValues(updateValues);
-      return;
-    }
-
-    const nextValues = updateValues(previewDraft.coupleInfo);
+    const nextValues = updateValues(values);
     onPreviewDraftChange({
       ...previewDraft,
-      coupleInfo: {
-        brideName: nextValues.brideName ?? "",
-        displayAs: nextValues.displayAs ?? "",
-        groomName: nextValues.groomName ?? "",
-        hostLine: nextValues.hostLine ?? "",
-        shortHostMessage: nextValues.shortHostMessage ?? "",
-      },
+      hostInfo: { ...previewDraft.hostInfo, ...nextValues } as typeof previewDraft.hostInfo,
+      ...(isWedding
+        ? {
+            coupleInfo: {
+              brideName: nextValues.brideName ?? "",
+              displayAs: nextValues.displayAs ?? "",
+              groomName: nextValues.groomName ?? "",
+              hostLine: nextValues.hostLine ?? "",
+              shortHostMessage: nextValues.shortHostMessage ?? "",
+            },
+          }
+        : {}),
     });
   }
 
@@ -556,26 +803,12 @@ function MainEventForm({
   section: EventWebsiteSectionDefinition;
 }) {
   const model = getMainEventModel(eventType, section.label);
-  const [localValues, setLocalValues] = useState(() => ({
-    endTime: model.defaultEndTime,
-    eventDate: eventData.eventDate ?? "2026-06-06",
-    eventLabel: model.defaultLabel,
-    eventTime: formatTime(eventData.eventTime) || model.defaultStartTime,
-    rsvpDeadline: formatDateTimeLocal(eventData.rsvpCloseAt) || "2026-06-01T18:00",
-    scheduleNote: eventData.eventContent?.scheduleNote ?? model.defaultScheduleNote,
-  }));
-  const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
-  const values = isWedding ? previewDraft.ceremony : localValues;
+  const values = previewDraft.ceremony;
 
   function updateMainEventValue(
     fieldId: keyof EventWebsitePreviewDraft["ceremony"],
     value: string,
   ) {
-    if (!isWedding) {
-      setLocalValues((current) => ({ ...current, [fieldId]: value }));
-      return;
-    }
-
     onPreviewDraftChange({
       ...previewDraft,
       ceremony: { ...previewDraft.ceremony, [fieldId]: value },
@@ -1118,11 +1351,21 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
   if (currentEventType === "birthday") {
     return {
       description: "Set the celebrant name and short host message shown on the RSVP website.",
-      displayOptions: ["Juan Carlos", "Juan Carlos turns 7", "Juan Carlos Birthday"],
       fields: [
-        { id: "celebrantName", label: "Celebrant Name", maxLength: 60 },
-        { id: "milestone", label: "Age / Milestone", maxLength: 40, optional: true },
-        { id: "displayAs", label: "Display As", maxLength: 80, type: "select" },
+        {
+          id: "celebrantName",
+          label: "Celebrant Name",
+          maxLength: 60,
+          placeholder: "Celebrant name",
+        },
+        {
+          id: "milestone",
+          label: "Age / Milestone",
+          maxLength: 40,
+          optional: true,
+          placeholder: "e.g. 7th Birthday",
+        },
+        { id: "displayAs", label: "Display As", maxLength: 80, placeholder: "e.g. Sofia turns 7" },
         ...baseHostMessage,
       ],
       groups: [
@@ -1137,9 +1380,15 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
     return {
       description: "Set the debutant name and short host message shown on the RSVP website.",
       fields: [
-        { id: "debutantName", label: "Debutant Name", maxLength: 60 },
-        { id: "milestone", label: "Age / Milestone", maxLength: 40, optional: true },
-        { id: "displayAs", label: "Display As", maxLength: 80 },
+        { id: "debutantName", label: "Debutant Name", maxLength: 60, placeholder: "Debutant name" },
+        {
+          id: "milestone",
+          label: "Age / Milestone",
+          maxLength: 40,
+          optional: true,
+          placeholder: "18th Birthday",
+        },
+        { id: "displayAs", label: "Display As", maxLength: 80, placeholder: "e.g. Sofia's Debut" },
         ...baseHostMessage,
       ],
       groups: [
@@ -1154,9 +1403,20 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
     return {
       description: "Set the child and parent details shown on the RSVP website.",
       fields: [
-        { id: "childName", label: "Child's Name", maxLength: 60 },
-        { id: "parentNames", label: "Parent / Guardian Names", maxLength: 120, optional: true },
-        { id: "displayAs", label: "Display As", maxLength: 80 },
+        { id: "childName", label: "Child's Name", maxLength: 60, placeholder: "Child's name" },
+        {
+          id: "parentNames",
+          label: "Parent / Guardian Names",
+          maxLength: 120,
+          optional: true,
+          placeholder: "Parent or guardian names",
+        },
+        {
+          id: "displayAs",
+          label: "Display As",
+          maxLength: 80,
+          placeholder: "e.g. Sofia's Christening",
+        },
         ...baseHostMessage,
       ],
       groups: [
