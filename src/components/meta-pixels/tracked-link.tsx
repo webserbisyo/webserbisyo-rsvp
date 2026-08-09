@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ComponentProps } from "react";
+import { trackMetaAcquisitionClick } from "@/lib/meta/acquisition-tracker";
 import {
   trackMetaPixelEvent,
   type MetaPixelBrowserEventName,
@@ -25,7 +26,15 @@ export function TrackedLink({
     <Link
       {...props}
       onClick={(event) => {
-        trackMetaPixelEvent(trackingEvent, trackingParams);
+        if (
+          trackingEvent === "SelectPlan" ||
+          trackingEvent === "StartApplicationClick" ||
+          trackingEvent === "Contact"
+        ) {
+          trackMetaAcquisitionClick(trackingEvent, trackingParams ?? {});
+        } else {
+          trackMetaPixelEvent(trackingEvent, trackingParams);
+        }
         onClick?.(event);
       }}
     />
@@ -44,7 +53,15 @@ export function TrackedAnchor({
     <a
       {...props}
       onClick={(event) => {
-        trackMetaPixelEvent(trackingEvent, trackingParams);
+        if (
+          trackingEvent === "SelectPlan" ||
+          trackingEvent === "StartApplicationClick" ||
+          trackingEvent === "Contact"
+        ) {
+          trackMetaAcquisitionClick(trackingEvent, trackingParams ?? {});
+        } else {
+          trackMetaPixelEvent(trackingEvent, trackingParams);
+        }
         onClick?.(event);
       }}
     />

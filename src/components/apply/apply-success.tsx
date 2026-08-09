@@ -9,7 +9,7 @@ import {
   buildMessengerContinueUrl,
   formatPlanLabel,
 } from "@/lib/apply/messenger";
-import { trackMetaPixelEvent } from "@/lib/meta/browser-events";
+import { trackMetaAcquisitionClick } from "@/lib/meta/acquisition-tracker";
 import { getPaymentOptionLabel } from "@/lib/apply/public-payment-option-dto";
 
 type ApplySuccessProps = {
@@ -114,7 +114,7 @@ export function ApplySuccess({
   }
 
   async function handleContinueOnMessenger() {
-    trackMetaPixelEvent("Contact", {
+    trackMetaAcquisitionClick("Contact", {
       contact_method: "messenger",
       source: "success",
     });

@@ -36,6 +36,41 @@ export function trackInitiateCheckoutOccurrence(input: InitiateCheckoutOccurrenc
   return eventId;
 }
 
+export function trackMetaAcquisitionClick(
+  eventName: "Contact" | "SelectPlan" | "StartApplicationClick",
+  params: Record<string, string | number | boolean | null | undefined>,
+) {
+  const eventId = crypto.randomUUID();
+  const sourcePath = window.location.pathname === "/apply" ? "/apply" : "/";
+  const source = typeof params.source === "string" ? params.source : "unknown";
+  const shared = { eventId, fbc: getFbc(), fbp: getCookie("_fbp") };
+
+  trackMetaPixelEvent(eventName, params, { eventID: eventId });
+
+  if (eventName === "SelectPlan" && (params.plan === "pro" || params.plan === "max")) {
+    sendMetaAcquisitionOccurrence({
+      ...shared,
+      eventName,
+      plan: params.plan,
+      source,
+      sourcePath,
+    });
+  } else if (eventName === "StartApplicationClick") {
+    sendMetaAcquisitionOccurrence({
+      ...shared,
+      destination: "/apply",
+      eventName,
+      source,
+      sourcePath: "/",
+    });
+  } else if (eventName === "Contact") {
+    const contactPath = window.location.pathname === "/apply/success" ? "/apply/success" : "/";
+    sendMetaAcquisitionOccurrence({ ...shared, eventName, source, sourcePath: contactPath });
+  }
+
+  return eventId;
+}
+
 function sendMetaAcquisitionOccurrence(payload: Record<string, string | undefined>) {
   try {
     void fetch("/api/meta/events", {

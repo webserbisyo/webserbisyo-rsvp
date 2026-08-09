@@ -143,6 +143,30 @@ test("InitiateCheckout is hydrated-client-only and pairs the browser event with 
   assert.doesNotMatch(pageSource, /eventName="InitiateCheckout"/);
 });
 
+test("mid-funnel endpoint remains allowlisted, UUID-bound, and navigation-safe", () => {
+  const schemaSource = readFileSync(
+    new URL("../src/lib/meta/acquisition-events.ts", import.meta.url),
+    "utf8",
+  );
+  const endpointSource = readFileSync(
+    new URL("../src/app/api/meta/events/route.ts", import.meta.url),
+    "utf8",
+  );
+  const trackerSource = readFileSync(
+    new URL("../src/lib/meta/acquisition-tracker.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(schemaSource, /z\.literal\("SelectPlan"\)/);
+  assert.match(schemaSource, /z\.literal\("StartApplicationClick"\)/);
+  assert.match(schemaSource, /z\.literal\("Contact"\)/);
+  assert.match(endpointSource, /isAllowedMetaAcquisitionOrigin/);
+  assert.match(endpointSource, /clientIpAddress/);
+  assert.match(endpointSource, /clientUserAgent/);
+  assert.match(trackerSource, /keepalive: true/);
+  assert.doesNotMatch(schemaSource, /pixelId|actionSource|clientIpAddress|clientUserAgent/);
+});
+
 test("Lead keeps its deterministic browser/server event ID contract", () => {
   const leadSource = readFileSync(
     new URL("../src/server/services/send-meta-capi-lead.ts", import.meta.url),

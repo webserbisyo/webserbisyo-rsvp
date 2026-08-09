@@ -28,7 +28,7 @@ export async function sendMetaCapiAcquisitionEvent(input: SendMetaCapiAcquisitio
   const pixelId = await getApplicationPixelId();
   const result = await sendMetaCapiEvent({
     actionSource: "website",
-    amount: getPlanValue(input.plan),
+    amount: "plan" in input ? getPlanValue(input.plan) : 0,
     clientIpAddress: input.clientIpAddress,
     clientUserAgent: input.clientUserAgent,
     currency: "PHP",
@@ -72,11 +72,31 @@ async function getApplicationPixelId() {
 }
 
 function buildCustomData(input: MetaAcquisitionEventInput): MetaCapiCustomData {
+  if (input.eventName === "StartApplicationClick") {
+    return {
+      content_category: "webserbisyo_application",
+      content_name: "Start application",
+      destination: input.destination,
+      source: input.source,
+      source_route: input.sourcePath,
+    };
+  }
+
+  if (input.eventName === "Contact") {
+    return {
+      content_category: "webserbisyo_contact",
+      content_name: "Messenger contact",
+      source: input.source,
+      source_route: input.sourcePath,
+    };
+  }
+
   return {
     content_category: "webserbisyo_application",
     content_name: `${input.plan.toUpperCase()} Plan Application`,
     currency: "PHP",
     plan: input.plan,
+    source: "source" in input ? input.source : undefined,
     source_route: input.sourcePath,
     value: getPlanValue(input.plan),
   };
