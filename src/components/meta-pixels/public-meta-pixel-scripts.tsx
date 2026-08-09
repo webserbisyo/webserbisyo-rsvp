@@ -27,6 +27,7 @@ type PublicMetaPixelScriptsProps = {
   eventParams?: MetaPixelEventParams;
   eventParamsByName?: Partial<Record<MetaPixelEventName, MetaPixelEventParams>>;
   executionKey?: string;
+  includePageView?: boolean;
   pixels: PublicMetaPixelConfig[];
 };
 
@@ -37,6 +38,7 @@ export function PublicMetaPixelScripts({
   eventParams,
   eventParamsByName,
   executionKey,
+  includePageView = true,
   pixels,
 }: PublicMetaPixelScriptsProps) {
   const uniquePixelIds = Array.from(new Set(pixels.map((pixel) => pixel.pixelId))).filter(
@@ -54,6 +56,7 @@ export function PublicMetaPixelScripts({
     eventParamsByName,
     eventOptions,
     eventOptionsByName,
+    includePageView,
   );
   const eventScriptId = buildEventScriptId(uniquePixelIds, eventScript, executionKey);
 
@@ -89,6 +92,7 @@ function buildEventScript(
   eventParamsByName: PublicMetaPixelScriptsProps["eventParamsByName"],
   eventOptions: PublicMetaPixelScriptsProps["eventOptions"],
   eventOptionsByName: PublicMetaPixelScriptsProps["eventOptionsByName"],
+  includePageView: boolean,
 ) {
   const initLines = [
     buildBootstrapScript(),
@@ -98,7 +102,7 @@ function buildEventScript(
       return `if (!window.__wsMetaPixelInitialized[${id}]) { fbq('init', ${id}); window.__wsMetaPixelInitialized[${id}] = true; }`;
     }),
   ];
-  const eventLines = [`fbq('track', 'PageView');`];
+  const eventLines = includePageView ? [`fbq('track', 'PageView');`] : [];
   const names = eventName ? (Array.isArray(eventName) ? eventName : [eventName]) : [];
 
   for (const name of names) {

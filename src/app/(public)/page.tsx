@@ -16,6 +16,7 @@ import { LandingPayment } from "@/components/landing/landing-payment";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { AcquisitionPageTracker } from "@/components/meta-pixels/acquisition-page-tracker";
 import { extractPublicRsvpSubdomainSlug } from "@/lib/public-rsvp-host";
 import { getPrivateAccessTokenFromSearchParams } from "@/lib/private-access";
 import { getRsvpBaseDomain } from "@/lib/public-rsvp-url";
@@ -129,15 +130,11 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
         dangerouslySetInnerHTML={{ __html: JSON.stringify(getMarketingJsonLd()) }}
       />
       <PublicMetaPixelScripts
-        eventName="ViewContent"
-        eventParams={{
-          content_category: "RSVP Website Service",
-          content_name: "WebSerbisyo RSVP Landing Page",
-          source_route: "/",
-        }}
+        includePageView={false}
         executionKey="landing"
         pixels={landingPixels}
       />
+      <AcquisitionPageTracker sourcePath="/" />
     </>
   );
 }

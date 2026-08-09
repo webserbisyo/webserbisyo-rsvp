@@ -117,6 +117,29 @@ The app intentionally does not track hovers, accordion opens, scroll depth, deco
 
 ## CAPI Status
 
+### Acquisition CAPI capability matrix
+
+All new acquisition CAPI capabilities are **disabled by default** and must be enabled and tested one
+at a time with explicit server test mode. They apply only to WebSerbisyo marketing/application pages;
+client event websites, standalone guest RSVP, Guestbook, and other guest traffic are excluded.
+
+| Event | Browser | CAPI capability | Default | ID | Context |
+| --- | --- | --- | --- | --- |
+| Lead | Yes | Yes | Existing flag | `Lead:<reference>` | Applicant identity + browser context |
+| Purchase | No | Yes | Existing transitional flag | `Purchase:<payment>` | Manual external-payment semantics |
+| InitiateCheckout | Yes | Yes | Off | UUID per form entry | Anonymous browser identifiers |
+| SelectPlan | Yes | Yes | Off | UUID per click | Plan, value, placement |
+| StartApplicationClick | Yes | Yes | Off | UUID per click | CTA placement/destination |
+| Contact | Yes | Yes | Off | UUID per click | Anonymous Messenger context |
+| CompleteRegistration | Yes | Yes | Off | `CompleteRegistration:<reference>` | Application identity resolved server-side |
+| ViewContent | Yes | Yes | Off | UUID per acquisition-page view | Landing/pricing taxonomy only |
+| PageView | Yes | Yes | Off | UUID per acquisition navigation | Landing/application pages only |
+
+New flag names: `META_CAPI_INITIATE_CHECKOUT_ENABLED`, `META_CAPI_SELECT_PLAN_ENABLED`,
+`META_CAPI_START_APPLICATION_CLICK_ENABLED`, `META_CAPI_CONTACT_ENABLED`,
+`META_CAPI_COMPLETE_REGISTRATION_ENABLED`, `META_CAPI_VIEW_CONTENT_ENABLED`, and
+`META_CAPI_PAGEVIEW_ENABLED`.
+
 ### Protected Lead baseline
 
 Server-side Lead CAPI is the protected, proven Pixel+CAPI implementation. It remains behind the

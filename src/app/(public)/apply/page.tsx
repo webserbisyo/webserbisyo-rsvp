@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ApplyLanding } from "@/components/apply/apply-landing";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { AcquisitionPageTracker } from "@/components/meta-pixels/acquisition-page-tracker";
 import { getVersionedSocialImage, SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
 import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
@@ -54,15 +55,11 @@ export default async function ApplyPage() {
     <>
       <ApplyLanding config={config} />
       <PublicMetaPixelScripts
-        eventName="ViewContent"
-        eventParams={{
-          content_category: "RSVP Website Pricing",
-          content_name: "WebSerbisyo RSVP Pricing Plans",
-          source_route: "/apply",
-        }}
+        includePageView={false}
         executionKey="apply"
         pixels={pixels}
       />
+      <AcquisitionPageTracker sourcePath="/apply" />
     </>
   );
 }

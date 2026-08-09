@@ -26,6 +26,7 @@ export async function sendMetaCapiAcquisitionEvent(input: SendMetaCapiAcquisitio
   }
 
   const pixelId = await getApplicationPixelId();
+  const identity = "referenceCode" in input ? await getApplicationIdentity(input.referenceCode) : null;
   const result = await sendMetaCapiEvent({
     actionSource: "website",
     amount: "plan" in input ? getPlanValue(input.plan) : 0,
@@ -33,11 +34,15 @@ export async function sendMetaCapiAcquisitionEvent(input: SendMetaCapiAcquisitio
     clientUserAgent: input.clientUserAgent,
     currency: "PHP",
     customData: buildCustomData(input),
+    email: identity?.email,
     eventId: input.eventId,
     eventName: input.eventName,
+    externalId: "referenceCode" in input ? input.referenceCode : undefined,
     fbc: input.fbc,
     fbp: input.fbp,
+    fullName: identity?.fullName,
     pixelId,
+    phone: identity?.phone,
     sourceUrl: input.eventSourceUrl,
   });
 
@@ -72,6 +77,15 @@ async function getApplicationPixelId() {
 }
 
 function buildCustomData(input: MetaAcquisitionEventInput): MetaCapiCustomData {
+  if (input.eventName === "CompleteRegistration") {
+    return { content_category: "webserbisyo_application", content_name: "Application completed", source_route: input.sourcePath };
+  }
+  if (input.eventName === "ViewContent") {
+    return { content_category: "webserbisyo_marketing", content_name: input.sourcePath === "/" ? "landing" : "pricing", source_route: input.sourcePath };
+  }
+  if (input.eventName === "PageView") {
+    return { content_category: "webserbisyo_marketing", content_name: "page_view", source_route: input.sourcePath };
+  }
   if (input.eventName === "StartApplicationClick") {
     return {
       content_category: "webserbisyo_application",
@@ -100,6 +114,17 @@ function buildCustomData(input: MetaAcquisitionEventInput): MetaCapiCustomData {
     source_route: input.sourcePath,
     value: getPlanValue(input.plan),
   };
+}
+
+async function getApplicationIdentity(referenceCode: string) {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("rsvp_applications")
+    .select("email, full_name, phone")
+    .eq("reference_code", referenceCode)
+    .maybeSingle();
+
+  return data ? { email: data.email, fullName: data.full_name, phone: data.phone } : null;
 }
 
 async function recordResult(

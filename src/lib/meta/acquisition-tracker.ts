@@ -71,6 +71,27 @@ export function trackMetaAcquisitionClick(
   return eventId;
 }
 
+export function trackCompleteRegistrationOccurrence(referenceCode: string) {
+  const eventId = `CompleteRegistration:${referenceCode}`;
+  const storageKey = `webserbisyo:meta:complete-registration:${referenceCode}`;
+  if (window.sessionStorage.getItem(storageKey)) return null;
+  window.sessionStorage.setItem(storageKey, "1");
+  trackMetaPixelEvent("CompleteRegistration", { source_route: "/apply/success" }, { eventID: eventId });
+  sendMetaAcquisitionOccurrence({ eventId, eventName: "CompleteRegistration", fbc: getFbc(), fbp: getCookie("_fbp"), referenceCode, sourcePath: "/apply/success" });
+  return eventId;
+}
+
+export function trackAcquisitionPageOccurrence(sourcePath: "/" | "/apply", viewContent: boolean) {
+  const pageViewId = crypto.randomUUID();
+  trackMetaPixelEvent("PageView", {}, { eventID: pageViewId });
+  sendMetaAcquisitionOccurrence({ eventId: pageViewId, eventName: "PageView", fbc: getFbc(), fbp: getCookie("_fbp"), sourcePath });
+  if (viewContent) {
+    const viewId = crypto.randomUUID();
+    trackMetaPixelEvent("ViewContent", { content_category: "webserbisyo_marketing", content_name: sourcePath === "/" ? "landing" : "pricing", source_route: sourcePath }, { eventID: viewId });
+    sendMetaAcquisitionOccurrence({ eventId: viewId, eventName: "ViewContent", fbc: getFbc(), fbp: getCookie("_fbp"), sourcePath });
+  }
+}
+
 function sendMetaAcquisitionOccurrence(payload: Record<string, string | undefined>) {
   try {
     void fetch("/api/meta/events", {

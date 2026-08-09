@@ -17,6 +17,7 @@ const BrowserIdentifierSchema = z.string().trim().max(512).optional();
 const PlanSchema = z.enum(["pro", "max"]);
 const SourcePathSchema = z.enum(["/", "/apply", "/apply/start", "/apply/success"]);
 const SourceSchema = z.string().trim().min(1).max(80);
+const ReferenceCodeSchema = z.string().regex(/^RSVP-[0-9]{8}-[A-Z0-9]{4}$/);
 
 const SharedSchema = z.object({
   eventId: EventIdSchema,
@@ -46,6 +47,19 @@ export const MetaAcquisitionEventSchema = z.discriminatedUnion("eventName", [
     eventName: z.literal("Contact"),
     source: SourceSchema,
     sourcePath: z.enum(["/", "/apply/success"]),
+  }),
+  z.object({
+    eventId: z.string().regex(/^CompleteRegistration:RSVP-[0-9]{8}-[A-Z0-9]{4}$/),
+    eventName: z.literal("CompleteRegistration"),
+    fbc: BrowserIdentifierSchema,
+    fbp: BrowserIdentifierSchema,
+    referenceCode: ReferenceCodeSchema,
+    sourcePath: z.literal("/apply/success"),
+  }),
+  SharedSchema.extend({ eventName: z.literal("ViewContent"), sourcePath: z.enum(["/", "/apply"]) }),
+  SharedSchema.extend({
+    eventName: z.literal("PageView"),
+    sourcePath: z.enum(["/", "/apply", "/apply/start", "/apply/success"]),
   }),
 ]);
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ApplySuccess } from "@/components/apply/apply-success";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { CompleteRegistrationTracker } from "@/components/meta-pixels/complete-registration-tracker";
 import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { isApplicationReferenceCode } from "@/lib/apply/reference";
 import {
@@ -111,12 +112,13 @@ export default async function ApplySuccessPage({ searchParams }: ApplySuccessPag
         />
       </div>
       <PublicMetaPixelScripts
-        eventName={["Lead", "CompleteRegistration"]}
+        eventName="Lead"
         eventOptionsByName={leadEventId ? { Lead: { eventID: leadEventId } } : undefined}
         eventParams={getSuccessEventParams(summary?.preferred_plan)}
         executionKey={`apply-success-${referenceCode ?? "missing"}`}
         pixels={pixels}
       />
+      <CompleteRegistrationTracker referenceCode={referenceCode} />
     </main>
   );
 }
