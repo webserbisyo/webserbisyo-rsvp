@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { getMetaCapiRuntimeConfig } from "./capi-config";
 
 export type MetaCapiEventInput = {
   amount: number;
@@ -21,7 +22,8 @@ export type MetaCapiEventInput = {
 };
 
 export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
-  const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
+  const config = getMetaCapiRuntimeConfig();
+  const accessToken = config.accessToken;
   const pixelId = input.pixelId ?? process.env.META_PIXEL_ID ?? null;
 
   if (!accessToken || !pixelId) {
@@ -42,7 +44,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
     };
   }
 
-  const apiVersion = process.env.META_CAPI_API_VERSION ?? "v24.0";
+  const apiVersion = config.apiVersion;
   const endpoint = `https://graph.facebook.com/${apiVersion}/${pixelId}/events`;
   const body = {
     data: [
@@ -60,7 +62,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
         user_data: userData,
       },
     ],
-    test_event_code: getTestEventCode(input.testEventCode),
+    test_event_code: input.testEventCode?.trim() || config.testEventCode || undefined,
   };
 
   try {
@@ -178,12 +180,6 @@ function normalizeHashable(value: string | null | undefined) {
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
-}
-
-function getTestEventCode(inputValue: string | null | undefined) {
-  const value = inputValue ?? process.env.META_CAPI_TEST_EVENT_CODE;
-
-  return value?.trim() || undefined;
 }
 
 function sanitizeMetaResponse(response: unknown) {

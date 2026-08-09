@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveMetaPixelForContext } from "@/lib/meta/pixel-resolution";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PublicMetaPixelRoute = "application" | "event_page" | "rsvp_submit";
@@ -21,7 +22,7 @@ export async function getPublicMetaPixelsForRoute(input: PublicMetaPixelInput) {
   const scopes = getRouteScopes(input.route);
   const { data, error } = await supabase
     .from("meta_pixels")
-    .select("id, pixel_id, tracking_scope, event_id")
+    .select("id, pixel_id, tracking_scope, event_id, updated_at")
     .eq("is_active", true)
     .in("tracking_scope", eventId ? [...scopes, "event"] : scopes);
 
@@ -29,13 +30,34 @@ export async function getPublicMetaPixelsForRoute(input: PublicMetaPixelInput) {
     throw error;
   }
 
-  return (data ?? [])
+  const matchingPixels = (data ?? [])
     .filter((pixel) => pixel.tracking_scope !== "event" || pixel.event_id === eventId)
     .map((pixel) => ({
       id: pixel.id,
       pixelId: pixel.pixel_id,
       trackingScope: pixel.tracking_scope,
+      updatedAt: pixel.updated_at,
     }));
+
+  if (input.route === "application") {
+    const pixel = resolveMetaPixelForContext(matchingPixels, "application_funnel");
+
+    return pixel ? [toPublicPixelConfig(pixel)] : [];
+  }
+
+  return matchingPixels.map(toPublicPixelConfig);
+}
+
+function toPublicPixelConfig(pixel: {
+  id: string;
+  pixelId: string;
+  trackingScope: string;
+}) {
+  return {
+    id: pixel.id,
+    pixelId: pixel.pixelId,
+    trackingScope: pixel.trackingScope,
+  };
 }
 
 async function getPublishedEventId(eventSlug: string) {

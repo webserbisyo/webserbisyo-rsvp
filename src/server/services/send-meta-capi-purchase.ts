@@ -2,7 +2,9 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
+import { getMetaCapiRuntimeConfig } from "@/lib/meta/capi-config";
 import { sendMetaCapiEvent } from "@/lib/meta";
+import { resolveMetaPixelForContext } from "@/lib/meta/pixel-resolution";
 import { writeAuditLog } from "./write-audit-log";
 
 export type SendMetaCapiPurchaseInput = {
@@ -23,8 +25,30 @@ export type SendMetaCapiPurchaseInput = {
 };
 
 export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
+  const config = getMetaCapiRuntimeConfig();
   const pixelId = await getMetaCapiPixelId();
   const eventId = `Purchase:${input.paymentId}`;
+
+  if (!config.purchaseEnabled) {
+    const result = {
+      eventId,
+      reason: "disabled",
+      status: "skipped" as const,
+    };
+
+    await safeWriteAuditLog({
+      action: `meta_capi_purchase_${result.status}`,
+      actorUserId: input.actorUserId,
+      clientId: input.clientId,
+      entityId: input.paymentId,
+      entityType: "payments",
+      eventId: input.eventId,
+      metadata: toAuditMetadata(result),
+    });
+
+    return result;
+  }
+
   const result = await sendMetaCapiEvent({
     amount: input.amount,
     clientIpAddress: input.clientIpAddress,
@@ -59,18 +83,27 @@ async function getMetaCapiPixelId() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("meta_pixels")
-    .select("pixel_id")
+    .select("id, pixel_id, tracking_scope, updated_at")
     .eq("is_active", true)
-    .in("tracking_scope", ["global_public", "application", "rsvp_submit"])
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .in("tracking_scope", ["global_public", "application"]);
 
   if (error) {
     return process.env.META_PIXEL_ID ?? null;
   }
 
-  return data?.pixel_id ?? process.env.META_PIXEL_ID ?? null;
+  return (
+    resolveMetaPixelForContext(
+      (data ?? []).map((row) => ({
+        id: row.id,
+        pixelId: row.pixel_id,
+        trackingScope: row.tracking_scope,
+        updatedAt: row.updated_at,
+      })),
+      "application_funnel",
+    )?.pixelId ??
+    process.env.META_PIXEL_ID ??
+    null
+  );
 }
 
 async function safeWriteAuditLog(input: Parameters<typeof writeAuditLog>[0]) {
@@ -84,4 +117,3 @@ async function safeWriteAuditLog(input: Parameters<typeof writeAuditLog>[0]) {
 function toAuditMetadata(value: unknown): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
 }
-

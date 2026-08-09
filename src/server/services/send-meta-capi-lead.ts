@@ -2,6 +2,8 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
+import { getMetaCapiRuntimeConfig } from "@/lib/meta/capi-config";
+import { resolveMetaPixelForContext } from "@/lib/meta/pixel-resolution";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import { writeAuditLog } from "./write-audit-log";
@@ -49,9 +51,10 @@ type MetaCapiUserData = Partial<{
 
 export async function sendMetaCapiLead(input: SendMetaCapiLeadInput) {
   const eventId = buildLeadEventId(input.referenceCode);
+  const config = getMetaCapiRuntimeConfig();
 
   try {
-    if (process.env.META_CAPI_LEAD_ENABLED !== "true") {
+    if (!config.leadEnabled) {
       const result = buildResult(eventId, "skipped", {
         pixelSource: "none",
         reason: "disabled",
@@ -71,7 +74,7 @@ export async function sendMetaCapiLead(input: SendMetaCapiLeadInput) {
       return result;
     }
 
-    const accessToken = process.env.META_CAPI_ACCESS_TOKEN?.trim();
+    const accessToken = config.accessToken;
 
     if (!accessToken) {
       const result = buildResult(eventId, "skipped", {
@@ -93,7 +96,7 @@ export async function sendMetaCapiLead(input: SendMetaCapiLeadInput) {
       return result;
     }
 
-    const apiVersion = process.env.META_CAPI_API_VERSION?.trim() || "v24.0";
+    const apiVersion = config.apiVersion;
     const endpoint = `https://graph.facebook.com/${apiVersion}/${pixel.pixelId}/events`;
     const response = await fetch(`${endpoint}?access_token=${encodeURIComponent(accessToken)}`, {
       body: JSON.stringify({
@@ -115,7 +118,7 @@ export async function sendMetaCapiLead(input: SendMetaCapiLeadInput) {
             user_data: userData,
           },
         ],
-        test_event_code: getTestEventCode(),
+        test_event_code: config.testEventCode ?? undefined,
       }),
       headers: {
         "content-type": "application/json",
@@ -161,16 +164,25 @@ async function getMetaCapiLeadPixel() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("meta_pixels")
-    .select("pixel_id")
+    .select("id, pixel_id, tracking_scope, updated_at")
     .eq("is_active", true)
-    .in("tracking_scope", ["global_public", "application", "rsvp_submit"])
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .in("tracking_scope", ["global_public", "application"]);
 
-  if (!error && data?.pixel_id) {
+  const pixel = !error
+    ? resolveMetaPixelForContext(
+        (data ?? []).map((row) => ({
+          id: row.id,
+          pixelId: row.pixel_id,
+          trackingScope: row.tracking_scope,
+          updatedAt: row.updated_at,
+        })),
+        "application_funnel",
+      )
+    : null;
+
+  if (pixel?.pixelId) {
     return {
-      pixelId: data.pixel_id,
+      pixelId: pixel.pixelId,
       pixelSource: "meta_pixels" as const,
     };
   }
@@ -331,8 +343,4 @@ function normalizeHashable(value: string | null | undefined) {
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
-}
-
-function getTestEventCode() {
-  return process.env.META_CAPI_TEST_EVENT_CODE?.trim() || undefined;
 }
