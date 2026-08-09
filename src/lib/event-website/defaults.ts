@@ -22,9 +22,7 @@ const DEFAULT_WEDDING_EVENT_TIME = "16:00";
 const DEFAULT_WEDDING_EVENT_END_TIME = "18:00";
 
 export function getDefaultWeddingSectionOrder(): EventWebsiteContentSectionKey[] {
-  return eventWebsiteContentSectionKeys.filter(
-    (key) => !["eighteen_roses_candles", "debut_court", "godparents"].includes(key),
-  );
+  return [...eventWebsiteContentSectionKeys];
 }
 
 export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSectionKey, boolean> {
@@ -375,9 +373,7 @@ function buildNeutralTargetContent(
     eventType,
     layout: {
       enabledSections: enabled,
-      sectionOrder: eventWebsiteContentSectionKeys.filter(
-        (key) => key !== "entourage" && key !== "principal_sponsors",
-      ),
+      sectionOrder: [...eventWebsiteContentSectionKeys],
     },
     sections: {
       ...base.sections,

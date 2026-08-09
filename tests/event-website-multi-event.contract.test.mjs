@@ -1,8 +1,40 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { registerHooks } from "node:module";
 import test from "node:test";
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const targetSectionKeys = ["eighteen_roses_candles", "debut_court", "godparents"];
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith("@/")) {
+      return nextResolve(new URL(`../src/${specifier.slice(2)}.ts`, import.meta.url).href, context);
+    }
+
+    return nextResolve(specifier, context);
+  },
+});
+
+async function loadEventWebsiteModules() {
+  const [defaults, hydration, types] = await Promise.all([
+    import("../src/lib/event-website/defaults.ts"),
+    import("../src/lib/event-website/hydration.ts"),
+    import("../src/lib/event-website/types.ts"),
+  ]);
+
+  return { defaults, hydration, types };
+}
+
+function readSectionContract() {
+  return JSON.parse(source("contracts/event-website-sections.v1.json"));
+}
+
+function assertCanonicalSectionOrder(sectionOrder, canonicalSectionKeys) {
+  assert.equal(sectionOrder.length, canonicalSectionKeys.length);
+  assert.equal(new Set(sectionOrder).size, canonicalSectionKeys.length);
+  assert.deepEqual(new Set(sectionOrder), new Set(canonicalSectionKeys));
+}
 
 test("event website content contract supports every built-in event type", () => {
   const types = source("src/lib/event-website/types.ts");
@@ -25,6 +57,44 @@ test("target presets are event-aware and avoid Wedding host fields", () => {
   assert.match(defaults, /childName: ""/);
   assert.match(defaults, /eighteen_roses_candles: \{ groups: \[\] \}/);
   assert.match(defaults, /godparents: \{ groups: \[\] \}/);
+});
+
+test("the versioned section contract exactly matches the canonical content keys", async () => {
+  const { types } = await loadEventWebsiteModules();
+  const contract = readSectionContract();
+  const contractKeys = contract.sections.map((section) => section.key);
+  const canonicalSectionKeys = types.eventWebsiteContentSectionKeys;
+
+  assert.equal(contract.contractVersion, 1);
+  assert.equal(contractKeys.length, 20);
+  assert.equal(new Set(contractKeys).size, contractKeys.length);
+  assert.deepEqual(new Set(contractKeys), new Set(canonicalSectionKeys));
+
+  for (const key of targetSectionKeys) {
+    assert.equal(contractKeys.filter((contractKey) => contractKey === key).length, 1);
+  }
+});
+
+test("all preset builders retain the canonical section order and visibility contract", async () => {
+  const { defaults, hydration, types } = await loadEventWebsiteModules();
+  const presets = [
+    defaults.buildDefaultWeddingEventWebsiteContent(),
+    defaults.buildDefaultBirthdayEventWebsiteContent(),
+    defaults.buildDefaultDebutEventWebsiteContent(),
+    defaults.buildDefaultBaptismEventWebsiteContent(),
+  ];
+
+  for (const preset of presets) {
+    assertCanonicalSectionOrder(preset.layout.sectionOrder, types.eventWebsiteContentSectionKeys);
+    assert.doesNotThrow(() => hydration.validateEventWebsiteContentForPersistence(preset));
+  }
+
+  const wedding = presets[0];
+  for (const key of targetSectionKeys) assert.equal(wedding.layout.enabledSections[key], false);
+  assert.equal(presets[1].layout.enabledSections.eighteen_roses_candles, false);
+  assert.equal(presets[2].layout.enabledSections.eighteen_roses_candles, true);
+  assert.equal(presets[2].layout.enabledSections.debut_court, false);
+  assert.equal(presets[3].layout.enabledSections.godparents, false);
 });
 
 test("hydration and saving select defaults by event type", () => {

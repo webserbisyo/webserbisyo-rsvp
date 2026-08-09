@@ -87,6 +87,24 @@
       "label": "Contact",
       "visibility": "optional",
       "navigationEligible": true
+    },
+    {
+      "key": "eighteen_roses_candles",
+      "label": "Traditions",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "debut_court",
+      "label": "Debut Court",
+      "visibility": "optional",
+      "navigationEligible": true
+    },
+    {
+      "key": "godparents",
+      "label": "Godparents",
+      "visibility": "optional",
+      "navigationEligible": true
     }
   ]
 }

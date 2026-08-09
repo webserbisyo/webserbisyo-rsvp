@@ -96,7 +96,7 @@ test("publication state is independent from unsaved browser state", () => {
 
 test("section contract is versioned and reorder UI is centrally disabled", () => {
   expect(EVENT_WEBSITE_SECTION_CONTRACT_VERSION).toBe(1);
-  expect(eventWebsiteSectionContract).toHaveLength(17);
+  expect(eventWebsiteSectionContract).toHaveLength(20);
   expect(requiredEventWebsiteSectionKeys).toEqual([
     "host_info",
     "main_event",
@@ -114,7 +114,7 @@ test("Gallery is canonical, disabled by default, and ordered immediately after M
     (section) => section.key === "style_theme",
   );
 
-  expect(Object.keys(content.layout.enabledSections)).toHaveLength(17);
+  expect(Object.keys(content.layout.enabledSections)).toHaveLength(20);
   expect(content.layout.enabledSections.gallery).toBe(false);
   expect(content.layout.sectionOrder.indexOf("gallery")).toBe(
     content.layout.sectionOrder.indexOf("music_effects") + 1,

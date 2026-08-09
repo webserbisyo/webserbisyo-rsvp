@@ -28,7 +28,7 @@ function parseSectionContract() {
     eventWebsiteContentSectionKeys.some((key) => !receivedKeys.has(key)) ||
     entries.some((entry) => !expectedKeys.has(entry.key))
   ) {
-    throw new Error("Event Website section contract keys do not match the application schema.");
+    throw new Error("Event Website section contract keys do not match the canonical content section keys.");
   }
 
   return entries;
