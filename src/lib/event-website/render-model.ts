@@ -5,6 +5,7 @@ import {
   type EventWebsiteGuestbookMessage,
   type EventWebsiteCustomQuestionFieldType,
   type EventWebsiteImageAsset,
+  type EventWebsiteHostInfoSection,
 } from "@/lib/event-website/types";
 
 // This file defines the default public renderer contract.
@@ -45,6 +46,7 @@ export type EventWebsiteGiftOptionRenderModel = {
 };
 
 export type EventWebsiteRenderModel = {
+  hostInfo: EventWebsiteHostInfoSection;
   attireDressCode: {
     colorMotifNote: string;
     dressCodeNote: string;
@@ -142,6 +144,9 @@ export type EventWebsiteRenderModel = {
     mapsLink: string;
     venueName: string;
   };
+  eighteenRosesCandles: EventWebsiteContent["sections"]["eighteen_roses_candles"];
+  debutCourt: EventWebsiteContent["sections"]["debut_court"];
+  godparents: EventWebsiteContent["sections"]["godparents"];
 };
 
 export const eventWebsiteRenderModelSectionKeys =
@@ -176,13 +181,8 @@ export function buildEventWebsiteRenderModel(
       shortNote: content.sections.countdown.shortNote,
       title: content.sections.countdown.title,
     },
-    coupleInfo: {
-      brideName: content.sections.host_info.brideName,
-      displayAs: content.sections.host_info.displayAs,
-      groomName: content.sections.host_info.groomName,
-      hostLine: content.sections.host_info.hostLine,
-      shortHostMessage: content.sections.host_info.shortHostMessage,
-    },
+    hostInfo: content.sections.host_info,
+    coupleInfo: toWeddingCompatibleCoupleInfo(content.sections.host_info),
     entourage: {
       groups: content.sections.entourage.groups.map((group) => ({
         groupTitle: group.groupTitle,
@@ -272,6 +272,24 @@ export function buildEventWebsiteRenderModel(
       mapsLink: content.sections.venue.mapsLink,
       venueName: content.sections.venue.venueName,
     },
+    eighteenRosesCandles: content.sections.eighteen_roses_candles,
+    debutCourt: content.sections.debut_court,
+    godparents: content.sections.godparents,
+  };
+}
+
+function toWeddingCompatibleCoupleInfo(hostInfo: EventWebsiteHostInfoSection) {
+  if (hostInfo.kind === "wedding") {
+    const { kind: _kind, ...coupleInfo } = hostInfo;
+    return coupleInfo;
+  }
+
+  return {
+    brideName: "",
+    displayAs: hostInfo.displayAs,
+    groomName: "",
+    hostLine: hostInfo.hostLine,
+    shortHostMessage: hostInfo.shortHostMessage,
   };
 }
 

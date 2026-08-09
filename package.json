@@ -19,7 +19,7 @@
     "test:e2e": "playwright test",
     "test:event-website-db": "node --env-file=.env.local scripts/verify-event-website-revisions.mjs",
     "test:deletion": "node --env-file=.env.local scripts/verify-permanent-client-deletion.mjs",
-    "test:unit": "node --experimental-strip-types --test tests/rsvp-finalization.contract.test.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/*.contract.test.mjs",
     "db:types": "supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/supabase/types.ts",
     "prepare": "echo 'Ready'",
     "check": "npm run typecheck && npm run lint && npm run format:check"

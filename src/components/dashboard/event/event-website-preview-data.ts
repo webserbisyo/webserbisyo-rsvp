@@ -74,6 +74,18 @@ export function createEventWebsiteDraftItemId(prefix: string) {
 }
 
 export const previewDefaultDraft: EventWebsitePreviewDraft = {
+  eighteenRosesCandles: { groups: [] },
+  debutCourt: { groups: [] },
+  godparents: { groups: [] },
+  hostInfo: {
+    kind: "wedding",
+    brideName: "Maria",
+    displayAs: "Juan & Maria",
+    groomName: "Juan",
+    hostLine: "Alexander Morales Wedding RSVP",
+    shortHostMessage:
+      "Together with their families, Juan and Maria invite you to celebrate their wedding day.",
+  },
   attireDressCode: {
     colorMotifNote: "Please wear shades that complement our wedding colors.",
     dressCodeNote: "Formal or semi-formal attire is encouraged.",
@@ -405,11 +417,7 @@ export function buildEventWebsiteContentFromPreviewDraft({
         sectionTitle: previewDraft.guestbook.sectionTitle,
       },
       host_info: {
-        brideName: previewDraft.coupleInfo.brideName,
-        displayAs: previewDraft.coupleInfo.displayAs,
-        groomName: previewDraft.coupleInfo.groomName,
-        hostLine: previewDraft.coupleInfo.hostLine,
-        shortHostMessage: previewDraft.coupleInfo.shortHostMessage,
+        ...previewDraft.hostInfo,
       },
       main_event: {
         endTime: previewDraft.ceremony.endTime,
@@ -498,6 +506,9 @@ export function buildEventWebsiteContentFromPreviewDraft({
         mapsLink: previewDraft.venue.mapsLink,
         venueName: previewDraft.venue.venueName,
       },
+      eighteen_roses_candles: previewDraft.eighteenRosesCandles,
+      debut_court: previewDraft.debutCourt,
+      godparents: previewDraft.godparents,
     },
   };
 }

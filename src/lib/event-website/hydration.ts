@@ -1,4 +1,4 @@
-import { buildDefaultWeddingEventWebsiteContent } from "@/lib/event-website/defaults";
+import { buildDefaultEventWebsiteContent } from "@/lib/event-website/defaults";
 import {
   formatCanonicalRsvpCloseAtToEditorInput,
   normalizeCanonicalDateInput,
@@ -10,6 +10,7 @@ import type {
   EventWebsiteContent,
   EventWebsiteContentSectionKey,
   EventWebsiteDefaultsContext,
+  EventWebsiteHostInfoSection,
   EventWebsiteRsvpFormSection,
 } from "@/lib/event-website/types";
 import {
@@ -22,6 +23,9 @@ const LEGACY_GALLERY_KEY = "gallery" satisfies EventWebsiteContentSectionKey;
 const legacyEventWebsiteContentSectionKeys = eventWebsiteContentSectionKeys.filter(
   (key) => key !== LEGACY_GALLERY_KEY,
 );
+type EventWebsiteHostInfoPatch = NonNullable<
+  NonNullable<EventWebsiteContentPatchInput["sections"]>["host_info"]
+>;
 
 export function parseEventWebsiteContentJson(raw: unknown): EventWebsiteContent | null {
   const parsed = validateEventWebsiteContentJson(raw);
@@ -63,7 +67,7 @@ export function mergeEventWebsiteContent(
   savedContent: unknown,
   context: EventWebsiteDefaultsContext = {},
 ): EventWebsiteContent {
-  const defaults = buildDefaultWeddingEventWebsiteContent(context);
+  const defaults = buildDefaultEventWebsiteContent(context.event?.eventType, context);
   const parsedPatch = EventWebsiteContentPatchSchema.safeParse(
     upgradeLegacyEventWebsiteContent(savedContent),
   );
@@ -81,7 +85,9 @@ export function mergeEventWebsiteContent(
 
 export function normalizeEventWebsiteContentForSave(draft: unknown): EventWebsiteContent {
   const parsedPatch = EventWebsiteContentPatchSchema.parse(draft);
-  const defaults = buildDefaultWeddingEventWebsiteContent();
+  const eventType =
+    isRecord(draft) && typeof draft.eventType === "string" ? draft.eventType : "wedding";
+  const defaults = buildDefaultEventWebsiteContent(eventType);
 
   return EventWebsiteContentSchema.parse(mergeEventWebsiteContentPatch(defaults, parsedPatch));
 }
@@ -98,6 +104,12 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     return raw;
   }
 
+  const hostInfo = isRecord(sections.host_info) ? sections.host_info : null;
+  const normalizedHostInfo =
+    hostInfo && typeof hostInfo.kind !== "string"
+      ? { kind: typeof raw.eventType === "string" ? raw.eventType : "wedding", ...hostInfo }
+      : hostInfo;
+
   const enabledSections = layout.enabledSections;
   const sectionOrder = layout.sectionOrder;
 
@@ -106,10 +118,14 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     !hasExactLegacySectionKeys(sections) ||
     !hasExactLegacySectionOrder(sectionOrder)
   ) {
-    return raw;
+    return normalizedHostInfo === hostInfo
+      ? raw
+      : { ...raw, sections: { ...sections, host_info: normalizedHostInfo } };
   }
 
-  const galleryDefaults = buildDefaultWeddingEventWebsiteContent().sections.gallery;
+  const galleryDefaults = buildDefaultEventWebsiteContent(
+    typeof raw.eventType === "string" ? raw.eventType : "wedding",
+  ).sections.gallery;
 
   return {
     ...raw,
@@ -123,6 +139,7 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     },
     sections: {
       ...sections,
+      host_info: normalizedHostInfo,
       [LEGACY_GALLERY_KEY]: { ...galleryDefaults },
     },
   };
@@ -226,10 +243,7 @@ function mergeEventWebsiteContentPatch(
         ...defaults.sections.guestbook,
         ...(patch.sections?.guestbook ?? {}),
       },
-      host_info: {
-        ...defaults.sections.host_info,
-        ...(patch.sections?.host_info ?? {}),
-      },
+      host_info: mergeHostInfoSection(defaults.sections.host_info, patch.sections?.host_info),
       main_event: {
         ...defaults.sections.main_event,
         ...(patch.sections?.main_event ?? {}),
@@ -268,9 +282,26 @@ function mergeEventWebsiteContentPatch(
         ...defaults.sections.venue,
         ...(patch.sections?.venue ?? {}),
       },
+      eighteen_roses_candles: {
+        ...defaults.sections.eighteen_roses_candles,
+        ...(patch.sections?.eighteen_roses_candles ?? {}),
+      },
+      debut_court: { ...defaults.sections.debut_court, ...(patch.sections?.debut_court ?? {}) },
+      godparents: { ...defaults.sections.godparents, ...(patch.sections?.godparents ?? {}) },
     },
     version: patch.version ?? defaults.version,
   };
+}
+
+function mergeHostInfoSection(
+  defaults: EventWebsiteHostInfoSection,
+  patch: EventWebsiteHostInfoPatch | undefined,
+): EventWebsiteHostInfoSection {
+  if (!patch || (patch.kind && patch.kind !== defaults.kind)) {
+    return defaults;
+  }
+
+  return { ...defaults, ...patch, kind: defaults.kind } as EventWebsiteHostInfoSection;
 }
 
 function normalizeRsvpFormSection(

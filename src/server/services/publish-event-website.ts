@@ -335,7 +335,7 @@ export async function publishEventWebsite(
       event: {
         eventDate: eventRecord.event_date,
         eventTime: eventRecord.event_time,
-        eventType: null,
+        eventType: eventRecord.event_type,
         rsvpCloseAt: eventRecord.rsvp_close_at,
         venueAddress: eventRecord.venue_address,
         venueName: eventRecord.venue_name,

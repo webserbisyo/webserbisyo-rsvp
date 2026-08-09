@@ -7,6 +7,7 @@ import {
   DEFAULT_WEDDING_EVENT_TYPE,
   eventWebsiteContentSectionKeys,
   type EventWebsiteContent,
+  type EventWebsiteContentEventType,
   type EventWebsiteContentSectionKey,
   type EventWebsiteDefaultsContext,
 } from "@/lib/event-website/types";
@@ -21,12 +22,17 @@ const DEFAULT_WEDDING_EVENT_TIME = "16:00";
 const DEFAULT_WEDDING_EVENT_END_TIME = "18:00";
 
 export function getDefaultWeddingSectionOrder(): EventWebsiteContentSectionKey[] {
-  return [...eventWebsiteContentSectionKeys];
+  return eventWebsiteContentSectionKeys.filter(
+    (key) => !["eighteen_roses_candles", "debut_court", "godparents"].includes(key),
+  );
 }
 
 export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSectionKey, boolean> {
   return Object.fromEntries(
-    eventWebsiteContentSectionKeys.map((key) => [key, key !== "gallery"]),
+    eventWebsiteContentSectionKeys.map((key) => [
+      key,
+      key !== "gallery" && !["eighteen_roses_candles", "debut_court", "godparents"].includes(key),
+    ]),
   ) as Record<EventWebsiteContentSectionKey, boolean>;
 }
 
@@ -131,6 +137,7 @@ export function buildDefaultWeddingEventWebsiteContent(
         sectionTitle: DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
       },
       host_info: {
+        kind: "wedding",
         brideName: coupleNames.brideName,
         displayAs: coupleNames.displayAs,
         groomName: coupleNames.groomName,
@@ -243,8 +250,195 @@ export function buildDefaultWeddingEventWebsiteContent(
         mapsLink: "",
         venueName,
       },
+      eighteen_roses_candles: { groups: [] },
+      debut_court: { groups: [] },
+      godparents: { groups: [] },
     },
     version: 1,
+  };
+}
+
+export function buildDefaultEventWebsiteContent(
+  eventType: string | null | undefined,
+  context: EventWebsiteDefaultsContext = {},
+): EventWebsiteContent {
+  if (eventType === "wedding") return buildDefaultWeddingEventWebsiteContent(context);
+  if (eventType === "birthday") return buildDefaultBirthdayEventWebsiteContent(context);
+  if (eventType === "debut") return buildDefaultDebutEventWebsiteContent(context);
+  if (eventType === "baptism") return buildDefaultBaptismEventWebsiteContent(context);
+  return buildDefaultWeddingEventWebsiteContent(context);
+}
+
+export function buildDefaultBirthdayEventWebsiteContent(
+  context: EventWebsiteDefaultsContext = {},
+): EventWebsiteContent {
+  return buildNeutralTargetContent("birthday", context, {
+    guestbookTitle: "Birthday Wishes",
+    mainEventLabel: "Birthday Celebration",
+    storyTitle: "A Special Celebration",
+    enabled: [
+      "host_info",
+      "countdown",
+      "main_event",
+      "venue",
+      "timeline_program",
+      "attire_motif",
+      "rsvp_form",
+      "guestbook",
+      "gift_details",
+      "contact_socials",
+    ],
+  });
+}
+
+export function buildDefaultDebutEventWebsiteContent(
+  context: EventWebsiteDefaultsContext = {},
+): EventWebsiteContent {
+  return buildNeutralTargetContent("debut", context, {
+    guestbookTitle: "Debut Wishes",
+    mainEventLabel: "Debut Celebration",
+    storyTitle: "A Special Celebration",
+    enabled: [
+      "host_info",
+      "countdown",
+      "main_event",
+      "venue",
+      "timeline_program",
+      "eighteen_roses_candles",
+      "attire_motif",
+      "rsvp_form",
+      "guestbook",
+      "gift_details",
+      "contact_socials",
+    ],
+  });
+}
+
+export function buildDefaultBaptismEventWebsiteContent(
+  context: EventWebsiteDefaultsContext = {},
+): EventWebsiteContent {
+  return buildNeutralTargetContent("baptism", context, {
+    guestbookTitle: "Blessings & Messages",
+    mainEventLabel: "Christening Ceremony",
+    storyTitle: "A Special Celebration",
+    enabled: ["host_info", "main_event", "venue", "rsvp_form", "guestbook", "contact_socials"],
+  });
+}
+
+function buildNeutralTargetContent(
+  eventType: Exclude<EventWebsiteContentEventType, "wedding">,
+  context: EventWebsiteDefaultsContext,
+  options: {
+    enabled: EventWebsiteContentSectionKey[];
+    guestbookTitle: string;
+    mainEventLabel: string;
+    storyTitle: string;
+  },
+): EventWebsiteContent {
+  const base = buildDefaultWeddingEventWebsiteContent(context);
+  const eventDate = normalizeCanonicalDateInput(context.event?.eventDate) || "";
+  const eventTime = normalizeCanonicalTimeInput(context.event?.eventTime) || "";
+  const rsvpDeadline = formatCanonicalRsvpCloseAtToEditorInput(context.event?.rsvpCloseAt) || "";
+  const enabled = Object.fromEntries(
+    eventWebsiteContentSectionKeys.map((key) => [key, options.enabled.includes(key)]),
+  ) as Record<EventWebsiteContentSectionKey, boolean>;
+  const hostInfo =
+    eventType === "birthday"
+      ? {
+          kind: "birthday" as const,
+          celebrantName: "",
+          milestone: "",
+          displayAs: "",
+          hostLine: "",
+          shortHostMessage: "",
+        }
+      : eventType === "debut"
+        ? {
+            kind: "debut" as const,
+            debutantName: "",
+            milestone: "18th Birthday",
+            displayAs: "",
+            hostLine: "",
+            shortHostMessage: "",
+          }
+        : {
+            kind: "baptism" as const,
+            childName: "",
+            parentNames: "",
+            displayAs: "",
+            hostLine: "",
+            shortHostMessage: "",
+          };
+
+  return {
+    ...base,
+    eventType,
+    layout: {
+      enabledSections: enabled,
+      sectionOrder: eventWebsiteContentSectionKeys.filter(
+        (key) => key !== "entourage" && key !== "principal_sponsors",
+      ),
+    },
+    sections: {
+      ...base.sections,
+      host_info: hostInfo,
+      countdown: {
+        title: "Counting down to the celebration",
+        shortNote: "We can't wait to celebrate with you.",
+      },
+      main_event: {
+        endTime: "",
+        eventDate,
+        eventLabel: options.mainEventLabel,
+        eventTime,
+        rsvpDeadline,
+        scheduleNote: "",
+      },
+      venue: {
+        address: normalizeText(context.event?.venueAddress),
+        arrivalNote: "",
+        mapsLink: "",
+        venueName: normalizeText(context.event?.venueName),
+      },
+      secondary_event: {
+        address: "",
+        endTime: "",
+        mapsLink: "",
+        note: "",
+        startTime: "",
+        title: eventType === "baptism" ? "Reception" : "",
+        venueName: "",
+      },
+      attire_motif: { colorMotifNote: "", dressCodeNote: "", sectionIntro: "" },
+      contact_socials: {
+        contactNumber: "",
+        contactPerson: "",
+        email: "",
+        facebookUrl: "",
+        instagramUrl: "",
+        tikTokUrl: "",
+      },
+      extra_info: { items: [], sectionIntro: "", sectionTitle: "Additional Details" },
+      gallery: { sectionIntro: "", sectionTitle: "Gallery" },
+      gift_details: {
+        giftNote: "",
+        options: [],
+        sectionIntro: "Your presence is the greatest gift.",
+      },
+      guestbook: {
+        emptyStateMessage: DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+        sectionIntro: "Messages shared by family and friends.",
+        sectionTitle: options.guestbookTitle,
+      },
+      music_effects: { musicLink: "", musicTitle: "", playButtonLabel: "", shortNote: "" },
+      principal_sponsors: { introLine: "", names: "" },
+      story_message: { sectionIntro: "", storyBody: "", storyTitle: options.storyTitle },
+      timeline_program: { items: [] },
+      entourage: { groups: [], introLine: "" },
+      eighteen_roses_candles: { groups: [] },
+      debut_court: { groups: [] },
+      godparents: { groups: [] },
+    },
   };
 }
 

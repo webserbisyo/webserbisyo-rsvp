@@ -26,10 +26,15 @@ export const eventWebsiteContentSectionKeys = [
   "guestbook",
   "story_message",
   "contact_socials",
+  "eighteen_roses_candles",
+  "debut_court",
+  "godparents",
 ] as const satisfies readonly EventWebsiteSectionKey[];
 
 export type EventWebsiteContentSectionKey = (typeof eventWebsiteContentSectionKeys)[number];
-export type EventWebsiteContentEventType = typeof DEFAULT_WEDDING_EVENT_TYPE;
+export const eventWebsiteContentEventTypes = ["wedding", "birthday", "debut", "baptism"] as const;
+
+export type EventWebsiteContentEventType = (typeof eventWebsiteContentEventTypes)[number];
 
 export const eventWebsiteCustomQuestionFieldTypes = [
   "Short text",
@@ -57,12 +62,71 @@ export type EventWebsiteImageAsset = {
   url?: string;
 };
 
-export type EventWebsiteHostInfoSection = {
+export type EventWebsiteWeddingHostInfoSection = {
+  kind: "wedding";
   brideName: string;
   displayAs: string;
   groomName: string;
   hostLine: string;
   shortHostMessage: string;
+};
+
+export type EventWebsiteBirthdayHostInfoSection = {
+  kind: "birthday";
+  celebrantName: string;
+  milestone: string;
+  displayAs: string;
+  hostLine: string;
+  shortHostMessage: string;
+  brideName?: undefined;
+  groomName?: undefined;
+};
+
+export type EventWebsiteDebutHostInfoSection = {
+  kind: "debut";
+  debutantName: string;
+  milestone: string;
+  displayAs: string;
+  hostLine: string;
+  shortHostMessage: string;
+  brideName?: undefined;
+  groomName?: undefined;
+};
+
+export type EventWebsiteBaptismHostInfoSection = {
+  kind: "baptism";
+  childName: string;
+  parentNames: string;
+  displayAs: string;
+  hostLine: string;
+  shortHostMessage: string;
+  brideName?: undefined;
+  groomName?: undefined;
+};
+
+export type EventWebsiteHostInfoSection =
+  | EventWebsiteWeddingHostInfoSection
+  | EventWebsiteBirthdayHostInfoSection
+  | EventWebsiteDebutHostInfoSection
+  | EventWebsiteBaptismHostInfoSection;
+
+export type EventWebsiteTraditionKind = "roses" | "candles" | "treasures" | "custom";
+
+export type EventWebsiteNamedEntry = { id: string; name: string };
+
+export type EventWebsiteEighteenTraditionEntry = EventWebsiteNamedEntry & { message: string };
+export type EventWebsiteEighteenTraditionGroup = {
+  id: string;
+  title: string;
+  kind: EventWebsiteTraditionKind;
+  entries: EventWebsiteEighteenTraditionEntry[];
+};
+export type EventWebsiteEighteenRosesCandlesSection = {
+  groups: EventWebsiteEighteenTraditionGroup[];
+};
+
+export type EventWebsiteNamedGroupsSection = {
+  groups: Array<{ id: string; title: string; names: EventWebsiteNamedEntry[] }>;
 };
 
 export type EventWebsiteCountdownSection = {
@@ -234,6 +298,9 @@ export type EventWebsiteSections = {
   timeline_program: EventWebsiteTimelineProgramSection;
   entourage: EventWebsiteEntourageSection;
   venue: EventWebsiteVenueSection;
+  eighteen_roses_candles: EventWebsiteEighteenRosesCandlesSection;
+  debut_court: EventWebsiteNamedGroupsSection;
+  godparents: EventWebsiteNamedGroupsSection;
 };
 
 export type EventWebsiteLayout = {
@@ -248,13 +315,16 @@ export type EventWebsiteContentMeta = {
   savedBy: string | null;
 };
 
-export type EventWebsiteContent = {
+export type EventWebsiteContentBase = {
   assets: EventWebsiteContentAssets;
-  eventType: EventWebsiteContentEventType;
   layout: EventWebsiteLayout;
   meta: EventWebsiteContentMeta;
   sections: EventWebsiteSections;
   version: 1;
+};
+
+export type EventWebsiteContent = EventWebsiteContentBase & {
+  eventType: EventWebsiteContentEventType;
 };
 
 export type EventWebsiteCanonicalEventPatch = {

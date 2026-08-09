@@ -111,6 +111,9 @@ export type PublicEventSectionsByKey = {
   story_message: EventWebsiteContent["sections"]["story_message"];
   timeline_program: EventWebsiteContent["sections"]["timeline_program"];
   venue: EventWebsiteContent["sections"]["venue"];
+  eighteen_roses_candles: EventWebsiteContent["sections"]["eighteen_roses_candles"];
+  debut_court: EventWebsiteContent["sections"]["debut_court"];
+  godparents: EventWebsiteContent["sections"]["godparents"];
 };
 
 export type PublicEventDto = {
@@ -379,6 +382,9 @@ function buildPublicSectionsByKey(
       items: content.sections.timeline_program.items.map((item) => ({ ...item })),
     },
     venue: { ...content.sections.venue },
+    eighteen_roses_candles: { ...content.sections.eighteen_roses_candles },
+    debut_court: { ...content.sections.debut_court },
+    godparents: { ...content.sections.godparents },
   };
 }
 

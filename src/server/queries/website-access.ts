@@ -47,6 +47,7 @@ type WebsiteAccessDataRow = {
       }>
     | null;
   event_date: string | null;
+  event_type: string | null;
   event_slug: string;
   event_time: string | null;
   fallback_page_enabled: boolean;
@@ -140,14 +141,14 @@ export async function getWebsiteAccessData(): Promise<WebsiteAccessInitialData> 
       : "valid";
   const mergedDraftContent = parsedDraftContent
     ? mergeEventWebsiteContent(parsedDraftContent, {
-          event: {
-            eventDate: event.event_date,
-            eventTime: event.event_time,
-            eventType: null,
-            venueAddress: event.venue_address,
-            venueName: event.venue_name,
-          },
-        })
+        event: {
+          eventDate: event.event_date,
+          eventTime: event.event_time,
+          eventType: event.event_type,
+          venueAddress: event.venue_address,
+          venueName: event.venue_name,
+        },
+      })
     : null;
   const contentDraftSavedAt = getEventWebsiteSavedAt(mergedDraftContent);
   const publishState =
@@ -308,6 +309,7 @@ async function getWebsiteAccessEventRow(
         fallback_page_enabled,
         website_access_updated_at,
         event_date,
+        event_type,
         event_time,
         venue_name,
         venue_address,
@@ -362,6 +364,7 @@ async function getDraftSchemaFallbackEventRow(
         fallback_page_enabled,
         website_access_updated_at,
         event_date,
+        event_type,
         event_time,
         venue_name,
         venue_address,
@@ -417,6 +420,7 @@ async function getDraftSchemaFallbackEventRow(
         created_at,
         updated_at,
         event_date,
+        event_type,
         event_time,
         venue_name,
         venue_address,
@@ -453,6 +457,7 @@ async function getDraftSchemaFallbackEventRow(
       draft_visibility: legacyEvent.visibility,
       event_content: legacyEvent.event_content,
       event_date: legacyEvent.event_date,
+      event_type: legacyEvent.event_type,
       event_slug: legacyEvent.event_slug,
       event_time: legacyEvent.event_time,
       fallback_page_enabled: legacyEvent.fallback_page_enabled,

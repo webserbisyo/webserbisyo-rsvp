@@ -5,6 +5,7 @@ import {
   DEFAULT_EVENT_WEBSITE_GUESTBOOK_INTRO,
   DEFAULT_EVENT_WEBSITE_GUESTBOOK_TITLE,
   DEFAULT_WEDDING_EVENT_TYPE,
+  eventWebsiteContentEventTypes,
   eventWebsiteContentSectionKeys,
   eventWebsiteCustomQuestionFieldTypes,
   type EventWebsiteContentSectionKey,
@@ -155,7 +156,7 @@ export function isSafeHttpUrl(value: string) {
 }
 
 export const EventWebsiteContentSectionKeySchema = z.enum(eventWebsiteContentSectionKeys);
-export const EventWebsiteContentEventTypeSchema = z.literal(DEFAULT_WEDDING_EVENT_TYPE);
+export const EventWebsiteContentEventTypeSchema = z.enum(eventWebsiteContentEventTypes);
 export const EventWebsiteCustomQuestionFieldTypeSchema = z.enum(
   eventWebsiteCustomQuestionFieldTypes,
 );
@@ -196,13 +197,88 @@ export const EventWebsiteImageAssetSchema = z
   })
   .strict();
 
-export const EventWebsiteHostInfoSectionSchema = z
+export const EventWebsiteWeddingHostInfoSectionSchema = z
   .object({
+    kind: z.literal("wedding"),
     brideName: draftText(40),
     displayAs: draftText(80),
     groomName: draftText(40),
     hostLine: draftText(120),
     shortHostMessage: draftText(160),
+  })
+  .strict();
+
+export const EventWebsiteBirthdayHostInfoSectionSchema = z
+  .object({
+    kind: z.literal("birthday"),
+    celebrantName: draftText(60),
+    milestone: draftText(40),
+    displayAs: draftText(80),
+    hostLine: draftText(120),
+    shortHostMessage: draftText(160),
+  })
+  .strict();
+export const EventWebsiteDebutHostInfoSectionSchema = z
+  .object({
+    kind: z.literal("debut"),
+    debutantName: draftText(60),
+    milestone: draftText(40),
+    displayAs: draftText(80),
+    hostLine: draftText(120),
+    shortHostMessage: draftText(160),
+  })
+  .strict();
+export const EventWebsiteBaptismHostInfoSectionSchema = z
+  .object({
+    kind: z.literal("baptism"),
+    childName: draftText(60),
+    parentNames: draftText(120),
+    displayAs: draftText(80),
+    hostLine: draftText(120),
+    shortHostMessage: draftText(160),
+  })
+  .strict();
+export const EventWebsiteHostInfoSectionSchema = z.discriminatedUnion("kind", [
+  EventWebsiteWeddingHostInfoSectionSchema,
+  EventWebsiteBirthdayHostInfoSectionSchema,
+  EventWebsiteDebutHostInfoSectionSchema,
+  EventWebsiteBaptismHostInfoSectionSchema,
+]);
+
+const EventWebsiteNamedEntrySchema = z
+  .object({ id: EventWebsiteItemIdSchema, name: draftText(120) })
+  .strict();
+export const EventWebsiteEighteenRosesCandlesSectionSchema = z
+  .object({
+    groups: z
+      .array(
+        z
+          .object({
+            id: EventWebsiteItemIdSchema,
+            title: draftText(80),
+            kind: z.enum(["roses", "candles", "treasures", "custom"]),
+            entries: z
+              .array(EventWebsiteNamedEntrySchema.extend({ message: draftText(220) }))
+              .max(18),
+          })
+          .strict(),
+      )
+      .max(8),
+  })
+  .strict();
+export const EventWebsiteNamedGroupsSectionSchema = z
+  .object({
+    groups: z
+      .array(
+        z
+          .object({
+            id: EventWebsiteItemIdSchema,
+            title: draftText(80),
+            names: z.array(EventWebsiteNamedEntrySchema).max(40),
+          })
+          .strict(),
+      )
+      .max(12),
   })
   .strict();
 
@@ -433,6 +509,9 @@ export const EventWebsiteSectionsSchema = z
     timeline_program: EventWebsiteTimelineProgramSectionSchema,
     entourage: EventWebsiteEntourageSectionSchema,
     venue: EventWebsiteVenueSectionSchema,
+    eighteen_roses_candles: EventWebsiteEighteenRosesCandlesSectionSchema,
+    debut_court: EventWebsiteNamedGroupsSectionSchema,
+    godparents: EventWebsiteNamedGroupsSectionSchema,
   })
   .strict();
 
@@ -541,10 +620,31 @@ export const EventWebsiteContentSchema = z
     sections: EventWebsiteSectionsSchema,
     version: z.literal(1),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.eventType !== value.sections.host_info.kind) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Host info must match the event type.",
+        path: ["sections", "host_info", "kind"],
+      });
+    }
+  });
 
-export const EventWebsiteHostInfoSectionPatchSchema =
-  EventWebsiteHostInfoSectionSchema.partial().strict();
+export const EventWebsiteHostInfoSectionPatchSchema = z.union([
+  EventWebsiteWeddingHostInfoSectionSchema.partial()
+    .extend({ kind: z.literal("wedding").optional() })
+    .strict(),
+  EventWebsiteBirthdayHostInfoSectionSchema.partial()
+    .extend({ kind: z.literal("birthday").optional() })
+    .strict(),
+  EventWebsiteDebutHostInfoSectionSchema.partial()
+    .extend({ kind: z.literal("debut").optional() })
+    .strict(),
+  EventWebsiteBaptismHostInfoSectionSchema.partial()
+    .extend({ kind: z.literal("baptism").optional() })
+    .strict(),
+]);
 export const EventWebsiteCountdownSectionPatchSchema =
   EventWebsiteCountdownSectionSchema.partial().strict();
 export const EventWebsiteMusicEffectsSectionPatchSchema =
@@ -640,6 +740,9 @@ export const EventWebsiteSectionsPatchSchema = z
     timeline_program: EventWebsiteTimelineProgramSectionPatchSchema.optional(),
     entourage: EventWebsiteEntourageSectionPatchSchema.optional(),
     venue: EventWebsiteVenueSectionPatchSchema.optional(),
+    eighteen_roses_candles: EventWebsiteEighteenRosesCandlesSectionSchema.partial().optional(),
+    debut_court: EventWebsiteNamedGroupsSectionSchema.partial().optional(),
+    godparents: EventWebsiteNamedGroupsSectionSchema.partial().optional(),
   })
   .strict();
 
