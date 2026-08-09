@@ -43,9 +43,11 @@ export function trackMetaAcquisitionClick(
   const eventId = crypto.randomUUID();
   const sourcePath = window.location.pathname === "/apply" ? "/apply" : "/";
   const source = typeof params.source === "string" ? params.source : "unknown";
+  const referenceCode = typeof params.reference_code === "string" ? params.reference_code : undefined;
   const shared = { eventId, fbc: getFbc(), fbp: getCookie("_fbp") };
 
-  trackMetaPixelEvent(eventName, params, { eventID: eventId });
+  const { reference_code: _referenceCode, ...browserParams } = params;
+  trackMetaPixelEvent(eventName, browserParams, { eventID: eventId });
 
   if (eventName === "SelectPlan" && (params.plan === "pro" || params.plan === "max")) {
     sendMetaAcquisitionOccurrence({
@@ -65,7 +67,7 @@ export function trackMetaAcquisitionClick(
     });
   } else if (eventName === "Contact") {
     const contactPath = window.location.pathname === "/apply/success" ? "/apply/success" : "/";
-    sendMetaAcquisitionOccurrence({ ...shared, eventName, source, sourcePath: contactPath });
+    sendMetaAcquisitionOccurrence({ ...shared, eventName, referenceCode, source, sourcePath: contactPath });
   }
 
   return eventId;

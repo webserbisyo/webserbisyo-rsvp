@@ -26,7 +26,10 @@ export async function sendMetaCapiAcquisitionEvent(input: SendMetaCapiAcquisitio
   }
 
   const pixelId = await getApplicationPixelId();
-  const identity = "referenceCode" in input ? await getApplicationIdentity(input.referenceCode) : null;
+  const identity =
+    "referenceCode" in input && input.referenceCode
+      ? await getApplicationIdentity(input.referenceCode)
+      : null;
   const result = await sendMetaCapiEvent({
     actionSource: "website",
     amount: "plan" in input ? getPlanValue(input.plan) : 0,

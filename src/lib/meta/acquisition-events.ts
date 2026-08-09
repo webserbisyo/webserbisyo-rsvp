@@ -45,6 +45,7 @@ export const MetaAcquisitionEventSchema = z.discriminatedUnion("eventName", [
   }),
   SharedSchema.extend({
     eventName: z.literal("Contact"),
+    referenceCode: ReferenceCodeSchema.optional(),
     source: SourceSchema,
     sourcePath: z.enum(["/", "/apply/success"]),
   }),
