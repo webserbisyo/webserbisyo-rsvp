@@ -8,10 +8,11 @@ export type MetaCapiEventInput = {
   amount: number;
   clientIpAddress?: string | null;
   clientUserAgent?: string | null;
+  customData?: MetaCapiCustomData;
   currency: string;
   email?: string | null;
   eventId: string;
-  eventName?: "Purchase";
+  eventName?: MetaCapiEventName;
   externalId?: string | null;
   fbc?: string | null;
   fbp?: string | null;
@@ -21,6 +22,18 @@ export type MetaCapiEventInput = {
   sourceUrl?: string | null;
   testEventCode?: string | null;
 };
+
+export type MetaCapiEventName =
+  | "CompleteRegistration"
+  | "Contact"
+  | "InitiateCheckout"
+  | "PageView"
+  | "Purchase"
+  | "SelectPlan"
+  | "StartApplicationClick"
+  | "ViewContent";
+
+export type MetaCapiCustomData = Record<string, boolean | number | string | undefined>;
 
 export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
   const config = getMetaCapiRuntimeConfig();
@@ -51,7 +64,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
     data: [
       {
         action_source: input.actionSource ?? "website",
-        custom_data: {
+        custom_data: input.customData ?? {
           currency: input.currency,
           order_id: input.eventId,
           value: input.amount,

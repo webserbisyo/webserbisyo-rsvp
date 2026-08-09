@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ApplyForm } from "@/components/apply/apply-form";
+import { InitiateCheckoutTracker } from "@/components/meta-pixels/initiate-checkout-tracker";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 import { getPublicApplyConfig } from "@/server/queries/public-apply";
@@ -35,28 +36,6 @@ type ApplyStartPageProps = {
 
 function normalizePlan(plan: string | undefined): "pro" | "max" {
   return plan === "max" ? "max" : "pro";
-}
-
-function getCheckoutEventParams(plan: "pro" | "max") {
-  if (plan === "max") {
-    return {
-      content_category: "RSVP Website Setup",
-      content_name: "MAX Plan",
-      currency: "PHP",
-      plan: "max",
-      source_route: "/apply/start",
-      value: 3599,
-    };
-  }
-
-  return {
-    content_category: "RSVP Website Setup",
-    content_name: "PRO Plan",
-    currency: "PHP",
-    plan: "pro",
-    source_route: "/apply/start",
-    value: 1599,
-  };
 }
 
 export default async function ApplyStartPage({ searchParams }: ApplyStartPageProps) {
@@ -96,12 +75,8 @@ export default async function ApplyStartPage({ searchParams }: ApplyStartPagePro
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <ApplyForm config={config} initialPlan={initialPlan} />
       </div>
-      <PublicMetaPixelScripts
-        eventName="InitiateCheckout"
-        eventParams={getCheckoutEventParams(initialPlan)}
-        executionKey={`apply-start-${initialPlan}`}
-        pixels={pixels}
-      />
+      <PublicMetaPixelScripts executionKey={`apply-start-${initialPlan}`} pixels={pixels} />
+      <InitiateCheckoutTracker plan={initialPlan} />
     </main>
   );
 }

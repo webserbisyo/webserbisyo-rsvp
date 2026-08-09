@@ -4,6 +4,7 @@ import test from "node:test";
 
 const { resolveMetaCapiRuntimeConfig } = await import("../src/lib/meta/capi-config-core.ts");
 const { resolveMetaPixelForContext } = await import("../src/lib/meta/pixel-resolution.ts");
+const { MetaAcquisitionEventSchema } = await import("../src/lib/meta/acquisition-events.ts");
 
 const candidate = (overrides = {}) => ({
   id: "pixel-global",
@@ -84,6 +85,62 @@ test("Lead, Purchase, and test-mode controls remain independent", () => {
   assert.equal(config.leadEnabled, true);
   assert.equal(config.purchaseEnabled, false);
   assert.equal(config.testEventCode, "test-code");
+});
+
+test("new acquisition CAPI flags default false while Lead and Purchase remain independent", () => {
+  const config = resolveMetaCapiRuntimeConfig({
+    META_CAPI_LEAD_ENABLED: "true",
+    META_CAPI_PURCHASE_ENABLED: "true",
+  });
+
+  assert.equal(config.initiateCheckoutEnabled, false);
+  assert.equal(config.selectPlanEnabled, false);
+  assert.equal(config.startApplicationClickEnabled, false);
+  assert.equal(config.contactEnabled, false);
+  assert.equal(config.completeRegistrationEnabled, false);
+  assert.equal(config.viewContentEnabled, false);
+  assert.equal(config.pageViewEnabled, false);
+  assert.equal(config.leadEnabled, true);
+  assert.equal(config.purchaseEnabled, true);
+});
+
+test("InitiateCheckout handoff accepts only a UUID occurrence and validated application context", () => {
+  const valid = MetaAcquisitionEventSchema.safeParse({
+    eventId: "0f11aa2e-66ad-4c0f-8e52-9af2b69904da",
+    eventName: "InitiateCheckout",
+    fbp: "fb.1.1.123.456",
+    plan: "pro",
+    sourcePath: "/apply/start",
+  });
+
+  assert.equal(valid.success, true);
+  assert.equal(
+    MetaAcquisitionEventSchema.safeParse({ ...valid.data, eventId: "not-a-uuid" }).success,
+    false,
+  );
+  assert.equal(
+    MetaAcquisitionEventSchema.safeParse({ ...valid.data, sourcePath: "https://attacker.example" })
+      .success,
+    false,
+  );
+});
+
+test("InitiateCheckout is hydrated-client-only and pairs the browser event with the handoff ID", () => {
+  const trackerSource = readFileSync(
+    new URL("../src/lib/meta/acquisition-tracker.ts", import.meta.url),
+    "utf8",
+  );
+  const pageSource = readFileSync(
+    new URL("../src/app/(public)/apply/start/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(trackerSource, /crypto\.randomUUID\(\)/);
+  assert.match(trackerSource, /\{ eventID: eventId \}/);
+  assert.match(trackerSource, /eventId,/);
+  assert.match(trackerSource, /keepalive: true/);
+  assert.match(pageSource, /<InitiateCheckoutTracker plan=\{initialPlan\} \/>/);
+  assert.doesNotMatch(pageSource, /eventName="InitiateCheckout"/);
 });
 
 test("Lead keeps its deterministic browser/server event ID contract", () => {
