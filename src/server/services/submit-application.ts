@@ -37,6 +37,30 @@ function isReferenceCodeConflict(error: unknown): error is SafeSupabaseError {
   );
 }
 
+function isActiveEmailConflict(error: unknown): error is SafeSupabaseError {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as SafeSupabaseError;
+
+  return (
+    candidate.code === "23505" &&
+    typeof candidate.message === "string" &&
+    (candidate.message.includes("idx_rsvp_applications_unique_active_email") ||
+      candidate.message.includes("lower(btrim(email))"))
+  );
+}
+
+const DUPLICATE_EMAIL_ZOD_ERROR = new ZodError([
+  {
+    code: ZodIssueCode.custom,
+    path: ["email"],
+    message:
+      "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.",
+  },
+]);
+
 export async function submitApplication(
   input: ApplicationInput,
   context?: SubmitApplicationContext,
@@ -66,21 +90,14 @@ export async function submitApplication(
   assertServiceSuccess(appCountError, "Failed to verify email availability.");
 
   if ((clientCount && clientCount > 0) || (appCount && appCount > 0)) {
-    throw new ZodError([
-      {
-        code: ZodIssueCode.custom,
-        path: ["email"],
-        message:
-          "This email is already linked to an application or account. Please use a different email, log in, or message WebSerbisyo if this is yours.",
-      },
-    ]);
+    throw DUPLICATE_EMAIL_ZOD_ERROR;
   }
 
   let application: Tables<"rsvp_applications"> | null = null;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const result = await insertApplication({
-      email: payload.email,
+      email: normalizedEmail,
       estimated_guest_count: payload.estimatedGuestCount ?? null,
       event_date: payload.eventDate ?? null,
       event_location: payload.eventLocation ?? null,
@@ -99,6 +116,10 @@ export async function submitApplication(
     if (!result.error) {
       application = result.data;
       break;
+    }
+
+    if (isActiveEmailConflict(result.error)) {
+      throw DUPLICATE_EMAIL_ZOD_ERROR;
     }
 
     if (!isReferenceCodeConflict(result.error)) {
