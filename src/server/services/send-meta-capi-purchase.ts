@@ -93,6 +93,7 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     await completeMetaCapiPurchaseDelivery({
       claimToken: claim.claimToken,
       deliveryId: claim.deliveryId,
+      failureCode: result.failureCode ?? null,
       outcome: result.status === "sent" ? "sent" : "failed",
     });
   } catch {
@@ -105,11 +106,13 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
 async function recordPurchaseResult(
   input: SendMetaCapiPurchaseInput,
   result: Awaited<ReturnType<typeof sendMetaCapiEvent>>,
-  claim?: Exclude<Awaited<ReturnType<typeof claimMetaCapiPurchaseDelivery>>, { state: "claimed" }> | {
-    attempts: number;
-    deliveryId: string;
-    state: "claimed";
-  },
+  claim?:
+    | Exclude<Awaited<ReturnType<typeof claimMetaCapiPurchaseDelivery>>, { state: "claimed" }>
+    | {
+        attempts: number;
+        deliveryId: string;
+        state: "claimed";
+      },
 ) {
   await safeWriteAuditLog({
     action: `meta_capi_purchase_${result.status}`,
@@ -126,6 +129,10 @@ async function recordPurchaseResult(
             ? "sent"
             : "failed"
           : (claim?.state ?? "disabled"),
+      event_id: result.eventId,
+      event_name: "Purchase",
+      payment_id: input.paymentId,
+      provider: "meta",
       result: toAuditMetadata(result),
     },
   });

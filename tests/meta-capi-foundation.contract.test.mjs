@@ -6,6 +6,13 @@ const { resolveMetaCapiRuntimeConfig } = await import("../src/lib/meta/capi-conf
 const { resolveMetaPixelForContext } = await import("../src/lib/meta/pixel-resolution.ts");
 const { MetaAcquisitionEventSchema } = await import("../src/lib/meta/acquisition-events.ts");
 const { getPurchaseEventTime } = await import("../src/lib/meta/purchase-event-time.ts");
+const {
+  buildMetaCapiEventEnvelope,
+  classifyMetaCapiResponse,
+  fingerprintMetaTestEventCode,
+  isMetaCapiIngestionConfirmed,
+  summarizeMetaCapiResponse,
+} = await import("../src/lib/meta/capi-response.ts");
 
 const candidate = (overrides = {}) => ({
   id: "pixel-global",
@@ -72,7 +79,61 @@ test("CAPI test code requires explicit test mode and warnings never include the 
     META_CAPI_TEST_MODE: "true",
   });
   assert.equal(active.testEventCode, "secret-test-code");
+  assert.equal(active.testModeEnabled, true);
   assert.deepEqual(active.warnings, []);
+});
+
+test("CAPI test routing is top-level only when test mode resolves an effective code", () => {
+  const enabled = resolveMetaCapiRuntimeConfig({
+    META_CAPI_TEST_EVENT_CODE: "TEST49251",
+    META_CAPI_TEST_MODE: "true",
+  });
+  const enabledEnvelope = buildMetaCapiEventEnvelope(
+    { event_name: "Purchase" },
+    enabled.testEventCode,
+  );
+  const disabledEnvelope = buildMetaCapiEventEnvelope(
+    { event_name: "Purchase" },
+    resolveMetaCapiRuntimeConfig({ META_CAPI_TEST_EVENT_CODE: "TEST49251" }).testEventCode,
+  );
+
+  assert.equal(enabledEnvelope.test_event_code, "TEST49251");
+  assert.equal(JSON.parse(JSON.stringify(disabledEnvelope)).test_event_code, undefined);
+});
+
+test("CAPI response requires acknowledged ingestion and retains only safe diagnostics", () => {
+  const confirmed = summarizeMetaCapiResponse({
+    events_received: 1,
+    fbtrace_id: "trace-1",
+    messages: ["accepted"],
+    user_data: { email: "must-not-survive" },
+  });
+  const zero = summarizeMetaCapiResponse({ events_received: 0, messages: [] });
+  const missing = summarizeMetaCapiResponse({ messages: [] });
+
+  assert.equal(isMetaCapiIngestionConfirmed(confirmed), true);
+  assert.equal(isMetaCapiIngestionConfirmed(zero), false);
+  assert.equal(isMetaCapiIngestionConfirmed(missing), false);
+  assert.equal(classifyMetaCapiResponse(false, confirmed), "http_failed");
+  assert.equal(classifyMetaCapiResponse(true, confirmed), "sent");
+  assert.equal(classifyMetaCapiResponse(true, zero), "ingestion_unconfirmed");
+  assert.equal(classifyMetaCapiResponse(true, missing), "ingestion_unconfirmed");
+  assert.deepEqual(confirmed, {
+    error: null,
+    eventsReceived: 1,
+    fbtraceId: "trace-1",
+    messages: ["accepted"],
+  });
+  assert.doesNotMatch(JSON.stringify(confirmed), /email|must-not-survive/);
+});
+
+test("test-event fingerprints are stable, short, and never retain the raw code", () => {
+  const fingerprint = fingerprintMetaTestEventCode("TEST49251");
+
+  assert.equal(fingerprint, fingerprintMetaTestEventCode(" TEST49251 "));
+  assert.equal(fingerprint?.length, 12);
+  assert.doesNotMatch(fingerprint ?? "", /TEST49251/);
+  assert.equal(fingerprintMetaTestEventCode(null), null);
 });
 
 test("Lead, Purchase, and test-mode controls remain independent", () => {

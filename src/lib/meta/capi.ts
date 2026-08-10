@@ -2,6 +2,12 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { getMetaCapiRuntimeConfig } from "./capi-config";
+import {
+  buildMetaCapiEventEnvelope,
+  classifyMetaCapiResponse,
+  fingerprintMetaTestEventCode,
+  summarizeMetaCapiResponse,
+} from "./capi-response";
 
 export type MetaCapiEventInput = {
   actionSource?: "other" | "website";
@@ -21,7 +27,6 @@ export type MetaCapiEventInput = {
   phone?: string | null;
   pixelId?: string | null;
   sourceUrl?: string | null;
-  testEventCode?: string | null;
 };
 
 export type MetaCapiEventName =
@@ -36,14 +41,54 @@ export type MetaCapiEventName =
 
 export type MetaCapiCustomData = Record<string, boolean | number | string | undefined>;
 
-export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
+export type MetaCapiSendResult = {
+  diagnostics?: {
+    actionSource: "other" | "website";
+    currency: string;
+    eventName: MetaCapiEventName;
+    eventTime: number;
+    eventsReceived?: number | null;
+    fbtraceId?: string | null;
+    httpStatus?: number;
+    messages?: string[];
+    pixelId: string | null;
+    testEventCodeFingerprint: string | null;
+    testEventCodePresent: boolean;
+    testModeEnabled: boolean;
+    value: number;
+  };
+  eventId: string;
+  failureCode?: "http_error" | "ingestion_unconfirmed" | "transport_error";
+  httpStatus?: number;
+  reason?: string;
+  response?: ReturnType<typeof summarizeMetaCapiResponse>;
+  status: "failed" | "sent" | "skipped";
+};
+
+export async function sendMetaCapiEvent(input: MetaCapiEventInput): Promise<MetaCapiSendResult> {
   const config = getMetaCapiRuntimeConfig();
   const accessToken = config.accessToken;
-  const pixelId = input.pixelId ?? process.env.META_PIXEL_ID ?? null;
+  const pixelId = (input.pixelId ?? process.env.META_PIXEL_ID)?.trim() || null;
+  const actionSource = input.actionSource ?? "website";
+  const eventName = input.eventName ?? "Purchase";
+  const eventTime = input.eventTime ?? Math.floor(Date.now() / 1000);
+  const testEventCode = config.testEventCode;
+  const requestDiagnostics = {
+    actionSource,
+    currency: input.currency,
+    eventName,
+    eventTime,
+    pixelId,
+    testEventCodeFingerprint: fingerprintMetaTestEventCode(testEventCode),
+    testEventCodePresent: Boolean(testEventCode),
+    testModeEnabled: config.testModeEnabled,
+    value: input.amount,
+  };
 
   if (!accessToken || !pixelId) {
     return {
       eventId: input.eventId,
+      diagnostics: requestDiagnostics,
       reason: "Meta CAPI access token or pixel ID is not configured.",
       status: "skipped" as const,
     };
@@ -54,6 +99,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
   if (Object.keys(userData).length === 0) {
     return {
       eventId: input.eventId,
+      diagnostics: requestDiagnostics,
       reason: "Meta CAPI user data is not available for matching.",
       status: "skipped" as const,
     };
@@ -61,24 +107,22 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
 
   const apiVersion = config.apiVersion;
   const endpoint = `https://graph.facebook.com/${apiVersion}/${pixelId}/events`;
-  const body = {
-    data: [
-      {
-        action_source: input.actionSource ?? "website",
-        custom_data: input.customData ?? {
-          currency: input.currency,
-          order_id: input.eventId,
-          value: input.amount,
-        },
-        event_id: input.eventId,
-        event_name: input.eventName ?? "Purchase",
-        event_source_url: input.sourceUrl ?? undefined,
-        event_time: input.eventTime ?? Math.floor(Date.now() / 1000),
-        user_data: userData,
+  const body = buildMetaCapiEventEnvelope(
+    {
+      action_source: actionSource,
+      custom_data: input.customData ?? {
+        currency: input.currency,
+        order_id: input.eventId,
+        value: input.amount,
       },
-    ],
-    test_event_code: input.testEventCode?.trim() || config.testEventCode || undefined,
-  };
+      event_id: input.eventId,
+      event_name: eventName,
+      event_source_url: input.sourceUrl ?? undefined,
+      event_time: eventTime,
+      user_data: userData,
+    },
+    testEventCode,
+  );
 
   try {
     const response = await fetch(`${endpoint}?access_token=${encodeURIComponent(accessToken)}`, {
@@ -89,25 +133,52 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
       method: "POST",
     });
     const responseBody = (await response.json().catch(() => null)) as unknown;
+    const responseSummary = summarizeMetaCapiResponse(responseBody);
+    const responseOutcome = classifyMetaCapiResponse(response.ok, responseSummary);
+    const diagnostics = {
+      ...requestDiagnostics,
+      eventsReceived: responseSummary.eventsReceived,
+      fbtraceId: responseSummary.fbtraceId ?? responseSummary.error?.fbtraceId ?? null,
+      httpStatus: response.status,
+      messages: responseSummary.messages,
+    };
 
-    if (!response.ok) {
+    if (responseOutcome === "http_failed") {
       return {
+        diagnostics,
         eventId: input.eventId,
+        failureCode: "http_error" as const,
         httpStatus: response.status,
-        response: sanitizeMetaResponse(responseBody),
+        response: responseSummary,
+        status: "failed" as const,
+      };
+    }
+
+    if (responseOutcome === "ingestion_unconfirmed") {
+      return {
+        diagnostics,
+        eventId: input.eventId,
+        failureCode: "ingestion_unconfirmed" as const,
+        httpStatus: response.status,
+        reason: "Meta did not confirm ingestion of an event.",
+        response: responseSummary,
         status: "failed" as const,
       };
     }
 
     return {
+      diagnostics,
       eventId: input.eventId,
-      response: sanitizeMetaResponse(responseBody),
+      httpStatus: response.status,
+      response: responseSummary,
       status: "sent" as const,
     };
-  } catch (error) {
+  } catch {
     return {
+      diagnostics: requestDiagnostics,
       eventId: input.eventId,
-      reason: error instanceof Error ? error.message : "Meta CAPI request failed.",
+      failureCode: "transport_error" as const,
+      reason: "Meta CAPI request failed.",
       status: "failed" as const,
     };
   }
@@ -195,10 +266,4 @@ function normalizeHashable(value: string | null | undefined) {
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
-}
-
-function sanitizeMetaResponse(response: unknown) {
-  return {
-    response,
-  };
 }

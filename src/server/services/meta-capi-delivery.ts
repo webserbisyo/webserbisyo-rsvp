@@ -57,6 +57,7 @@ export async function claimMetaCapiPurchaseDelivery(input: {
 export async function completeMetaCapiPurchaseDelivery(input: {
   claimToken: string;
   deliveryId: string;
+  failureCode?: string | null;
   outcome: "failed" | "sent";
 }) {
   const supabase = createAdminClient();
@@ -64,7 +65,8 @@ export async function completeMetaCapiPurchaseDelivery(input: {
     .from("meta_capi_deliveries")
     .update({
       claim_token: null,
-      last_error_code: input.outcome === "failed" ? "meta_request_failed" : null,
+      last_error_code:
+        input.outcome === "failed" ? (input.failureCode ?? "meta_request_failed") : null,
       sent_at: input.outcome === "sent" ? new Date().toISOString() : null,
       status: input.outcome,
     })

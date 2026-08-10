@@ -16,6 +16,7 @@ export type MetaCapiRuntimeConfig = {
   selectPlanEnabled: boolean;
   startApplicationClickEnabled: boolean;
   testEventCode: string | null;
+  testModeEnabled: boolean;
   viewContentEnabled: boolean;
   warnings: MetaCapiConfigurationWarning[];
 };
@@ -53,6 +54,7 @@ export function resolveMetaCapiRuntimeConfig(
     selectPlanEnabled: environment.META_CAPI_SELECT_PLAN_ENABLED === "true",
     startApplicationClickEnabled: environment.META_CAPI_START_APPLICATION_CLICK_ENABLED === "true",
     testEventCode: testMode ? configuredTestCode : null,
+    testModeEnabled: testMode,
     viewContentEnabled: environment.META_CAPI_VIEW_CONTENT_ENABLED === "true",
     warnings,
   };
