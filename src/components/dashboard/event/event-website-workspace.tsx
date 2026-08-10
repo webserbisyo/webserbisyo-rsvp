@@ -504,7 +504,10 @@ function EnabledEventWebsiteWorkspace({
         />
         <EventWebsiteConflictDialog
           conflictDetails={autosave.conflictDetails}
-          open={autosave.persistenceState === "conflict" && Boolean(autosave.conflictDetails?.overlappingPaths.length)}
+          open={
+            autosave.persistenceState === "conflict" &&
+            Boolean(autosave.conflictDetails?.overlappingPaths.length)
+          }
           onAdoptLatest={() => void autosave.adoptLatest()}
           onKeepLocal={() => void autosave.keepLocalChanges()}
         />
@@ -516,7 +519,10 @@ function EnabledEventWebsiteWorkspace({
     <div className="event-website-responsive-shell">
       <EventWebsiteConflictDialog
         conflictDetails={autosave.conflictDetails}
-        open={autosave.persistenceState === "conflict" && Boolean(autosave.conflictDetails?.overlappingPaths.length)}
+        open={
+          autosave.persistenceState === "conflict" &&
+          Boolean(autosave.conflictDetails?.overlappingPaths.length)
+        }
         onAdoptLatest={() => void autosave.adoptLatest()}
         onKeepLocal={() => void autosave.keepLocalChanges()}
       />
@@ -638,21 +644,35 @@ function EventWebsiteConflictDialog({
   onAdoptLatest,
   onKeepLocal,
   open,
-}: {
+}: EventWebsiteConflictDialogProps) {
+  if (!open) return null;
+
+  return (
+    <OpenEventWebsiteConflictDialog
+      conflictDetails={conflictDetails}
+      onAdoptLatest={onAdoptLatest}
+      onKeepLocal={onKeepLocal}
+    />
+  );
+}
+
+type EventWebsiteConflictDialogProps = {
   conflictDetails: { overlappingPaths: readonly unknown[] } | null;
   onAdoptLatest: () => void;
   onKeepLocal: () => void;
   open: boolean;
-}) {
+};
+
+function OpenEventWebsiteConflictDialog({
+  conflictDetails,
+  onAdoptLatest,
+  onKeepLocal,
+}: Omit<EventWebsiteConflictDialogProps, "open">) {
   const [confirmKeepLocal, setConfirmKeepLocal] = useState(false);
   const hasOverlap = Boolean(conflictDetails?.overlappingPaths.length);
 
-  useEffect(() => {
-    if (!open) setConfirmKeepLocal(false);
-  }, [open]);
-
   return (
-    <Dialog open={open} onOpenChange={() => undefined}>
+    <Dialog open onOpenChange={() => undefined}>
       <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>This information was edited somewhere else</DialogTitle>

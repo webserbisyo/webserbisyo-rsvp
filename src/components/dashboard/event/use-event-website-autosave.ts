@@ -58,21 +58,20 @@ export function useEventWebsiteAutosave({
   const onSavedRef = useRef(onSaved);
   const onDraftReplacedRef = useRef(onDraftReplaced);
   const eventIdRef = useRef(eventId);
-  const controllerRef = useRef<DraftSaveController<EventWebsiteContent> | null>(null);
   const [state, setState] = useState<DraftSaveControllerState<EventWebsiteContent> | null>(null);
   const [conflictDetails, setConflictDetails] = useState<ConflictDetails | null>(null);
   const autoReconciledConflictRef = useRef<number | null>(null);
-
-  if (!controllerRef.current) {
-    controllerRef.current = new DraftSaveController({
+  // Controller callbacks run after render and intentionally read the latest callback/event refs.
+  // eslint-disable-next-line react-hooks/refs
+  const [controller] = useState(() => {
+    const createdController = new DraftSaveController({
       autoSaveEnabled,
       debounceMs: DEFAULT_AUTOSAVE_DELAY_MS,
       initialContent: content,
       initialSavedAt,
       initialSavedRevision,
       onChange: () => {
-        const controller = controllerRef.current;
-        if (controller) setState(controller.getState());
+        setState(createdController.getState());
       },
       onSaved: (savedContent, savedAt, savedRevision) => {
         onSavedRef.current({ content: savedContent, savedAt, savedRevision });
@@ -114,9 +113,9 @@ export function useEventWebsiteAutosave({
         }
       },
     });
-  }
+    return createdController;
+  });
 
-  const controller = controllerRef.current;
   const snapshot = state ?? controller.getState();
 
   useEffect(() => {
@@ -158,7 +157,7 @@ export function useEventWebsiteAutosave({
     });
     setConflictDetails(comparison);
     return comparison;
-  }, [controller, fetchLatest]);
+  }, [controller, fetchLatest, setConflictDetails]);
 
   const adoptLatest = useCallback(async () => {
     const latest = await fetchLatest();
@@ -167,7 +166,7 @@ export function useEventWebsiteAutosave({
     setConflictDetails(null);
     onDraftReplacedRef.current(latest.content);
     return true;
-  }, [controller, fetchLatest]);
+  }, [controller, fetchLatest, setConflictDetails]);
 
   const reconcile = useCallback(
     async (reason: "conflict-merge" | "explicit-keep-local", allowOverlap: boolean) => {
@@ -191,7 +190,7 @@ export function useEventWebsiteAutosave({
       onDraftReplacedRef.current(comparison.merged);
       return controller.saveReconciled(reason);
     },
-    [controller, fetchLatest],
+    [controller, fetchLatest, setConflictDetails],
   );
 
   const mergeNonOverlappingConflict = useCallback(

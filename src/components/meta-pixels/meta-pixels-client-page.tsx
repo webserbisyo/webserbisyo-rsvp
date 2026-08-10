@@ -324,7 +324,7 @@ export function MetaPixelsClientPage({ initialData }: MetaPixelsClientPageProps)
             <p className="text-muted-foreground mt-2 text-sm leading-6">
               Mark as Paid does not use the browser Pixel. After a successful payment confirmation,
               the server can send a Meta CAPI Purchase event using the confirmed payment amount in
-              the payment record's currency.
+              the payment record&apos;s currency.
             </p>
           </div>
           <div className="rounded-xl border p-4">
