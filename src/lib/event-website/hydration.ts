@@ -19,10 +19,6 @@ import {
   type EventWebsiteContentPatchInput,
 } from "@/lib/validations/event-website.schema";
 
-const LEGACY_GALLERY_KEY = "gallery" satisfies EventWebsiteContentSectionKey;
-const legacyEventWebsiteContentSectionKeys = eventWebsiteContentSectionKeys.filter(
-  (key) => key !== LEGACY_GALLERY_KEY,
-);
 type EventWebsiteHostInfoPatch = NonNullable<
   NonNullable<EventWebsiteContentPatchInput["sections"]>["host_info"]
 >;
@@ -104,90 +100,68 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     return raw;
   }
 
+  const rawEventType = typeof raw.eventType === "string" ? raw.eventType : "wedding";
+  const defaults = buildDefaultEventWebsiteContent(rawEventType);
+
   const hostInfo = isRecord(sections.host_info) ? sections.host_info : null;
   const normalizedHostInfo =
     hostInfo && typeof hostInfo.kind !== "string"
-      ? { kind: typeof raw.eventType === "string" ? raw.eventType : "wedding", ...hostInfo }
-      : hostInfo;
+      ? { kind: rawEventType, ...hostInfo }
+      : (hostInfo ?? defaults.sections.host_info);
 
-  const enabledSections = layout.enabledSections;
-  const sectionOrder = layout.sectionOrder;
+  const rawEnabledSections = isRecord(layout.enabledSections) ? layout.enabledSections : {};
+  const rawSectionOrder = Array.isArray(layout.sectionOrder) ? layout.sectionOrder : [];
 
-  if (
-    !hasExactLegacySectionKeys(enabledSections) ||
-    !hasExactLegacySectionKeys(sections) ||
-    !hasExactLegacySectionOrder(sectionOrder)
-  ) {
-    return normalizedHostInfo === hostInfo
-      ? raw
-      : { ...raw, sections: { ...sections, host_info: normalizedHostInfo } };
+  const enabledSections: Record<string, boolean> = {};
+  for (const key of eventWebsiteContentSectionKeys) {
+    if (typeof rawEnabledSections[key] === "boolean") {
+      enabledSections[key] = rawEnabledSections[key] as boolean;
+    } else {
+      enabledSections[key] = defaults.layout.enabledSections[key] ?? false;
+    }
   }
 
-  const galleryDefaults = buildDefaultEventWebsiteContent(
-    typeof raw.eventType === "string" ? raw.eventType : "wedding",
-  ).sections.gallery;
+  const seenOrderKeys = new Set<EventWebsiteContentSectionKey>();
+  const sectionOrder: EventWebsiteContentSectionKey[] = [];
+
+  for (const item of rawSectionOrder) {
+    if (
+      typeof item === "string" &&
+      eventWebsiteContentSectionKeys.includes(item as EventWebsiteContentSectionKey) &&
+      !seenOrderKeys.has(item as EventWebsiteContentSectionKey)
+    ) {
+      seenOrderKeys.add(item as EventWebsiteContentSectionKey);
+      sectionOrder.push(item as EventWebsiteContentSectionKey);
+    }
+  }
+
+  for (const defaultKey of defaults.layout.sectionOrder) {
+    if (!seenOrderKeys.has(defaultKey)) {
+      seenOrderKeys.add(defaultKey);
+      sectionOrder.push(defaultKey);
+    }
+  }
+
+  const normalizedSections: Record<string, unknown> = {
+    ...sections,
+    host_info: normalizedHostInfo,
+  };
+
+  for (const key of eventWebsiteContentSectionKeys) {
+    if (!isRecord(normalizedSections[key])) {
+      normalizedSections[key] = { ...defaults.sections[key] };
+    }
+  }
 
   return {
     ...raw,
     layout: {
       ...layout,
-      enabledSections: {
-        ...enabledSections,
-        [LEGACY_GALLERY_KEY]: false,
-      },
-      sectionOrder: insertGalleryIntoSectionOrder(sectionOrder),
+      enabledSections,
+      sectionOrder,
     },
-    sections: {
-      ...sections,
-      host_info: normalizedHostInfo,
-      [LEGACY_GALLERY_KEY]: { ...galleryDefaults },
-    },
+    sections: normalizedSections,
   };
-}
-
-function insertGalleryIntoSectionOrder(
-  order: EventWebsiteContentSectionKey[],
-): EventWebsiteContentSectionKey[] {
-  if (order.includes(LEGACY_GALLERY_KEY)) {
-    return [...order];
-  }
-
-  const musicIndex = order.indexOf("music_effects");
-
-  if (musicIndex === -1) {
-    return [...order];
-  }
-
-  const insertIndex = musicIndex + 1;
-  return [...order.slice(0, insertIndex), LEGACY_GALLERY_KEY, ...order.slice(insertIndex)];
-}
-
-function hasExactLegacySectionKeys(value: unknown): value is Record<string, unknown> {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const receivedKeys = Object.keys(value);
-  return (
-    receivedKeys.length === legacyEventWebsiteContentSectionKeys.length &&
-    legacyEventWebsiteContentSectionKeys.every((key) => Object.hasOwn(value, key))
-  );
-}
-
-function hasExactLegacySectionOrder(value: unknown): value is EventWebsiteContentSectionKey[] {
-  if (
-    !Array.isArray(value) ||
-    value.length !== legacyEventWebsiteContentSectionKeys.length ||
-    value.some((key) => typeof key !== "string")
-  ) {
-    return false;
-  }
-
-  const receivedKeys = new Set(value);
-  return (
-    receivedKeys.size === legacyEventWebsiteContentSectionKeys.length &&
-    legacyEventWebsiteContentSectionKeys.every((key) => receivedKeys.has(key))
-  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

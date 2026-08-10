@@ -113,3 +113,54 @@ test("renderer has target host and special-section routes", () => {
   assert.match(renderer, /debut_court/);
   assert.match(renderer, /godparents/);
 });
+
+test("legacy 17-key and 16-key stored snapshots hydrate cleanly to 20-section schema", async () => {
+  const { defaults, hydration, types } = await loadEventWebsiteModules();
+  const weddingPreset = defaults.buildDefaultWeddingEventWebsiteContent();
+
+  const legacy17Snapshot = {
+    version: 1,
+    eventType: "wedding",
+    layout: {
+      enabledSections: Object.fromEntries(
+        types.eventWebsiteContentSectionKeys
+          .slice(0, 17)
+          .map((key) => [key, key === "main_event" || key === "venue"]),
+      ),
+      sectionOrder: types.eventWebsiteContentSectionKeys.slice(0, 17),
+    },
+    meta: { savedAt: null, savedBy: null },
+    sections: Object.fromEntries(
+      types.eventWebsiteContentSectionKeys
+        .slice(0, 17)
+        .map((key) => [key, weddingPreset.sections[key]]),
+    ),
+    assets: {},
+  };
+
+  const parsed = hydration.parseEventWebsiteContentJson(legacy17Snapshot);
+  assert.notEqual(parsed, null);
+  assert.equal(parsed.layout.sectionOrder.length, 20);
+  assert.equal(new Set(parsed.layout.sectionOrder).size, 20);
+
+  // Preserve relative order of existing 17 keys
+  for (let i = 0; i < 17; i += 1) {
+    assert.equal(parsed.layout.sectionOrder[i], types.eventWebsiteContentSectionKeys[i]);
+  }
+
+  // Missing 3 keys appended at end
+  const missingKeys = ["eighteen_roses_candles", "debut_court", "godparents"];
+  for (const key of missingKeys) {
+    assert.equal(parsed.layout.enabledSections[key], false);
+    assert.ok(parsed.layout.sectionOrder.includes(key));
+    assert.ok(parsed.sections[key] !== undefined);
+  }
+
+  // Saved toggles preserved
+  assert.equal(parsed.layout.enabledSections.main_event, true);
+  assert.equal(parsed.layout.enabledSections.venue, true);
+
+  // Idempotency check: repeat hydration on already hydrated content yields same result
+  const repeated = hydration.parseEventWebsiteContentJson(parsed);
+  assert.deepEqual(repeated, parsed);
+});
