@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  APPLICATION_STATUS_VALUES,
+  FUNNEL_PLAN_VALUES,
+  type ApplicationStatus,
+} from "@/lib/domain/funnel";
 import type { Database, Tables } from "@/lib/supabase/types";
 
 export const APPLICATIONS_PAGE_SIZE = 20;
@@ -15,7 +20,7 @@ export const PARAM_EVENT_TO = "eventTo";
 export const PARAM_SORT = "sort";
 export const PARAM_PAGE = "page";
 
-export const APPLICATION_PLAN_VALUES = ["pro", "max"] as const;
+export const APPLICATION_PLAN_VALUES = FUNNEL_PLAN_VALUES;
 export const APPLICATION_PAYMENT_VALUES = ["gcash", "maya"] as const;
 export const APPLICATION_PAYMENT_FILTER_VALUES = ["gcash", "maya", "not_selected"] as const;
 export const APPLICATION_SORT_VALUES = [
@@ -25,7 +30,8 @@ export const APPLICATION_SORT_VALUES = [
   "event_date_asc",
 ] as const;
 
-export type ApplicationStatus = "submitted" | "reviewing" | "approved" | "rejected" | "cancelled";
+export { APPLICATION_STATUS_VALUES };
+export type { ApplicationStatus };
 export type ApplicationStatusFilter = "all" | "pending" | "approved";
 export type ApplicationPlan = (typeof APPLICATION_PLAN_VALUES)[number];
 export type ApplicationPlanFilter = ApplicationPlan | "all";

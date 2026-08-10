@@ -4,6 +4,14 @@ import test from "node:test";
 
 const { parseApplicationDraft, serializeApplicationDraft } =
   await import("../src/lib/apply/application-draft.ts");
+const {
+  ACTIVE_APPLICATION_STATUS_VALUES,
+  APPLICATION_STATUS_VALUES,
+  CLIENT_STATUS_VALUES,
+  FUNNEL_CURRENCY_VALUES,
+  FUNNEL_PLAN_VALUES,
+  PAYMENT_STATUS_VALUES,
+} = await import("../src/lib/domain/funnel.ts");
 
 const actionSource = readFileSync(
   new URL("../src/server/actions/applications.ts", import.meta.url),
@@ -45,4 +53,19 @@ test("rejected submission transport preserves the draft without automatic resubm
     formSource,
     /catch \{[\s\S]*submitApplicationAction\(enrichedValues\)[\s\S]*submitApplicationAction\(enrichedValues\)/,
   );
+});
+
+test("funnel domain contracts match the database-constrained values", () => {
+  assert.deepEqual(FUNNEL_PLAN_VALUES, ["pro", "max"]);
+  assert.deepEqual(APPLICATION_STATUS_VALUES, [
+    "submitted",
+    "reviewing",
+    "approved",
+    "rejected",
+    "cancelled",
+  ]);
+  assert.deepEqual(ACTIVE_APPLICATION_STATUS_VALUES, ["submitted", "reviewing"]);
+  assert.deepEqual(PAYMENT_STATUS_VALUES, ["pending", "paid", "failed", "refunded", "cancelled"]);
+  assert.deepEqual(CLIENT_STATUS_VALUES, ["active", "paused", "expired", "archived", "cancelled"]);
+  assert.deepEqual(FUNNEL_CURRENCY_VALUES, ["PHP"]);
 });

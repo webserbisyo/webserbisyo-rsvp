@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { FUNNEL_PLAN_VALUES, PAYMENT_STATUS_VALUES } from "@/lib/domain/funnel";
 import type { Database, Tables } from "@/lib/supabase/types";
 
 export const SALES_PAGE_SIZE = 20;
@@ -10,8 +11,8 @@ export const SALES_PARAM_PLAN = "plan";
 export const SALES_PARAM_SORT = "sort";
 export const SALES_PARAM_STATUS = "status";
 
-export const SALES_PLAN_VALUES = ["pro", "max"] as const;
-export const SALES_STATUS_VALUES = ["pending", "paid", "failed", "refunded", "cancelled"] as const;
+export const SALES_PLAN_VALUES = FUNNEL_PLAN_VALUES;
+export const SALES_STATUS_VALUES = PAYMENT_STATUS_VALUES;
 export const SALES_SORT_VALUES = [
   "created_desc",
   "paid_desc",

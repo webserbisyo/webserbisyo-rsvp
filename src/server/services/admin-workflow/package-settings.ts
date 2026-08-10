@@ -1,12 +1,13 @@
 import "server-only";
 
+import { FUNNEL_PLAN_VALUES, type FunnelPlan } from "@/lib/domain/funnel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 import type { SavePackageSettingsInput } from "@/lib/validations/admin-workflow.schema";
 import { ServiceError, assertServiceSuccess } from "@/server/services/service-error";
 import { writeAuditLog } from "@/server/services/write-audit-log";
 
-export type PackagePlanType = "pro" | "max";
+export type PackagePlanType = FunnelPlan;
 
 export type PackageSettingRecord = Pick<
   Tables<"platform_package_settings">,
@@ -30,7 +31,7 @@ export async function getPackageSettingsMap() {
   const { data, error } = await supabase
     .from("platform_package_settings")
     .select(PACKAGE_SETTINGS_COLUMNS)
-    .in("plan_type", ["pro", "max"]);
+    .in("plan_type", [...FUNNEL_PLAN_VALUES]);
 
   assertServiceSuccess(error, "Failed to load package settings.");
 

@@ -3,12 +3,11 @@ import {
   EVENT_TYPE_VALUES,
   getAvailableApplicationEventTypes,
 } from "@/config/event-type-availability";
+import { FUNNEL_PLAN_VALUES, type FunnelPlan } from "@/lib/domain/funnel";
 
-const PLAN_TYPE_VALUES = ["pro", "max"] as const;
 const MANUAL_PAYMENT_OPTION_VALUES = ["gcash", "maya"] as const;
 
 type EventType = (typeof EVENT_TYPE_VALUES)[number];
-type PlanType = (typeof PLAN_TYPE_VALUES)[number];
 type ManualPaymentOption = (typeof MANUAL_PAYMENT_OPTION_VALUES)[number];
 
 function isAllowedNameCharacter(value: string) {
@@ -85,7 +84,7 @@ export const EventTypeSchema = buildSelectionSchema(
 );
 
 export const PlanTypeSchema = buildSelectionSchema(
-  PLAN_TYPE_VALUES,
+  FUNNEL_PLAN_VALUES,
   "Select a plan.",
   "Select a plan.",
 );
@@ -189,6 +188,6 @@ export type ApplicationInput = z.output<typeof ApplicationSchema>;
 export type ApplicationFormInput = z.input<typeof ApplicationSchema>;
 
 export const EVENT_TYPE_OPTIONS = EVENT_TYPE_VALUES satisfies readonly EventType[];
-export const PLAN_TYPE_OPTIONS = PLAN_TYPE_VALUES satisfies readonly PlanType[];
+export const PLAN_TYPE_OPTIONS = FUNNEL_PLAN_VALUES satisfies readonly FunnelPlan[];
 export const MANUAL_PAYMENT_OPTIONS =
   MANUAL_PAYMENT_OPTION_VALUES satisfies readonly ManualPaymentOption[];

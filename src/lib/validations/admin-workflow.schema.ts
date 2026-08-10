@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAYMENT_FAILURE_TRANSITION_VALUES } from "@/lib/domain/funnel";
 import { PlanTypeSchema } from "./application.schema";
 
 const MANUAL_PAYMENT_METHOD_VALUES = ["gcash", "maya", "manual"] as const;
@@ -86,7 +87,7 @@ export const ConfirmManualPaymentSchema = z
 export const TransitionPaymentStatusSchema = z.object({
   note: requiredText(2000, "A note is required."),
   paymentId: z.uuid(),
-  status: z.enum(["failed", "cancelled", "refunded"]),
+  status: z.enum(PAYMENT_FAILURE_TRANSITION_VALUES),
 });
 
 export const MarkClientPaidSchema = z.object({
