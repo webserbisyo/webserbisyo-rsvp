@@ -78,58 +78,37 @@ export async function confirmManualPayment(
   assertCompleteOwnerSetup(ownerSetup);
 
   const shouldWriteConfirmationAudit = payment.payment_status !== "paid";
-  const { data: updatedPayment, error: paymentError } = await supabase
-    .from("payments")
-    .update({
-      amount_paid: shouldWriteConfirmationAudit ? amountPaid : payment.amount_paid,
-      client_id: payment.client_id ?? client.id,
-      confirmed_by: payment.confirmed_by ?? actorUserId,
-      currency: payment.currency ?? packageSettings.currency,
-      event_id: payment.event_id ?? eventBundle.event.id,
-      hosting_ends_at: payment.hosting_ends_at ?? coverage.hostingEndsAt,
-      hosting_starts_at: payment.hosting_starts_at ?? coverage.hostingStartsAt,
-      notes: mergeNotes(
-        payment.notes,
-        buildPaymentNoteFragment(
-          input.note,
-          input.customAmountReason,
-          amountPaid,
-          payment.amount_due,
-        ),
-      ),
-      paid_at: payment.paid_at ?? paidAt,
-      payment_method:
-        payment.payment_method ??
-        input.paymentMethod ??
-        application.preferred_manual_payment_option ??
-        "manual",
-      payment_status: "paid",
-      reference_number: payment.reference_number ?? input.referenceNumber,
-      renewal_required_at: payment.renewal_required_at ?? coverage.renewalRequiredAt,
-    })
-    .eq("id", payment.id)
-    .select("*")
-    .single();
+  const { data: rpcResult, error: rpcError } = await (
+    supabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+  )("mark_payment_paid_atomic", {
+    p_actor_user_id: actorUserId,
+    p_amount_paid: shouldWriteConfirmationAudit ? amountPaid : payment.amount_paid,
+    p_hosting_ends_at: coverage.hostingEndsAt,
+    p_hosting_starts_at: coverage.hostingStartsAt,
+    p_note: buildPaymentNoteFragment(
+      input.note,
+      input.customAmountReason,
+      amountPaid,
+      payment.amount_due,
+    ),
+    p_paid_at: paidAt,
+    p_payment_id: payment.id,
+    p_payment_method:
+      payment.payment_method ??
+      input.paymentMethod ??
+      application.preferred_manual_payment_option ??
+      "manual",
+    p_reference_number: payment.reference_number ?? input.referenceNumber,
+    p_renewal_required_at: coverage.renewalRequiredAt,
+  });
 
-  assertServiceSuccess(paymentError, "Failed to confirm the manual payment.");
-  assertServiceData(updatedPayment, "Payment confirmation returned no row.");
+  assertServiceSuccess(rpcError, "Failed to confirm the manual payment atomically.");
+  assertServiceData(rpcResult, "Payment confirmation RPC returned no row.");
 
-  const { error: clientError } = await supabase
-    .from("clients")
-    .update({
-      contact_email: application.email,
-      contact_name: application.full_name,
-      contact_phone: application.phone,
-      hosting_ends_at: updatedPayment.hosting_ends_at,
-      hosting_starts_at: updatedPayment.hosting_starts_at,
-      name: client.name || application.full_name,
-      plan_type: payment.plan_type,
-      renewal_required_at: updatedPayment.renewal_required_at,
-      status: "active",
-    })
-    .eq("id", client.id);
-
-  assertServiceSuccess(clientError, "Failed to update the client hosting mirror.");
+  const updatedPayment = await getPaymentForMutation(payment.id);
 
   const { error: applicationError } = await supabase
     .from("rsvp_applications")

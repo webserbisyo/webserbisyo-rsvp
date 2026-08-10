@@ -134,7 +134,6 @@ export async function markClientAsPaid(
   const planType = normalizePlanType(client.plan_type || application.preferred_plan);
   const packageSettings = packageSettingsMap.get(planType);
   const paidAt = input.paidAt ?? new Date().toISOString();
-  const amountDue = input.amountDue ?? packageSettings?.default_amount ?? input.amountPaid;
   const paymentMethod = resolvePaymentMethod(
     existingPayment?.payment_method ?? null,
     application.preferred_manual_payment_option ?? null,
@@ -165,54 +164,41 @@ export async function markClientAsPaid(
     throw new ServiceError("Refunded payments must be handled through refund records.");
   }
 
-  const paymentPayload = {
-    amount_due: amountDue,
-    amount_paid: input.amountPaid,
-    application_id: application.id,
-    client_id: client.id,
-    confirmed_by: actorUserId,
-    currency: packageSettings?.currency ?? "PHP",
-    event_id: event.id,
-    hosting_ends_at: coverage?.hostingEndsAt ?? null,
-    hosting_starts_at: coverage?.hostingStartsAt ?? null,
-    notes: mergeNotes(existingPayment?.notes ?? null, input.note),
-    paid_at: paidAt,
-    payment_method: paymentMethod,
-    payment_status: "paid",
-    plan_type: planType,
-    reference_number: input.referenceNumber ?? null,
-    renewal_required_at: coverage?.renewalRequiredAt ?? null,
-  } satisfies TablesInsert<"payments">;
+  if (!existingPayment) {
+    throw new ServiceError(
+      "An existing payment record is required before payment can be confirmed. Approve the application first.",
+    );
+  }
 
-  const { data: payment, error: paymentError } = existingPayment
-    ? await supabase
-        .from("payments")
-        .update(paymentPayload)
-        .eq("id", existingPayment.id)
-        .select("*")
-        .single()
-    : await supabase.from("payments").insert(paymentPayload).select("*").single();
+  const { data: rpcResult, error: rpcError } = await (
+    supabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+  )("mark_payment_paid_atomic", {
+    p_actor_user_id: actorUserId,
+    p_amount_paid: input.amountPaid,
+    p_hosting_ends_at: coverage?.hostingEndsAt ?? null,
+    p_hosting_starts_at: coverage?.hostingStartsAt ?? null,
+    p_note: input.note,
+    p_paid_at: paidAt,
+    p_payment_id: existingPayment.id,
+    p_payment_method: paymentMethod,
+    p_reference_number: input.referenceNumber ?? null,
+    p_renewal_required_at: coverage?.renewalRequiredAt ?? null,
+  });
 
-  assertServiceSuccess(paymentError, "Failed to confirm the client payment.");
-  assertServiceData(payment, "Payment confirmation returned no row.");
+  assertServiceSuccess(rpcError, "Failed to confirm the client payment atomically.");
+  assertServiceData(rpcResult, "Payment confirmation RPC returned no row.");
 
-  const clientUpdate = coverage
-    ? {
-        hosting_ends_at: coverage.hostingEndsAt,
-        hosting_starts_at: coverage.hostingStartsAt,
-        renewal_required_at: coverage.renewalRequiredAt,
-        status: "active",
-      }
-    : {
-        status: "active",
-      };
+  const { data: payment, error: paymentLoadError } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("id", existingPayment.id)
+    .single();
 
-  const { error: clientError } = await supabase
-    .from("clients")
-    .update(clientUpdate)
-    .eq("id", client.id);
-
-  assertServiceSuccess(clientError, "Failed to update the client payment state.");
+  assertServiceSuccess(paymentLoadError, "Failed to reload the confirmed payment.");
+  assertServiceData(payment, "Confirmed payment record no longer exists.");
 
   const auditWarning = await safeWriteAuditLog({
     action: "payment_confirmed",

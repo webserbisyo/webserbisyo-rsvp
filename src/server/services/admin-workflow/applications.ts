@@ -26,7 +26,6 @@ import {
   ensureEventBundleForClient,
   ensureOwnerProfileForClient,
 } from "./provisioning";
-import { getRequiredPackageSettings } from "./package-settings";
 
 const MUTATION_APPLICATION_COLUMNS = "id, preferred_plan, preferred_manual_payment_option, status";
 
