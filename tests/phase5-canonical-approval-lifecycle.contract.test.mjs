@@ -12,7 +12,7 @@ const createClientUserSource = readFileSync(
 );
 const rpcMigrationSource = readFileSync(
   new URL(
-    "../supabase/migrations/20260810180000_phase5_canonical_approval_payment_rpc.sql",
+    "../supabase/migrations/20260810193000_fix_provision_event_draft_fields.sql",
     import.meta.url,
   ),
   "utf8",
@@ -20,6 +20,9 @@ const rpcMigrationSource = readFileSync(
 
 test("Phase 5 RPC provisions Client, Event, Profile, and ONE linked pending Payment atomically", () => {
   assert.match(rpcMigrationSource, /create or replace function app_private\.provision_application_atomic/);
+  assert.match(rpcMigrationSource, /insert into public\.rsvp_events/);
+  assert.match(rpcMigrationSource, /draft_event_slug/);
+  assert.match(rpcMigrationSource, /draft_visibility/);
   assert.match(rpcMigrationSource, /insert into public\.payments/);
   assert.match(rpcMigrationSource, /application_id, client_id, event_id, plan_type, amount_due/);
   assert.match(rpcMigrationSource, /action, entity_type, entity_id, client_id, event_id, metadata/);
