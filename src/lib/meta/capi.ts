@@ -13,6 +13,7 @@ export type MetaCapiEventInput = {
   email?: string | null;
   eventId: string;
   eventName?: MetaCapiEventName;
+  eventTime?: number;
   externalId?: string | null;
   fbc?: string | null;
   fbp?: string | null;
@@ -72,7 +73,7 @@ export async function sendMetaCapiEvent(input: MetaCapiEventInput) {
         event_id: input.eventId,
         event_name: input.eventName ?? "Purchase",
         event_source_url: input.sourceUrl ?? undefined,
-        event_time: Math.floor(Date.now() / 1000),
+        event_time: input.eventTime ?? Math.floor(Date.now() / 1000),
         user_data: userData,
       },
     ],

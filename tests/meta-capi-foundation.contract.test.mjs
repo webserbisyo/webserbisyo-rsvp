@@ -5,6 +5,7 @@ import test from "node:test";
 const { resolveMetaCapiRuntimeConfig } = await import("../src/lib/meta/capi-config-core.ts");
 const { resolveMetaPixelForContext } = await import("../src/lib/meta/pixel-resolution.ts");
 const { MetaAcquisitionEventSchema } = await import("../src/lib/meta/acquisition-events.ts");
+const { getPurchaseEventTime } = await import("../src/lib/meta/purchase-event-time.ts");
 
 const candidate = (overrides = {}) => ({
   id: "pixel-global",
@@ -200,6 +201,20 @@ test("Purchase delivery migration has one atomic logical-delivery identity and r
   assert.match(migration, /enable row level security/);
 });
 
+test("Purchase event time uses the persisted paid_at instant across later sends and retries", () => {
+  const paidAt = "2026-08-09T10:30:00.000Z";
+  const persistedSeconds = 1_786_271_400;
+
+  assert.equal(getPurchaseEventTime(paidAt, Date.parse("2026-08-10T00:00:00.000Z")), persistedSeconds);
+  assert.equal(getPurchaseEventTime(paidAt, Date.parse("2026-08-12T00:00:00.000Z")), persistedSeconds);
+});
+
+test("Purchase event time safely falls back only for missing or malformed paid_at", () => {
+  const fallbackNow = Date.parse("2026-08-10T00:00:00.000Z");
+  assert.equal(getPurchaseEventTime(null, fallbackNow), Math.floor(fallbackNow / 1000));
+  assert.equal(getPurchaseEventTime("not-a-date", fallbackNow), Math.floor(fallbackNow / 1000));
+});
+
 test("Purchase uses manual-payment source semantics without administrator browser context", () => {
   const purchaseSource = readFileSync(
     new URL("../src/server/services/send-meta-capi-purchase.ts", import.meta.url),
@@ -217,6 +232,7 @@ test("Purchase uses manual-payment source semantics without administrator browse
   assert.match(purchaseSource, /const eventId = `Purchase:\$\{input\.paymentId\}`/);
   assert.match(purchaseSource, /actionSource: "other"/);
   assert.match(purchaseSource, /currency: input\.currency/);
+  assert.match(purchaseSource, /eventTime: getPurchaseEventTime\(input\.paidAt\)/);
   assert.doesNotMatch(purchaseSource, /clientIpAddress|clientUserAgent|sourceUrl/);
   assert.doesNotMatch(clientActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
   assert.doesNotMatch(salesActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);

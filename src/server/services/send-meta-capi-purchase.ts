@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getMetaCapiRuntimeConfig } from "@/lib/meta/capi-config";
+import { getPurchaseEventTime } from "@/lib/meta/purchase-event-time";
 import { sendMetaCapiEvent } from "@/lib/meta";
 import { resolveMetaPixelForContext } from "@/lib/meta/pixel-resolution";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -24,6 +25,7 @@ export type SendMetaCapiPurchaseInput = {
   fbc?: string | null;
   fbp?: string | null;
   paymentId: string;
+  paidAt?: string | null;
 };
 
 export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
@@ -78,6 +80,7 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     email: input.customerEmail,
     eventId,
     eventName: "Purchase",
+    eventTime: getPurchaseEventTime(input.paidAt),
     externalId: input.externalId,
     fbc: input.fbc,
     fbp: input.fbp,
