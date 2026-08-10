@@ -144,6 +144,63 @@ test("InitiateCheckout is hydrated-client-only and pairs the browser event with 
   assert.doesNotMatch(pageSource, /eventName="InitiateCheckout"/);
 });
 
+test("all acquisition routes emit one UUID PageView browser/server pair without an automatic PageView", () => {
+  const trackerSource = readFileSync(
+    new URL("../src/lib/meta/acquisition-tracker.ts", import.meta.url),
+    "utf8",
+  );
+  const trackerComponentSource = readFileSync(
+    new URL("../src/components/meta-pixels/acquisition-page-tracker.tsx", import.meta.url),
+    "utf8",
+  );
+  const startSource = readFileSync(
+    new URL("../src/app/(public)/apply/start/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const successSource = readFileSync(
+    new URL("../src/app/(public)/apply/success/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(trackerSource, /const pageViewId = crypto\.randomUUID\(\)/);
+  assert.match(trackerSource, /"PageView", \{\}, \{ eventID: pageViewId \}/);
+  assert.match(trackerSource, /eventId: pageViewId,\s*eventName: "PageView"/);
+  assert.match(trackerComponentSource, /"\/apply\/start"/);
+  assert.match(trackerComponentSource, /"\/apply\/success"/);
+  assert.match(startSource, /includePageView=\{false\}/);
+  assert.match(startSource, /<AcquisitionPageTracker sourcePath="\/apply\/start" \/>/);
+  assert.match(successSource, /includePageView=\{false\}/);
+  assert.match(successSource, /<AcquisitionPageTracker sourcePath="\/apply\/success" \/>/);
+});
+
+test("paired acquisition events share one occurrence ID and Purchase stays server-only", () => {
+  const trackerSource = readFileSync(
+    new URL("../src/lib/meta/acquisition-tracker.ts", import.meta.url),
+    "utf8",
+  );
+  const browserSource = readFileSync(
+    new URL("../src/lib/meta/browser-events.ts", import.meta.url),
+    "utf8",
+  );
+
+  for (const eventName of [
+    "PageView",
+    "ViewContent",
+    "StartApplicationClick",
+    "SelectPlan",
+    "InitiateCheckout",
+    "CompleteRegistration",
+    "Contact",
+  ]) {
+    assert.match(trackerSource, new RegExp(eventName));
+  }
+
+  assert.match(trackerSource, /trackMetaPixelEvent\([\s\S]*\{ eventID: eventId \}/);
+  assert.match(trackerSource, /sendMetaAcquisitionOccurrence\(\{[\s\S]*eventId/);
+  assert.doesNotMatch(browserSource, /"Purchase"/);
+  assert.doesNotMatch(trackerSource, /"Purchase"/);
+});
+
 test("mid-funnel endpoint remains allowlisted, UUID-bound, and navigation-safe", () => {
   const schemaSource = readFileSync(
     new URL("../src/lib/meta/acquisition-events.ts", import.meta.url),
@@ -205,8 +262,14 @@ test("Purchase event time uses the persisted paid_at instant across later sends 
   const paidAt = "2026-08-09T10:30:00.000Z";
   const persistedSeconds = 1_786_271_400;
 
-  assert.equal(getPurchaseEventTime(paidAt, Date.parse("2026-08-10T00:00:00.000Z")), persistedSeconds);
-  assert.equal(getPurchaseEventTime(paidAt, Date.parse("2026-08-12T00:00:00.000Z")), persistedSeconds);
+  assert.equal(
+    getPurchaseEventTime(paidAt, Date.parse("2026-08-10T00:00:00.000Z")),
+    persistedSeconds,
+  );
+  assert.equal(
+    getPurchaseEventTime(paidAt, Date.parse("2026-08-12T00:00:00.000Z")),
+    persistedSeconds,
+  );
 });
 
 test("Purchase event time safely falls back only for missing or malformed paid_at", () => {

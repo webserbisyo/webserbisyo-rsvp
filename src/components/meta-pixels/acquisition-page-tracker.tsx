@@ -1,7 +1,14 @@
 "use client";
+
 import { useEffect } from "react";
 import { trackAcquisitionPageOccurrence } from "@/lib/meta/acquisition-tracker";
-export function AcquisitionPageTracker({ sourcePath }: { sourcePath: "/" | "/apply" }) {
-  useEffect(() => { trackAcquisitionPageOccurrence(sourcePath, true); }, [sourcePath]);
+
+type AcquisitionPagePath = "/" | "/apply" | "/apply/start" | "/apply/success";
+
+export function AcquisitionPageTracker({ sourcePath }: { sourcePath: AcquisitionPagePath }) {
+  useEffect(() => {
+    trackAcquisitionPageOccurrence(sourcePath, sourcePath === "/" || sourcePath === "/apply");
+  }, [sourcePath]);
+
   return null;
 }

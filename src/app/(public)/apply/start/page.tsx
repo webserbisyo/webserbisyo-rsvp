@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ApplyForm } from "@/components/apply/apply-form";
+import { AcquisitionPageTracker } from "@/components/meta-pixels/acquisition-page-tracker";
 import { InitiateCheckoutTracker } from "@/components/meta-pixels/initiate-checkout-tracker";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
 import { SOCIAL_PREVIEWS } from "@/config/social-previews";
@@ -75,7 +76,12 @@ export default async function ApplyStartPage({ searchParams }: ApplyStartPagePro
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <ApplyForm config={config} initialPlan={initialPlan} />
       </div>
-      <PublicMetaPixelScripts executionKey={`apply-start-${initialPlan}`} pixels={pixels} />
+      <PublicMetaPixelScripts
+        includePageView={false}
+        executionKey={`apply-start-${initialPlan}`}
+        pixels={pixels}
+      />
+      <AcquisitionPageTracker sourcePath="/apply/start" />
       <InitiateCheckoutTracker plan={initialPlan} />
     </main>
   );
