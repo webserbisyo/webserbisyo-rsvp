@@ -78,7 +78,7 @@ export async function submitApplication(
     supabase
       .from("clients")
       .select("*", { count: "exact", head: true })
-      .eq("contact_email", normalizedEmail),
+      .ilike("contact_email", normalizedEmail),
     supabase
       .from("rsvp_applications")
       .select("*", { count: "exact", head: true })

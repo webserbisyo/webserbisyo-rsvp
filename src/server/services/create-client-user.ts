@@ -21,16 +21,16 @@ export type CreateClientUserResult = {
   warning?: string;
 };
 
-export async function ensureAuthUserByEmail(
+export async function ensureAuthUserWithCreationFlag(
   email: string,
   fullName?: string | null,
-): Promise<string> {
+): Promise<{ userId: string; wasCreated: boolean }> {
   const adminSupabase = createAdminClient();
   const normalizedEmail = normalizeAuthEmail(email);
   const existingAuthUser = await findUniqueAuthUserByEmail(normalizedEmail);
 
   if (existingAuthUser) {
-    return existingAuthUser.id;
+    return { userId: existingAuthUser.id, wasCreated: false };
   }
 
   const internalPassword = generateInternalAuthPassword();
@@ -51,7 +51,15 @@ export async function ensureAuthUserByEmail(
     );
   }
 
-  return createdUser.user.id;
+  return { userId: createdUser.user.id, wasCreated: true };
+}
+
+export async function ensureAuthUserByEmail(
+  email: string,
+  fullName?: string | null,
+): Promise<string> {
+  const result = await ensureAuthUserWithCreationFlag(email, fullName);
+  return result.userId;
 }
 
 export async function createClientUser(

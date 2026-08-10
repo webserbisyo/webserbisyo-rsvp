@@ -20,10 +20,9 @@ import {
 } from "@/server/services/service-error";
 import { sendClientPasswordSetup } from "@/server/services/send-client-password-setup";
 import { writeAuditLog } from "@/server/services/write-audit-log";
-import { ensureAuthUserByEmail } from "@/server/services/create-client-user";
+import { ensureAuthUserWithCreationFlag } from "@/server/services/create-client-user";
 import {
   assertCompleteOwnerSetup,
-  ensureClientForApplication,
   ensureEventBundleForClient,
   ensureOwnerProfileForClient,
 } from "./provisioning";
@@ -32,7 +31,6 @@ import { getRequiredPackageSettings } from "./package-settings";
 const MUTATION_APPLICATION_COLUMNS = "id, preferred_plan, preferred_manual_payment_option, status";
 
 export async function approveApplication(input: ApproveApplicationInput, actorUserId: string) {
-  const supabase = await createServerSupabaseClient();
   const application = await getApplicationForMutation(input.applicationId);
   const warnings: string[] = [];
 
@@ -80,26 +78,57 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     "approve this application",
   );
 
-  const authUserId = await ensureAuthUserByEmail(application.email, application.full_name);
+  const { userId: authUserId, wasCreated } = await ensureAuthUserWithCreationFlag(
+    application.email,
+    application.full_name,
+  );
   const adminSupabase = createAdminClient();
 
-  const { data: rpcResult, error: rpcError } = await (
-    adminSupabase.rpc as unknown as (
-      name: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: unknown }>
-  )("provision_application_atomic", {
-    p_actor_user_id: actorUserId,
-    p_application_id: application.id,
-    p_auth_user_id: authUserId,
-  });
+  let rpcResult: unknown;
+  let rpcError: unknown;
 
-  assertServiceSuccess(rpcError, "Failed to provision application atomically.");
+  try {
+    const result = await (
+      adminSupabase.rpc as unknown as (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: unknown }>
+    )("provision_application_atomic", {
+      p_actor_user_id: actorUserId,
+      p_application_id: application.id,
+      p_auth_user_id: authUserId,
+    });
+
+    rpcResult = result.data;
+    rpcError = result.error;
+  } catch (error) {
+    if (wasCreated) {
+      try {
+        await adminSupabase.auth.admin.deleteUser(authUserId);
+      } catch {
+        // Safe compensation fallback
+      }
+    }
+    throw error;
+  }
+
+  if (rpcError) {
+    if (wasCreated) {
+      try {
+        await adminSupabase.auth.admin.deleteUser(authUserId);
+      } catch {
+        // Safe compensation fallback
+      }
+    }
+    assertServiceSuccess(rpcError, "Failed to provision application atomically.");
+  }
+
   assertServiceData(rpcResult, "Provisioning RPC returned no result.");
 
   const provisioned = rpcResult as {
     client_id: string;
     event_id: string;
+    payment_id: string;
     profile_id: string;
     status: string;
   };
@@ -109,25 +138,7 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
     getApplicationForMutation(application.id),
   ]);
 
-  const ownerSetup = { profileId: provisioned.profile_id, userId: authUserId };
   const eventBundle = { event: { id: provisioned.event_id } };
-
-  try {
-    await writeAuditLog({
-      action: "client_provisioning_completed",
-      actorUserId,
-      clientId: client.id,
-      entityId: application.id,
-      entityType: "rsvp_applications",
-      eventId: eventBundle.event.id,
-      metadata: {
-        application_id: application.id,
-        profile_id: ownerSetup.profileId,
-      },
-    });
-  } catch {
-    warnings.push("Provisioning completion audit logging was skipped.");
-  }
 
   try {
     await writeAuditLog({
@@ -140,6 +151,7 @@ export async function approveApplication(input: ApproveApplicationInput, actorUs
       metadata: {
         client_id: client.id,
         event_id: eventBundle.event.id,
+        payment_id: provisioned.payment_id,
         plan_type: application.preferred_plan,
         profile_email: application.email,
       },
@@ -465,88 +477,21 @@ export async function approveApplicationForPayment(
   input: ApproveApplicationForPaymentInput,
   actorUserId: string,
 ) {
-  const supabase = createAdminClient();
-  const application = await getApplicationForMutation(input.applicationId);
-  const existingPayment = await getPaymentByApplicationId(input.applicationId);
+  const approvalResult = await approveApplication({ applicationId: input.applicationId }, actorUserId);
+  const payment = await getPaymentByApplicationId(input.applicationId);
 
-  ensureAllowedStatusTransition(
-    application.status,
-    ["submitted", "reviewing", "approved"],
-    "approve this application for payment",
-  );
+  assertServiceData(payment, "Canonical payment record was not created during approval.");
 
-  if (
-    existingPayment?.payment_status === "paid" ||
-    existingPayment?.payment_status === "refunded"
-  ) {
-    throw new ServiceError("This application already has a finalized payment record.");
+  if (input.note) {
+    const supabase = createAdminClient();
+    await supabase
+      .from("payments")
+      .update({ notes: mergeNotes(payment.notes, input.note) })
+      .eq("id", payment.id);
   }
 
-  const packageSettings = await getRequiredPackageSettings(
-    application.preferred_plan as "pro" | "max",
-  );
-  const now = new Date().toISOString();
-
-  const { data: payment, error: paymentError } = await supabase
-    .from("payments")
-    .upsert(
-      {
-        amount_due: existingPayment?.amount_due ?? packageSettings.defaultAmount,
-        amount_paid: 0,
-        application_id: application.id,
-        client_id: existingPayment?.client_id ?? null,
-        confirmed_by: null,
-        currency: packageSettings.currency,
-        event_id: existingPayment?.event_id ?? null,
-        hosting_ends_at: null,
-        hosting_starts_at: null,
-        notes: mergeNotes(existingPayment?.notes ?? null, input.note),
-        paid_at: null,
-        payment_method:
-          existingPayment?.payment_method ?? application.preferred_manual_payment_option ?? null,
-        payment_status: "pending",
-        plan_type: application.preferred_plan as "pro" | "max",
-        reference_number: null,
-        renewal_required_at: null,
-      },
-      { onConflict: "application_id" },
-    )
-    .select("id, payment_status")
-    .single();
-
-  assertServiceSuccess(paymentError, "Failed to create the pending payment record.");
-  assertServiceData(payment, "Pending payment upsert returned no row.");
-
-  const { data, error } = await supabase
-    .from("rsvp_applications")
-    .update({
-      approved_at: application.approved_at ?? now,
-      review_notes: mergeNotes(application.review_notes, input.note),
-      reviewed_at: now,
-      status: "approved",
-    })
-    .eq("id", application.id)
-    .select(MUTATION_APPLICATION_COLUMNS)
-    .single();
-
-  assertServiceSuccess(error, "Failed to approve the application for payment.");
-  assertServiceData(data, "Application approval returned no row.");
-
-  await writeAuditLog({
-    action: "application_approved_for_payment",
-    actorUserId,
-    entityId: application.id,
-    entityType: "rsvp_applications",
-    metadata: {
-      amount_due: existingPayment?.amount_due ?? packageSettings.defaultAmount,
-      note: input.note ?? null,
-      payment_id: payment.id,
-      plan_type: application.preferred_plan,
-    },
-  });
-
   return {
-    application: data,
+    application: approvalResult.application,
     payment,
   };
 }

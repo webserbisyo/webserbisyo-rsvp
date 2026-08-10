@@ -23,7 +23,7 @@ test("Phase 4 migration creates partial unique index on lower(btrim(email)) for 
 test("submitApplication normalizes email with trim and lowercase before insert and lookup", () => {
   assert.match(submitAppSource, /const normalizedEmail = payload\.email\.trim\(\)\.toLowerCase\(\)/);
   assert.match(submitAppSource, /email: normalizedEmail/);
-  assert.match(submitAppSource, /\.eq\("contact_email", normalizedEmail\)/);
+  assert.match(submitAppSource, /\.ilike\("contact_email", normalizedEmail\)/);
   assert.match(submitAppSource, /\.eq\("email", normalizedEmail\)/);
   assert.match(submitAppSource, /\.in\("status", \["submitted", "reviewing"\]\)/);
 });
