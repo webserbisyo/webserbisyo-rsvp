@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,11 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { buildMessengerFollowupMessage } from "@/lib/apply/messenger";
+import {
+  APPLY_DRAFT_STORAGE_KEY,
+  parseApplicationDraft,
+  serializeApplicationDraft,
+} from "@/lib/apply/application-draft";
 import type { PublicApplyConfig } from "@/lib/apply/public-payment-option-dto";
 import { getApplicationEventTypeOptions } from "@/config/event-type-availability";
 import {
@@ -97,6 +102,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
     formState: { errors },
     handleSubmit,
     register,
+    reset,
     setError,
     setValue,
     trigger,
@@ -124,6 +130,46 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   const selectedEventType = useWatch({ control, name: "eventType" });
   const watchedLocation = useWatch({ control, name: "eventLocation" }) ?? "";
   const watchedMessage = useWatch({ control, name: "message" }) ?? "";
+  const watchedValues = useWatch({ control });
+  const draftReadyRef = useRef(false);
+  const [submissionTransportFailed, setSubmissionTransportFailed] = useState(false);
+
+  useEffect(() => {
+    const draft = parseApplicationDraft(sessionStorage.getItem(APPLY_DRAFT_STORAGE_KEY));
+
+    if (draft) {
+      const { step: draftStep, ...values } = draft;
+      reset({
+        email: values.email ?? "",
+        estimatedGuestCount: values.estimatedGuestCount,
+        eventDate: values.eventDate,
+        eventLocation: values.eventLocation ?? "",
+        eventType: (values.eventType as ApplicationFormInput["eventType"]) ?? "wedding",
+        fullName: values.fullName ?? "",
+        message: values.message ?? "",
+        phone: values.phone ?? "",
+        preferredManualPaymentOption:
+          (values.preferredManualPaymentOption as ApplicationFormInput["preferredManualPaymentOption"]) ??
+          config.paymentOptions[0]?.provider,
+        preferredPlan:
+          (values.preferredPlan as ApplicationFormInput["preferredPlan"]) ?? initialPlan,
+      });
+      // Restoring session-scoped state is the purpose of this mount-only synchronization.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStep(draftStep ?? 1);
+    }
+
+    draftReadyRef.current = true;
+  }, [config.paymentOptions, initialPlan, reset]);
+
+  useEffect(() => {
+    if (!draftReadyRef.current) return;
+
+    sessionStorage.setItem(
+      APPLY_DRAFT_STORAGE_KEY,
+      serializeApplicationDraft({ ...watchedValues, step }),
+    );
+  }, [step, watchedValues]);
 
   const planKey = (selectedPlan ?? initialPlan) as keyof typeof PLAN_DETAILS;
   const planDetails = PLAN_DETAILS[planKey] ?? PLAN_DETAILS.pro;
@@ -192,6 +238,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
   }
 
   const submit = handleSubmit((values) => {
+    setSubmissionTransportFailed(false);
     startTransition(async () => {
       // Capture Meta cookie values for CAPI event matching
       const fbFbp = getCookieValue("_fbp");
@@ -202,7 +249,19 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
         ...(fbFbc ? { fbFbc } : {}),
       };
 
-      const result = await submitApplicationAction(enrichedValues);
+      let result: Awaited<ReturnType<typeof submitApplicationAction>>;
+
+      try {
+        result = await submitApplicationAction(enrichedValues);
+      } catch {
+        sessionStorage.setItem(
+          APPLY_DRAFT_STORAGE_KEY,
+          serializeApplicationDraft({ ...values, step }),
+        );
+        setSubmissionTransportFailed(true);
+        toast.error("This page may have been updated. Your details are saved in this tab.");
+        return;
+      }
 
       if (!result.ok) {
         assignServerFieldErrors(result.fieldErrors);
@@ -286,6 +345,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
           referenceCode: result.data.referenceCode,
         }),
       );
+      sessionStorage.removeItem(APPLY_DRAFT_STORAGE_KEY);
 
       toast.success("Application submitted.");
       router.push(`/apply/success?ref=${encodeURIComponent(result.data.referenceCode)}`);
@@ -384,6 +444,26 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
 
       {/* ── Form card ── */}
       <div className="w-full rounded-3xl border border-white/[0.08] bg-white/[0.02] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:p-10">
+        {submissionTransportFailed && (
+          <div
+            className="mb-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-50"
+            role="alert"
+          >
+            <p className="font-semibold">
+              This page was updated or the connection was interrupted.
+            </p>
+            <p className="mt-1 text-amber-50/80">
+              Your details are saved in this tab. Refresh the page, review them, then submit once.
+            </p>
+            <button
+              type="button"
+              className="mt-3 rounded-lg border border-amber-200/30 bg-amber-50/10 px-3 py-2 text-xs font-bold text-amber-50 hover:bg-amber-50/20"
+              onClick={() => window.location.reload()}
+            >
+              Refresh and restore details
+            </button>
+          </div>
+        )}
         <form onSubmit={submit}>
           {/* ══ STEP 1: Your Details ══ */}
           {step === 1 && (
