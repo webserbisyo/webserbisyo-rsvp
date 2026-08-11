@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getServerCanonicalMetaAcquisitionUrl } from "@/lib/meta/acquisition-origin";
 import { getMetaCapiRuntimeConfig } from "@/lib/meta/capi-config";
 import { getPurchaseEventTime } from "@/lib/meta/purchase-event-time";
 import { sendMetaCapiEvent } from "@/lib/meta";
@@ -74,7 +75,7 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
   });
 
   const result = await sendMetaCapiEvent({
-    actionSource: "other",
+    actionSource: "website",
     amount: input.amount,
     currency: input.currency,
     email: input.customerEmail,
@@ -87,6 +88,7 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     fullName: input.customerFullName,
     phone: input.customerPhone,
     pixelId: await getMetaCapiPixelId(),
+    sourceUrl: getServerCanonicalMetaAcquisitionUrl("/apply/success"),
   });
 
   try {

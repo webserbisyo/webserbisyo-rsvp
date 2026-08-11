@@ -339,7 +339,7 @@ test("Purchase event time safely falls back only for missing or malformed paid_a
   assert.equal(getPurchaseEventTime("not-a-date", fallbackNow), Math.floor(fallbackNow / 1000));
 });
 
-test("Purchase uses manual-payment source semantics without administrator browser context", () => {
+test("Purchase uses website acquisition source semantics without administrator browser context", () => {
   const purchaseSource = readFileSync(
     new URL("../src/server/services/send-meta-capi-purchase.ts", import.meta.url),
     "utf8",
@@ -352,14 +352,64 @@ test("Purchase uses manual-payment source semantics without administrator browse
     new URL("../src/server/actions/admin-sales.ts", import.meta.url),
     "utf8",
   );
+  const canonicalSourceUrl = "https://rsvp.webserbisyo.com/apply/success";
 
   assert.match(purchaseSource, /const eventId = `Purchase:\$\{input\.paymentId\}`/);
-  assert.match(purchaseSource, /actionSource: "other"/);
+  assert.match(purchaseSource, /actionSource: "website"/);
+  assert.match(
+    purchaseSource,
+    /sourceUrl: getServerCanonicalMetaAcquisitionUrl\("\/apply\/success"\)/,
+  );
+  assert.match(purchaseSource, /getServerCanonicalMetaAcquisitionUrl/);
+  assert.match(
+    readFileSync(new URL("../src/lib/meta/acquisition-origin.ts", import.meta.url), "utf8"),
+    /export function getServerCanonicalMetaAcquisitionUrl/,
+  );
   assert.match(purchaseSource, /currency: input\.currency/);
   assert.match(purchaseSource, /eventTime: getPurchaseEventTime\(input\.paidAt\)/);
-  assert.doesNotMatch(purchaseSource, /clientIpAddress|clientUserAgent|sourceUrl/);
+  assert.equal(canonicalSourceUrl, "https://rsvp.webserbisyo.com/apply/success");
+  assert.doesNotMatch(purchaseSource, /clientIpAddress|clientUserAgent/);
   assert.doesNotMatch(clientActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
   assert.doesNotMatch(salesActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
+});
+
+test("Purchase CAPI envelope uses website source URL and top-level test routing only in test mode", () => {
+  const paymentId = "pay_123";
+  const paidAt = "2026-08-09T10:30:00.000Z";
+  const eventId = `Purchase:${paymentId}`;
+  const sourceUrl = "https://rsvp.webserbisyo.com/apply/success";
+  const event = {
+    action_source: "website",
+    custom_data: {
+      currency: "PHP",
+      order_id: eventId,
+      value: 1999,
+    },
+    event_id: eventId,
+    event_name: "Purchase",
+    event_source_url: sourceUrl,
+    event_time: getPurchaseEventTime(paidAt),
+    user_data: { em: ["hashed-email"] },
+  };
+  const testConfig = resolveMetaCapiRuntimeConfig({
+    META_CAPI_TEST_EVENT_CODE: "TEST49251",
+    META_CAPI_TEST_MODE: "true",
+  });
+  const liveConfig = resolveMetaCapiRuntimeConfig({
+    META_CAPI_TEST_EVENT_CODE: "TEST49251",
+  });
+  const testEnvelope = buildMetaCapiEventEnvelope(event, testConfig.testEventCode);
+  const liveEnvelope = JSON.parse(
+    JSON.stringify(buildMetaCapiEventEnvelope(event, liveConfig.testEventCode)),
+  );
+
+  assert.equal(testEnvelope.data[0].action_source, "website");
+  assert.equal(testEnvelope.data[0].event_source_url, sourceUrl);
+  assert.equal(testEnvelope.data[0].event_id, eventId);
+  assert.equal(testEnvelope.data[0].event_time, getPurchaseEventTime(paidAt));
+  assert.equal(testEnvelope.test_event_code, "TEST49251");
+  assert.equal(liveEnvelope.test_event_code, undefined);
+  assert.equal(classifyMetaCapiResponse(true, summarizeMetaCapiResponse({ events_received: 1 })), "sent");
 });
 
 test("Purchase flag and delivery completion remain separate from payment business errors", () => {

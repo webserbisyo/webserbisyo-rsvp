@@ -17,6 +17,21 @@ export function getCanonicalMetaAcquisitionUrl(request: Request, sourcePath: str
   return new URL(sourcePath, origin).toString();
 }
 
+export function getServerCanonicalMetaAcquisitionUrl(sourcePath: string) {
+  return new URL(sourcePath, getServerPreferredOrigin()).toString();
+}
+
+function getServerPreferredOrigin() {
+  for (const value of [process.env.NEXT_PUBLIC_APP_URL, process.env.SITE_URL, process.env.APP_BASE_URL]) {
+    const origin = normalizeOrigin(value);
+    if (origin && origin !== OFFICIAL_DEFAULT_ORIGIN.replace(/\/+$/, "")) {
+      return origin;
+    }
+  }
+
+  return OFFICIAL_DEFAULT_ORIGIN;
+}
+
 function getAllowedOrigins(request: Request) {
   const origins = new Set([OFFICIAL_DEFAULT_ORIGIN]);
 
