@@ -85,7 +85,7 @@ test("CAPI test code requires explicit test mode and warnings never include the 
 
 test("CAPI test routing is top-level only when test mode resolves an effective code", () => {
   const enabled = resolveMetaCapiRuntimeConfig({
-    META_CAPI_TEST_EVENT_CODE: "TEST49251",
+    META_CAPI_TEST_EVENT_CODE: "TEST_DUMMY_CODE",
     META_CAPI_TEST_MODE: "true",
   });
   const enabledEnvelope = buildMetaCapiEventEnvelope(
@@ -94,10 +94,10 @@ test("CAPI test routing is top-level only when test mode resolves an effective c
   );
   const disabledEnvelope = buildMetaCapiEventEnvelope(
     { event_name: "Purchase" },
-    resolveMetaCapiRuntimeConfig({ META_CAPI_TEST_EVENT_CODE: "TEST49251" }).testEventCode,
+    resolveMetaCapiRuntimeConfig({ META_CAPI_TEST_EVENT_CODE: "TEST_DUMMY_CODE" }).testEventCode,
   );
 
-  assert.equal(enabledEnvelope.test_event_code, "TEST49251");
+  assert.equal(enabledEnvelope.test_event_code, "TEST_DUMMY_CODE");
   assert.equal(JSON.parse(JSON.stringify(disabledEnvelope)).test_event_code, undefined);
 });
 
@@ -128,11 +128,11 @@ test("CAPI response requires acknowledged ingestion and retains only safe diagno
 });
 
 test("test-event fingerprints are stable, short, and never retain the raw code", () => {
-  const fingerprint = fingerprintMetaTestEventCode("TEST49251");
+  const fingerprint = fingerprintMetaTestEventCode("TEST_DUMMY_CODE");
 
-  assert.equal(fingerprint, fingerprintMetaTestEventCode(" TEST49251 "));
+  assert.equal(fingerprint, fingerprintMetaTestEventCode(" TEST_DUMMY_CODE "));
   assert.equal(fingerprint?.length, 12);
-  assert.doesNotMatch(fingerprint ?? "", /TEST49251/);
+  assert.doesNotMatch(fingerprint ?? "", /TEST_DUMMY_CODE/);
   assert.equal(fingerprintMetaTestEventCode(null), null);
 });
 
@@ -392,11 +392,11 @@ test("Purchase CAPI envelope uses website source URL and top-level test routing 
     user_data: { em: ["hashed-email"] },
   };
   const testConfig = resolveMetaCapiRuntimeConfig({
-    META_CAPI_TEST_EVENT_CODE: "TEST49251",
+    META_CAPI_TEST_EVENT_CODE: "TEST_DUMMY_CODE",
     META_CAPI_TEST_MODE: "true",
   });
   const liveConfig = resolveMetaCapiRuntimeConfig({
-    META_CAPI_TEST_EVENT_CODE: "TEST49251",
+    META_CAPI_TEST_EVENT_CODE: "TEST_DUMMY_CODE",
   });
   const testEnvelope = buildMetaCapiEventEnvelope(event, testConfig.testEventCode);
   const liveEnvelope = JSON.parse(
@@ -407,7 +407,7 @@ test("Purchase CAPI envelope uses website source URL and top-level test routing 
   assert.equal(testEnvelope.data[0].event_source_url, sourceUrl);
   assert.equal(testEnvelope.data[0].event_id, eventId);
   assert.equal(testEnvelope.data[0].event_time, getPurchaseEventTime(paidAt));
-  assert.equal(testEnvelope.test_event_code, "TEST49251");
+  assert.equal(testEnvelope.test_event_code, "TEST_DUMMY_CODE");
   assert.equal(liveEnvelope.test_event_code, undefined);
   assert.equal(classifyMetaCapiResponse(true, summarizeMetaCapiResponse({ events_received: 1 })), "sent");
 });
