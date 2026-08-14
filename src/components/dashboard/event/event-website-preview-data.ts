@@ -2,6 +2,7 @@ import type {
   EventWebsiteSectionDefinition,
   EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { resolveEventWebsiteSectionOrder } from "@/lib/event-website/defaults";
 import {
   buildEventWebsiteRenderModel,
   eventWebsiteRenderModelSectionKeys,
@@ -350,6 +351,11 @@ export function buildEventWebsiteContentFromPreviewDraft({
   savedContent: EventWebsiteContent;
   sectionOrder: readonly EventWebsiteSectionKey[];
 }): EventWebsiteContent {
+  const resolvedSectionOrder = resolveEventWebsiteSectionOrder({
+    eventType: savedContent.eventType,
+    storedSectionOrder: mapSectionOrder(sectionOrder),
+  });
+
   return {
     ...savedContent,
     layout: {
@@ -357,7 +363,7 @@ export function buildEventWebsiteContentFromPreviewDraft({
         ...savedContent.layout.enabledSections,
         ...pickSavedSectionEnabledState(enabledSections),
       },
-      sectionOrder: mapSectionOrder(sectionOrder),
+      sectionOrder: resolvedSectionOrder,
     },
     sections: {
       attire_motif: {

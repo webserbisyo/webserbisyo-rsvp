@@ -1,4 +1,7 @@
-import { buildDefaultEventWebsiteContent } from "@/lib/event-website/defaults";
+import {
+  buildDefaultEventWebsiteContent,
+  resolveEventWebsiteSectionOrder,
+} from "@/lib/event-website/defaults";
 import {
   formatCanonicalRsvpCloseAtToEditorInput,
   normalizeCanonicalDateInput,
@@ -121,26 +124,10 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     }
   }
 
-  const seenOrderKeys = new Set<EventWebsiteContentSectionKey>();
-  const sectionOrder: EventWebsiteContentSectionKey[] = [];
-
-  for (const item of rawSectionOrder) {
-    if (
-      typeof item === "string" &&
-      eventWebsiteContentSectionKeys.includes(item as EventWebsiteContentSectionKey) &&
-      !seenOrderKeys.has(item as EventWebsiteContentSectionKey)
-    ) {
-      seenOrderKeys.add(item as EventWebsiteContentSectionKey);
-      sectionOrder.push(item as EventWebsiteContentSectionKey);
-    }
-  }
-
-  for (const defaultKey of defaults.layout.sectionOrder) {
-    if (!seenOrderKeys.has(defaultKey)) {
-      seenOrderKeys.add(defaultKey);
-      sectionOrder.push(defaultKey);
-    }
-  }
+  const sectionOrder = resolveEventWebsiteSectionOrder({
+    eventType: rawEventType,
+    storedSectionOrder: rawSectionOrder,
+  });
 
   const normalizedSections: Record<string, unknown> = {
     ...sections,
@@ -172,17 +159,21 @@ function mergeEventWebsiteContentPatch(
   defaults: EventWebsiteContent,
   patch: EventWebsiteContentPatchInput,
 ): EventWebsiteContent {
+  const resolvedEventType = patch.eventType ?? defaults.eventType;
+  const sectionOrder = resolveEventWebsiteSectionOrder({
+    eventType: resolvedEventType,
+    storedSectionOrder: patch.layout?.sectionOrder,
+  });
+
   return {
     assets: patch.assets ?? defaults.assets,
-    eventType: patch.eventType ?? defaults.eventType,
+    eventType: resolvedEventType,
     layout: {
       enabledSections: {
         ...defaults.layout.enabledSections,
         ...(patch.layout?.enabledSections ?? {}),
       },
-      sectionOrder: patch.layout?.sectionOrder
-        ? [...patch.layout.sectionOrder]
-        : [...defaults.layout.sectionOrder],
+      sectionOrder,
     },
     meta: {
       savedAt: patch.meta?.savedAt ?? defaults.meta.savedAt,

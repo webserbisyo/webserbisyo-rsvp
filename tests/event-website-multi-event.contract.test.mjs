@@ -143,24 +143,194 @@ test("legacy 17-key and 16-key stored snapshots hydrate cleanly to 20-section sc
   assert.equal(parsed.layout.sectionOrder.length, 20);
   assert.equal(new Set(parsed.layout.sectionOrder).size, 20);
 
-  // Preserve relative order of existing 17 keys
-  for (let i = 0; i < 17; i += 1) {
-    assert.equal(parsed.layout.sectionOrder[i], types.eventWebsiteContentSectionKeys[i]);
-  }
-
-  // Missing 3 keys appended at end
-  const missingKeys = ["eighteen_roses_candles", "debut_court", "godparents"];
-  for (const key of missingKeys) {
-    assert.equal(parsed.layout.enabledSections[key], false);
-    assert.ok(parsed.layout.sectionOrder.includes(key));
-    assert.ok(parsed.sections[key] !== undefined);
-  }
+  // Canonical wedding order matches getDefaultWeddingSectionOrder()
+  assert.deepEqual(parsed.layout.sectionOrder, defaults.getDefaultWeddingSectionOrder());
 
   // Saved toggles preserved
   assert.equal(parsed.layout.enabledSections.main_event, true);
   assert.equal(parsed.layout.enabledSections.venue, true);
+  assert.equal(parsed.layout.enabledSections.gallery, false);
 
   // Idempotency check: repeat hydration on already hydrated content yields same result
   const repeated = hydration.parseEventWebsiteContentJson(parsed);
   assert.deepEqual(repeated, parsed);
+});
+
+test("scrambled legacy wedding sectionOrder hydrates to canonical wedding order while preserving enabledSections and content", async () => {
+  const { defaults, hydration } = await loadEventWebsiteModules();
+  const weddingPreset = defaults.buildDefaultWeddingEventWebsiteContent();
+
+  // Scrambled historical order: venue before main_event, gallery before music_effects
+  const scrambledOrder = [
+    "host_info",
+    "countdown",
+    "venue",
+    "main_event",
+    "gallery",
+    "music_effects",
+    "secondary_event",
+    "timeline_program",
+    "entourage",
+    "principal_sponsors",
+    "attire_motif",
+    "extra_info",
+    "rsvp_form",
+    "gift_details",
+    "guestbook",
+    "story_message",
+    "contact_socials",
+    "eighteen_roses_candles",
+    "debut_court",
+    "godparents",
+  ];
+
+  const legacyScrambledSnapshot = {
+    ...weddingPreset,
+    layout: {
+      enabledSections: {
+        ...weddingPreset.layout.enabledSections,
+        gallery: false,
+        music_effects: true,
+        venue: true,
+        main_event: true,
+      },
+      sectionOrder: scrambledOrder,
+    },
+    sections: {
+      ...weddingPreset.sections,
+      host_info: {
+        ...weddingPreset.sections.host_info,
+        groomName: "Alexander",
+        brideName: "Maria",
+      },
+    },
+  };
+
+  const hydrated = hydration.parseEventWebsiteContentJson(legacyScrambledSnapshot);
+  assert.notEqual(hydrated, null);
+
+  // Enforces canonical wedding section order
+  assert.deepEqual(hydrated.layout.sectionOrder, defaults.getDefaultWeddingSectionOrder());
+  assert.equal(hydrated.layout.sectionOrder[2], "music_effects");
+  assert.equal(hydrated.layout.sectionOrder[3], "gallery");
+  assert.equal(hydrated.layout.sectionOrder[4], "main_event");
+  assert.equal(hydrated.layout.sectionOrder[5], "venue");
+
+  // Preserves enabledSections toggles exactly
+  assert.equal(hydrated.layout.enabledSections.gallery, false);
+  assert.equal(hydrated.layout.enabledSections.music_effects, true);
+  assert.equal(hydrated.layout.enabledSections.venue, true);
+  assert.equal(hydrated.layout.enabledSections.main_event, true);
+
+  // Preserves section content
+  assert.equal(hydrated.sections.host_info.groomName, "Alexander");
+  assert.equal(hydrated.sections.host_info.brideName, "Maria");
+});
+
+test("wedding save patch normalizes to canonical wedding section order", async () => {
+  const { defaults, hydration } = await loadEventWebsiteModules();
+
+  const patch = {
+    eventType: "wedding",
+    layout: {
+      enabledSections: {
+        gallery: false,
+        music_effects: true,
+      },
+      sectionOrder: ["venue", "host_info", "countdown", "main_event"],
+    },
+    sections: {
+      host_info: {
+        kind: "wedding",
+        groomName: "Alexander",
+        brideName: "Maria",
+      },
+    },
+  };
+
+  const normalized = hydration.normalizeEventWebsiteContentForSave(patch, {
+    event: { eventType: "wedding" },
+  });
+
+  assert.deepEqual(normalized.layout.sectionOrder, defaults.getDefaultWeddingSectionOrder());
+  assert.equal(normalized.layout.enabledSections.gallery, false);
+  assert.equal(normalized.layout.enabledSections.music_effects, true);
+});
+
+test("non-wedding event types preserve custom section order during hydration and resolve", async () => {
+  const { defaults, hydration } = await loadEventWebsiteModules();
+  const debutPreset = defaults.buildDefaultDebutEventWebsiteContent();
+
+  const customDebutOrder = [
+    "host_info",
+    "countdown",
+    "eighteen_roses_candles",
+    "debut_court",
+    "music_effects",
+    "gallery",
+    "main_event",
+    "venue",
+    "secondary_event",
+    "timeline_program",
+    "entourage",
+    "principal_sponsors",
+    "attire_motif",
+    "extra_info",
+    "rsvp_form",
+    "gift_details",
+    "guestbook",
+    "story_message",
+    "contact_socials",
+    "godparents",
+  ];
+
+  const debutSnapshot = {
+    ...debutPreset,
+    eventType: "debut",
+    layout: {
+      enabledSections: debutPreset.layout.enabledSections,
+      sectionOrder: customDebutOrder,
+    },
+  };
+
+  const hydratedDebut = hydration.parseEventWebsiteContentJson(debutSnapshot);
+  assert.notEqual(hydratedDebut, null);
+  assert.equal(hydratedDebut.layout.sectionOrder[2], "eighteen_roses_candles");
+  assert.equal(hydratedDebut.layout.sectionOrder[3], "debut_court");
+
+  const resolvedOrder = defaults.resolveEventWebsiteSectionOrder({
+    eventType: "debut",
+    storedSectionOrder: customDebutOrder,
+  });
+  assert.equal(resolvedOrder[2], "eighteen_roses_candles");
+  assert.equal(resolvedOrder[3], "debut_court");
+});
+
+test("autosave canonical validation rejects rsvp deadline after ceremony start", async () => {
+  const { EventWebsiteCanonicalEventPatchSchema } =
+    await import("../src/lib/validations/event-website.schema.ts");
+
+  const validCanonicalPatch = {
+    event_date: "2026-06-06",
+    event_time: "16:00",
+    rsvp_close_at: "2026-06-01T16:00:00+08:00",
+    venue_name: "The Ruins, Bacolod",
+    venue_address: "Talisay City",
+  };
+  const validResult = EventWebsiteCanonicalEventPatchSchema.safeParse(validCanonicalPatch);
+  assert.equal(validResult.success, true);
+
+  const invalidCanonicalPatch = {
+    event_date: "2026-06-06",
+    event_time: "16:00",
+    rsvp_close_at: "2026-06-10T16:00:00+08:00", // after ceremony start!
+    venue_name: "The Ruins, Bacolod",
+    venue_address: "Talisay City",
+  };
+  const invalidResult = EventWebsiteCanonicalEventPatchSchema.safeParse(invalidCanonicalPatch);
+  assert.equal(invalidResult.success, false);
+  assert.equal(
+    invalidResult.error.issues[0].message,
+    "RSVP deadline must be on or before the ceremony start.",
+  );
 });

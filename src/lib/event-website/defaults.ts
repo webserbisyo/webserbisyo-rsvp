@@ -34,6 +34,50 @@ export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSe
   ) as Record<EventWebsiteContentSectionKey, boolean>;
 }
 
+/**
+ * Resolves the canonical section order for an event website.
+ * - For "wedding", the section order is fixed to the canonical wedding sequence (getDefaultWeddingSectionOrder()).
+ * - For non-wedding event types, preserves any valid stored custom order, appending missing default keys.
+ */
+export function resolveEventWebsiteSectionOrder({
+  eventType,
+  storedSectionOrder,
+}: {
+  eventType?: string | null;
+  storedSectionOrder?: readonly string[] | null;
+}): EventWebsiteContentSectionKey[] {
+  const normalizedType = typeof eventType === "string" ? eventType : "wedding";
+
+  if (normalizedType === "wedding") {
+    return getDefaultWeddingSectionOrder();
+  }
+
+  const defaults = buildDefaultEventWebsiteContent(normalizedType);
+  const rawOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : [];
+  const seenOrderKeys = new Set<EventWebsiteContentSectionKey>();
+  const sectionOrder: EventWebsiteContentSectionKey[] = [];
+
+  for (const item of rawOrder) {
+    if (
+      typeof item === "string" &&
+      eventWebsiteContentSectionKeys.includes(item as EventWebsiteContentSectionKey) &&
+      !seenOrderKeys.has(item as EventWebsiteContentSectionKey)
+    ) {
+      seenOrderKeys.add(item as EventWebsiteContentSectionKey);
+      sectionOrder.push(item as EventWebsiteContentSectionKey);
+    }
+  }
+
+  for (const defaultKey of defaults.layout.sectionOrder) {
+    if (!seenOrderKeys.has(defaultKey)) {
+      seenOrderKeys.add(defaultKey);
+      sectionOrder.push(defaultKey);
+    }
+  }
+
+  return sectionOrder;
+}
+
 export function buildDefaultWeddingEventWebsiteContent(
   context: EventWebsiteDefaultsContext = {},
 ): EventWebsiteContent {

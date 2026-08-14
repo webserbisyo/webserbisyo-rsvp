@@ -59,6 +59,7 @@ import {
   type EventWebsiteSectionDefinition,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { resolveEventWebsiteSectionOrder } from "@/lib/event-website/defaults";
 import {
   getEventWebsiteSavedAt,
   getEventWebsiteWorkspaceStatus,
@@ -206,8 +207,15 @@ function EnabledEventWebsiteWorkspace({
     [resolvedSections.optionalSections, resolvedSections.requiredSections],
   );
   const defaultWebsiteFlowSections = useMemo(
-    () => buildInitialWebsiteFlow(editableSections, savedContent.layout.sectionOrder),
-    [editableSections, savedContent.layout.sectionOrder],
+    () =>
+      buildInitialWebsiteFlow(
+        editableSections,
+        resolveEventWebsiteSectionOrder({
+          eventType: eventWebsiteData.eventType,
+          storedSectionOrder: savedContent.layout.sectionOrder,
+        }),
+      ),
+    [editableSections, eventWebsiteData.eventType, savedContent.layout.sectionOrder],
   );
   const [websiteFlowSections, setWebsiteFlowSections] = useState(defaultWebsiteFlowSections);
   const [enabledSections, setEnabledSections] = useState(() =>
@@ -256,10 +264,16 @@ function EnabledEventWebsiteWorkspace({
         buildInitialEnabledSections(editableSections, nextContent.layout.enabledSections),
       );
       setWebsiteFlowSections(
-        buildInitialWebsiteFlow(editableSections, nextContent.layout.sectionOrder),
+        buildInitialWebsiteFlow(
+          editableSections,
+          resolveEventWebsiteSectionOrder({
+            eventType: eventWebsiteData.eventType,
+            storedSectionOrder: nextContent.layout.sectionOrder,
+          }),
+        ),
       );
     },
-    [editableSections],
+    [editableSections, eventWebsiteData.eventType],
   );
   const autosave = useEventWebsiteAutosave({
     autoSaveEnabled,
@@ -395,7 +409,7 @@ function EnabledEventWebsiteWorkspace({
         label:
           autosave.persistenceState === "conflict"
             ? "Another saved version was found"
-            : "Save failed — Retry",
+            : autosave.errorMessage || "Save failed — Retry",
         tone: "warning",
       };
     }
@@ -411,7 +425,7 @@ function EnabledEventWebsiteWorkspace({
       label: "All changes saved",
       tone: "neutral",
     };
-  }, [autosave.persistenceState, isDirty]);
+  }, [autosave.errorMessage, autosave.persistenceState, isDirty]);
   const publicationStatusPill = useMemo<EventWebsiteStatusPill>(() => {
     if (eventWebsiteData.publishState !== "published") {
       return {

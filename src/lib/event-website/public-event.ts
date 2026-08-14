@@ -3,6 +3,7 @@ import {
   resolveEventWebsiteSections,
   type EventWebsiteSectionKey,
 } from "@/config/event-website-sections";
+import { resolveEventWebsiteSectionOrder } from "@/lib/event-website/defaults";
 import {
   buildEventWebsiteRenderModel,
   eventWebsiteRenderModelSectionKeys,
@@ -230,7 +231,11 @@ export function buildPublicRenderableSections(
       (section) => section.key,
     ),
   );
-  const orderedSections = content.layout.sectionOrder.filter(
+  const resolvedSectionOrder = resolveEventWebsiteSectionOrder({
+    eventType,
+    storedSectionOrder: content.layout.sectionOrder,
+  });
+  const orderedSections = resolvedSectionOrder.filter(
     (sectionKey) => content.layout.enabledSections[sectionKey],
   );
 
