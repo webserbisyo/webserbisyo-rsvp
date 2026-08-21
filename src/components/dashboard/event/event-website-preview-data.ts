@@ -368,10 +368,10 @@ export function getPreviewDefaultDraft(eventType?: string | null): EventWebsiteP
         sectionIntro: "Your presence is the greatest gift.",
       },
       loveStory: {
-        sectionIntro: "A little message about this milestone.",
+        sectionIntro: "A milestone reflection on turning eighteen.",
         storyBody:
-          "Eighteen years of love, growth, and wonderful memories with family and friends. Join us as Sofia steps gracefully into adulthood.",
-        storyTitle: "A Journey to 18",
+          "Eighteen years of love, cherished memories, and beautiful lessons. Thank you to everyone who has been a part of my journey as I step into adulthood.",
+        storyTitle: "My Journey to 18",
       },
       guestbook: {
         emptyStateMessage: DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,

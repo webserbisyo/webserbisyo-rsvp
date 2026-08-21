@@ -482,6 +482,12 @@ export const eventWebsiteTypeConfig: Record<
       { key: "countdown" },
       { defaultEnabled: false, key: "music_effects" },
       { defaultEnabled: false, key: "gallery" },
+      {
+        defaultEnabled: false,
+        helper: "Share a milestone journey, childhood reflection, or thanksgiving message for your 18th birthday.",
+        key: "story_message",
+        label: "Debutant Story",
+      },
       { defaultEnabled: false, key: "secondary_event", label: "Reception" },
       { key: "timeline_program" },
       { key: "eighteen_roses_candles" },

@@ -138,7 +138,7 @@ function SectionRouter({
         {sectionKey === "guestbook" ? (
           <GuestbookSection draft={draft} guestbookMessages={guestbookMessages} />
         ) : null}
-        {sectionKey === "story_message" && draft.hostInfo.kind !== "debut" ? (
+        {sectionKey === "story_message" ? (
           <LoveStorySection draft={draft} />
         ) : null}
         {sectionKey === "contact_socials" ? <ContactSocialsSection draft={draft} /> : null}

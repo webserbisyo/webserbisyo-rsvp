@@ -31,6 +31,7 @@ export function getDefaultDebutSectionOrder(): EventWebsiteContentSectionKey[] {
     "countdown",
     "music_effects",
     "gallery",
+    "story_message",
     "main_event",
     "venue",
     "secondary_event",
@@ -44,7 +45,6 @@ export function getDefaultDebutSectionOrder(): EventWebsiteContentSectionKey[] {
     "gift_details",
     "guestbook",
     "contact_socials",
-    "story_message",
     "entourage",
     "godparents",
   ];
@@ -89,7 +89,7 @@ export function getDisallowedSectionsForEventType(
 ): readonly EventWebsiteContentSectionKey[] {
   const normalized = typeof eventType === "string" ? eventType.toLowerCase() : "wedding";
   if (normalized === "debut") {
-    return ["story_message", "entourage", "godparents"];
+    return ["entourage", "godparents"];
   }
   if (normalized === "birthday") {
     return ["entourage", "eighteen_roses_candles", "debut_court", "godparents"];

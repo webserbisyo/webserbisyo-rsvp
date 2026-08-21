@@ -504,7 +504,11 @@ export function OptionalLoveStoryPanel({
             id: "loveStoryTitle",
             label: "Story Title",
             maxLength: 80,
-            placeholder: isBirthday ? "e.g. A Journey to 30" : undefined,
+            placeholder: isBirthday
+              ? "e.g. A Journey to 30"
+              : isDebut
+                ? "e.g. My Journey to 18"
+                : undefined,
           }}
           value={values.storyTitle}
           onChange={(value) => updateValues("storyTitle", value)}
@@ -516,7 +520,9 @@ export function OptionalLoveStoryPanel({
             maxLength: 420,
             placeholder: isBirthday
               ? "e.g. Grateful for 30 years of blessings, growth, and wonderful memories with family and friends..."
-              : undefined,
+              : isDebut
+                ? "e.g. Eighteen years of cherished memories, love, and lessons as I step into adulthood..."
+                : undefined,
           }}
           value={values.storyBody}
           onChange={(value) => updateValues("storyBody", value)}
