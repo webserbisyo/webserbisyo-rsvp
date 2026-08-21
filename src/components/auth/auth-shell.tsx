@@ -13,34 +13,33 @@ export function AuthShell({
   title = "Sign in to WebSerbisyo RSVP",
 }: AuthShellProps) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 sm:px-6">
-      <Image
-        src="/images/auth/login-bg-rsvp.jpeg"
-        alt=""
-        fill
-        priority
-        className="object-cover object-center"
-        sizes="100vw"
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#fffaf4] px-4 py-8 sm:px-6">
+      {/* Ambient warm brand glow meshes (Zero asset overhead) */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(201,107,72,0.14),_transparent_55%)]"
+        aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-slate-950/55" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.16),_transparent_42%)]" />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_rgba(201,107,72,0.08),_transparent_40%)]"
+        aria-hidden="true"
+      />
 
-      <Card className="relative z-10 w-full max-w-[420px] border-white/20 bg-white/14 py-0 text-white shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
+      <Card className="relative z-10 w-full max-w-[420px] border-slate-800/80 bg-slate-950 py-0 text-white shadow-2xl shadow-stone-900/10">
         <div className="flex flex-col gap-6 px-5 py-6 sm:px-7 sm:py-8">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/90 shadow-lg shadow-slate-950/20">
+            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white p-2 shadow-md">
               <Image
-                src="/images/brand/webserbisyo-logo.jpeg"
+                src="/icon.png"
                 alt="WebSerbisyo"
-                width={84}
-                height={84}
+                width={64}
+                height={64}
                 priority
-                className="size-20 object-cover sm:size-[84px]"
+                className="size-14 object-contain sm:size-16"
               />
             </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-              <p className="text-sm leading-6 text-white/78">{description}</p>
+            <div className="space-y-1.5">
+              <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
+              <p className="text-sm leading-6 text-white/75">{description}</p>
             </div>
           </div>
 
