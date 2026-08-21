@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle } from "lucide-react";
 import {
   Dialog,
@@ -147,6 +147,7 @@ export function PaymentConfirmedDialog({
   paymentStatus,
 }: PaymentConfirmedDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
     // Gate 1: Only trigger for confirmed payments.
@@ -154,19 +155,26 @@ export function PaymentConfirmedDialog({
       return;
     }
 
-    // Gate 2: Already acknowledged in this browser.
+    // Gate 2: In-memory ref to prevent double-execution in React 18 / concurrent renders.
+    if (hasTriggeredRef.current) {
+      return;
+    }
+
+    // Gate 3: Already acknowledged in this browser.
     if (isAlreadyAcknowledged(paymentId)) {
       return;
     }
 
-    // Gate 3: 14-day suppression — don't pop up for old historical payments.
+    // Gate 4: 14-day suppression — don't pop up for old historical payments.
     if (!isWithinSuppressionWindow(paidAt)) {
       // Silently mark as acknowledged so it never pops up later.
       markAsAcknowledged(paymentId);
       return;
     }
 
-    // Show the modal and fire the browser Purchase pixel with retry.
+    // Latch immediately (synchronous) before async operations to guarantee idempotency.
+    hasTriggeredRef.current = true;
+    markAsAcknowledged(paymentId);
     setIsOpen(true);
 
     void firePurchasePixelWithRetry({
@@ -177,8 +185,6 @@ export function PaymentConfirmedDialog({
       customerPhone,
       externalId,
       paymentId,
-    }).finally(() => {
-      markAsAcknowledged(paymentId);
     });
   }, [
     amountPaid,

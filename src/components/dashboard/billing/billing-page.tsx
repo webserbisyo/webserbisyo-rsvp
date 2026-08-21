@@ -5,7 +5,6 @@ import { BillingStatCard } from "@/components/dashboard/billing/billing-stat-car
 import { BillingStatusBadge } from "@/components/dashboard/billing/billing-status-badge";
 import type { BillingPageData } from "@/components/dashboard/billing/billing-types";
 import { MessengerLogo } from "@/components/dashboard/billing/messenger-logo";
-import { PaymentConfirmedDialog } from "@/components/dashboard/billing/payment-confirmed-dialog";
 import { Button } from "@/components/ui/button";
 import {
   CalendarDays,
@@ -21,19 +20,6 @@ export function BillingPage({ data }: { data: BillingPageData }) {
 
   return (
     <div className="space-y-6 pt-2 pb-24 md:pb-8">
-      {data.latestPayment ? (
-        <PaymentConfirmedDialog
-          amountPaid={data.amountPaid}
-          currency={data.currency}
-          customerEmail={data.latestPayment.customerEmail}
-          customerFullName={data.latestPayment.customerFullName}
-          customerPhone={data.latestPayment.customerPhone}
-          externalId={data.clientId}
-          paidAt={data.latestPayment.paidAt}
-          paymentId={data.latestPayment.id}
-          paymentStatus={data.latestPayment.status}
-        />
-      ) : null}
       {/* ── Two-column layout ── */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_348px]">
         {/* ── Left / main column ── */}
