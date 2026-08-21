@@ -25,17 +25,15 @@ export const metadata: Metadata = {
   creator: "WebSerbisyo",
   publisher: "WebSerbisyo",
   icons: {
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", sizes: "512x512", type: "image/png" },
-    ],
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "WebSerbisyo RSVP",
+    startupImage: ["/icon.png"],
   },
 };
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "rsvp-offline-v9";
+const CACHE_NAME = "rsvp-offline-v10";
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -31,11 +31,13 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  if (event.request.mode !== "navigate") return;
 
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(OFFLINE_URL)),
-  );
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(OFFLINE_URL)),
+    );
+    return;
+  }
 });
 
 self.addEventListener("push", (event) => {
