@@ -25,6 +25,31 @@ export function getDefaultWeddingSectionOrder(): EventWebsiteContentSectionKey[]
   return [...eventWebsiteContentSectionKeys];
 }
 
+export function getDefaultDebutSectionOrder(): EventWebsiteContentSectionKey[] {
+  return [
+    "host_info",
+    "countdown",
+    "music_effects",
+    "gallery",
+    "main_event",
+    "venue",
+    "secondary_event",
+    "timeline_program",
+    "eighteen_roses_candles",
+    "debut_court",
+    "principal_sponsors",
+    "attire_motif",
+    "extra_info",
+    "rsvp_form",
+    "gift_details",
+    "guestbook",
+    "contact_socials",
+    "story_message",
+    "entourage",
+    "godparents",
+  ];
+}
+
 export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSectionKey, boolean> {
   return Object.fromEntries(
     eventWebsiteContentSectionKeys.map((key) => [
@@ -352,6 +377,7 @@ export function buildDefaultDebutEventWebsiteContent(
   return buildNeutralTargetContent("debut", context, {
     guestbookTitle: "Debut Wishes",
     mainEventLabel: "Debut Celebration",
+    sectionOrder: getDefaultDebutSectionOrder(),
     storyTitle: "A Special Celebration",
     enabled: [
       "host_info",
@@ -387,6 +413,7 @@ function buildNeutralTargetContent(
     enabled: EventWebsiteContentSectionKey[];
     guestbookTitle: string;
     mainEventLabel: string;
+    sectionOrder?: EventWebsiteContentSectionKey[];
     storyTitle: string;
   },
 ): EventWebsiteContent {
@@ -430,7 +457,7 @@ function buildNeutralTargetContent(
     eventType,
     layout: {
       enabledSections: enabled,
-      sectionOrder: [...eventWebsiteContentSectionKeys],
+      sectionOrder: options.sectionOrder ?? [...eventWebsiteContentSectionKeys],
     },
     sections: {
       ...base.sections,

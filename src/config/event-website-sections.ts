@@ -474,6 +474,9 @@ export const eventWebsiteTypeConfig: Record<
   debut: {
     optionalDefaults: [
       { key: "countdown" },
+      { defaultEnabled: false, key: "music_effects" },
+      { defaultEnabled: false, key: "gallery" },
+      { defaultEnabled: false, key: "secondary_event", label: "Reception" },
       { key: "timeline_program" },
       { key: "eighteen_roses_candles" },
       { defaultEnabled: false, key: "debut_court" },
@@ -484,13 +487,10 @@ export const eventWebsiteTypeConfig: Record<
         label: "Special Sponsors",
       },
       { key: "attire_motif" },
-      { key: "guestbook" },
-      { key: "gift_details" },
-      { key: "contact_socials" },
-      { defaultEnabled: false, key: "gallery" },
-      { defaultEnabled: false, key: "music_effects" },
       { defaultEnabled: false, key: "extra_info" },
-      { defaultEnabled: false, key: "secondary_event", label: "Reception" },
+      { key: "gift_details" },
+      { key: "guestbook" },
+      { key: "contact_socials" },
     ],
     required: {
       ...genericRequiredConfig,
