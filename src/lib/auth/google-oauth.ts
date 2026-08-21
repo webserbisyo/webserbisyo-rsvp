@@ -2,11 +2,13 @@ import type { User } from "@supabase/supabase-js";
 import { DEFAULT_PUBLIC_APP_URL } from "@/lib/public-rsvp-url";
 import { getSafeNextPath } from "./redirects";
 
-/**
- * This is a build-time public setting. Because NEXT_PUBLIC_* values are compiled
- * into the browser bundle, changing it requires a new deployment.
- */
-export const GOOGLE_AUTH_ENABLED = isGoogleAuthEnabled(process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED);
+export const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ??
+  "1018608771984-a1m86bvpejrh9f8mmpgc91kotih0mukh.apps.googleusercontent.com";
+
+export const GOOGLE_AUTH_ENABLED =
+  Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) ||
+  isGoogleAuthEnabled(process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED);
 
 export const GOOGLE_OAUTH_CALLBACK_PATH = "/callback";
 

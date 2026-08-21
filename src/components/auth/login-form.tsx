@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
-import {
-  GOOGLE_AUTH_ENABLED,
-  getGoogleOAuthCallbackUrl,
-} from "@/lib/auth/google-oauth";
+import { GOOGLE_AUTH_ENABLED } from "@/lib/auth/google-oauth";
 import { getAuthRedirectErrorMessage } from "@/lib/auth/redirects";
 import { createClient } from "@/lib/supabase/client";
 import { loginAction, type LoginActionState } from "@/server/actions/auth";
@@ -32,6 +31,7 @@ export function LoginForm({
   nextPath,
   signOutOnMount = false,
 }: LoginFormProps) {
+  const router = useRouter();
   const initialMessage = getAuthRedirectErrorMessage(initialErrorCode);
   const [state, formAction, isPending] = useActionState(loginAction, INITIAL_LOGIN_STATE);
   const [isGooglePending, setIsGooglePending] = useState(false);
@@ -71,41 +71,28 @@ export function LoginForm({
     }
   }, [googleError]);
 
-  async function handleGoogleSignIn() {
-    if (!GOOGLE_AUTH_ENABLED || isBusy) {
-      return;
-    }
-
-    setGoogleError(null);
+  async function handleGoogleCredentialSuccess(credential: string) {
     setIsGooglePending(true);
+    setGoogleError(null);
 
     try {
-      const intentResponse = await fetch("/api/auth/google-intent", {
-        cache: "no-store",
-        credentials: "same-origin",
-        method: "POST",
-      });
-
-      if (!intentResponse.ok) {
-        throw new Error("Google sign-in intent could not be created.");
-      }
-
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithIdToken({
         provider: "google",
-        options: {
-          redirectTo: getGoogleOAuthCallbackUrl(nextPath),
-          queryParams: {
-            prompt: "select_account",
-          },
-        },
+        token: credential,
       });
 
       if (error) {
         throw error;
       }
-    } catch {
-      setGoogleError("Google sign-in could not be started. Please try again or use email and password.");
+
+      toast.success("Signed in successfully with Google.");
+      router.push(nextPath || "/dashboard");
+      router.refresh();
+    } catch (err) {
+      setGoogleError(
+        err instanceof Error ? err.message : "Google sign-in could not be completed.",
+      );
       setIsGooglePending(false);
     }
   }
@@ -113,7 +100,7 @@ export function LoginForm({
   return (
     <div className="space-y-5">
       <p className="sr-only" aria-live="assertive" aria-atomic="true">
-        {isGooglePending ? "Redirecting to Google…" : visibleError ?? initialSuccessMessage}
+        {isGooglePending ? "Signing in with Google…" : visibleError ?? initialSuccessMessage}
       </p>
 
       {initialSuccessMessage ? (
@@ -124,18 +111,34 @@ export function LoginForm({
 
       {GOOGLE_AUTH_ENABLED ? (
         <>
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="h-11 w-full border-white/40 bg-white text-slate-900 hover:bg-slate-100 focus-visible:ring-white/80"
-            disabled={isBusy}
-            aria-busy={isGooglePending}
-            onClick={handleGoogleSignIn}
-          >
-            {isGooglePending ? <Loader2 className="size-4 animate-spin" /> : <GoogleMark />}
-            {isGooglePending ? "Redirecting to Google..." : "Sign in with Google"}
-          </Button>
+          <div className="flex w-full flex-col items-center justify-center overflow-hidden rounded-xl bg-white p-0.5 shadow-sm">
+            {isGooglePending ? (
+              <div className="flex h-10 w-full items-center justify-center gap-2 text-sm font-medium text-slate-800">
+                <Loader2 className="size-4 animate-spin text-slate-700" />
+                Signing in with Google…
+              </div>
+            ) : (
+              <div className="w-full">
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    if (credentialResponse.credential) {
+                      void handleGoogleCredentialSuccess(credentialResponse.credential);
+                    } else {
+                      setGoogleError("Google did not return valid credentials.");
+                    }
+                  }}
+                  onError={() => {
+                    setGoogleError("Google sign-in was cancelled or failed.");
+                  }}
+                  theme="outline"
+                  size="large"
+                  width="100%"
+                  text="signin_with"
+                  shape="rectangular"
+                />
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-3" aria-hidden="true">
             <div className="h-px flex-1 bg-white/35" />
@@ -225,28 +228,5 @@ export function LoginForm({
         link expired, request a new secure link through Forgot password.
       </p>
     </div>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24">
-      <path
-        fill="#4285F4"
-        d="M21.8 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h5.5a4.7 4.7 0 0 1-2 3.1v2.4h3.2c1.9-1.8 3.1-4.3 3.1-7.2Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 22c2.7 0 5-.9 6.7-2.5l-3.2-2.4c-.9.6-2 .9-3.5.9-2.7 0-5-1.8-5.8-4.3H2.9V16A10 10 0 0 0 12 22Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M6.2 13.7A6 6 0 0 1 5.9 12c0-.6.1-1.2.3-1.7V7.9H2.9A10 10 0 0 0 2 12c0 1.5.4 2.9.9 4.1l3.3-2.4Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 6c1.6 0 3 .5 4.1 1.6l3.1-3.1C17 2.9 14.7 2 12 2A10 10 0 0 0 2.9 7.9l3.3 2.4C7 7.8 9.3 6 12 6Z"
-      />
-    </svg>
   );
 }
