@@ -553,6 +553,7 @@ function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
 function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const isDebut = draft.hostInfo.kind === "debut";
   const isWedding = draft.hostInfo.kind === "wedding";
+  const isBirthday = draft.hostInfo.kind === "birthday";
   const items = normalizeTimelineItems(draft.timelineProgram.items, draft.hostInfo.kind);
 
   return (
@@ -565,7 +566,9 @@ function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
           ? "Debut Program Flow"
           : isWedding
             ? "Wedding Day Timeline"
-            : "Event Schedule & Flow"}
+            : isBirthday
+              ? "Birthday Party Flow"
+              : "Event Schedule & Flow"}
       </h3>
       <p className="event-preview-copy">
         Here is the flow of the day so guests know what to expect.
@@ -610,8 +613,8 @@ function EntourageSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function PrincipalSponsorsSection({ draft }: { draft: EventWebsiteRenderModel }) {
-  const isDebut = draft.hostInfo.kind === "debut";
-  const label = isDebut ? "Special Sponsors" : "Principal Sponsors";
+  const isSpecialSponsors = draft.hostInfo.kind === "debut" || draft.hostInfo.kind === "birthday";
+  const label = isSpecialSponsors ? "Special Sponsors" : "Principal Sponsors";
   const intro = draft.principalSponsors.introLine.trim();
   const names = normalizeLineList(draft.principalSponsors.names, draft.hostInfo.kind);
 
@@ -950,6 +953,9 @@ function GuestbookMessageCard({ message }: { message: EventWebsiteGuestbookMessa
 
 function LoveStorySection({ draft }: { draft: EventWebsiteRenderModel }) {
   const fallbackDraft = getDraftFallback(draft);
+  const isBirthday = draft.hostInfo.kind === "birthday";
+  const isDebut = draft.hostInfo.kind === "debut";
+  const sectionLabel = isBirthday ? "Celebrant Story" : isDebut ? "My Journey" : "Love Story";
   const intro = draft.loveStory.sectionIntro.trim();
   const title = withFallback(draft.loveStory.storyTitle, fallbackDraft.loveStory.storyTitle);
   const body = draft.loveStory.storyBody.trim() || fallbackDraft.loveStory.storyBody;
@@ -957,9 +963,9 @@ function LoveStorySection({ draft }: { draft: EventWebsiteRenderModel }) {
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
-        Love Story
+        {sectionLabel}
       </Badge>
-      <h3>Love Story</h3>
+      <h3>{sectionLabel}</h3>
       {intro ? <p className="event-preview-copy">{intro}</p> : null}
       <div className="event-preview-story-card">
         <strong>{title}</strong>
@@ -982,12 +988,15 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
     { label: "TikTok", value: values.tikTokUrl.trim() },
   ].filter((item) => item.value);
   const isDebut = draft.hostInfo.kind === "debut";
+  const isBirthday = draft.hostInfo.kind === "birthday";
   const brandLine = isDebut
     ? `${draft.hostInfo.displayAs || "Debutant"}'s 18th Birthday`
-    : withFallback(
-        draft.coupleInfo.displayAs,
-        fallbackDraft.coupleInfo.displayAs,
-      );
+    : isBirthday
+      ? `${draft.hostInfo.displayAs || "Celebrant's Birthday"}`
+      : withFallback(
+          draft.coupleInfo.displayAs,
+          fallbackDraft.coupleInfo.displayAs,
+        );
 
   return (
     <footer className="event-preview-section event-preview-section--footer">

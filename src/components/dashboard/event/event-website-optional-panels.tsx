@@ -391,6 +391,8 @@ export function OptionalPrincipalSponsorsPanel({
   saveButtonProps,
 }: SharedOptionalPanelProps) {
   const isDebut = previewDraft.hostInfo.kind === "debut";
+  const isBirthday = previewDraft.hostInfo.kind === "birthday";
+  const isSpecialSponsors = isDebut || isBirthday;
   const values = previewDraft.principalSponsors;
 
   function updateValues(
@@ -405,11 +407,13 @@ export function OptionalPrincipalSponsorsPanel({
 
   return (
     <EditorShell
-      title={isDebut ? "Special Sponsors" : "Principal Sponsors"}
+      title={isSpecialSponsors ? "Special Sponsors" : "Principal Sponsors"}
       description={
         isDebut
           ? "List godparents, mentors, and honored guests supporting the debutant."
-          : "List the principal sponsors who should appear on the wedding website."
+          : isBirthday
+            ? "List godparents, mentors, and honored guests supporting the celebrant."
+            : "List the principal sponsors who should appear on the wedding website."
       }
     >
       <EditorGroup title="Sponsor Intro">
@@ -419,7 +423,7 @@ export function OptionalPrincipalSponsorsPanel({
             id: "principalSponsorsIntroLine",
             label: "Section Intro",
             maxLength: 220,
-            placeholder: isDebut
+            placeholder: isSpecialSponsors
               ? "e.g. We are blessed with the guidance and love of our special sponsors."
               : "e.g. We are grateful for the guidance of our principal sponsors.",
           }}
@@ -427,13 +431,13 @@ export function OptionalPrincipalSponsorsPanel({
           onChange={(value) => updateValues("introLine", value)}
         />
       </EditorGroup>
-      <EditorGroup title={isDebut ? "Special Sponsor Names" : "Principal Sponsor Names"}>
+      <EditorGroup title={isSpecialSponsors ? "Special Sponsor Names" : "Principal Sponsor Names"}>
         <TextAreaField
           field={{
             id: "principalSponsorsNames",
             label: "Names",
             maxLength: 420,
-            placeholder: isDebut
+            placeholder: isSpecialSponsors
               ? "Ninong Alexander Morales\nNinang Elena Santos\nTito Roberto Reyes"
               : "Mr. Juan Dela Cruz\nMrs. Maria Dela Cruz",
           }}
@@ -451,6 +455,8 @@ export function OptionalLoveStoryPanel({
   previewDraft,
   saveButtonProps,
 }: SharedOptionalPanelProps) {
+  const isBirthday = previewDraft.hostInfo.kind === "birthday";
+  const isDebut = previewDraft.hostInfo.kind === "debut";
   const values = previewDraft.loveStory;
 
   function updateValues(fieldId: keyof EventWebsitePreviewDraft["loveStory"], value: string) {
@@ -462,24 +468,51 @@ export function OptionalLoveStoryPanel({
 
   return (
     <EditorShell
-      title="Love Story"
-      description="Share a short story guests can read on the wedding website."
+      title={isBirthday ? "Celebrant Story" : isDebut ? "Debutant Story" : "Love Story"}
+      description={
+        isBirthday
+          ? "Share a short milestone story or message guests can read on the website."
+          : isDebut
+            ? "Share a milestone journey or reflection guests can read on the website."
+            : "Share a short story guests can read on the wedding website."
+      }
     >
       <EditorGroup title="Story Intro">
         <TextAreaField
-          field={{ id: "loveStorySectionIntro", label: "Section Intro", maxLength: 180 }}
+          field={{
+            id: "loveStorySectionIntro",
+            label: "Section Intro",
+            maxLength: 180,
+            placeholder: isBirthday
+              ? "e.g. A special milestone reflection..."
+              : isDebut
+                ? "e.g. A milestone reflection on turning 18..."
+                : undefined,
+          }}
           value={values.sectionIntro}
           onChange={(value) => updateValues("sectionIntro", value)}
         />
       </EditorGroup>
       <EditorGroup title="Story Content">
         <TextField
-          field={{ id: "loveStoryTitle", label: "Story Title", maxLength: 80 }}
+          field={{
+            id: "loveStoryTitle",
+            label: "Story Title",
+            maxLength: 80,
+            placeholder: isBirthday ? "e.g. A Journey to 30" : undefined,
+          }}
           value={values.storyTitle}
           onChange={(value) => updateValues("storyTitle", value)}
         />
         <TextAreaField
-          field={{ id: "loveStoryBody", label: "Story Body", maxLength: 420 }}
+          field={{
+            id: "loveStoryBody",
+            label: "Story Body",
+            maxLength: 420,
+            placeholder: isBirthday
+              ? "e.g. Grateful for 30 years of blessings, growth, and wonderful memories with family and friends..."
+              : undefined,
+          }}
           value={values.storyBody}
           onChange={(value) => updateValues("storyBody", value)}
         />

@@ -447,8 +447,163 @@ export function getPreviewDefaultDraft(eventType?: string | null): EventWebsiteP
     };
   }
 
+  if (normalizedType === "birthday") {
+    return defaultBirthdayPreviewDraft;
+  }
+
   return defaultWeddingPreviewDraft;
 }
+
+export const defaultBirthdayPreviewDraft: EventWebsitePreviewDraft = {
+  ...defaultWeddingPreviewDraft,
+  hostInfo: {
+    kind: "birthday",
+    celebrantName: "Marco",
+    milestone: "30th Birthday",
+    displayAs: "Marco's 30th Birthday",
+    hostLine: "Marco Santos Birthday RSVP",
+    shortHostMessage:
+      "Join us as we celebrate Marco's 30th birthday milestone with good food, drinks, and great company.",
+  },
+  attireDressCode: {
+    colorMotifNote: "Casual chic / celebratory colors.",
+    dressCodeNote: "Smart casual or party attire.",
+    sectionIntro: "Wear something comfortable and celebratory!",
+  },
+  ceremony: {
+    endTime: "23:00",
+    eventDate: "2026-07-18",
+    eventLabel: "Birthday Celebration",
+    eventTime: "18:00",
+    rsvpDeadline: "2026-07-10T18:00",
+    scheduleNote: "Please arrive promptly for welcome drinks and mingling.",
+  },
+  contactSocials: {
+    contactNumber: "+63 917 123 4567",
+    contactPerson: "Marco Santos",
+    email: "marco@example.com",
+    facebookUrl: "https://facebook.com",
+    instagramUrl: "https://instagram.com",
+    tikTokUrl: "",
+  },
+  countdown: {
+    shortNote: "Can't wait to celebrate together!",
+    title: "Counting down to Marco's 30th Birthday",
+  },
+  coupleInfo: {
+    brideName: "",
+    displayAs: "Marco's 30th Birthday",
+    groomName: "",
+    hostLine: "Marco Santos Birthday RSVP",
+    shortHostMessage: "Marco invites you to celebrate his 30th birthday.",
+  },
+  debutCourt: { groups: [] },
+  eighteenRosesCandles: { groups: [] },
+  entourage: { groups: [], introLine: "" },
+  extraInfo: {
+    items: [
+      {
+        details: "Valet and free self-parking available on-site.",
+        id: "extra-info-1",
+        title: "Parking & Access",
+      },
+      {
+        details: "Drinks and appetizers will be served upon arrival.",
+        id: "extra-info-2",
+        title: "Welcome Drinks",
+      },
+    ],
+    sectionIntro: "A few helpful notes for our party guests.",
+    sectionTitle: "Celebration Notes",
+  },
+  giftDetails: {
+    giftNote:
+      "Your presence and celebration with Marco are the greatest gifts. If you wish to send a monetary gift, details are provided below.",
+    options: [
+      { file: null, id: "gift-option-1", image: null, title: "GCash" },
+      { file: null, id: "gift-option-2", image: null, title: "Bank Transfer" },
+    ],
+    sectionIntro: "Your presence is our greatest joy.",
+  },
+  godparents: { groups: [] },
+  guestbook: {
+    emptyStateMessage: "Be the first to leave a birthday message for Marco.",
+    sectionIntro: "Leave your warm wishes and birthday messages for Marco.",
+    sectionTitle: "Birthday Wishes",
+  },
+  loveStory: {
+    sectionIntro: "A little milestone reflection about this celebration.",
+    storyBody:
+      "Thirty years of cherished moments, laughter, and growth. Grateful to celebrate this special milestone with family and friends.",
+    storyTitle: "A Journey to 30",
+  },
+  musicEffects: {
+    musicLink: "",
+    musicTitle: "Party Playlist",
+    playButtonLabel: "Play party mix",
+    shortNote: "Upbeat tracks curated for Marco's birthday celebration.",
+  },
+  principalSponsors: {
+    introLine: "We are blessed with the guidance and love of our honored sponsors and mentors.",
+    names: "Ninong Alexander Morales\nNinang Elena Santos\nTito Roberto Reyes",
+  },
+  reception: {
+    address: "Bonifacio Global City, Taguig City, Metro Manila",
+    endTime: "23:00",
+    mapsLink: "#",
+    note: "Drinks, social hours, and celebration to continue after dinner.",
+    startTime: "20:00",
+    title: "After-Party & Socials",
+    venueName: "The Penthouse Lounge",
+  },
+  rsvpForm: {
+    companionAgeEnabled: false,
+    companionLimit: "1",
+    companionNameEnabled: true,
+    customQuestions: [],
+    emailEnabled: true,
+    emailRequired: true,
+    foodAllergiesEnabled: false,
+    messageToHostEnabled: true,
+    phoneEnabled: false,
+    phoneRequired: false,
+    plusOneEnabled: false,
+  },
+  timelineProgram: {
+    items: [
+      {
+        description: "Grab a welcome drink and mingle.",
+        id: "timeline-1",
+        time: "18:00",
+        title: "Guest Arrival & Drinks",
+      },
+      {
+        description: "Enjoy a hearty buffet and drinks with friends.",
+        id: "timeline-2",
+        time: "19:00",
+        title: "Dinner Buffet Opens",
+      },
+      {
+        description: "Blow out the candles and cheers to 30!",
+        id: "timeline-3",
+        time: "20:30",
+        title: "Birthday Toast & Cake Cutting",
+      },
+      {
+        description: "Music, games, and celebration into the night.",
+        id: "timeline-4",
+        time: "21:00",
+        title: "Party & Socials",
+      },
+    ],
+  },
+  venue: {
+    address: "Bonifacio Global City, Taguig City, Metro Manila",
+    arrivalNote: "Please proceed directly to the 7th floor lounge.",
+    mapsLink: "#",
+    venueName: "The Penthouse Lounge",
+  },
+};
 
 export const previewDefaultDraft: EventWebsitePreviewDraft = getPreviewDefaultDraft("wedding");
 
