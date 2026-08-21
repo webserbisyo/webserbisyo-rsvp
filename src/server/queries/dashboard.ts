@@ -891,6 +891,30 @@ function normalizeEventContentRelation(
 }
 
 function hasHostInfoContent(section: EventWebsiteContent["sections"]["host_info"]) {
+  if (section.kind === "debut") {
+    return hasAnyNonEmptyText(
+      section.displayAs,
+      section.debutantName,
+      section.hostLine,
+      section.milestone,
+    );
+  }
+  if (section.kind === "birthday") {
+    return hasAnyNonEmptyText(
+      section.displayAs,
+      section.celebrantName,
+      section.hostLine,
+      section.milestone,
+    );
+  }
+  if (section.kind === "baptism") {
+    return hasAnyNonEmptyText(
+      section.displayAs,
+      section.childName,
+      section.parentNames,
+      section.hostLine,
+    );
+  }
   return hasAnyNonEmptyText(
     section.displayAs,
     section.brideName,

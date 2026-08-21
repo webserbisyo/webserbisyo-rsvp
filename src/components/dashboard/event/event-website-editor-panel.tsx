@@ -129,21 +129,6 @@ const requiredSectionKeys = new Set<EventWebsiteSectionKey>([
   "rsvp_form",
 ]);
 
-const implementedWeddingOptionalSectionKeys = new Set<EventWebsiteSectionKey>([
-  "countdown",
-  "secondary_event",
-  "timeline_program",
-  "entourage",
-  "principal_sponsors",
-  "story_message",
-  "attire_motif",
-  "guestbook",
-  "gift_details",
-  "contact_socials",
-  "music_effects",
-  "extra_info",
-]);
-
 export function EventWebsiteEditorPanel({
   eventData,
   onPreviewDraftChange,
@@ -185,40 +170,14 @@ export function EventWebsiteEditorPanel({
   }
 
   if (!requiredSectionKeys.has(selectedSectionId)) {
-    if (["eighteen_roses_candles", "debut_court", "godparents"].includes(selectedSectionId)) {
-      return (
-        <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
-          <TargetSpecialSectionForm
-            previewDraft={previewDraft}
-            sectionId={selectedSectionId as "eighteen_roses_candles" | "debut_court" | "godparents"}
-            onPreviewDraftChange={onPreviewDraftChange}
-            saveButtonProps={saveButtonProps}
-          />
-        </section>
-      );
-    }
-    if (
-      resolvedSections.eventType === "wedding" &&
-      implementedWeddingOptionalSectionKeys.has(selectedSectionId)
-    ) {
-      return (
-        <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
-          <WeddingOptionalSectionForm
-            guestbookMessages={eventData.guestbookMessages}
-            previewDraft={previewDraft}
-            sectionId={selectedSectionId}
-            onPreviewDraftChange={onPreviewDraftChange}
-            saveButtonProps={saveButtonProps}
-          />
-        </section>
-      );
-    }
-
     return (
-      <section className="event-website-editor" aria-label="Event Website editor">
-        <PlaceholderPanel
-          title={selectedSection.label}
-          description="Optional section editor will be added after required setup."
+      <section className="event-website-editor" aria-label={`${selectedSection.label} editor`}>
+        <OptionalSectionForm
+          guestbookMessages={eventData.guestbookMessages}
+          previewDraft={previewDraft}
+          sectionId={selectedSectionId}
+          onPreviewDraftChange={onPreviewDraftChange}
+          saveButtonProps={saveButtonProps}
         />
       </section>
     );
@@ -237,238 +196,6 @@ export function EventWebsiteEditorPanel({
         saveButtonProps={saveButtonProps}
       />
     </section>
-  );
-}
-
-function TargetSpecialSectionForm({
-  previewDraft,
-  sectionId,
-  onPreviewDraftChange,
-  saveButtonProps,
-}: {
-  previewDraft: EventWebsitePreviewDraft;
-  sectionId: "eighteen_roses_candles" | "debut_court" | "godparents";
-  onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
-  saveButtonProps: EventWebsiteSaveButtonProps;
-}) {
-  const isTraditions = sectionId === "eighteen_roses_candles";
-  const section = isTraditions
-    ? previewDraft.eighteenRosesCandles
-    : sectionId === "debut_court"
-      ? previewDraft.debutCourt
-      : previewDraft.godparents;
-  const title = isTraditions
-    ? "18 Traditions"
-    : sectionId === "debut_court"
-      ? "Debut Court"
-      : "Godparents";
-  const setSection = (next: typeof section) =>
-    onPreviewDraftChange({
-      ...previewDraft,
-      ...(isTraditions
-        ? { eighteenRosesCandles: next }
-        : sectionId === "debut_court"
-          ? { debutCourt: next }
-          : { godparents: next }),
-    } as EventWebsitePreviewDraft);
-  const addGroup = () =>
-    setSection({
-      ...section,
-      groups: [
-        ...section.groups,
-        isTraditions
-          ? {
-              id: createEventWebsiteDraftItemId("tradition"),
-              title: "",
-              kind: "roses" as const,
-              entries: [],
-            }
-          : { id: createEventWebsiteDraftItemId("group"), title: "", names: [] },
-      ],
-    } as typeof section);
-
-  return (
-    <EditorShell
-      title={title}
-      description="Add only the groups and people that belong in your celebration."
-    >
-      <div className="space-y-4">
-        {section.groups.map((group, groupIndex) => (
-          <div key={group.id} className="space-y-3 rounded-lg border p-3">
-            <div className="flex gap-2">
-              <Input
-                value={group.title}
-                placeholder={isTraditions ? "Tradition title" : "Group label"}
-                onChange={(event) => {
-                  const groups = section.groups.map((item, index) =>
-                    index === groupIndex ? { ...item, title: event.target.value } : item,
-                  );
-                  setSection({ ...section, groups } as typeof section);
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  setSection({
-                    ...section,
-                    groups: section.groups.filter((_, index) => index !== groupIndex),
-                  } as typeof section)
-                }
-              >
-                Remove
-              </Button>
-            </div>
-            {isTraditions ? (
-              <Select
-                value={(group as (typeof previewDraft.eighteenRosesCandles.groups)[number]).kind}
-                onValueChange={(kind) => {
-                  const groups = section.groups.map((item, index) =>
-                    index === groupIndex ? { ...item, kind } : item,
-                  );
-                  setSection({ ...section, groups } as typeof section);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["roses", "candles", "treasures", "custom"].map((kind) => (
-                    <SelectItem key={kind} value={kind}>
-                      {kind}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
-            {(isTraditions
-              ? (group as (typeof previewDraft.eighteenRosesCandles.groups)[number]).entries
-              : (group as (typeof previewDraft.debutCourt.groups)[number]).names
-            ).map((entry, entryIndex) => (
-              <div key={entry.id} className="flex gap-2">
-                <Input
-                  value={entry.name}
-                  placeholder="Name"
-                  onChange={(event) => {
-                    const groups = section.groups.map((item, index) => {
-                      if (index !== groupIndex) return item;
-                      if (isTraditions) {
-                        const tradition =
-                          item as (typeof previewDraft.eighteenRosesCandles.groups)[number];
-                        return {
-                          ...tradition,
-                          entries: tradition.entries.map((value, i) =>
-                            i === entryIndex ? { ...value, name: event.target.value } : value,
-                          ),
-                        };
-                      }
-                      const namedGroup = item as (typeof previewDraft.debutCourt.groups)[number];
-                      return {
-                        ...namedGroup,
-                        names: namedGroup.names.map((value, i) =>
-                          i === entryIndex ? { ...value, name: event.target.value } : value,
-                        ),
-                      };
-                    });
-                    setSection({ ...section, groups } as typeof section);
-                  }}
-                />
-                {isTraditions ? (
-                  <Input
-                    value={
-                      (
-                        entry as (typeof previewDraft.eighteenRosesCandles.groups)[number]["entries"][number]
-                      ).message
-                    }
-                    placeholder="Optional message"
-                    onChange={(event) => {
-                      const groups = section.groups.map((item, index) =>
-                        index === groupIndex
-                          ? {
-                              ...item,
-                              entries: (
-                                item as (typeof previewDraft.eighteenRosesCandles.groups)[number]
-                              ).entries.map((value, i) =>
-                                i === entryIndex
-                                  ? { ...value, message: event.target.value }
-                                  : value,
-                              ),
-                            }
-                          : item,
-                      );
-                      setSection({ ...section, groups } as typeof section);
-                    }}
-                  />
-                ) : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    const groups = section.groups.map((item, index) =>
-                      index === groupIndex
-                        ? isTraditions
-                          ? {
-                              ...item,
-                              entries: (
-                                item as (typeof previewDraft.eighteenRosesCandles.groups)[number]
-                              ).entries.filter((_, i) => i !== entryIndex),
-                            }
-                          : {
-                              ...item,
-                              names: (
-                                item as (typeof previewDraft.debutCourt.groups)[number]
-                              ).names.filter((_, i) => i !== entryIndex),
-                            }
-                        : item,
-                    );
-                    setSection({ ...section, groups } as typeof section);
-                  }}
-                >
-                  ×
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const groups = section.groups.map((item, index) =>
-                  index === groupIndex
-                    ? isTraditions
-                      ? {
-                          ...item,
-                          entries: [
-                            ...(item as (typeof previewDraft.eighteenRosesCandles.groups)[number])
-                              .entries,
-                            {
-                              id: createEventWebsiteDraftItemId("tradition-entry"),
-                              name: "",
-                              message: "",
-                            },
-                          ],
-                        }
-                      : {
-                          ...item,
-                          names: [
-                            ...(item as (typeof previewDraft.debutCourt.groups)[number]).names,
-                            { id: createEventWebsiteDraftItemId("named-entry"), name: "" },
-                          ],
-                        }
-                    : item,
-                );
-                setSection({ ...section, groups } as typeof section);
-              }}
-            >
-              Add person
-            </Button>
-          </div>
-        ))}
-        <Button type="button" variant="outline" onClick={addGroup}>
-          Add group
-        </Button>
-      </div>
-      <EditorSaveButton {...saveButtonProps} />
-    </EditorShell>
   );
 }
 
@@ -535,7 +262,7 @@ function RequiredSectionForm({
   );
 }
 
-function WeddingOptionalSectionForm({
+function OptionalSectionForm({
   guestbookMessages,
   onPreviewDraftChange,
   previewDraft,
