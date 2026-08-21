@@ -14,6 +14,10 @@ import {
 } from "@/lib/public-rsvp-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  eventWebsiteTypeConfig,
+  normalizeEventWebsiteEventType,
+} from "@/config/event-website-sections";
 import { EventWebsiteContentPatchSchema } from "@/lib/validations/event-website.schema";
 import { getEventAttendingGuestCount, getEventResponseCount } from "@/server/queries/responses";
 
@@ -337,6 +341,7 @@ async function loadDashboardSummary(
   const venueCompleted = Boolean(event?.venue_name && event?.venue_address);
   const websiteContentCompleted = Boolean(getEventWebsiteSavedAt(websiteContent));
   const checklistItems = buildChecklistItems({
+    eventType: event?.event_type,
     hostInfoCompleted,
     mainEventCompleted,
     paymentCompleted: paymentSummary.isConfirmed,
@@ -496,6 +501,7 @@ function buildFallbackDashboardSummary(profile: AuthenticatedProfile): Dashboard
 }
 
 function buildChecklistItems(input: {
+  eventType?: string | null;
   hostInfoCompleted: boolean;
   mainEventCompleted: boolean;
   paymentCompleted: boolean;
@@ -503,18 +509,23 @@ function buildChecklistItems(input: {
   venueCompleted: boolean;
   websiteContentCompleted: boolean;
 }) {
+  const normalizedType = normalizeEventWebsiteEventType(input.eventType);
+  const typeConfig = eventWebsiteTypeConfig[normalizedType];
+  const hostInfoLabel = typeConfig.required.host_info.label;
+  const mainEventLabel = typeConfig.required.main_event.label;
+
   return [
     {
       completed: input.hostInfoCompleted,
       href: buildDashboardEventHref("host_info"),
-      id: "couple-info",
-      label: "Couple Info",
+      id: "host-info",
+      label: hostInfoLabel,
     },
     {
       completed: input.mainEventCompleted,
       href: buildDashboardEventHref("main_event"),
-      id: "ceremony",
-      label: "Ceremony",
+      id: "main-event",
+      label: mainEventLabel,
     },
     {
       completed: input.venueCompleted,

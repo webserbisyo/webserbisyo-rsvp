@@ -39,6 +39,7 @@ export type EventWebsiteGiftOptionDraft =
 export type EventWebsitePreviewDraft = EventWebsiteRenderModel;
 
 type EventWebsitePreviewEventData = {
+  eventType?: string | null;
   eventWebsiteContent?: EventWebsiteContent | null;
   eventContent: {
     coupleOrCelebrantNames: string | null;
@@ -74,7 +75,7 @@ export function createEventWebsiteDraftItemId(prefix: string) {
   return `${prefix}-${eventWebsiteDraftIdCounter}`;
 }
 
-export const previewDefaultDraft: EventWebsitePreviewDraft = {
+const defaultWeddingPreviewDraft: EventWebsitePreviewDraft = {
   eighteenRosesCandles: { groups: [] },
   debutCourt: { groups: [] },
   godparents: { groups: [] },
@@ -243,6 +244,214 @@ export const previewDefaultDraft: EventWebsitePreviewDraft = {
   },
 };
 
+export function getPreviewDefaultDraft(eventType?: string | null): EventWebsitePreviewDraft {
+  const normalizedType = typeof eventType === "string" ? eventType.toLowerCase() : "wedding";
+
+  if (normalizedType === "debut") {
+    return {
+      eighteenRosesCandles: {
+        groups: [
+          {
+            entries: [
+              { id: "rose-1", message: "First dance with dad", name: "Alexander Morales (Father)" },
+              { id: "rose-2", message: "Brother's dance", name: "Mateo Morales (Brother)" },
+            ],
+            id: "group-roses",
+            kind: "roses",
+            title: "18 Roses",
+          },
+          {
+            entries: [
+              { id: "candle-1", message: "Wishing you joy and grace on your journey", name: "Elena Santos" },
+              { id: "candle-2", message: "May all your dreams take flight", name: "Maria Dela Cruz" },
+            ],
+            id: "group-candles",
+            kind: "candles",
+            title: "18 Candles",
+          },
+          {
+            entries: [
+              { id: "treasure-1", message: "A keepsake to remember this special milestone", name: "Tita Carmen" },
+            ],
+            id: "group-treasures",
+            kind: "treasures",
+            title: "18 Treasures",
+          },
+        ],
+      },
+      debutCourt: {
+        groups: [
+          {
+            id: "group-escort",
+            names: [{ id: "escort-1", name: "Mateo Morales" }],
+            title: "Debut Escort",
+          },
+          {
+            id: "group-cotillion",
+            names: [
+              { id: "court-1", name: "Paolo Santos & Bea Reyes" },
+              { id: "court-2", name: "Marco Garcia & Ana Lim" },
+            ],
+            title: "Cotillion de Honor",
+          },
+        ],
+      },
+      godparents: { groups: [] },
+      hostInfo: {
+        kind: "debut",
+        debutantName: "Sofia",
+        displayAs: "Sofia's 18th Birthday",
+        hostLine: "Sofia Morales Debut RSVP",
+        milestone: "18th Birthday",
+        shortHostMessage:
+          "Together with her family, Sofia invites you to celebrate her 18th birthday celebration.",
+      },
+      attireDressCode: {
+        colorMotifNote: "Please wear shades that complement our debut color palette.",
+        dressCodeNote: "Semi-formal or formal attire is encouraged.",
+        sectionIntro: "We would love to see you in our celebration motif.",
+      },
+      ceremony: {
+        endTime: "21:00",
+        eventDate: "2026-06-06",
+        eventLabel: "Debut Celebration",
+        eventTime: "16:00",
+        rsvpDeadline: "2026-06-01T18:00",
+        scheduleNote: "Please arrive at least 15 minutes before the program begins.",
+      },
+      contactSocials: {
+        contactNumber: "+63 917 123 4567",
+        contactPerson: "Anna Santos",
+        email: "hello@example.com",
+        facebookUrl: "https://facebook.com",
+        instagramUrl: "https://instagram.com",
+        tikTokUrl: "https://tiktok.com",
+      },
+      countdown: {
+        shortNote: "We can't wait to celebrate with you.",
+        title: "Counting down to Sofia's 18th Birthday",
+      },
+      coupleInfo: {
+        brideName: "",
+        displayAs: "Sofia's Debut",
+        groomName: "",
+        hostLine: "Sofia Morales Debut RSVP",
+        shortHostMessage: "Sofia invites you to celebrate her 18th birthday.",
+      },
+      entourage: {
+        groups: [],
+        introLine: "",
+      },
+      extraInfo: {
+        items: [
+          {
+            details: "Parking is available near the venue entrance.",
+            id: "extra-info-parking",
+            title: "Parking",
+          },
+          {
+            details: "Program starts promptly at 4:00 PM.",
+            id: "extra-info-reminder",
+            title: "Prompt Arrival",
+          },
+        ],
+        sectionIntro: "Here are a few helpful notes for our guests.",
+        sectionTitle: "Celebration Notes",
+      },
+      giftDetails: {
+        giftNote:
+          "Your presence is our greatest joy. If you wish to bless Sofia with a gift, monetary gifts are warmly appreciated.",
+        options: [
+          { file: null, id: "gift-option-1", image: null, title: "GCash" },
+          { file: null, id: "gift-option-2", image: null, title: "Bank Transfer" },
+        ],
+        sectionIntro: "Your presence is the greatest gift.",
+      },
+      loveStory: {
+        sectionIntro: "A little message about this milestone.",
+        storyBody:
+          "Eighteen years of love, growth, and wonderful memories with family and friends. Join us as Sofia steps gracefully into adulthood.",
+        storyTitle: "A Journey to 18",
+      },
+      guestbook: {
+        emptyStateMessage: DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
+        sectionIntro: "Leave your warm wishes and blessings for Sofia.",
+        sectionTitle: "Debut Wishes",
+      },
+      musicEffects: {
+        musicLink: "",
+        musicTitle: "Debut Playlist",
+        playButtonLabel: "Play music",
+        shortNote: "Music curated for Sofia's special celebration.",
+      },
+      principalSponsors: {
+        introLine: "",
+        names: "",
+      },
+      reception: {
+        address: "Talisay City, Negros Occidental, Philippines",
+        endTime: "21:00",
+        mapsLink: "#",
+        note: "Dinner and celebration program.",
+        startTime: "18:00",
+        title: "Celebration Reception",
+        venueName: "The Ruins Garden Hall",
+      },
+      rsvpForm: {
+        companionAgeEnabled: false,
+        companionLimit: "1",
+        companionNameEnabled: true,
+        customQuestions: [],
+        emailEnabled: true,
+        emailRequired: true,
+        foodAllergiesEnabled: false,
+        messageToHostEnabled: true,
+        phoneEnabled: false,
+        phoneRequired: false,
+        plusOneEnabled: false,
+      },
+      venue: {
+        address: "Talisay City, Negros Occidental, Philippines",
+        arrivalNote: "Please proceed directly to the Grand Ballroom entrance.",
+        mapsLink: "#",
+        venueName: "The Ruins Garden Hall",
+      },
+      timelineProgram: {
+        items: [
+          {
+            description: "Guests arrive and are escorted to their tables.",
+            id: "timeline-guest-arrival",
+            time: "15:00",
+            title: "Guest Arrival",
+          },
+          {
+            description: "Welcome the debutant and family.",
+            id: "timeline-entrance",
+            time: "16:00",
+            title: "Grand Entrance",
+          },
+          {
+            description: "18 Roses dance, 18 Candles wishes, and 18 Treasures gifts.",
+            id: "timeline-traditions",
+            time: "17:00",
+            title: "18 Traditions",
+          },
+          {
+            description: "Dinner buffet opens followed by birthday cake and celebrations.",
+            id: "timeline-dinner",
+            time: "18:30",
+            title: "Dinner & Program",
+          },
+        ],
+      },
+    };
+  }
+
+  return defaultWeddingPreviewDraft;
+}
+
+export const previewDefaultDraft: EventWebsitePreviewDraft = getPreviewDefaultDraft("wedding");
+
 export function buildInitialPreviewDraft(
   eventData: EventWebsitePreviewEventData,
 ): EventWebsitePreviewDraft {
@@ -250,58 +459,60 @@ export function buildInitialPreviewDraft(
     return buildEventWebsiteRenderModel(eventData.eventWebsiteContent);
   }
 
+  const baseDraft = getPreviewDefaultDraft(eventData.eventType);
+
   return {
-    ...previewDefaultDraft,
-    attireDressCode: { ...previewDefaultDraft.attireDressCode },
+    ...baseDraft,
+    attireDressCode: { ...baseDraft.attireDressCode },
     ceremony: {
-      ...previewDefaultDraft.ceremony,
-      eventDate: eventData.eventDate || previewDefaultDraft.ceremony.eventDate,
-      eventTime: formatInputTime(eventData.eventTime) || previewDefaultDraft.ceremony.eventTime,
+      ...baseDraft.ceremony,
+      eventDate: eventData.eventDate || baseDraft.ceremony.eventDate,
+      eventTime: formatInputTime(eventData.eventTime) || baseDraft.ceremony.eventTime,
       rsvpDeadline:
-        formatDateTimeLocal(eventData.rsvpCloseAt) || previewDefaultDraft.ceremony.rsvpDeadline,
+        formatDateTimeLocal(eventData.rsvpCloseAt) || baseDraft.ceremony.rsvpDeadline,
       scheduleNote:
-        eventData.eventContent?.scheduleNote || previewDefaultDraft.ceremony.scheduleNote,
+        eventData.eventContent?.scheduleNote || baseDraft.ceremony.scheduleNote,
     },
-    contactSocials: { ...previewDefaultDraft.contactSocials },
-    countdown: { ...previewDefaultDraft.countdown },
+    contactSocials: { ...baseDraft.contactSocials },
+    countdown: { ...baseDraft.countdown },
     coupleInfo: {
-      ...previewDefaultDraft.coupleInfo,
-      hostLine: eventData.eventContent?.heroTitle || previewDefaultDraft.coupleInfo.hostLine,
+      ...baseDraft.coupleInfo,
+      hostLine: eventData.eventContent?.heroTitle || baseDraft.coupleInfo.hostLine,
       shortHostMessage:
-        eventData.eventContent?.heroSubtitle || previewDefaultDraft.coupleInfo.shortHostMessage,
+        eventData.eventContent?.heroSubtitle || baseDraft.coupleInfo.shortHostMessage,
     },
     entourage: {
-      ...previewDefaultDraft.entourage,
-      groups: previewDefaultDraft.entourage.groups.map((group) => ({ ...group })),
+      ...baseDraft.entourage,
+      groups: baseDraft.entourage.groups.map((group) => ({ ...group })),
     },
     extraInfo: {
-      ...previewDefaultDraft.extraInfo,
-      items: previewDefaultDraft.extraInfo.items.map((item) => ({ ...item })),
+      ...baseDraft.extraInfo,
+      items: baseDraft.extraInfo.items.map((item) => ({ ...item })),
     },
     giftDetails: {
-      ...previewDefaultDraft.giftDetails,
-      options: previewDefaultDraft.giftDetails.options.map((option) => ({ ...option })),
+      ...baseDraft.giftDetails,
+      options: baseDraft.giftDetails.options.map((option) => ({ ...option })),
     },
-    loveStory: { ...previewDefaultDraft.loveStory },
-    guestbook: { ...previewDefaultDraft.guestbook },
-    musicEffects: { ...previewDefaultDraft.musicEffects },
-    principalSponsors: { ...previewDefaultDraft.principalSponsors },
+    loveStory: { ...baseDraft.loveStory },
+    guestbook: { ...baseDraft.guestbook },
+    musicEffects: { ...baseDraft.musicEffects },
+    principalSponsors: { ...baseDraft.principalSponsors },
     reception: {
-      ...previewDefaultDraft.reception,
-      address: eventData.venueAddress || previewDefaultDraft.reception.address,
+      ...baseDraft.reception,
+      address: eventData.venueAddress || baseDraft.reception.address,
     },
     rsvpForm: {
-      ...previewDefaultDraft.rsvpForm,
+      ...baseDraft.rsvpForm,
       plusOneEnabled: Boolean(eventData.maxGuestCount),
     },
     timelineProgram: {
-      items: previewDefaultDraft.timelineProgram.items.map((item) => ({ ...item })),
+      items: baseDraft.timelineProgram.items.map((item) => ({ ...item })),
     },
     venue: {
-      ...previewDefaultDraft.venue,
-      address: eventData.venueAddress || previewDefaultDraft.venue.address,
-      arrivalNote: eventData.eventContent?.venueNote || previewDefaultDraft.venue.arrivalNote,
-      venueName: eventData.venueName || previewDefaultDraft.venue.venueName,
+      ...baseDraft.venue,
+      address: eventData.venueAddress || baseDraft.venue.address,
+      arrivalNote: eventData.eventContent?.venueNote || baseDraft.venue.arrivalNote,
+      venueName: eventData.venueName || baseDraft.venue.venueName,
     },
   };
 }

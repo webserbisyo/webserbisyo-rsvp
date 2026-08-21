@@ -20,6 +20,7 @@ import {
   formatPreviewDate,
   formatPreviewDateTime,
   formatPreviewTime,
+  getPreviewDefaultDraft,
   previewDefaultDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import {
@@ -210,23 +211,41 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function TraditionsSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const groups =
+    draft.eighteenRosesCandles.groups.length > 0
+      ? draft.eighteenRosesCandles.groups
+      : getPreviewDefaultDraft("debut").eighteenRosesCandles.groups;
+
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
         18 Traditions
       </Badge>
       <h3>18 Traditions</h3>
-      {draft.eighteenRosesCandles.groups.map((group) => (
-        <div key={group.id} className="event-preview-party-card">
-          <strong>{group.title || group.kind}</strong>
-          {group.entries.map((entry) => (
-            <p key={entry.id}>
-              {entry.name}
-              {entry.message ? ` — ${entry.message}` : ""}
-            </p>
-          ))}
-        </div>
-      ))}
+      <p className="event-preview-copy">
+        Honored participants and special dances for the debutant.
+      </p>
+      <div className="event-preview-party-grid">
+        {groups.map((group) => (
+          <div key={group.id} className="event-preview-party-card">
+            <strong>{group.title || group.kind}</strong>
+            {group.entries.length > 0 ? (
+              <div className="space-y-1 pt-1 text-sm">
+                {group.entries.map((entry) => (
+                  <p key={entry.id} className="text-slate-600">
+                    <span className="font-medium text-slate-800">{entry.name}</span>
+                    {entry.message ? (
+                      <span className="italic text-slate-500"> — {entry.message}</span>
+                    ) : null}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-slate-400">No participants listed yet.</p>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -238,20 +257,33 @@ function NamedGroupsSection({
   title: string;
   groups: EventWebsiteRenderModel["debutCourt"]["groups"];
 }) {
+  const displayGroups =
+    groups.length > 0 ? groups : getPreviewDefaultDraft("debut").debutCourt.groups;
+
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
         {title}
       </Badge>
       <h3>{title}</h3>
-      {groups.map((group) => (
-        <div key={group.id} className="event-preview-party-card">
-          <strong>{group.title}</strong>
-          {group.names.map((entry) => (
-            <p key={entry.id}>{entry.name}</p>
-          ))}
-        </div>
-      ))}
+      <div className="event-preview-party-grid">
+        {displayGroups.map((group) => (
+          <div key={group.id} className="event-preview-party-card">
+            <strong>{group.title}</strong>
+            {group.names.length > 0 ? (
+              <div className="space-y-1 pt-1 text-sm">
+                {group.names.map((entry) => (
+                  <p key={entry.id} className="text-slate-700">
+                    {entry.name}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="italic text-slate-400">No members listed yet.</p>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -355,21 +387,29 @@ function MusicSection({ draft }: { draft: EventWebsiteRenderModel }) {
 
 function CeremonySection({ draft }: { draft: EventWebsiteRenderModel }) {
   const ceremony = draft.ceremony;
+  const isDebut = draft.hostInfo.kind === "debut";
+  const isWedding = draft.hostInfo.kind === "wedding";
+  const defaultDraft = getPreviewDefaultDraft(draft.hostInfo.kind);
+
   const date = formatPreviewDate(
     ceremony.eventDate,
-    formatPreviewDate(previewDefaultDraft.ceremony.eventDate, "Saturday, June 6, 2026"),
+    formatPreviewDate(defaultDraft.ceremony.eventDate, "Saturday, June 6, 2026"),
   );
   const startTime = formatPreviewTime(ceremony.eventTime, "4:00 PM");
-  const endTime = formatPreviewTime(ceremony.endTime, "6:00 PM");
+  const endTime = formatPreviewTime(ceremony.endTime, isDebut ? "9:00 PM" : "6:00 PM");
   const rsvpDeadline = formatPreviewDateTime(ceremony.rsvpDeadline, "June 1, 2026 at 6:00 PM");
-  const scheduleNote = ceremony.scheduleNote.trim() || previewDefaultDraft.ceremony.scheduleNote;
+  const scheduleNote = ceremony.scheduleNote.trim() || defaultDraft.ceremony.scheduleNote;
+  const badgeLabel =
+    ceremony.eventLabel.trim() ||
+    (isDebut ? "Debut Program" : isWedding ? "Ceremony" : "Main Event");
+  const sectionHeading = withFallback(ceremony.eventLabel, defaultDraft.ceremony.eventLabel);
 
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
-        Ceremony
+        {badgeLabel}
       </Badge>
-      <h3>{withFallback(ceremony.eventLabel, previewDefaultDraft.ceremony.eventLabel)}</h3>
+      <h3>{sectionHeading}</h3>
       <dl className="event-preview-detail-list">
         <div>
           <dt>Date</dt>
@@ -470,14 +510,22 @@ function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
-  const items = normalizeTimelineItems(draft.timelineProgram.items);
+  const isDebut = draft.hostInfo.kind === "debut";
+  const isWedding = draft.hostInfo.kind === "wedding";
+  const items = normalizeTimelineItems(draft.timelineProgram.items, draft.hostInfo.kind);
 
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
         Timeline / Program
       </Badge>
-      <h3>Wedding Day Timeline</h3>
+      <h3>
+        {isDebut
+          ? "Debut Program Flow"
+          : isWedding
+            ? "Wedding Day Timeline"
+            : "Event Schedule & Flow"}
+      </h3>
       <p className="event-preview-copy">
         Here is the flow of the day so guests know what to expect.
       </p>
@@ -999,7 +1047,10 @@ function InternalDivider() {
   return <div className="event-preview-internal-divider" aria-hidden="true" />;
 }
 
-function normalizeTimelineItems(items: EventWebsiteRenderModel["timelineProgram"]["items"]) {
+function normalizeTimelineItems(
+  items: EventWebsiteRenderModel["timelineProgram"]["items"],
+  eventType?: string,
+) {
   const hasDraftContent = items.some(
     (item) => item.time.trim() || item.title.trim() || item.description.trim(),
   );
@@ -1016,16 +1067,17 @@ function normalizeTimelineItems(items: EventWebsiteRenderModel["timelineProgram"
       title: item.title || (item.description ? "Program Item" : ""),
     }));
 
-  return cleaned.length > 0
-    ? cleaned
-    : hasDraftContent
-      ? cleaned
-      : previewDefaultDraft.timelineProgram.items.map((item) => ({
-          description: item.description,
-          id: item.id,
-          time: formatPreviewTime(item.time, item.time),
-          title: item.title,
-        }));
+  if (cleaned.length > 0 || hasDraftContent) {
+    return cleaned;
+  }
+
+  const defaultDraft = getPreviewDefaultDraft(eventType);
+  return defaultDraft.timelineProgram.items.map((item) => ({
+    description: item.description,
+    id: item.id,
+    time: formatPreviewTime(item.time, item.time),
+    title: item.title,
+  }));
 }
 
 function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["groups"]) {

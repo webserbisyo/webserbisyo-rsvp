@@ -60,7 +60,7 @@ export function OptionalCountdownPanel({
   return (
     <EditorShell
       title="Countdown"
-      description="Toggle this section on to show a countdown on the event website. The date and time come automatically from the required Ceremony details."
+      description="Toggle this section on to show a countdown on the event website. The date and time come automatically from the required Main Event / Program details."
     >
       <EditorGroup title="Countdown Copy">
         <TextField
@@ -220,7 +220,7 @@ export function OptionalTimelinePanel({
   return (
     <EditorShell
       title="Timeline / Program"
-      description="Build a simple run-of-show for the wedding day. Reorder items as needed and keep the list guest-friendly."
+      description="Build a simple run-of-show for your celebration. Reorder items as needed and keep the list guest-friendly."
     >
       <EditorGroup title="Program Items">
         <ListBuilder addLabel="Add program item" onAdd={addItem}>
@@ -1118,6 +1118,458 @@ export function OptionalExtraInfoPanel({
           ))}
         </ListBuilder>
       </EditorGroup>
+      <EditorSaveButton {...saveButtonProps} />
+    </EditorShell>
+  );
+}
+
+export function OptionalEighteenRosesCandlesPanel({
+  onPreviewDraftChange,
+  previewDraft,
+  saveButtonProps,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.eighteenRosesCandles || { groups: [] };
+  const groups = values.groups || [];
+
+  function updateGroups(nextGroups: typeof groups) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      eighteenRosesCandles: { groups: nextGroups },
+    });
+  }
+
+  function addGroup(kind: "roses" | "candles" | "treasures" | "custom" = "roses") {
+    const titleMap = {
+      roses: "18 Roses",
+      candles: "18 Candles",
+      treasures: "18 Treasures",
+      custom: "Custom Tradition",
+    };
+    updateGroups([
+      ...groups,
+      {
+        entries: [],
+        id: createEventWebsiteDraftItemId("tradition-group"),
+        kind,
+        title: titleMap[kind],
+      },
+    ]);
+  }
+
+  function removeGroup(index: number) {
+    updateGroups(groups.filter((_, i) => i !== index));
+  }
+
+  function updateGroupTitle(index: number, title: string) {
+    updateGroups(groups.map((g, i) => (i === index ? { ...g, title } : g)));
+  }
+
+  function addEntry(groupIndex: number) {
+    const group = groups[groupIndex];
+    if (!group || group.entries.length >= 18) return;
+    const nextEntries = [
+      ...group.entries,
+      {
+        id: createEventWebsiteDraftItemId("tradition-entry"),
+        message: "",
+        name: "",
+      },
+    ];
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, entries: nextEntries } : g)),
+    );
+  }
+
+  function updateEntry(
+    groupIndex: number,
+    entryIndex: number,
+    field: "name" | "message",
+    value: string,
+  ) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextEntries = group.entries.map((entry, i) =>
+      i === entryIndex ? { ...entry, [field]: value } : entry,
+    );
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, entries: nextEntries } : g)),
+    );
+  }
+
+  function removeEntry(groupIndex: number, entryIndex: number) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextEntries = group.entries.filter((_, i) => i !== entryIndex);
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, entries: nextEntries } : g)),
+    );
+  }
+
+  function moveEntry(groupIndex: number, entryIndex: number, direction: -1 | 1) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextIndex = entryIndex + direction;
+    if (nextIndex < 0 || nextIndex >= group.entries.length) return;
+    const nextEntries = [...group.entries];
+    const moved = nextEntries[entryIndex];
+    nextEntries[entryIndex] = nextEntries[nextIndex]!;
+    nextEntries[nextIndex] = moved!;
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, entries: nextEntries } : g)),
+    );
+  }
+
+  return (
+    <EditorShell
+      title="18 Roses & Candles"
+      description="Manage the honored participants for 18 Roses, 18 Candles, 18 Treasures, and other debut traditions."
+    >
+      {groups.length === 0 ? (
+        <EditorGroup title="Quick Start Traditions">
+          <p className="mb-3 text-sm text-slate-500">
+            Add standard debut traditions with one click:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => addGroup("roses")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add 18 Roses
+            </button>
+            <button
+              type="button"
+              onClick={() => addGroup("candles")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add 18 Candles
+            </button>
+            <button
+              type="button"
+              onClick={() => addGroup("treasures")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add 18 Treasures
+            </button>
+            <button
+              type="button"
+              onClick={() => addGroup("custom")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add Custom Tradition
+            </button>
+          </div>
+        </EditorGroup>
+      ) : null}
+
+      {groups.map((group, groupIndex) => (
+        <EditorGroup
+          key={group.id}
+          title={`${group.title || "Tradition Group"} (${group.entries.length}/18)`}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <TextField
+                  field={{
+                    id: `traditionTitle${groupIndex}`,
+                    label: "Tradition Title",
+                    maxLength: 80,
+                  }}
+                  value={group.title}
+                  onChange={(val) => updateGroupTitle(groupIndex, val)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeGroup(groupIndex)}
+                className="mt-5 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
+              >
+                Delete Group
+              </button>
+            </div>
+
+            <ListBuilder
+              addLabel={`Add ${group.title || "participant"} (${group.entries.length}/18)`}
+              onAdd={() => addEntry(groupIndex)}
+            >
+              {group.entries.map((entry, entryIndex) => (
+                <ListBuilderRow
+                  key={entry.id}
+                  canMoveDown={entryIndex < group.entries.length - 1}
+                  canMoveUp={entryIndex > 0}
+                  hideGripIcon
+                  onMoveDown={() => moveEntry(groupIndex, entryIndex, 1)}
+                  onMoveUp={() => moveEntry(groupIndex, entryIndex, -1)}
+                  onRemove={() => removeEntry(groupIndex, entryIndex)}
+                  title={`${entry.name || `Participant ${entryIndex + 1}`}`}
+                >
+                  <FieldGrid layout="two-column">
+                    <TextField
+                      field={{
+                        colSpan: "half",
+                        id: `entryName${groupIndex}_${entryIndex}`,
+                        label: "Participant Name",
+                        maxLength: 80,
+                        placeholder: "e.g. Juan Dela Cruz",
+                      }}
+                      value={entry.name}
+                      onChange={(val) => updateEntry(groupIndex, entryIndex, "name", val)}
+                    />
+                    <TextField
+                      field={{
+                        colSpan: "half",
+                        id: `entryMessage${groupIndex}_${entryIndex}`,
+                        label: "Dedication / Message",
+                        maxLength: 220,
+                        placeholder: "e.g. First dance with dad",
+                      }}
+                      value={entry.message}
+                      onChange={(val) => updateEntry(groupIndex, entryIndex, "message", val)}
+                    />
+                  </FieldGrid>
+                </ListBuilderRow>
+              ))}
+            </ListBuilder>
+          </div>
+        </EditorGroup>
+      ))}
+
+      {groups.length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => addGroup("roses")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add 18 Roses
+          </button>
+          <button
+            type="button"
+            onClick={() => addGroup("candles")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add 18 Candles
+          </button>
+          <button
+            type="button"
+            onClick={() => addGroup("treasures")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add 18 Treasures
+          </button>
+          <button
+            type="button"
+            onClick={() => addGroup("custom")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add Custom Group
+          </button>
+        </div>
+      )}
+
+      <EditorSaveButton {...saveButtonProps} />
+    </EditorShell>
+  );
+}
+
+export function OptionalDebutCourtPanel({
+  onPreviewDraftChange,
+  previewDraft,
+  saveButtonProps,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.debutCourt || { groups: [] };
+  const groups = values.groups || [];
+
+  function updateGroups(nextGroups: typeof groups) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      debutCourt: { groups: nextGroups },
+    });
+  }
+
+  function addGroup(defaultTitle = "Cotillion de Honor") {
+    updateGroups([
+      ...groups,
+      {
+        id: createEventWebsiteDraftItemId("court-group"),
+        names: [],
+        title: defaultTitle,
+      },
+    ]);
+  }
+
+  function removeGroup(index: number) {
+    updateGroups(groups.filter((_, i) => i !== index));
+  }
+
+  function updateGroupTitle(index: number, title: string) {
+    updateGroups(groups.map((g, i) => (i === index ? { ...g, title } : g)));
+  }
+
+  function addName(groupIndex: number) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextNames = [
+      ...group.names,
+      {
+        id: createEventWebsiteDraftItemId("court-name"),
+        name: "",
+      },
+    ];
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  function updateName(groupIndex: number, nameIndex: number, value: string) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextNames = group.names.map((n, i) =>
+      i === nameIndex ? { ...n, name: value } : n,
+    );
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  function removeName(groupIndex: number, nameIndex: number) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextNames = group.names.filter((_, i) => i !== nameIndex);
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  function moveName(groupIndex: number, nameIndex: number, direction: -1 | 1) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextIndex = nameIndex + direction;
+    if (nextIndex < 0 || nextIndex >= group.names.length) return;
+    const nextNames = [...group.names];
+    const moved = nextNames[nameIndex];
+    nextNames[nameIndex] = nextNames[nextIndex]!;
+    nextNames[nextIndex] = moved!;
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  return (
+    <EditorShell
+      title="Debut Court"
+      description="List your Debut Escort, Cotillion de Honor pairs, and court members."
+    >
+      {groups.length === 0 ? (
+        <EditorGroup title="Debut Court Setup">
+          <p className="mb-3 text-sm text-slate-500">
+            Add court groups for your debut program:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => addGroup("Debut Escort")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add Debut Escort
+            </button>
+            <button
+              type="button"
+              onClick={() => addGroup("Cotillion de Honor")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add Cotillion de Honor
+            </button>
+            <button
+              type="button"
+              onClick={() => addGroup("Debut Court")}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              + Add Court Group
+            </button>
+          </div>
+        </EditorGroup>
+      ) : null}
+
+      {groups.map((group, groupIndex) => (
+        <EditorGroup
+          key={group.id}
+          title={`${group.title || "Court Group"} (${group.names.length})`}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <TextField
+                  field={{
+                    id: `courtTitle${groupIndex}`,
+                    label: "Group Title",
+                    maxLength: 80,
+                  }}
+                  value={group.title}
+                  onChange={(val) => updateGroupTitle(groupIndex, val)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeGroup(groupIndex)}
+                className="mt-5 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
+              >
+                Delete Group
+              </button>
+            </div>
+
+            <ListBuilder
+              addLabel={`Add member to ${group.title || "court"}`}
+              onAdd={() => addName(groupIndex)}
+            >
+              {group.names.map((entry, nameIndex) => (
+                <ListBuilderRow
+                  key={entry.id}
+                  canMoveDown={nameIndex < group.names.length - 1}
+                  canMoveUp={nameIndex > 0}
+                  hideGripIcon
+                  onMoveDown={() => moveName(groupIndex, nameIndex, 1)}
+                  onMoveUp={() => moveName(groupIndex, nameIndex, -1)}
+                  onRemove={() => removeName(groupIndex, nameIndex)}
+                  title={`${entry.name || `Member ${nameIndex + 1}`}`}
+                >
+                  <TextField
+                    field={{
+                      id: `courtName${groupIndex}_${nameIndex}`,
+                      label: "Member / Pair Name",
+                      maxLength: 80,
+                      placeholder: "e.g. Mateo Morales & Bea Reyes",
+                    }}
+                    value={entry.name}
+                    onChange={(val) => updateName(groupIndex, nameIndex, val)}
+                  />
+                </ListBuilderRow>
+              ))}
+            </ListBuilder>
+          </div>
+        </EditorGroup>
+      ))}
+
+      {groups.length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => addGroup("Debut Escort")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add Debut Escort
+          </button>
+          <button
+            type="button"
+            onClick={() => addGroup("Cotillion de Honor")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add Cotillion Group
+          </button>
+        </div>
+      )}
+
       <EditorSaveButton {...saveButtonProps} />
     </EditorShell>
   );

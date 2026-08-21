@@ -9,6 +9,8 @@ import {
   OptionalAttirePanel,
   OptionalContactSocialsPanel,
   OptionalCountdownPanel,
+  OptionalDebutCourtPanel,
+  OptionalEighteenRosesCandlesPanel,
   OptionalEntouragePanel,
   OptionalExtraInfoPanel,
   OptionalGiftDetailsPanel,
@@ -660,6 +662,26 @@ function WeddingOptionalSectionForm({
   if (sectionId === "extra_info") {
     return (
       <OptionalExtraInfoPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
+      />
+    );
+  }
+
+  if (sectionId === "eighteen_roses_candles") {
+    return (
+      <OptionalEighteenRosesCandlesPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
+      />
+    );
+  }
+
+  if (sectionId === "debut_court") {
+    return (
+      <OptionalDebutCourtPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
         saveButtonProps={saveButtonProps}
