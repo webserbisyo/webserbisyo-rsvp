@@ -21,7 +21,6 @@ import {
   formatPreviewDateTime,
   formatPreviewTime,
   getPreviewDefaultDraft,
-  previewDefaultDraft,
 } from "@/components/dashboard/event/event-website-preview-data";
 import {
   eventWebsiteRenderModelSectionKeys,
@@ -61,6 +60,11 @@ type EventWebsiteRendererProps = {
 };
 
 const supportedSectionKeySet = new Set<EventWebsiteSectionKey>(eventWebsiteRenderModelSectionKeys);
+
+function getDraftFallback(draft: EventWebsiteRenderModel) {
+  const eventKind = draft.hostInfo?.kind || "wedding";
+  return getPreviewDefaultDraft(eventKind);
+}
 
 export function EventWebsiteRenderer({
   draft,
@@ -183,8 +187,9 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
     );
   }
   const coupleInfo = hostInfo;
-  const groomName = withFallback(coupleInfo.groomName, previewDefaultDraft.coupleInfo.groomName);
-  const brideName = withFallback(coupleInfo.brideName, previewDefaultDraft.coupleInfo.brideName);
+  const fallbackDraft = getDraftFallback(draft);
+  const groomName = withFallback(coupleInfo.groomName, fallbackDraft.coupleInfo.groomName);
+  const brideName = withFallback(coupleInfo.brideName, fallbackDraft.coupleInfo.brideName);
   const displayAs = coupleInfo.displayAs.trim() || `${groomName} & ${brideName}`;
   const hostLine = coupleInfo.hostLine.trim();
   const message = coupleInfo.shortHostMessage.trim();
@@ -291,7 +296,8 @@ function NamedGroupsSection({
 }
 
 function CountdownSection({ draft }: { draft: EventWebsiteRenderModel }) {
-  const title = withFallback(draft.countdown.title, previewDefaultDraft.countdown.title);
+  const fallbackDraft = getDraftFallback(draft);
+  const title = withFallback(draft.countdown.title, fallbackDraft.countdown.title);
   const shortNote = draft.countdown.shortNote.trim();
   const [now, setNow] = useState(0);
   const countdownItems = useMemo(
@@ -336,13 +342,14 @@ function CountdownSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function MusicSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const values = draft.musicEffects;
-  const title = withFallback(values.musicTitle, previewDefaultDraft.musicEffects.musicTitle);
+  const title = withFallback(values.musicTitle, fallbackDraft.musicEffects.musicTitle);
   const buttonLabel = withFallback(
     values.playButtonLabel,
-    previewDefaultDraft.musicEffects.playButtonLabel,
+    fallbackDraft.musicEffects.playButtonLabel,
   );
-  const note = values.shortNote.trim() || previewDefaultDraft.musicEffects.shortNote;
+  const note = values.shortNote.trim() || fallbackDraft.musicEffects.shortNote;
 
   return (
     <section className="event-preview-section event-preview-section--compact">
@@ -432,6 +439,7 @@ function CeremonySection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function VenueSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const venue = draft.venue;
   const mapsLink = venue.mapsLink.trim();
   const arrivalNote = venue.arrivalNote.trim();
@@ -441,11 +449,11 @@ function VenueSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <Badge variant="outline" className="event-preview-section-label">
         Venue
       </Badge>
-      <h3>{withFallback(venue.venueName, previewDefaultDraft.venue.venueName)}</h3>
+      <h3>{withFallback(venue.venueName, fallbackDraft.venue.venueName)}</h3>
       <p className="event-preview-address-copy">
         <MapPin className="size-4" aria-hidden="true" />
         <span className="event-preview-address-text">
-          {withFallback(venue.address, previewDefaultDraft.venue.address)}
+          {withFallback(venue.address, fallbackDraft.venue.address)}
         </span>
       </p>
       {mapsLink ? (
@@ -466,16 +474,17 @@ function VenueSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const values = draft.reception;
   const startTime = formatPreviewTime(
     values.startTime,
-    formatPreviewTime(previewDefaultDraft.reception.startTime, "6:00 PM"),
+    formatPreviewTime(fallbackDraft.reception.startTime, "6:00 PM"),
   );
   const endTime = formatPreviewTime(
     values.endTime,
-    formatPreviewTime(previewDefaultDraft.reception.endTime, "9:00 PM"),
+    formatPreviewTime(fallbackDraft.reception.endTime, "9:00 PM"),
   );
-  const note = values.note.trim() || previewDefaultDraft.reception.note;
+  const note = values.note.trim() || fallbackDraft.reception.note;
   const venueName = values.venueName.trim();
   const address = values.address.trim();
   const mapsLink = values.mapsLink.trim();
@@ -486,7 +495,7 @@ function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <Badge variant="outline" className="event-preview-section-label">
         Reception
       </Badge>
-      <h3>{withFallback(values.title, previewDefaultDraft.reception.title)}</h3>
+      <h3>{withFallback(values.title, fallbackDraft.reception.title)}</h3>
       <div className="event-preview-inline-card">
         <CalendarDays className="size-4" aria-hidden="true" />
         <span>
@@ -496,7 +505,7 @@ function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
       <p className="event-preview-copy">{note}</p>
       {hasLocation ? (
         <div className="event-preview-location-card">
-          <strong>{venueName || previewDefaultDraft.reception.venueName}</strong>
+          <strong>{venueName || fallbackDraft.reception.venueName}</strong>
           {address ? <span>{address}</span> : null}
           {mapsLink ? (
             <Button asChild variant="outline" size="sm" className="event-preview-map-button">
@@ -549,7 +558,7 @@ function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
 
 function EntourageSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const intro = draft.entourage.introLine.trim();
-  const groups = normalizeEntourageGroups(draft.entourage.groups);
+  const groups = normalizeEntourageGroups(draft.entourage.groups, draft.hostInfo.kind);
 
   return (
     <section className="event-preview-section">
@@ -574,7 +583,7 @@ function PrincipalSponsorsSection({ draft }: { draft: EventWebsiteRenderModel })
   const isDebut = draft.hostInfo.kind === "debut";
   const label = isDebut ? "Special Sponsors" : "Principal Sponsors";
   const intro = draft.principalSponsors.introLine.trim();
-  const names = normalizeLineList(draft.principalSponsors.names);
+  const names = normalizeLineList(draft.principalSponsors.names, draft.hostInfo.kind);
 
   return (
     <section className="event-preview-section">
@@ -593,6 +602,7 @@ function PrincipalSponsorsSection({ draft }: { draft: EventWebsiteRenderModel })
 }
 
 function AttireSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const values = draft.attireDressCode;
   const intro = values.sectionIntro.trim();
   const cards = [
@@ -609,8 +619,8 @@ function AttireSection({ draft }: { draft: EventWebsiteRenderModel }) {
     cards.length > 0
       ? cards
       : [
-          { body: previewDefaultDraft.attireDressCode.dressCodeNote, title: "Dress Code" },
-          { body: previewDefaultDraft.attireDressCode.colorMotifNote, title: "Color / Motif" },
+          { body: fallbackDraft.attireDressCode.dressCodeNote, title: "Dress Code" },
+          { body: fallbackDraft.attireDressCode.colorMotifNote, title: "Color / Motif" },
         ];
 
   return (
@@ -633,10 +643,11 @@ function AttireSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function ExtraInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const values = draft.extraInfo;
-  const title = withFallback(values.sectionTitle, previewDefaultDraft.extraInfo.sectionTitle);
+  const title = withFallback(values.sectionTitle, fallbackDraft.extraInfo.sectionTitle);
   const intro = values.sectionIntro.trim();
-  const items = normalizeExtraInfoItems(values.items);
+  const items = normalizeExtraInfoItems(values.items, draft.hostInfo.kind);
 
   return (
     <section className="event-preview-section">
@@ -803,10 +814,11 @@ function RsvpFormSection({
 }
 
 function GiftDetailsSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const values = draft.giftDetails;
-  const intro = values.sectionIntro.trim() || previewDefaultDraft.giftDetails.sectionIntro;
-  const note = values.giftNote.trim() || previewDefaultDraft.giftDetails.giftNote;
-  const options = normalizeGiftOptions(values.options);
+  const intro = values.sectionIntro.trim() || fallbackDraft.giftDetails.sectionIntro;
+  const note = values.giftNote.trim() || fallbackDraft.giftDetails.giftNote;
+  const options = normalizeGiftOptions(values.options, draft.hostInfo.kind);
 
   return (
     <section className="event-preview-section">
@@ -835,13 +847,14 @@ function GuestbookSection({
   draft: EventWebsiteRenderModel;
   guestbookMessages: EventWebsiteGuestbookMessage[];
 }) {
+  const fallbackDraft = getDraftFallback(draft);
   const title = withFallback(
     draft.guestbook.sectionTitle,
-    previewDefaultDraft.guestbook.sectionTitle,
+    fallbackDraft.guestbook.sectionTitle,
   );
-  const intro = draft.guestbook.sectionIntro.trim() || previewDefaultDraft.guestbook.sectionIntro;
+  const intro = draft.guestbook.sectionIntro.trim() || fallbackDraft.guestbook.sectionIntro;
   const emptyState =
-    draft.guestbook.emptyStateMessage.trim() || previewDefaultDraft.guestbook.emptyStateMessage;
+    draft.guestbook.emptyStateMessage.trim() || fallbackDraft.guestbook.emptyStateMessage;
 
   return (
     <section className="event-preview-section event-preview-section--guestbook">
@@ -906,9 +919,10 @@ function GuestbookMessageCard({ message }: { message: EventWebsiteGuestbookMessa
 }
 
 function LoveStorySection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const intro = draft.loveStory.sectionIntro.trim();
-  const title = withFallback(draft.loveStory.storyTitle, previewDefaultDraft.loveStory.storyTitle);
-  const body = draft.loveStory.storyBody.trim() || previewDefaultDraft.loveStory.storyBody;
+  const title = withFallback(draft.loveStory.storyTitle, fallbackDraft.loveStory.storyTitle);
+  const body = draft.loveStory.storyBody.trim() || fallbackDraft.loveStory.storyBody;
 
   return (
     <section className="event-preview-section">
@@ -926,8 +940,9 @@ function LoveStorySection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const fallbackDraft = getDraftFallback(draft);
   const hasAnyContent = Object.values(draft.contactSocials).some((value) => value.trim());
-  const values = hasAnyContent ? draft.contactSocials : previewDefaultDraft.contactSocials;
+  const values = hasAnyContent ? draft.contactSocials : fallbackDraft.contactSocials;
   const contactPerson = values.contactPerson.trim();
   const contactNumber = values.contactNumber.trim();
   const email = values.email.trim();
@@ -936,10 +951,13 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
     { label: "Instagram", value: values.instagramUrl.trim() },
     { label: "TikTok", value: values.tikTokUrl.trim() },
   ].filter((item) => item.value);
-  const brandLine = withFallback(
-    draft.coupleInfo.displayAs,
-    previewDefaultDraft.coupleInfo.displayAs,
-  );
+  const isDebut = draft.hostInfo.kind === "debut";
+  const brandLine = isDebut
+    ? `${draft.hostInfo.displayAs || "Debutant"}'s 18th Birthday`
+    : withFallback(
+        draft.coupleInfo.displayAs,
+        fallbackDraft.coupleInfo.displayAs,
+      );
 
   return (
     <footer className="event-preview-section event-preview-section--footer">
@@ -1084,8 +1102,13 @@ function normalizeTimelineItems(
   }));
 }
 
-function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["groups"]) {
-  const hasDraftContent = groups.some((group) => group.groupTitle.trim() || group.names.trim());
+function normalizeEntourageGroups(
+  groups: EventWebsiteRenderModel["entourage"]["groups"],
+  kind?: string,
+) {
+  const hasDraftContent = groups.some(
+    (group) => group.groupTitle.trim() || group.names.trim(),
+  );
   const cleaned = groups
     .map((group) => ({
       groupTitle: group.groupTitle.trim() || (group.names.trim() ? "Wedding Party" : ""),
@@ -1098,19 +1121,29 @@ function normalizeEntourageGroups(groups: EventWebsiteRenderModel["entourage"]["
     ? cleaned
     : hasDraftContent
       ? cleaned
-      : previewDefaultDraft.entourage.groups;
+      : getPreviewDefaultDraft(kind).entourage.groups;
 }
 
-function normalizeLineList(value: string): string[] {
+function normalizeLineList(value: string, kind?: string): string[] {
   const items = value
     .split("\n")
     .map((entry) => entry.trim())
     .filter(Boolean);
 
-  return items.length > 0 ? items : normalizeLineList(previewDefaultDraft.principalSponsors.names);
+  if (items.length > 0) {
+    return items;
+  }
+  const fallbackNames = getPreviewDefaultDraft(kind).principalSponsors.names;
+  return fallbackNames
+    .split("\n")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
-function normalizeExtraInfoItems(items: EventWebsiteRenderModel["extraInfo"]["items"]) {
+function normalizeExtraInfoItems(
+  items: EventWebsiteRenderModel["extraInfo"]["items"],
+  kind?: string,
+) {
   const hasDraftContent = items.some((item) => item.title.trim() || item.details.trim());
   const cleaned = items
     .map((item) => ({
@@ -1129,14 +1162,17 @@ function normalizeExtraInfoItems(items: EventWebsiteRenderModel["extraInfo"]["it
     ? cleaned
     : hasDraftContent
       ? cleaned
-      : previewDefaultDraft.extraInfo.items;
+      : getPreviewDefaultDraft(kind).extraInfo.items;
 }
 
-function normalizeGiftOptions(options: EventWebsiteRenderModel["giftDetails"]["options"]) {
+function normalizeGiftOptions(
+  options: EventWebsiteRenderModel["giftDetails"]["options"],
+  kind?: string,
+) {
   const cleaned = options.filter(
     (option) => option.title.trim() || option.file || option.image?.url?.trim(),
   );
-  return cleaned.length > 0 ? cleaned : previewDefaultDraft.giftDetails.options;
+  return cleaned.length > 0 ? cleaned : getPreviewDefaultDraft(kind).giftDetails.options;
 }
 
 function buildCountdownItems(eventDate: string, eventTime: string, now: number) {
