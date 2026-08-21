@@ -34,7 +34,8 @@ export function AuthShell({
                 width={72}
                 height={72}
                 priority
-                className="size-full object-cover"
+                className="h-auto w-auto object-cover"
+                style={{ width: "auto", height: "auto" }}
               />
             </div>
             <div className="space-y-1.5">

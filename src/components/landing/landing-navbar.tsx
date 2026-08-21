@@ -110,6 +110,7 @@ export function LandingNavbar() {
                 height={28}
                 aria-hidden="true"
                 className="size-full object-cover select-none"
+                style={{ width: "auto", height: "auto" }}
               />
             </div>
             <span className="font-semibold tracking-tight text-[var(--landing-text)]">
@@ -200,6 +201,7 @@ export function LandingNavbar() {
                   height={28}
                   aria-hidden="true"
                   className="size-full object-cover select-none"
+                  style={{ width: "auto", height: "auto" }}
                 />
               </div>
               <span className="font-semibold tracking-tight text-[var(--landing-text)]">

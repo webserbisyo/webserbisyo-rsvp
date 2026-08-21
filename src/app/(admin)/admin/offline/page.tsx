@@ -20,6 +20,7 @@ export default function AdminOfflinePage() {
             width={88}
             height={88}
             className="size-20 object-cover"
+            style={{ width: "auto", height: "auto" }}
           />
         </div>
         <div className="bg-rsvp-accent text-rsvp-accent-foreground flex size-14 items-center justify-center rounded-lg">

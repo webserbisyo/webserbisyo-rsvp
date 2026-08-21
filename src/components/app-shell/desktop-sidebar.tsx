@@ -57,6 +57,7 @@ export function DesktopSidebar({ profile }: DesktopSidebarProps) {
                     width={32}
                     height={32}
                     className="size-8 object-cover"
+                    style={{ width: "auto", height: "auto" }}
                   />
                 </span>
                 <span className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">

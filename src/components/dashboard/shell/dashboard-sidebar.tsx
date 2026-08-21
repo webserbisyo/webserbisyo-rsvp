@@ -55,6 +55,7 @@ export function DashboardSidebar({ email, displayName }: DashboardSidebarProps) 
                     height={32}
                     priority
                     className="h-8 w-8 rounded-lg object-contain"
+                    style={{ width: "auto", height: "auto" }}
                   />
                 </span>
                 <span className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
