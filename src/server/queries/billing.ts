@@ -92,7 +92,9 @@ export async function getBillingPageData(): Promise<BillingPageData> {
     await Promise.all([
       supabase
         .from("clients")
-        .select("id, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at")
+        .select(
+          "id, status, plan_type, hosting_starts_at, hosting_ends_at, renewal_required_at, contact_email, contact_name, contact_phone",
+        )
         .eq("id", clientId)
         .maybeSingle(),
       supabase
@@ -166,6 +168,9 @@ export async function getBillingPageData(): Promise<BillingPageData> {
           confirmedAt: shouldShowConfirmedAt(latestPayment.payment_status)
             ? latestPayment.paid_at
             : null,
+          customerEmail: profile.email ?? client.contact_email ?? null,
+          customerFullName: profile.full_name ?? client.contact_name ?? null,
+          customerPhone: client.contact_phone ?? null,
           id: latestPayment.id,
           method: latestPayment.payment_method,
           paidAt: latestPayment.paid_at,

@@ -16,6 +16,8 @@ import { writeAuditLog } from "./write-audit-log";
 export type SendMetaCapiPurchaseInput = {
   actorUserId: string;
   amount: number;
+  clientIpAddress?: string | null;
+  clientUserAgent?: string | null;
   clientId: string;
   currency: string;
   customerEmail?: string | null;
@@ -77,6 +79,8 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
   const result = await sendMetaCapiEvent({
     actionSource: "website",
     amount: input.amount,
+    clientIpAddress: input.clientIpAddress,
+    clientUserAgent: input.clientUserAgent,
     currency: input.currency,
     email: input.customerEmail,
     eventId,

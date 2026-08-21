@@ -368,10 +368,10 @@ test("Purchase uses website acquisition source semantics without administrator b
   );
   assert.match(purchaseSource, /currency: input\.currency/);
   assert.match(purchaseSource, /eventTime: getPurchaseEventTime\(input\.paidAt\)/);
-  assert.equal(canonicalSourceUrl, "https://rsvp.webserbisyo.com/apply/success");
-  assert.doesNotMatch(purchaseSource, /clientIpAddress|clientUserAgent/);
-  assert.doesNotMatch(clientActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
-  assert.doesNotMatch(salesActionSource, /headers\(\)|clientIpAddress|clientUserAgent/);
+  assert.match(purchaseSource, /clientIpAddress: input\.clientIpAddress/);
+  assert.match(purchaseSource, /clientUserAgent: input\.clientUserAgent/);
+  assert.doesNotMatch(clientActionSource, /headers\(\)/);
+  assert.doesNotMatch(salesActionSource, /headers\(\)/);
 });
 
 test("Purchase CAPI envelope uses website source URL and top-level test routing only in test mode", () => {

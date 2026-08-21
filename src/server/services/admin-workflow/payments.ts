@@ -158,6 +158,8 @@ export async function confirmManualPayment(
     await sendMetaCapiPurchase({
       actorUserId,
       amount: updatedPayment.amount_paid,
+      clientIpAddress: application.client_ip_address,
+      clientUserAgent: application.client_user_agent,
       clientId: client.id,
       currency: updatedPayment.currency,
       customerEmail: application.email,
@@ -275,7 +277,7 @@ async function getApplicationForPayment(applicationId: string) {
   const { data, error } = await supabase
     .from("rsvp_applications")
     .select(
-      "id, approved_at, approved_client_id, approved_event_id, email, estimated_guest_count, event_date, event_location, event_type, fb_fbc, fb_fbp, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, review_notes, reviewed_at, status",
+      "id, approved_at, approved_client_id, approved_event_id, client_ip_address, client_user_agent, email, estimated_guest_count, event_date, event_location, event_type, fb_fbc, fb_fbp, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, review_notes, reviewed_at, status",
     )
     .eq("id", applicationId)
     .single();

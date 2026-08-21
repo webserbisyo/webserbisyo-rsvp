@@ -25,6 +25,10 @@ export function BillingPage({ data }: { data: BillingPageData }) {
         <PaymentConfirmedDialog
           amountPaid={data.amountPaid}
           currency={data.currency}
+          customerEmail={data.latestPayment.customerEmail}
+          customerFullName={data.latestPayment.customerFullName}
+          customerPhone={data.latestPayment.customerPhone}
+          externalId={data.clientId}
           paidAt={data.latestPayment.paidAt}
           paymentId={data.latestPayment.id}
           paymentStatus={data.latestPayment.status}

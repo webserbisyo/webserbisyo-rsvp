@@ -97,6 +97,8 @@ export async function submitApplication(
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const result = await insertApplication({
+      client_ip_address: context?.clientIpAddress ?? null,
+      client_user_agent: context?.clientUserAgent ?? null,
       email: normalizedEmail,
       estimated_guest_count: payload.estimatedGuestCount ?? null,
       event_date: payload.eventDate ?? null,

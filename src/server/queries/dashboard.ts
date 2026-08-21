@@ -146,6 +146,9 @@ export type DashboardHomeData = {
     amountLabel: string;
     amountPaid: number;
     currency: string;
+    customerEmail?: string | null;
+    customerFullName?: string | null;
+    customerPhone?: string | null;
     description: string;
     isConfirmed: boolean;
     paidAt: string | null;
@@ -200,7 +203,7 @@ async function loadDashboardSummary(
     supabase
       .from("clients")
       .select(
-        "id, name, contact_email, contact_name, status, plan_type, hosting_starts_at, hosting_ends_at",
+        "id, name, contact_email, contact_name, contact_phone, status, plan_type, hosting_starts_at, hosting_ends_at",
       )
       .eq("id", clientId)
       .maybeSingle(),
@@ -391,6 +394,9 @@ async function loadDashboardSummary(
       amountLabel: paymentAmount !== null ? formatCurrency(paymentAmount) : "Amount pending",
       amountPaid: netAmountPaid,
       currency: payment?.currency ?? "PHP",
+      customerEmail: profile.email ?? client.contact_email ?? null,
+      customerFullName: profile.full_name ?? client.contact_name ?? client.name ?? null,
+      customerPhone: client.contact_phone ?? null,
       description: paymentSummary.description,
       isConfirmed: paymentSummary.isConfirmed,
       paidAt: payment?.paid_at ?? null,

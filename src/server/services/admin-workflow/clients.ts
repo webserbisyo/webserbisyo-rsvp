@@ -229,6 +229,8 @@ export async function markClientAsPaid(
   const capiWarning = await safeSendMetaCapiPurchase({
     actorUserId,
     amount: payment.amount_paid,
+    clientIpAddress: application.client_ip_address,
+    clientUserAgent: application.client_user_agent,
     clientId: client.id,
     currency: payment.currency,
     customerEmail: application.email,
@@ -937,7 +939,7 @@ async function getApprovedApplicationForClient(clientId: string) {
   const { data, error } = await supabase
     .from("rsvp_applications")
     .select(
-      "id, approved_at, email, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, fb_fbp, fb_fbc",
+      "id, approved_at, email, full_name, phone, preferred_manual_payment_option, preferred_plan, reference_code, fb_fbp, fb_fbc, client_ip_address, client_user_agent",
     )
     .eq("approved_client_id", clientId)
     .order("approved_at", { ascending: false, nullsFirst: false })

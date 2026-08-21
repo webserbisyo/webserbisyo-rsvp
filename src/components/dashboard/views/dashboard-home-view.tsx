@@ -38,6 +38,10 @@ function DashboardHomeContent({ summary }: { summary: DashboardHomeDto }) {
         <PaymentConfirmedDialog
           amountPaid={summary.payment.amountPaid}
           currency={summary.payment.currency}
+          customerEmail={summary.payment.customerEmail}
+          customerFullName={summary.payment.customerFullName}
+          customerPhone={summary.payment.customerPhone}
+          externalId={summary.payment.paymentId}
           paidAt={summary.payment.paidAt}
           paymentId={summary.payment.paymentId}
           paymentStatus={summary.payment.isConfirmed ? "confirmed" : summary.payment.status}

@@ -1006,6 +1006,8 @@ export type Database = {
           approved_at: string | null
           approved_client_id: string | null
           approved_event_id: string | null
+          client_ip_address: string | null
+          client_user_agent: string | null
           created_at: string
           email: string
           estimated_guest_count: number | null
@@ -1032,6 +1034,8 @@ export type Database = {
           approved_at?: string | null
           approved_client_id?: string | null
           approved_event_id?: string | null
+          client_ip_address?: string | null
+          client_user_agent?: string | null
           created_at?: string
           email: string
           estimated_guest_count?: number | null
@@ -1058,6 +1062,8 @@ export type Database = {
           approved_at?: string | null
           approved_client_id?: string | null
           approved_event_id?: string | null
+          client_ip_address?: string | null
+          client_user_agent?: string | null
           created_at?: string
           email?: string
           estimated_guest_count?: number | null

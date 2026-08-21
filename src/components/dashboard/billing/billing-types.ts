@@ -32,6 +32,9 @@ export type BillingPageData = {
   latestPayment: {
     amount: number | null;
     confirmedAt: string | null;
+    customerEmail?: string | null;
+    customerFullName?: string | null;
+    customerPhone?: string | null;
     id: string;
     method: string | null;
     paidAt: string | null;

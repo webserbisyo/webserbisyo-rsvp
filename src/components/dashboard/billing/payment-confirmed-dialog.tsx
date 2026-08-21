@@ -16,6 +16,10 @@ import { trackMetaPixelEvent } from "@/lib/meta/browser-events";
 type PaymentConfirmedDialogProps = {
   amountPaid: number;
   currency: string;
+  customerEmail?: string | null;
+  customerFullName?: string | null;
+  customerPhone?: string | null;
+  externalId?: string | null;
   paidAt: string | null;
   paymentId: string;
   paymentStatus: "confirmed" | string;
@@ -54,6 +58,30 @@ function isWithinSuppressionWindow(paidAt: string | null): boolean {
   return Date.now() - paidTime <= SUPPRESSION_WINDOW_MS;
 }
 
+async function sha256Client(value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  try {
+    if (typeof window !== "undefined" && window.crypto?.subtle) {
+      const msgBuffer = new TextEncoder().encode(normalized);
+      const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function sha256Phone(value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  const digits = value.replaceAll(/\D/g, "");
+  if (!digits) return null;
+  return sha256Client(digits);
+}
+
 /**
  * Shows a one-time payment confirmation dialog on the client dashboard when:
  * 1. The payment status is "confirmed" (paid).
@@ -61,20 +89,44 @@ function isWithinSuppressionWindow(paidAt: string | null): boolean {
  * 3. The user has not yet acknowledged this specific payment.
  *
  * Fires `fbq('track', 'Purchase', ...)` with an eventID matching the server
- * CAPI deduplication key: `Purchase:<paymentId>`.
+ * CAPI deduplication key: `Purchase:<paymentId>`, augmented with Manual Advanced
+ * Matching customer parameters (em, ph, fn, ln, external_id) for max EMQ.
  */
 async function firePurchasePixelWithRetry(params: {
   amountPaid: number;
   currency: string;
+  customerEmail?: string | null;
+  customerFullName?: string | null;
+  customerPhone?: string | null;
+  externalId?: string | null;
   paymentId: string;
 }) {
+  const nameParts = params.customerFullName?.trim().split(/\s+/) ?? [];
+  const firstName = nameParts[0] ?? null;
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
+
+  const [em, ph, fn, ln, externalId] = await Promise.all([
+    sha256Client(params.customerEmail),
+    sha256Phone(params.customerPhone),
+    sha256Client(firstName),
+    sha256Client(lastName),
+    sha256Client(params.externalId ?? params.paymentId),
+  ]);
+
   const maxAttempts = 15;
   for (let i = 0; i < maxAttempts; i++) {
     if (typeof window !== "undefined" && typeof window.fbq === "function") {
       trackMetaPixelEvent(
         "Purchase",
         { value: params.amountPaid, currency: params.currency },
-        { eventID: `Purchase:${params.paymentId}` },
+        {
+          eventID: `Purchase:${params.paymentId}`,
+          ...(em ? { em } : {}),
+          ...(ph ? { ph } : {}),
+          ...(fn ? { fn } : {}),
+          ...(ln ? { ln } : {}),
+          ...(externalId ? { external_id: externalId } : {}),
+        },
       );
       return true;
     }
@@ -86,6 +138,10 @@ async function firePurchasePixelWithRetry(params: {
 export function PaymentConfirmedDialog({
   amountPaid,
   currency,
+  customerEmail,
+  customerFullName,
+  customerPhone,
+  externalId,
   paidAt,
   paymentId,
   paymentStatus,
@@ -116,11 +172,25 @@ export function PaymentConfirmedDialog({
     void firePurchasePixelWithRetry({
       amountPaid,
       currency,
+      customerEmail,
+      customerFullName,
+      customerPhone,
+      externalId,
       paymentId,
     }).finally(() => {
       markAsAcknowledged(paymentId);
     });
-  }, [amountPaid, currency, paidAt, paymentId, paymentStatus]);
+  }, [
+    amountPaid,
+    currency,
+    customerEmail,
+    customerFullName,
+    customerPhone,
+    externalId,
+    paidAt,
+    paymentId,
+    paymentStatus,
+  ]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
