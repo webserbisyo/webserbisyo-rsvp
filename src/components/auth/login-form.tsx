@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { GOOGLE_AUTH_ENABLED, GOOGLE_CLIENT_ID } from "@/lib/auth/google-oauth";
+import { generateNoncePair } from "@/lib/auth/nonce";
 import { getAuthRedirectErrorMessage } from "@/lib/auth/redirects";
 import { createClient } from "@/lib/supabase/client";
 import { loginAction, type LoginActionState } from "@/server/actions/auth";
@@ -37,6 +38,7 @@ declare global {
           initialize: (config: {
             client_id: string;
             callback: (response: GoogleCredentialResponse) => void;
+            nonce?: string;
             auto_select?: boolean;
             cancel_on_tap_outside?: boolean;
           }) => void;
@@ -77,6 +79,9 @@ export function LoginForm({
   const isBusy = isPending || isGooglePending;
   const visibleError = state.error ?? googleError ?? initialMessage;
 
+  // Persistent cryptographic nonce pair for Google OIDC synchronization
+  const noncePairRef = useRef<{ rawNonce: string; hashedNonce: string } | null>(null);
+
   useEffect(() => {
     if (signOutOnMount) {
       const supabase = createClient();
@@ -108,59 +113,77 @@ export function LoginForm({
     }
   }, [googleError]);
 
-  const handleCredentialResponse = async (response: GoogleCredentialResponse) => {
-    if (!response.credential) {
-      setGoogleError("No ID token returned by Google.");
-      setIsGooglePending(false);
+  const handleCredentialResponse = useCallback(
+    async (response: GoogleCredentialResponse) => {
+      if (!response.credential) {
+        setGoogleError("No ID token returned by Google.");
+        setIsGooglePending(false);
+        return;
+      }
+
+      setIsGooglePending(true);
+      setGoogleError(null);
+
+      try {
+        const supabase = createClient();
+        const rawNonce = noncePairRef.current?.rawNonce;
+
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: response.credential,
+          nonce: rawNonce,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success("Signed in successfully with Google.");
+        router.push(nextPath || "/dashboard");
+        router.refresh();
+      } catch (err) {
+        setGoogleError(
+          err instanceof Error ? err.message : "Google sign-in could not be completed.",
+        );
+        setIsGooglePending(false);
+      }
+    },
+    [nextPath, router],
+  );
+
+  const initGoogleClient = useCallback(async () => {
+    if (typeof window === "undefined" || !window.google?.accounts?.id || !GOOGLE_CLIENT_ID) {
       return;
     }
 
-    setIsGooglePending(true);
-    setGoogleError(null);
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: "google",
-        token: response.credential,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success("Signed in successfully with Google.");
-      router.push(nextPath || "/dashboard");
-      router.refresh();
-    } catch (err) {
-      setGoogleError(
-        err instanceof Error ? err.message : "Google sign-in could not be completed.",
-      );
-      setIsGooglePending(false);
+    if (!noncePairRef.current) {
+      noncePairRef.current = await generateNoncePair();
     }
-  };
 
-  const initGoogleClient = () => {
-    if (typeof window !== "undefined" && window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      });
-    }
-  };
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      nonce: noncePairRef.current.hashedNonce,
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+  }, [handleCredentialResponse]);
 
   useEffect(() => {
-    initGoogleClient();
-  }, []);
+    void (async () => {
+      if (!noncePairRef.current) {
+        noncePairRef.current = await generateNoncePair();
+      }
+      await initGoogleClient();
+    })();
+  }, [initGoogleClient]);
 
-  const handleGoogleClick = () => {
+  const handleGoogleClick = async () => {
     setGoogleError(null);
     setIsGooglePending(true);
 
     if (typeof window !== "undefined" && window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
-      initGoogleClient();
+      await initGoogleClient();
       window.google.accounts.id.prompt((notification: GooglePromptNotification) => {
         if (
           notification.isNotDisplayed() ||
@@ -171,7 +194,7 @@ export function LoginForm({
         }
       });
     } else {
-      setGoogleError("Google Sign-In is initializing. Please try again.");
+      setGoogleError("Google Sign-In is initializing. Please try again in a moment.");
       setIsGooglePending(false);
     }
   };
@@ -182,7 +205,9 @@ export function LoginForm({
         <Script
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
-          onLoad={initGoogleClient}
+          onLoad={() => {
+            void initGoogleClient();
+          }}
         />
       )}
 
@@ -200,7 +225,9 @@ export function LoginForm({
         <>
           <button
             type="button"
-            onClick={handleGoogleClick}
+            onClick={() => {
+              void handleGoogleClick();
+            }}
             disabled={isBusy}
             aria-busy={isGooglePending}
             className="flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:border-slate-600 hover:bg-slate-800/90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:pointer-events-none disabled:opacity-50"
