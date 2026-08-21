@@ -438,11 +438,15 @@ function HostInfoForm({
   saveButtonProps: EventWebsiteSaveButtonProps;
 }) {
   const model = getHostInfoModel(eventType);
-  const isWedding = normalizeEventWebsiteEventType(eventType) === "wedding";
+  const normalizedType = normalizeEventWebsiteEventType(eventType);
+  const isWedding = normalizedType === "wedding";
+  const isDebut = normalizedType === "debut";
   const values = previewDraft.hostInfo as unknown as Record<string, string>;
   const displayOptions = isWedding
     ? getWeddingDisplayOptions(values.groomName, values.brideName)
-    : model.displayOptions;
+    : isDebut
+      ? getDebutDisplayOptions(values.debutantName, values.milestone)
+      : model.displayOptions;
 
   function updateHostValue(fieldId: string, value: string) {
     const updateValues = (current: Record<string, string>) => {
@@ -455,6 +459,20 @@ function HostInfoForm({
           current.brideName,
         );
         const nextOptions = getWeddingDisplayOptions(next.groomName, next.brideName);
+
+        next.displayAs =
+          currentTemplate !== null
+            ? (nextOptions[currentTemplate] ?? nextOptions[0] ?? "")
+            : next.displayAs || nextOptions[0] || "";
+      }
+
+      if (isDebut && (fieldId === "debutantName" || fieldId === "milestone")) {
+        const currentTemplate = getDebutDisplayTemplate(
+          current.displayAs,
+          current.debutantName,
+          current.milestone,
+        );
+        const nextOptions = getDebutDisplayOptions(next.debutantName, next.milestone);
 
         next.displayAs =
           currentTemplate !== null
@@ -1126,10 +1144,12 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
   }
 
   if (currentEventType === "debut") {
+    const debutant = "Sofia";
     return {
       description: "Set the debutant name and short host message shown on the RSVP website.",
+      displayOptions: getDebutDisplayOptions(debutant, "18th Birthday"),
       fields: [
-        { id: "debutantName", label: "Debutant Name", maxLength: 60, placeholder: "Debutant name" },
+        { id: "debutantName", label: "Debutant Name", maxLength: 60, placeholder: "Sofia" },
         {
           id: "milestone",
           label: "Age / Milestone",
@@ -1137,7 +1157,7 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
           optional: true,
           placeholder: "18th Birthday",
         },
-        { id: "displayAs", label: "Display As", maxLength: 80, placeholder: "e.g. Sofia's Debut" },
+        { colSpan: "full", id: "displayAs", label: "Display As", maxLength: 80, type: "select" },
         ...baseHostMessage,
       ],
       groups: [
@@ -1279,6 +1299,29 @@ function getWeddingDisplayTemplate(
   brideName: string | undefined,
 ) {
   const options = getWeddingDisplayOptions(groomName, brideName);
+  const index = options.indexOf(displayAs ?? "");
+
+  return index >= 0 ? index : null;
+}
+
+export function getDebutDisplayOptions(debutantName?: string, milestone?: string): string[] {
+  const name = debutantName?.trim() || "Sofia";
+  const age = milestone?.trim() || "18th Birthday";
+  return [
+    `${name}'s ${age}`,
+    `${name}'s Debut`,
+    `👑 ${name}'s Debut`,
+    `${name} @ 18`,
+    `The Debut of ${name}`,
+  ];
+}
+
+export function getDebutDisplayTemplate(
+  displayAs: string | undefined,
+  debutantName: string | undefined,
+  milestone: string | undefined,
+) {
+  const options = getDebutDisplayOptions(debutantName, milestone);
   const index = options.indexOf(displayAs ?? "");
 
   return index >= 0 ? index : null;

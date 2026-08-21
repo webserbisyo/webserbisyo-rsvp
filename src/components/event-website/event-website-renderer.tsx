@@ -156,20 +156,51 @@ function SectionRouter({
 
 function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const hostInfo = draft.hostInfo;
+  const fallbackDraft = getDraftFallback(draft);
+
   if (hostInfo.kind !== "wedding") {
-    const primary =
+    const fallbackHost = fallbackDraft.hostInfo;
+    const rawPrimary =
       hostInfo.kind === "birthday"
         ? hostInfo.celebrantName
         : hostInfo.kind === "debut"
           ? hostInfo.debutantName
           : hostInfo.childName;
+
+    const fallbackPrimary =
+      fallbackHost.kind === "birthday"
+        ? fallbackHost.celebrantName
+        : fallbackHost.kind === "debut"
+          ? fallbackHost.debutantName
+          : fallbackHost.kind === "baptism"
+            ? fallbackHost.childName
+            : "Celebrant";
+
+    const primary = withFallback(rawPrimary, fallbackPrimary);
     const label =
       hostInfo.kind === "birthday"
         ? "Celebrant Info"
         : hostInfo.kind === "debut"
           ? "Debutant Info"
           : "Child & Parents";
-    const supporting = hostInfo.kind === "baptism" ? hostInfo.parentNames : hostInfo.milestone;
+
+    const rawSupporting = hostInfo.kind === "baptism" ? hostInfo.parentNames : hostInfo.milestone;
+    const fallbackSupporting =
+      fallbackHost.kind === "baptism"
+        ? fallbackHost.parentNames
+        : fallbackHost.kind === "birthday" || fallbackHost.kind === "debut"
+          ? fallbackHost.milestone
+          : "";
+    const supporting = withFallback(rawSupporting, fallbackSupporting);
+
+    const displayAs =
+      hostInfo.displayAs.trim() ||
+      (hostInfo.kind === "debut"
+        ? `${primary}'s ${supporting || "18th Birthday"}`
+        : hostInfo.kind === "birthday"
+          ? `${primary}'s Birthday`
+          : primary);
+
     return (
       <section className="event-preview-section event-preview-section--hero">
         <Badge variant="outline" className="event-preview-section-label">
@@ -178,7 +209,7 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
         {hostInfo.hostLine.trim() ? (
           <p className="event-preview-host-line">{hostInfo.hostLine}</p>
         ) : null}
-        <h2>{hostInfo.displayAs.trim() || primary}</h2>
+        <h2>{displayAs}</h2>
         {supporting ? <p className="event-preview-copy">{supporting}</p> : null}
         {hostInfo.shortHostMessage.trim() ? (
           <p className="event-preview-copy">{hostInfo.shortHostMessage}</p>
@@ -187,7 +218,6 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
     );
   }
   const coupleInfo = hostInfo;
-  const fallbackDraft = getDraftFallback(draft);
   const groomName = withFallback(coupleInfo.groomName, fallbackDraft.coupleInfo.groomName);
   const brideName = withFallback(coupleInfo.brideName, fallbackDraft.coupleInfo.brideName);
   const displayAs = coupleInfo.displayAs.trim() || `${groomName} & ${brideName}`;
