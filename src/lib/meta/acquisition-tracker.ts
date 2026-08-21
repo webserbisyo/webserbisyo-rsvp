@@ -103,21 +103,26 @@ export function trackCompleteRegistrationOccurrence(referenceCode: string) {
   return eventId;
 }
 
+async function waitForFbpCookie(timeoutMs = 1000, intervalMs = 100): Promise<void> {
+  if (typeof document === "undefined") return;
+  if (getCookie("_fbp")) return;
+
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    if (getCookie("_fbp")) return;
+  }
+}
+
 export function trackAcquisitionPageOccurrence(
   sourcePath: "/" | "/apply" | "/apply/start" | "/apply/success",
   viewContent: boolean,
 ) {
   const pageViewId = crypto.randomUUID();
   trackMetaPixelEvent("PageView", {}, { eventID: pageViewId });
-  sendMetaAcquisitionOccurrence({
-    eventId: pageViewId,
-    eventName: "PageView",
-    fbc: getFbc(),
-    fbp: getCookie("_fbp"),
-    sourcePath,
-  });
-  if (viewContent) {
-    const viewId = crypto.randomUUID();
+
+  const viewId = viewContent ? crypto.randomUUID() : null;
+  if (viewId) {
     trackMetaPixelEvent(
       "ViewContent",
       {
@@ -127,14 +132,32 @@ export function trackAcquisitionPageOccurrence(
       },
       { eventID: viewId },
     );
+  }
+
+  void (async () => {
+    await waitForFbpCookie();
+
+    const fbc = getFbc();
+    const fbp = getCookie("_fbp");
+
     sendMetaAcquisitionOccurrence({
-      eventId: viewId,
-      eventName: "ViewContent",
-      fbc: getFbc(),
-      fbp: getCookie("_fbp"),
+      eventId: pageViewId,
+      eventName: "PageView",
+      fbc,
+      fbp,
       sourcePath,
     });
-  }
+
+    if (viewId) {
+      sendMetaAcquisitionOccurrence({
+        eventId: viewId,
+        eventName: "ViewContent",
+        fbc,
+        fbp,
+        sourcePath,
+      });
+    }
+  })();
 }
 
 function sendMetaAcquisitionOccurrence(payload: Record<string, string | undefined>) {
