@@ -40,7 +40,7 @@ const eventTypeAvailabilityMap: Record<EventType, EventTypeAvailability> = {
     status: "in_development",
   },
   baptism: {
-    applicationEnabled: false,
+    applicationEnabled: true,
     comingSoonLabel: defaultComingSoonLabel,
     dashboardBuilderEnabled: true,
     eventType: "baptism",
@@ -51,7 +51,7 @@ const eventTypeAvailabilityMap: Record<EventType, EventTypeAvailability> = {
     status: "available",
   },
   birthday: {
-    applicationEnabled: false,
+    applicationEnabled: true,
     comingSoonLabel: defaultComingSoonLabel,
     dashboardBuilderEnabled: true,
     eventType: "birthday",
@@ -74,7 +74,7 @@ const eventTypeAvailabilityMap: Record<EventType, EventTypeAvailability> = {
     status: "in_development",
   },
   debut: {
-    applicationEnabled: false,
+    applicationEnabled: true,
     comingSoonLabel: defaultComingSoonLabel,
     dashboardBuilderEnabled: true,
     eventType: "debut",

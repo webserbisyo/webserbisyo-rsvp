@@ -593,7 +593,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     </span>
                   </div>
                   <p className="mt-0.5 text-[11px] text-white/40">
-                    Wedding is available now. More celebration types are coming soon.
+                    Choose your event celebration type.
                   </p>
                   {errors.eventType?.message && (
                     <p className="mt-1 text-xs font-medium text-red-400">
