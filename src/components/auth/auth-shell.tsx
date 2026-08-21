@@ -27,14 +27,14 @@ export function AuthShell({
       <Card className="relative z-10 w-full max-w-[420px] border-slate-800/80 bg-slate-950 py-0 text-white shadow-2xl shadow-stone-900/10">
         <div className="flex flex-col gap-6 px-5 py-6 sm:px-7 sm:py-8">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white p-2 shadow-md">
+            <div className="relative flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900 shadow-lg shadow-black/20 ring-1 ring-white/10 sm:size-18">
               <Image
                 src="/icon.png"
                 alt="WebSerbisyo"
-                width={64}
-                height={64}
+                width={72}
+                height={72}
                 priority
-                className="size-14 object-contain sm:size-16"
+                className="size-full object-cover"
               />
             </div>
             <div className="space-y-1.5">
