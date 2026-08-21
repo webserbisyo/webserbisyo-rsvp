@@ -7,6 +7,9 @@ import { getSafeNextPath } from "@/lib/auth/redirects";
 import { AuthenticationError, PermissionError, requireTenantMember } from "@/lib/permissions";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
+import { getPublicMetaPixelsForRoute } from "@/server/queries/public-meta-pixels";
+
 type DashboardLayoutProps = {
   children: React.ReactNode;
 };
@@ -62,24 +65,36 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   }
 
   const supabase = await createServerSupabaseClient();
-  const { data: clientData } = await supabase
-    .from("clients")
-    .select("plan_type")
-    .eq("id", clientId)
-    .single();
+  const [{ data: clientData }, pixels] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("plan_type")
+      .eq("id", clientId)
+      .single(),
+    getPublicMetaPixelsForRoute({ route: "application" }).catch(() => []),
+  ]);
 
   planType = clientData?.plan_type ?? null;
 
   return (
-    <DashboardShell
-      clientId={clientId}
-      email={profile.email}
-      displayName={profile.full_name ?? undefined}
-      planType={planType}
-      profileId={profile.id}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      <DashboardShell
+        clientId={clientId}
+        email={profile.email}
+        displayName={profile.full_name ?? undefined}
+        planType={planType}
+        profileId={profile.id}
+      >
+        {children}
+      </DashboardShell>
+      {pixels.length > 0 ? (
+        <PublicMetaPixelScripts
+          executionKey="dashboard"
+          includePageView={false}
+          pixels={pixels}
+        />
+      ) : null}
+    </>
   );
 }
 

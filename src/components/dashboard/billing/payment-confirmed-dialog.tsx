@@ -126,7 +126,7 @@ export function PaymentConfirmedDialog({
         </DialogHeader>
         <DialogFooter>
           <Button
-            className="w-full rounded-full bg-[color:var(--dash-brand)] text-white hover:bg-[color:var(--dash-brand-hover)]"
+            className="w-full"
             onClick={() => setIsOpen(false)}
           >
             Got it
