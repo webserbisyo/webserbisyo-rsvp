@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { SOCIAL_PREVIEWS } from "@/config/social-previews";
-import { AuthProviders } from "@/components/auth/auth-providers";
 
 export const metadata: Metadata = {
   description: SOCIAL_PREVIEWS.neutral.description,
@@ -21,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <AuthProviders>{children}</AuthProviders>;
+  return children;
 }

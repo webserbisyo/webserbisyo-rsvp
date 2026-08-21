@@ -1,18 +1,55 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
 import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { GOOGLE_AUTH_ENABLED } from "@/lib/auth/google-oauth";
+import { GOOGLE_AUTH_ENABLED, GOOGLE_CLIENT_ID } from "@/lib/auth/google-oauth";
 import { getAuthRedirectErrorMessage } from "@/lib/auth/redirects";
 import { createClient } from "@/lib/supabase/client";
 import { loginAction, type LoginActionState } from "@/server/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+type GoogleCredentialResponse = {
+  credential?: string;
+  select_by?: string;
+};
+
+type GooglePromptNotification = {
+  isDisplayed: () => boolean;
+  isNotDisplayed: () => boolean;
+  isSkippedMoment: () => boolean;
+  isDismissedMoment: () => boolean;
+  getNotDisplayedReason: () => string;
+  getSkippedReason: () => string;
+  getDismissedReason: () => string;
+};
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: GoogleCredentialResponse) => void;
+            auto_select?: boolean;
+            cancel_on_tap_outside?: boolean;
+          }) => void;
+          prompt: (momentListener?: (notification: GooglePromptNotification) => void) => void;
+          renderButton: (
+            parent: HTMLElement,
+            options: Record<string, unknown>,
+          ) => void;
+        };
+      };
+    };
+  }
+}
 
 type LoginFormProps = {
   initialErrorCode?: string;
@@ -71,42 +108,84 @@ export function LoginForm({
     }
   }, [googleError]);
 
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setIsGooglePending(true);
-      setGoogleError(null);
-
-      try {
-        const supabase = createClient();
-        const token = (tokenResponse as { credential?: string }).credential || tokenResponse.access_token;
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: token,
-          access_token: tokenResponse.access_token,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        toast.success("Signed in successfully with Google.");
-        router.push(nextPath || "/dashboard");
-        router.refresh();
-      } catch (err) {
-        setGoogleError(
-          err instanceof Error ? err.message : "Google sign-in could not be completed.",
-        );
-        setIsGooglePending(false);
-      }
-    },
-    onError: () => {
-      setGoogleError("Google sign-in was cancelled or failed. Please try again.");
+  const handleCredentialResponse = async (response: GoogleCredentialResponse) => {
+    if (!response.credential) {
+      setGoogleError("No ID token returned by Google.");
       setIsGooglePending(false);
-    },
-  });
+      return;
+    }
+
+    setIsGooglePending(true);
+    setGoogleError(null);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: response.credential,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Signed in successfully with Google.");
+      router.push(nextPath || "/dashboard");
+      router.refresh();
+    } catch (err) {
+      setGoogleError(
+        err instanceof Error ? err.message : "Google sign-in could not be completed.",
+      );
+      setIsGooglePending(false);
+    }
+  };
+
+  const initGoogleClient = () => {
+    if (typeof window !== "undefined" && window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+    }
+  };
+
+  useEffect(() => {
+    initGoogleClient();
+  }, []);
+
+  const handleGoogleClick = () => {
+    setGoogleError(null);
+    setIsGooglePending(true);
+
+    if (typeof window !== "undefined" && window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
+      initGoogleClient();
+      window.google.accounts.id.prompt((notification: GooglePromptNotification) => {
+        if (
+          notification.isNotDisplayed() ||
+          notification.isSkippedMoment() ||
+          notification.isDismissedMoment()
+        ) {
+          setIsGooglePending(false);
+        }
+      });
+    } else {
+      setGoogleError("Google Sign-In is initializing. Please try again.");
+      setIsGooglePending(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
+      {GOOGLE_AUTH_ENABLED && (
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+          onLoad={initGoogleClient}
+        />
+      )}
+
       <p className="sr-only" aria-live="assertive" aria-atomic="true">
         {isGooglePending ? "Connecting to Google…" : visibleError ?? initialSuccessMessage}
       </p>
@@ -121,10 +200,7 @@ export function LoginForm({
         <>
           <button
             type="button"
-            onClick={() => {
-              setGoogleError(null);
-              loginWithGoogle();
-            }}
+            onClick={handleGoogleClick}
             disabled={isBusy}
             aria-busy={isGooglePending}
             className="flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:border-slate-600 hover:bg-slate-800/90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:pointer-events-none disabled:opacity-50"
