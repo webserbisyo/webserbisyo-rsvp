@@ -32,10 +32,16 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "WebSerbisyo RSVP",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#c96b48",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -44,8 +50,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full">
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full bg-[#fffaf4] text-stone-900 antialiased`}
+      style={{ backgroundColor: "#fffaf4" }}
+    >
+      <body
+        className="min-h-full bg-[#fffaf4] text-stone-900"
+        style={{ backgroundColor: "#fffaf4" }}
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
