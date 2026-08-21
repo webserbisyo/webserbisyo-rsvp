@@ -10,6 +10,7 @@ export type MetaPixelBrowserEventName =
   | "Lead"
   | "MessengerClick"
   | "PageView"
+  | "Purchase"
   | "RSVPSubmitted"
   | "SelectPlan"
   | "StartApplicationClick"
@@ -34,6 +35,7 @@ const META_STANDARD_EVENTS = new Set<MetaPixelBrowserEventName>([
   "InitiateCheckout",
   "Lead",
   "PageView",
+  "Purchase",
   "ViewContent",
 ]);
 

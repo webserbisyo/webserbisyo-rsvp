@@ -234,7 +234,7 @@ test("all acquisition routes emit one UUID PageView browser/server pair without 
   assert.match(successSource, /<AcquisitionPageTracker sourcePath="\/apply\/success" \/>/);
 });
 
-test("paired acquisition events share one occurrence ID and Purchase stays server-only", () => {
+test("paired acquisition events share one occurrence ID and Purchase stays outside the acquisition tracker", () => {
   const trackerSource = readFileSync(
     new URL("../src/lib/meta/acquisition-tracker.ts", import.meta.url),
     "utf8",
@@ -258,7 +258,8 @@ test("paired acquisition events share one occurrence ID and Purchase stays serve
 
   assert.match(trackerSource, /trackMetaPixelEvent\([\s\S]*\{ eventID: eventId \}/);
   assert.match(trackerSource, /sendMetaAcquisitionOccurrence\(\{[\s\S]*eventId/);
-  assert.doesNotMatch(browserSource, /"Purchase"/);
+  // Purchase browser pixel is fired from the dashboard dialog, not the public funnel tracker.
+  assert.match(browserSource, /"Purchase"/);
   assert.doesNotMatch(trackerSource, /"Purchase"/);
 });
 

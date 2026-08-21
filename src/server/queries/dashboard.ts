@@ -144,8 +144,12 @@ export type DashboardHomeData = {
   };
   payment: {
     amountLabel: string;
+    amountPaid: number;
+    currency: string;
     description: string;
     isConfirmed: boolean;
+    paidAt: string | null;
+    paymentId: string | null;
     status: string;
   };
   profile: {
@@ -385,8 +389,12 @@ async function loadDashboardSummary(
         : undefined,
     payment: {
       amountLabel: paymentAmount !== null ? formatCurrency(paymentAmount) : "Amount pending",
+      amountPaid: netAmountPaid,
+      currency: payment?.currency ?? "PHP",
       description: paymentSummary.description,
       isConfirmed: paymentSummary.isConfirmed,
+      paidAt: payment?.paid_at ?? null,
+      paymentId: payment?.id ?? null,
       status: paymentSummary.label,
     },
     profile: {
@@ -452,9 +460,13 @@ function buildFallbackDashboardSummary(profile: AuthenticatedProfile): Dashboard
     packageDefaults: undefined,
     payment: {
       amountLabel: "Amount pending",
+      amountPaid: 0,
+      currency: "PHP",
       description:
         "Payment details are temporarily unavailable. Please refresh or try again shortly.",
       isConfirmed: false,
+      paidAt: null,
+      paymentId: null,
       status: "Pending",
     },
     profile: {

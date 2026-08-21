@@ -166,7 +166,9 @@ export async function getBillingPageData(): Promise<BillingPageData> {
           confirmedAt: shouldShowConfirmedAt(latestPayment.payment_status)
             ? latestPayment.paid_at
             : null,
+          id: latestPayment.id,
           method: latestPayment.payment_method,
+          paidAt: latestPayment.paid_at,
           reference: latestPayment.reference_number,
           status: paymentStatus,
         }

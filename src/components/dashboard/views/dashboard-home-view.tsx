@@ -2,6 +2,7 @@
 
 import { Globe, Star, User, Wallet } from "lucide-react";
 import { ErrorState } from "@/components/feedback/error-state";
+import { PaymentConfirmedDialog } from "@/components/dashboard/billing/payment-confirmed-dialog";
 import { DashboardViewLoading } from "@/components/dashboard/dashboard-view-loading";
 import { EventCountdownCard } from "@/components/dashboard/home/event-countdown-card";
 import { HomeSummaryCard } from "@/components/dashboard/home/home-summary-card";
@@ -33,6 +34,15 @@ export default function DashboardHomeView() {
 function DashboardHomeContent({ summary }: { summary: DashboardHomeDto }) {
   return (
     <div className="ws-home-page pb-24 md:pb-8">
+      {summary.payment.paymentId ? (
+        <PaymentConfirmedDialog
+          amountPaid={summary.payment.amountPaid}
+          currency={summary.payment.currency}
+          paidAt={summary.payment.paidAt}
+          paymentId={summary.payment.paymentId}
+          paymentStatus={summary.payment.isConfirmed ? "confirmed" : summary.payment.status}
+        />
+      ) : null}
       <section className="ws-intro">
         <div className="ws-intro-line">
           <h2>
