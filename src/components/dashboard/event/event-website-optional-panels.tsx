@@ -390,6 +390,7 @@ export function OptionalPrincipalSponsorsPanel({
   previewDraft,
   saveButtonProps,
 }: SharedOptionalPanelProps) {
+  const isDebut = previewDraft.hostInfo.kind === "debut";
   const values = previewDraft.principalSponsors;
 
   function updateValues(
@@ -404,8 +405,12 @@ export function OptionalPrincipalSponsorsPanel({
 
   return (
     <EditorShell
-      title="Principal Sponsors"
-      description="List the principal sponsors who should appear on the wedding website."
+      title={isDebut ? "Special Sponsors" : "Principal Sponsors"}
+      description={
+        isDebut
+          ? "List godparents, mentors, and honored guests supporting the debutant."
+          : "List the principal sponsors who should appear on the wedding website."
+      }
     >
       <EditorGroup title="Sponsor Intro">
         <TextAreaField
@@ -414,18 +419,23 @@ export function OptionalPrincipalSponsorsPanel({
             id: "principalSponsorsIntroLine",
             label: "Section Intro",
             maxLength: 220,
+            placeholder: isDebut
+              ? "e.g. We are blessed with the guidance and love of our special sponsors."
+              : "e.g. We are grateful for the guidance of our principal sponsors.",
           }}
           value={values.introLine}
           onChange={(value) => updateValues("introLine", value)}
         />
       </EditorGroup>
-      <EditorGroup title="Principal Sponsor Names">
+      <EditorGroup title={isDebut ? "Special Sponsor Names" : "Principal Sponsor Names"}>
         <TextAreaField
           field={{
             id: "principalSponsorsNames",
             label: "Names",
             maxLength: 420,
-            placeholder: "One name per line",
+            placeholder: isDebut
+              ? "Ninong Alexander Morales\nNinang Elena Santos\nTito Roberto Reyes"
+              : "Mr. Juan Dela Cruz\nMrs. Maria Dela Cruz",
           }}
           value={values.names}
           onChange={(value) => updateValues("names", value)}

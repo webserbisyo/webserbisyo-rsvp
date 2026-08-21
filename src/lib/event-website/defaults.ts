@@ -34,6 +34,19 @@ export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSe
   ) as Record<EventWebsiteContentSectionKey, boolean>;
 }
 
+export function getDisallowedSectionsForEventType(
+  eventType?: string | null,
+): readonly EventWebsiteContentSectionKey[] {
+  const normalized = typeof eventType === "string" ? eventType.toLowerCase() : "wedding";
+  if (normalized === "debut") {
+    return ["story_message", "entourage", "godparents"];
+  }
+  if (normalized === "wedding") {
+    return ["eighteen_roses_candles", "debut_court", "godparents"];
+  }
+  return [];
+}
+
 /**
  * Resolves the canonical section order for an event website.
  * - For "wedding", the section order is fixed to the canonical wedding sequence (getDefaultWeddingSectionOrder()).

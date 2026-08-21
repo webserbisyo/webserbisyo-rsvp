@@ -134,7 +134,9 @@ function SectionRouter({
         {sectionKey === "guestbook" ? (
           <GuestbookSection draft={draft} guestbookMessages={guestbookMessages} />
         ) : null}
-        {sectionKey === "story_message" ? <LoveStorySection draft={draft} /> : null}
+        {sectionKey === "story_message" && draft.hostInfo.kind !== "debut" ? (
+          <LoveStorySection draft={draft} />
+        ) : null}
         {sectionKey === "contact_socials" ? <ContactSocialsSection draft={draft} /> : null}
         {sectionKey === "eighteen_roses_candles" ? <TraditionsSection draft={draft} /> : null}
         {sectionKey === "debut_court" ? (
@@ -569,15 +571,17 @@ function EntourageSection({ draft }: { draft: EventWebsiteRenderModel }) {
 }
 
 function PrincipalSponsorsSection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const isDebut = draft.hostInfo.kind === "debut";
+  const label = isDebut ? "Special Sponsors" : "Principal Sponsors";
   const intro = draft.principalSponsors.introLine.trim();
   const names = normalizeLineList(draft.principalSponsors.names);
 
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
-        Principal Sponsors
+        {label}
       </Badge>
-      <h3>Principal Sponsors</h3>
+      <h3>{label}</h3>
       {intro ? <p className="event-preview-copy">{intro}</p> : null}
       <div className="event-preview-sponsor-list">
         {names.map((name, index) => (

@@ -1,5 +1,6 @@
 import {
   buildDefaultEventWebsiteContent,
+  getDisallowedSectionsForEventType,
   resolveEventWebsiteSectionOrder,
 } from "@/lib/event-website/defaults";
 import {
@@ -124,6 +125,11 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     }
   }
 
+  const disallowedLegacyKeys = getDisallowedSectionsForEventType(rawEventType);
+  for (const key of disallowedLegacyKeys) {
+    enabledSections[key] = false;
+  }
+
   const sectionOrder = resolveEventWebsiteSectionOrder({
     eventType: rawEventType,
     storedSectionOrder: rawSectionOrder,
@@ -165,14 +171,20 @@ function mergeEventWebsiteContentPatch(
     storedSectionOrder: patch.layout?.sectionOrder,
   });
 
+  const mergedEnabledSections: Record<string, boolean> = {
+    ...defaults.layout.enabledSections,
+    ...(patch.layout?.enabledSections ?? {}),
+  };
+  const disallowedPatchKeys = getDisallowedSectionsForEventType(resolvedEventType);
+  for (const key of disallowedPatchKeys) {
+    mergedEnabledSections[key] = false;
+  }
+
   return {
     assets: patch.assets ?? defaults.assets,
     eventType: resolvedEventType,
     layout: {
-      enabledSections: {
-        ...defaults.layout.enabledSections,
-        ...(patch.layout?.enabledSections ?? {}),
-      },
+      enabledSections: mergedEnabledSections,
       sectionOrder,
     },
     meta: {
