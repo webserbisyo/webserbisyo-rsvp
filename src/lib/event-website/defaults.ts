@@ -102,8 +102,15 @@ export function getDisallowedSectionsForEventType(
 
 function isLegacyDebutSectionOrder(storedOrder: readonly string[]): boolean {
   const contactIndex = storedOrder.indexOf("contact_socials");
-  const traditionsIndex = storedOrder.indexOf("eighteen_roses_candles");
-  return contactIndex !== -1 && traditionsIndex !== -1 && contactIndex < traditionsIndex;
+  const rosesIndex = storedOrder.indexOf("eighteen_roses_candles");
+  const courtIndex = storedOrder.indexOf("debut_court");
+  const storyIndex = storedOrder.indexOf("story_message");
+
+  return (
+    (contactIndex !== -1 && rosesIndex !== -1 && contactIndex < rosesIndex) ||
+    (contactIndex !== -1 && courtIndex !== -1 && contactIndex < courtIndex) ||
+    (contactIndex !== -1 && storyIndex !== -1 && storyIndex > contactIndex)
+  );
 }
 
 function isLegacyBirthdaySectionOrder(storedOrder: readonly string[]): boolean {
