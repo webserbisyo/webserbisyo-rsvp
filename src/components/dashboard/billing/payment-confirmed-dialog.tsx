@@ -63,6 +63,26 @@ function isWithinSuppressionWindow(paidAt: string | null): boolean {
  * Fires `fbq('track', 'Purchase', ...)` with an eventID matching the server
  * CAPI deduplication key: `Purchase:<paymentId>`.
  */
+async function firePurchasePixelWithRetry(params: {
+  amountPaid: number;
+  currency: string;
+  paymentId: string;
+}) {
+  const maxAttempts = 15;
+  for (let i = 0; i < maxAttempts; i++) {
+    if (typeof window !== "undefined" && typeof window.fbq === "function") {
+      trackMetaPixelEvent(
+        "Purchase",
+        { value: params.amountPaid, currency: params.currency },
+        { eventID: `Purchase:${params.paymentId}` },
+      );
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return false;
+}
+
 export function PaymentConfirmedDialog({
   amountPaid,
   currency,
@@ -90,17 +110,16 @@ export function PaymentConfirmedDialog({
       return;
     }
 
-    // Show the modal and fire the browser Purchase pixel.
+    // Show the modal and fire the browser Purchase pixel with retry.
     setIsOpen(true);
 
-    trackMetaPixelEvent(
-      "Purchase",
-      { value: amountPaid, currency },
-      { eventID: `Purchase:${paymentId}` },
-    );
-
-    // Mark acknowledged immediately — the pixel has already fired.
-    markAsAcknowledged(paymentId);
+    void firePurchasePixelWithRetry({
+      amountPaid,
+      currency,
+      paymentId,
+    }).finally(() => {
+      markAsAcknowledged(paymentId);
+    });
   }, [amountPaid, currency, paidAt, paymentId, paymentStatus]);
 
   return (
