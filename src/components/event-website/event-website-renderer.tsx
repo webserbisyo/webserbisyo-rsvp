@@ -505,6 +505,8 @@ function VenueSection({ draft }: { draft: EventWebsiteRenderModel }) {
 
 function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const fallbackDraft = getDraftFallback(draft);
+  const isBirthday = draft.hostInfo.kind === "birthday";
+  const label = isBirthday ? "Reception / After-Party" : "Reception";
   const values = draft.reception;
   const startTime = formatPreviewTime(
     values.startTime,
@@ -523,7 +525,7 @@ function ReceptionSection({ draft }: { draft: EventWebsiteRenderModel }) {
   return (
     <section className="event-preview-section">
       <Badge variant="outline" className="event-preview-section-label">
-        Reception
+        {label}
       </Badge>
       <h3>{withFallback(values.title, fallbackDraft.reception.title)}</h3>
       <div className="event-preview-inline-card">

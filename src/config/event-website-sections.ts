@@ -426,7 +426,7 @@ export const eventWebsiteTypeConfig: Record<
         key: "story_message",
         label: "Celebrant Story",
       },
-      { defaultEnabled: false, key: "secondary_event", label: "After-Party" },
+      { defaultEnabled: false, key: "secondary_event", label: "Reception / After-Party" },
       { key: "timeline_program" },
       {
         defaultEnabled: false,

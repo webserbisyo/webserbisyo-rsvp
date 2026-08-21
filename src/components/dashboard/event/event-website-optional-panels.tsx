@@ -84,6 +84,7 @@ export function OptionalReceptionPanel({
   previewDraft,
   saveButtonProps,
 }: SharedOptionalPanelProps) {
+  const isBirthday = previewDraft.hostInfo.kind === "birthday";
   const values = previewDraft.reception;
 
   function updateReceptionValue(
@@ -98,8 +99,12 @@ export function OptionalReceptionPanel({
 
   return (
     <EditorShell
-      title="Reception"
-      description="Add a separate reception block for the event website without changing the required venue section."
+      title={isBirthday ? "Reception / After-Party" : "Reception"}
+      description={
+        isBirthday
+          ? "Add a separate reception or after-party block for the event website without changing the required venue section."
+          : "Add a separate reception block for the event website without changing the required venue section."
+      }
     >
       <EditorGroup title="Reception Details" layout="two-column">
         <TextField
