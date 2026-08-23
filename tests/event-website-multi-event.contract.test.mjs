@@ -94,7 +94,7 @@ test("all preset builders retain the canonical section order and visibility cont
   assert.equal(presets[1].layout.enabledSections.eighteen_roses_candles, false);
   assert.equal(presets[2].layout.enabledSections.eighteen_roses_candles, true);
   assert.equal(presets[2].layout.enabledSections.debut_court, false);
-  assert.equal(presets[3].layout.enabledSections.godparents, false);
+  assert.equal(presets[3].layout.enabledSections.godparents, true);
 });
 
 test("hydration and saving select defaults by event type", () => {

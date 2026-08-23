@@ -1,5 +1,6 @@
 import {
   buildDefaultEventWebsiteContent,
+  getDefaultWeddingSectionOrder,
   getDisallowedSectionsForEventType,
   resolveEventWebsiteSectionOrder,
 } from "@/lib/event-website/defaults";
@@ -140,7 +141,14 @@ function upgradeLegacyEventWebsiteContent(raw: unknown): unknown {
     host_info: normalizedHostInfo,
   };
 
-  for (const key of eventWebsiteContentSectionKeys) {
+  const LEGACY_UPGRADEABLE_SECTION_KEYS: readonly EventWebsiteContentSectionKey[] = [
+    "gallery",
+    "eighteen_roses_candles",
+    "debut_court",
+    "godparents",
+  ];
+
+  for (const key of LEGACY_UPGRADEABLE_SECTION_KEYS) {
     if (!isRecord(normalizedSections[key])) {
       normalizedSections[key] = { ...defaults.sections[key] };
     }
@@ -166,10 +174,13 @@ function mergeEventWebsiteContentPatch(
   patch: EventWebsiteContentPatchInput,
 ): EventWebsiteContent {
   const resolvedEventType = patch.eventType ?? defaults.eventType;
-  const sectionOrder = resolveEventWebsiteSectionOrder({
-    eventType: resolvedEventType,
-    storedSectionOrder: patch.layout?.sectionOrder,
-  });
+  const sectionOrder =
+    resolvedEventType === "wedding"
+      ? getDefaultWeddingSectionOrder()
+      : resolveEventWebsiteSectionOrder({
+          eventType: resolvedEventType,
+          storedSectionOrder: patch.layout?.sectionOrder,
+        });
 
   const mergedEnabledSections: Record<string, boolean> = {
     ...defaults.layout.enabledSections,

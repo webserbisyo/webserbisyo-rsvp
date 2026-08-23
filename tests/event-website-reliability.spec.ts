@@ -106,7 +106,7 @@ test("section contract is versioned and reorder UI is centrally disabled", () =>
   expect(EVENT_WEBSITE_REORDER_UI_ENABLED).toBe(false);
 });
 
-test("Gallery is canonical, disabled by default, and ordered immediately after Music", () => {
+test("Gallery is canonical, enabled by default, and ordered immediately after Music", () => {
   const content = buildDefaultWeddingEventWebsiteContent();
   const sections = resolveEventWebsiteSections("wedding");
   const gallery = sections.optionalSections.find((section) => section.key === "gallery");
@@ -115,15 +115,14 @@ test("Gallery is canonical, disabled by default, and ordered immediately after M
   );
 
   expect(Object.keys(content.layout.enabledSections)).toHaveLength(20);
-  expect(content.layout.enabledSections.gallery).toBe(false);
+  expect(content.layout.enabledSections.gallery).toBe(true);
   expect(content.layout.sectionOrder.indexOf("gallery")).toBe(
     content.layout.sectionOrder.indexOf("music_effects") + 1,
   );
   expect(gallery).toMatchObject({
-    comingSoon: true,
-    defaultEnabled: false,
-    toggleableWhenComingSoon: true,
+    defaultEnabled: true,
   });
+  expect(gallery?.comingSoon).not.toBe(true);
   expect(styleTheme?.toggleableWhenComingSoon).not.toBe(true);
 });
 
@@ -186,7 +185,7 @@ test("exact legacy 16-key content upgrades Gallery without changing existing dat
   const parsed = parseEventWebsiteContentJson(legacy);
   expect(parsed).not.toBeNull();
   expect(validateEventWebsiteContentJson(legacy).success).toBe(true);
-  expect(parsed?.layout.enabledSections.gallery).toBe(false);
+  expect(parsed?.layout.enabledSections.gallery).toBe(true);
   expect(parsed?.sections.gallery).toEqual({
     sectionIntro: "Photo highlights and visual memories.",
     sectionTitle: "Gallery",

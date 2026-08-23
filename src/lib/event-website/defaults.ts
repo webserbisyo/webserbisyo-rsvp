@@ -104,7 +104,7 @@ export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSe
   return Object.fromEntries(
     eventWebsiteContentSectionKeys.map((key) => [
       key,
-      key !== "gallery" && !["eighteen_roses_candles", "debut_court", "godparents"].includes(key),
+      !["eighteen_roses_candles", "debut_court", "godparents"].includes(key),
     ]),
   ) as Record<EventWebsiteContentSectionKey, boolean>;
 }
@@ -163,9 +163,29 @@ function isLegacyBaptismSectionOrder(storedOrder: readonly string[]): boolean {
   );
 }
 
+const LEGACY_WEDDING_CORE_KEYS: readonly string[] = [
+  "host_info",
+  "countdown",
+  "music_effects",
+  "main_event",
+  "venue",
+  "secondary_event",
+  "timeline_program",
+  "entourage",
+  "principal_sponsors",
+  "attire_motif",
+  "extra_info",
+  "rsvp_form",
+  "gift_details",
+  "guestbook",
+  "story_message",
+  "contact_socials",
+];
+
 /**
  * Resolves the canonical section order for an event website.
- * - For "wedding", the section order is fixed to the canonical wedding sequence (getDefaultWeddingSectionOrder()).
+ * - For "wedding", the section order is fixed to the canonical wedding sequence (getDefaultWeddingSectionOrder())
+ *   when complete or legacy-upgradeable, but retains incomplete arrays to reject malformed data.
  * - For "debut", auto-upgrades legacy stored orders (where contact_socials precedes traditions) to getDefaultDebutSectionOrder().
  * - For "birthday", auto-upgrades legacy stored orders (where contact_socials precedes attire/sponsors) to getDefaultBirthdaySectionOrder().
  * - For "baptism", auto-upgrades legacy stored orders to getDefaultBaptismSectionOrder().
@@ -179,12 +199,20 @@ export function resolveEventWebsiteSectionOrder({
   storedSectionOrder?: readonly string[] | null;
 }): EventWebsiteContentSectionKey[] {
   const normalizedType = typeof eventType === "string" ? eventType : "wedding";
+  const rawOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : [];
 
   if (normalizedType === "wedding") {
-    return getDefaultWeddingSectionOrder();
+    if (rawOrder.length === 0) {
+      return getDefaultWeddingSectionOrder();
+    }
+    const hasAllCoreKeys = LEGACY_WEDDING_CORE_KEYS.every((key) => rawOrder.includes(key));
+    if (hasAllCoreKeys) {
+      return getDefaultWeddingSectionOrder();
+    }
+    return rawOrder.filter((key): key is EventWebsiteContentSectionKey =>
+      eventWebsiteContentSectionKeys.includes(key as EventWebsiteContentSectionKey),
+    );
   }
-
-  const rawOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : [];
   if (normalizedType === "debut" && (rawOrder.length === 0 || isLegacyDebutSectionOrder(rawOrder))) {
     return getDefaultDebutSectionOrder();
   }
@@ -464,13 +492,16 @@ export function buildDefaultBirthdayEventWebsiteContent(
     enabled: [
       "host_info",
       "countdown",
+      "music_effects",
+      "gallery",
+      "story_message",
       "main_event",
       "venue",
       "timeline_program",
       "attire_motif",
       "rsvp_form",
-      "guestbook",
       "gift_details",
+      "guestbook",
       "contact_socials",
     ],
   });
@@ -487,14 +518,17 @@ export function buildDefaultDebutEventWebsiteContent(
     enabled: [
       "host_info",
       "countdown",
+      "music_effects",
+      "gallery",
+      "story_message",
       "main_event",
       "venue",
       "timeline_program",
       "eighteen_roses_candles",
       "attire_motif",
       "rsvp_form",
-      "guestbook",
       "gift_details",
+      "guestbook",
       "contact_socials",
     ],
   });
@@ -511,9 +545,13 @@ export function buildDefaultBaptismEventWebsiteContent(
     enabled: [
       "host_info",
       "countdown",
+      "music_effects",
+      "gallery",
+      "story_message",
       "main_event",
       "venue",
       "timeline_program",
+      "godparents",
       "attire_motif",
       "rsvp_form",
       "gift_details",

@@ -13,6 +13,7 @@ import {
   OptionalEighteenRosesCandlesPanel,
   OptionalEntouragePanel,
   OptionalExtraInfoPanel,
+  OptionalGalleryPanel,
   OptionalGiftDetailsPanel,
   OptionalGodparentsPanel,
   OptionalGuestbookPanel,
@@ -420,6 +421,16 @@ function OptionalSectionForm({
   if (sectionId === "godparents") {
     return (
       <OptionalGodparentsPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
+      />
+    );
+  }
+
+  if (sectionId === "gallery") {
+    return (
+      <OptionalGalleryPanel
         previewDraft={previewDraft}
         onPreviewDraftChange={onPreviewDraftChange}
         saveButtonProps={saveButtonProps}

@@ -212,14 +212,12 @@ const optionalBaseSections: Record<
     required: false,
   },
   gallery: {
-    comingSoon: true,
-    defaultEnabled: false,
+    defaultEnabled: true,
     helper: "Photo highlights and visual memories.",
     icon: Images,
     key: "gallery",
     label: "Gallery",
     required: false,
-    toggleableWhenComingSoon: true,
   },
   food_dietary: {
     defaultEnabled: true,
@@ -238,7 +236,7 @@ const optionalBaseSections: Record<
     required: false,
   },
   godparents: {
-    defaultEnabled: false,
+    defaultEnabled: true,
     helper: "Godparents, Ninong, and Ninang details.",
     icon: Baby,
     key: "godparents",
@@ -385,10 +383,9 @@ export const eventWebsiteTypeConfig: Record<
   baptism: {
     optionalDefaults: [
       { key: "countdown" },
-      { defaultEnabled: false, key: "music_effects" },
-      { defaultEnabled: false, key: "gallery" },
+      { key: "music_effects" },
+      { key: "gallery" },
       {
-        defaultEnabled: false,
         helper: "Share a dedication message, thanksgiving prayer, or milestone reflection for the child.",
         key: "story_message",
         label: "Parents' Dedication",
@@ -396,7 +393,6 @@ export const eventWebsiteTypeConfig: Record<
       { defaultEnabled: false, key: "secondary_event", label: "Reception Banquet" },
       { key: "timeline_program" },
       {
-        defaultEnabled: false,
         helper: "List the godparents, sponsors, and mentors blessed to guide the child.",
         key: "godparents",
         label: "Godparents",
@@ -424,10 +420,9 @@ export const eventWebsiteTypeConfig: Record<
   birthday: {
     optionalDefaults: [
       { key: "countdown" },
-      { defaultEnabled: false, key: "music_effects" },
-      { defaultEnabled: false, key: "gallery" },
+      { key: "music_effects" },
+      { key: "gallery" },
       {
-        defaultEnabled: false,
         helper: "Share a short milestone reflection, thanksgiving message, or journey story.",
         key: "story_message",
         label: "Celebrant Story",
@@ -486,18 +481,17 @@ export const eventWebsiteTypeConfig: Record<
   debut: {
     optionalDefaults: [
       { key: "countdown" },
-      { defaultEnabled: false, key: "music_effects" },
-      { defaultEnabled: false, key: "gallery" },
+      { key: "music_effects" },
+      { key: "gallery" },
       {
-        defaultEnabled: false,
         helper: "Share a milestone journey, childhood reflection, or thanksgiving message for your 18th birthday.",
         key: "story_message",
         label: "Debutant Story",
       },
       { defaultEnabled: false, key: "secondary_event", label: "Reception" },
       { key: "timeline_program" },
-      { key: "eighteen_roses_candles", label: "18 Roses / 18 Candles" },
-      { key: "debut_court", label: "Debut Court" },
+      { defaultEnabled: true, key: "eighteen_roses_candles", label: "18 Roses / 18 Candles" },
+      { defaultEnabled: false, key: "debut_court", label: "Debut Court" },
       {
         defaultEnabled: false,
         helper: "Godparents, mentors, and honored guests supporting the debutant.",
@@ -549,12 +543,7 @@ export const eventWebsiteTypeConfig: Record<
     optionalDefaults: [
       { key: "countdown" },
       { key: "music_effects" },
-      {
-        key: "gallery",
-        comingSoon: true,
-        defaultEnabled: false,
-        toggleableWhenComingSoon: true,
-      },
+      { key: "gallery" },
       { key: "secondary_event", label: "Reception" },
       { key: "timeline_program" },
       { key: "entourage" },

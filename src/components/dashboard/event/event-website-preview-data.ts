@@ -154,6 +154,10 @@ const defaultWeddingPreviewDraft: EventWebsitePreviewDraft = {
     sectionIntro: "Here are a few helpful notes for our guests.",
     sectionTitle: "Additional Details",
   },
+  gallery: {
+    sectionIntro: "Photo highlights and visual memories.",
+    sectionTitle: "Gallery",
+  },
   giftDetails: {
     giftNote:
       "If you wish to give a gift, a monetary gift would be greatly appreciated as we begin this new chapter together.",
@@ -366,6 +370,10 @@ export function getPreviewDefaultDraft(eventType?: string | null): EventWebsiteP
           { file: null, id: "gift-option-2", image: null, title: "Bank Transfer" },
         ],
         sectionIntro: "Your presence is the greatest gift.",
+      },
+      gallery: {
+        sectionIntro: "Photo highlights and visual memories.",
+        sectionTitle: "Gallery",
       },
       loveStory: {
         sectionIntro: "A milestone reflection on turning eighteen.",
@@ -821,6 +829,7 @@ export function buildInitialPreviewDraft(
       ...baseDraft.giftDetails,
       options: baseDraft.giftDetails.options.map((option) => ({ ...option })),
     },
+    gallery: { ...baseDraft.gallery },
     loveStory: { ...baseDraft.loveStory },
     guestbook: { ...baseDraft.guestbook },
     musicEffects: { ...baseDraft.musicEffects },

@@ -26,7 +26,10 @@ import {
   eventWebsiteRenderModelSectionKeys,
   type EventWebsiteRenderModel,
 } from "@/lib/event-website/render-model";
-import type { EventWebsiteGuestbookMessage } from "@/lib/event-website/types";
+import type {
+  EventWebsiteContentEventType,
+  EventWebsiteGuestbookMessage,
+} from "@/lib/event-website/types";
 import {
   RSVP_ATTENDANCE_LABEL,
   RSVP_EMAIL_LABEL,
@@ -123,6 +126,7 @@ function SectionRouter({
         {sectionKey === "host_info" ? <HostInfoSection draft={draft} /> : null}
         {sectionKey === "countdown" ? <CountdownSection draft={draft} /> : null}
         {sectionKey === "music_effects" ? <MusicSection draft={draft} /> : null}
+        {sectionKey === "gallery" ? <GallerySection draft={draft} /> : null}
         {sectionKey === "main_event" ? <CeremonySection draft={draft} /> : null}
         {sectionKey === "venue" ? <VenueSection draft={draft} /> : null}
         {sectionKey === "secondary_event" ? <ReceptionSection draft={draft} /> : null}
@@ -244,6 +248,154 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
           <strong>Bride</strong>
           {brideName}
         </span>
+      </div>
+    </section>
+  );
+}
+
+const GALLERY_PLACEHOLDER_SEEDS: Record<
+  EventWebsiteContentEventType,
+  Array<{ alt: string; url: string }>
+> = {
+  wedding: [
+    {
+      alt: "Wedding couple moment",
+      url: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Wedding rings and details",
+      url: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Bridal portrait",
+      url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Ceremony aisle and florals",
+      url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Sunset romance portrait",
+      url: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Reception celebration",
+      url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80",
+    },
+  ],
+  debut: [
+    {
+      alt: "Debutant portrait in gown",
+      url: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Debut celebration bouquet",
+      url: "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Milestone celebration portrait",
+      url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Debut ballroom ambiance",
+      url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Celebration lights and smile",
+      url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Party celebration moment",
+      url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80",
+    },
+  ],
+  birthday: [
+    {
+      alt: "Celebrant milestone portrait",
+      url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Birthday party cheer",
+      url: "https://images.unsplash.com/photo-1496337589254-7e19d01cec44?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Celebration confetti",
+      url: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Party gathering and drinks",
+      url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Milestone toast",
+      url: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Birthday party memories",
+      url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80",
+    },
+  ],
+  baptism: [
+    {
+      alt: "Holy baptism ceremony candle",
+      url: "https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Baptismal white flowers",
+      url: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Baby blessing portrait",
+      url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Church sanctuary and altar",
+      url: "https://images.unsplash.com/photo-1548625361-19597a7e3734?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Family holding child",
+      url: "https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      alt: "Reception gathering",
+      url: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80",
+    },
+  ],
+};
+
+function GallerySection({ draft }: { draft: EventWebsiteRenderModel }) {
+  const kind =
+    draft.hostInfo.kind === "wedding" ||
+    draft.hostInfo.kind === "debut" ||
+    draft.hostInfo.kind === "birthday" ||
+    draft.hostInfo.kind === "baptism"
+      ? draft.hostInfo.kind
+      : "wedding";
+  const images = GALLERY_PLACEHOLDER_SEEDS[kind];
+  const sectionTitle = draft.gallery?.sectionTitle?.trim() || "Gallery";
+  const sectionIntro = draft.gallery?.sectionIntro?.trim() || "Photo highlights and visual memories.";
+
+  return (
+    <section className="event-preview-section">
+      <Badge variant="outline" className="event-preview-section-label">
+        Gallery
+      </Badge>
+      <h3>{sectionTitle}</h3>
+      {sectionIntro ? <p className="event-preview-copy">{sectionIntro}</p> : null}
+      <div className="grid grid-cols-2 gap-2.5 pt-2 sm:grid-cols-3 sm:gap-3">
+        {images.map((img, index) => (
+          <div
+            key={index}
+            className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100 shadow-sm transition duration-300 hover:shadow-md"
+          >
+            <img
+              src={img.url}
+              alt={img.alt}
+              className="size-full object-cover transition duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+          </div>
+        ))}
       </div>
     </section>
   );

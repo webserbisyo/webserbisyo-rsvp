@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
@@ -1837,6 +1837,95 @@ export function OptionalGodparentsPanel({
           </button>
         </div>
       )}
+
+      <EditorSaveButton {...saveButtonProps} />
+    </EditorShell>
+  );
+}
+
+export function OptionalGalleryPanel({
+  onPreviewDraftChange,
+  previewDraft,
+  saveButtonProps,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.gallery || { sectionIntro: "", sectionTitle: "" };
+
+  function updateValues(fieldId: keyof EventWebsitePreviewDraft["gallery"], value: string) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      gallery: { ...values, [fieldId]: value },
+    });
+  }
+
+  return (
+    <EditorShell
+      title="Photo Gallery"
+      description="Customize your gallery headings and send your photos to our concierge team for professional formatting and mobile optimization."
+    >
+      <EditorGroup title="Gallery Header">
+        <TextField
+          field={{
+            id: "galleryTitle",
+            label: "Section Title",
+            maxLength: 80,
+            placeholder: "e.g. Gallery / Photo Highlights",
+          }}
+          value={values.sectionTitle}
+          onChange={(val) => updateValues("sectionTitle", val)}
+        />
+        <TextAreaField
+          field={{
+            id: "galleryIntro",
+            label: "Section Intro",
+            maxLength: 240,
+            placeholder: "e.g. A collection of our favorite moments and cherished memories...",
+          }}
+          value={values.sectionIntro}
+          onChange={(val) => updateValues("sectionIntro", val)}
+        />
+      </EditorGroup>
+
+      <EditorGroup title="Photo Upload & Concierge Setup">
+        <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-amber-50/80 p-5 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-sm">
+              <Sparkles className="size-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900">Concierge Photo Optimization</h4>
+              <span className="inline-flex items-center rounded-md border border-amber-300 bg-amber-100/70 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                Included in Your Package
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs leading-relaxed text-slate-600">
+            To ensure your RSVP website loads blazing fast on mobile phones with zero layout shift, our design team formats, crops, and converts your photos into next-gen WebP formats.
+          </p>
+
+          <div className="mt-4 rounded-xl border border-amber-200/70 bg-white/80 p-3.5 space-y-2">
+            <p className="text-xs font-semibold text-slate-800">📸 Recommended Photo Guidelines:</p>
+            <ul className="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
+              <li>Send <strong>6 to 12 high-resolution photos</strong> (prenup, portraits, or memories).</li>
+              <li>A mix of portrait (vertical) and landscape (horizontal) orientations works best.</li>
+              <li>We will crop, color-balance, and upload them directly to your live website.</li>
+            </ul>
+          </div>
+
+          <div className="mt-4 pt-1">
+            <a
+              href="https://m.me/webserbisyo"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0084FF] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0074E4]"
+            >
+              <MessageCircle className="size-4" />
+              Send Photos via Messenger
+              <ArrowUpRight className="size-3.5" />
+            </a>
+          </div>
+        </div>
+      </EditorGroup>
 
       <EditorSaveButton {...saveButtonProps} />
     </EditorShell>

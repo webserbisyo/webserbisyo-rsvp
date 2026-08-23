@@ -88,6 +88,10 @@ export type EventWebsiteRenderModel = {
     sectionIntro: string;
     sectionTitle: string;
   };
+  gallery: {
+    sectionIntro: string;
+    sectionTitle: string;
+  };
   giftDetails: {
     giftNote: string;
     options: EventWebsiteGiftOptionRenderModel[];
@@ -199,6 +203,10 @@ export function buildEventWebsiteRenderModel(
       })),
       sectionIntro: content.sections.extra_info.sectionIntro,
       sectionTitle: content.sections.extra_info.sectionTitle,
+    },
+    gallery: {
+      sectionIntro: content.sections.gallery.sectionIntro,
+      sectionTitle: content.sections.gallery.sectionTitle,
     },
     giftDetails: {
       giftNote: content.sections.gift_details.giftNote,
