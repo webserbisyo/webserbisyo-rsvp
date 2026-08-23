@@ -75,6 +75,31 @@ export function getDefaultBirthdaySectionOrder(): EventWebsiteContentSectionKey[
   ];
 }
 
+export function getDefaultBaptismSectionOrder(): EventWebsiteContentSectionKey[] {
+  return [
+    "host_info",
+    "countdown",
+    "music_effects",
+    "gallery",
+    "story_message",
+    "main_event",
+    "venue",
+    "secondary_event",
+    "timeline_program",
+    "godparents",
+    "attire_motif",
+    "extra_info",
+    "rsvp_form",
+    "gift_details",
+    "guestbook",
+    "contact_socials",
+    "entourage",
+    "eighteen_roses_candles",
+    "debut_court",
+    "principal_sponsors",
+  ];
+}
+
 export function getDefaultWeddingEnabledSections(): Record<EventWebsiteContentSectionKey, boolean> {
   return Object.fromEntries(
     eventWebsiteContentSectionKeys.map((key) => [
@@ -93,6 +118,9 @@ export function getDisallowedSectionsForEventType(
   }
   if (normalized === "birthday") {
     return ["entourage", "eighteen_roses_candles", "debut_court", "godparents"];
+  }
+  if (normalized === "baptism") {
+    return ["entourage", "eighteen_roses_candles", "debut_court", "principal_sponsors"];
   }
   if (normalized === "wedding") {
     return ["eighteen_roses_candles", "debut_court", "godparents"];
@@ -123,11 +151,24 @@ function isLegacyBirthdaySectionOrder(storedOrder: readonly string[]): boolean {
   );
 }
 
+function isLegacyBaptismSectionOrder(storedOrder: readonly string[]): boolean {
+  const contactIndex = storedOrder.indexOf("contact_socials");
+  const godparentsIndex = storedOrder.indexOf("godparents");
+  const secondaryIndex = storedOrder.indexOf("secondary_event");
+
+  return (
+    (contactIndex !== -1 && godparentsIndex !== -1 && contactIndex < godparentsIndex) ||
+    (secondaryIndex !== -1 && secondaryIndex < 3) ||
+    storedOrder.length !== 20
+  );
+}
+
 /**
  * Resolves the canonical section order for an event website.
  * - For "wedding", the section order is fixed to the canonical wedding sequence (getDefaultWeddingSectionOrder()).
  * - For "debut", auto-upgrades legacy stored orders (where contact_socials precedes traditions) to getDefaultDebutSectionOrder().
  * - For "birthday", auto-upgrades legacy stored orders (where contact_socials precedes attire/sponsors) to getDefaultBirthdaySectionOrder().
+ * - For "baptism", auto-upgrades legacy stored orders to getDefaultBaptismSectionOrder().
  * - For other custom orders, preserves any valid stored custom order, appending missing default keys.
  */
 export function resolveEventWebsiteSectionOrder({
@@ -149,6 +190,9 @@ export function resolveEventWebsiteSectionOrder({
   }
   if (normalizedType === "birthday" && (rawOrder.length === 0 || isLegacyBirthdaySectionOrder(rawOrder))) {
     return getDefaultBirthdaySectionOrder();
+  }
+  if (normalizedType === "baptism" && (rawOrder.length === 0 || isLegacyBaptismSectionOrder(rawOrder))) {
+    return getDefaultBaptismSectionOrder();
   }
 
   const defaults = buildDefaultEventWebsiteContent(normalizedType);
@@ -460,10 +504,22 @@ export function buildDefaultBaptismEventWebsiteContent(
   context: EventWebsiteDefaultsContext = {},
 ): EventWebsiteContent {
   return buildNeutralTargetContent("baptism", context, {
-    guestbookTitle: "Blessings & Messages",
+    guestbookTitle: "Prayers & Blessings",
     mainEventLabel: "Christening Ceremony",
-    storyTitle: "A Special Celebration",
-    enabled: ["host_info", "main_event", "venue", "rsvp_form", "guestbook", "contact_socials"],
+    sectionOrder: getDefaultBaptismSectionOrder(),
+    storyTitle: "Welcoming Liam into Faith",
+    enabled: [
+      "host_info",
+      "countdown",
+      "main_event",
+      "venue",
+      "timeline_program",
+      "attire_motif",
+      "rsvp_form",
+      "gift_details",
+      "guestbook",
+      "contact_socials",
+    ],
   });
 }
 

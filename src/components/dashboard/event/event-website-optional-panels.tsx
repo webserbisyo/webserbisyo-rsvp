@@ -462,6 +462,7 @@ export function OptionalLoveStoryPanel({
 }: SharedOptionalPanelProps) {
   const isBirthday = previewDraft.hostInfo.kind === "birthday";
   const isDebut = previewDraft.hostInfo.kind === "debut";
+  const isBaptism = previewDraft.hostInfo.kind === "baptism";
   const values = previewDraft.loveStory;
 
   function updateValues(fieldId: keyof EventWebsitePreviewDraft["loveStory"], value: string) {
@@ -473,13 +474,23 @@ export function OptionalLoveStoryPanel({
 
   return (
     <EditorShell
-      title={isBirthday ? "Celebrant Story" : isDebut ? "Debutant Story" : "Love Story"}
+      title={
+        isBirthday
+          ? "Celebrant Story"
+          : isDebut
+            ? "Debutant Story"
+            : isBaptism
+              ? "Parents' Dedication"
+              : "Love Story"
+      }
       description={
         isBirthday
           ? "Share a short milestone story or message guests can read on the website."
           : isDebut
             ? "Share a milestone journey or reflection guests can read on the website."
-            : "Share a short story guests can read on the wedding website."
+            : isBaptism
+              ? "Share a dedication message, thanksgiving prayer, or milestone reflection for the child."
+              : "Share a short story guests can read on the wedding website."
       }
     >
       <EditorGroup title="Story Intro">
@@ -492,7 +503,9 @@ export function OptionalLoveStoryPanel({
               ? "e.g. A special milestone reflection..."
               : isDebut
                 ? "e.g. A milestone reflection on turning 18..."
-                : undefined,
+                : isBaptism
+                  ? "e.g. A prayer and blessing for our beloved child..."
+                  : undefined,
           }}
           value={values.sectionIntro}
           onChange={(value) => updateValues("sectionIntro", value)}
@@ -508,7 +521,9 @@ export function OptionalLoveStoryPanel({
               ? "e.g. A Journey to 30"
               : isDebut
                 ? "e.g. My Journey to 18"
-                : undefined,
+                : isBaptism
+                  ? "e.g. Welcoming Liam into Faith"
+                  : undefined,
           }}
           value={values.storyTitle}
           onChange={(value) => updateValues("storyTitle", value)}
@@ -522,7 +537,9 @@ export function OptionalLoveStoryPanel({
               ? "e.g. Grateful for 30 years of blessings, growth, and wonderful memories with family and friends..."
               : isDebut
                 ? "e.g. Eighteen years of cherished memories, love, and lessons as I step into adulthood..."
-                : undefined,
+                : isBaptism
+                  ? "e.g. A precious blessing from God, Liam has brought immense joy and love into our lives..."
+                  : undefined,
           }}
           value={values.storyBody}
           onChange={(value) => updateValues("storyBody", value)}
@@ -1620,6 +1637,203 @@ export function OptionalDebutCourtPanel({
             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
           >
             + Add Cotillion Group
+          </button>
+        </div>
+      )}
+
+      <EditorSaveButton {...saveButtonProps} />
+    </EditorShell>
+  );
+}
+
+export function OptionalGodparentsPanel({
+  onPreviewDraftChange,
+  previewDraft,
+  saveButtonProps,
+}: SharedOptionalPanelProps) {
+  const values = previewDraft.godparents || { groups: [] };
+  const groups = values.groups || [];
+
+  function updateGroups(nextGroups: typeof groups) {
+    onPreviewDraftChange({
+      ...previewDraft,
+      godparents: { groups: nextGroups },
+    });
+  }
+
+  function addGroup(defaultTitle = "Ninongs (Godfathers)") {
+    updateGroups([
+      ...groups,
+      {
+        id: createEventWebsiteDraftItemId("godparent-group"),
+        names: [],
+        title: defaultTitle,
+      },
+    ]);
+  }
+
+  function removeGroup(index: number) {
+    updateGroups(groups.filter((_, i) => i !== index));
+  }
+
+  function updateGroupTitle(index: number, title: string) {
+    updateGroups(groups.map((g, i) => (i === index ? { ...g, title } : g)));
+  }
+
+  function addName(groupIndex: number) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextNames = [
+      ...group.names,
+      {
+        id: createEventWebsiteDraftItemId("godparent-name"),
+        name: "",
+      },
+    ];
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  function updateName(groupIndex: number, nameIndex: number, value: string) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextNames = group.names.map((n, i) =>
+      i === nameIndex ? { ...n, name: value } : n,
+    );
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  function removeName(groupIndex: number, nameIndex: number) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const nextNames = group.names.filter((_, i) => i !== nameIndex);
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  function moveName(groupIndex: number, nameIndex: number, direction: -1 | 1) {
+    const group = groups[groupIndex];
+    if (!group) return;
+    const target = nameIndex + direction;
+    if (target < 0 || target >= group.names.length) return;
+    const nextNames = [...group.names];
+    const [moved] = nextNames.splice(nameIndex, 1);
+    if (!moved) return;
+    nextNames.splice(target, 0, moved);
+    updateGroups(
+      groups.map((g, i) => (i === groupIndex ? { ...g, names: nextNames } : g)),
+    );
+  }
+
+  return (
+    <EditorShell
+      title="Godparents"
+      description="List the godparents, sponsors, and mentors blessed to guide the child."
+    >
+      {groups.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
+          <p className="text-sm font-medium text-slate-700">No godparent groups yet</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Add Ninongs and Ninangs to display on the christening website.
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => addGroup("Ninongs (Godfathers)")}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            >
+              + Add Ninongs
+            </button>
+            <button
+              type="button"
+              onClick={() => addGroup("Ninangs (Godmothers)")}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            >
+              + Add Ninangs
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {groups.map((group, groupIndex) => (
+        <EditorGroup
+          key={group.id}
+          title={group.title || `Group ${groupIndex + 1}`}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <TextField
+                  field={{
+                    id: `godparentGroupTitle_${groupIndex}`,
+                    label: "Group Title",
+                    maxLength: 60,
+                    placeholder: "e.g. Ninongs (Godfathers)",
+                  }}
+                  value={group.title}
+                  onChange={(val) => updateGroupTitle(groupIndex, val)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeGroup(groupIndex)}
+                className="mt-5 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
+              >
+                Delete Group
+              </button>
+            </div>
+
+            <ListBuilder
+              addLabel={`Add member to ${group.title || "group"}`}
+              onAdd={() => addName(groupIndex)}
+            >
+              {group.names.map((entry, nameIndex) => (
+                <ListBuilderRow
+                  key={entry.id}
+                  canMoveDown={nameIndex < group.names.length - 1}
+                  canMoveUp={nameIndex > 0}
+                  hideGripIcon
+                  onMoveDown={() => moveName(groupIndex, nameIndex, 1)}
+                  onMoveUp={() => moveName(groupIndex, nameIndex, -1)}
+                  onRemove={() => removeName(groupIndex, nameIndex)}
+                  title={`${entry.name || `Member ${nameIndex + 1}`}`}
+                >
+                  <TextField
+                    field={{
+                      id: `godparentName${groupIndex}_${nameIndex}`,
+                      label: "Godparent Name",
+                      maxLength: 80,
+                      placeholder: "e.g. Alexander Morales",
+                    }}
+                    value={entry.name}
+                    onChange={(val) => updateName(groupIndex, nameIndex, val)}
+                  />
+                </ListBuilderRow>
+              ))}
+            </ListBuilder>
+          </div>
+        </EditorGroup>
+      ))}
+
+      {groups.length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => addGroup("Ninongs (Godfathers)")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add Ninongs Group
+          </button>
+          <button
+            type="button"
+            onClick={() => addGroup("Ninangs (Godmothers)")}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+          >
+            + Add Ninangs Group
           </button>
         </div>
       )}

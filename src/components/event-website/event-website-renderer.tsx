@@ -199,7 +199,9 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
         ? `${primary}'s ${supporting || "18th Birthday"}`
         : hostInfo.kind === "birthday"
           ? `${primary}'s Birthday`
-          : primary);
+          : hostInfo.kind === "baptism"
+            ? `${primary}'s Christening`
+            : primary);
 
     return (
       <section className="event-preview-section event-preview-section--hero">
@@ -294,8 +296,11 @@ function NamedGroupsSection({
   title: string;
   groups: EventWebsiteRenderModel["debutCourt"]["groups"];
 }) {
-  const displayGroups =
-    groups.length > 0 ? groups : getPreviewDefaultDraft("debut").debutCourt.groups;
+  const isGodparents = title.toLowerCase().includes("godparent") || title === "Godparents";
+  const defaultGroups = isGodparents
+    ? getPreviewDefaultDraft("baptism").godparents.groups
+    : getPreviewDefaultDraft("debut").debutCourt.groups;
+  const displayGroups = groups.length > 0 ? groups : defaultGroups;
 
   return (
     <section className="event-preview-section">
@@ -556,6 +561,7 @@ function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const isDebut = draft.hostInfo.kind === "debut";
   const isWedding = draft.hostInfo.kind === "wedding";
   const isBirthday = draft.hostInfo.kind === "birthday";
+  const isBaptism = draft.hostInfo.kind === "baptism";
   const items = normalizeTimelineItems(draft.timelineProgram.items, draft.hostInfo.kind);
 
   return (
@@ -570,7 +576,9 @@ function TimelineSection({ draft }: { draft: EventWebsiteRenderModel }) {
             ? "Wedding Day Timeline"
             : isBirthday
               ? "Birthday Party Flow"
-              : "Event Schedule & Flow"}
+              : isBaptism
+                ? "Christening Flow"
+                : "Event Schedule & Flow"}
       </h3>
       <p className="event-preview-copy">
         Here is the flow of the day so guests know what to expect.
@@ -957,7 +965,14 @@ function LoveStorySection({ draft }: { draft: EventWebsiteRenderModel }) {
   const fallbackDraft = getDraftFallback(draft);
   const isBirthday = draft.hostInfo.kind === "birthday";
   const isDebut = draft.hostInfo.kind === "debut";
-  const sectionLabel = isBirthday ? "Celebrant Story" : isDebut ? "My Journey" : "Love Story";
+  const isBaptism = draft.hostInfo.kind === "baptism";
+  const sectionLabel = isBaptism
+    ? "Parents' Dedication"
+    : isDebut
+      ? "My Journey"
+      : isBirthday
+        ? "Celebrant Story"
+        : "Love Story";
   const intro = draft.loveStory.sectionIntro.trim();
   const title = withFallback(draft.loveStory.storyTitle, fallbackDraft.loveStory.storyTitle);
   const body = draft.loveStory.storyBody.trim() || fallbackDraft.loveStory.storyBody;
@@ -991,14 +1006,17 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
   ].filter((item) => item.value);
   const isDebut = draft.hostInfo.kind === "debut";
   const isBirthday = draft.hostInfo.kind === "birthday";
+  const isBaptism = draft.hostInfo.kind === "baptism";
   const brandLine = isDebut
     ? `${draft.hostInfo.displayAs || "Debutant"}'s 18th Birthday`
     : isBirthday
       ? `${draft.hostInfo.displayAs || "Celebrant's Birthday"}`
-      : withFallback(
-          draft.coupleInfo.displayAs,
-          fallbackDraft.coupleInfo.displayAs,
-        );
+      : isBaptism
+        ? `${draft.hostInfo.displayAs || "Liam's Christening"}`
+        : withFallback(
+            draft.coupleInfo.displayAs,
+            fallbackDraft.coupleInfo.displayAs,
+          );
 
   return (
     <footer className="event-preview-section event-preview-section--footer">

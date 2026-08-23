@@ -14,6 +14,7 @@ import {
   OptionalEntouragePanel,
   OptionalExtraInfoPanel,
   OptionalGiftDetailsPanel,
+  OptionalGodparentsPanel,
   OptionalGuestbookPanel,
   OptionalLoveStoryPanel,
   OptionalMusicEffectsPanel,
@@ -416,6 +417,16 @@ function OptionalSectionForm({
     );
   }
 
+  if (sectionId === "godparents") {
+    return (
+      <OptionalGodparentsPanel
+        previewDraft={previewDraft}
+        onPreviewDraftChange={onPreviewDraftChange}
+        saveButtonProps={saveButtonProps}
+      />
+    );
+  }
+
   return (
     <PlaceholderPanel
       title="Section unavailable"
@@ -442,6 +453,7 @@ function HostInfoForm({
   const isWedding = normalizedType === "wedding";
   const isDebut = normalizedType === "debut";
   const isBirthday = normalizedType === "birthday";
+  const isBaptism = normalizedType === "baptism";
   const values = previewDraft.hostInfo as unknown as Record<string, string>;
   const displayOptions = isWedding
     ? getWeddingDisplayOptions(values.groomName, values.brideName)
@@ -449,7 +461,9 @@ function HostInfoForm({
       ? getDebutDisplayOptions(values.debutantName, values.milestone)
       : isBirthday
         ? getBirthdayDisplayOptions(values.celebrantName, values.milestone)
-        : model.displayOptions;
+        : isBaptism
+          ? getBaptismDisplayOptions(values.childName)
+          : model.displayOptions;
 
   function updateHostValue(fieldId: string, value: string) {
     const updateValues = (current: Record<string, string>) => {
@@ -490,6 +504,19 @@ function HostInfoForm({
           current.milestone,
         );
         const nextOptions = getBirthdayDisplayOptions(next.celebrantName, next.milestone);
+
+        next.displayAs =
+          currentTemplate !== null
+            ? (nextOptions[currentTemplate] ?? nextOptions[0] ?? "")
+            : next.displayAs || nextOptions[0] || "";
+      }
+
+      if (isBaptism && fieldId === "childName") {
+        const currentTemplate = getBaptismDisplayTemplate(
+          current.displayAs,
+          current.childName,
+        );
+        const nextOptions = getBaptismDisplayOptions(next.childName);
 
         next.displayAs =
           currentTemplate !== null
@@ -1188,22 +1215,25 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
   }
 
   if (currentEventType === "baptism") {
+    const child = "Liam";
     return {
       description: "Set the child and parent details shown on the RSVP website.",
+      displayOptions: getBaptismDisplayOptions(child),
       fields: [
-        { id: "childName", label: "Child's Name", maxLength: 60, placeholder: "Child's name" },
+        { id: "childName", label: "Child's Name", maxLength: 60, placeholder: "Liam" },
         {
           id: "parentNames",
           label: "Parent / Guardian Names",
           maxLength: 120,
           optional: true,
-          placeholder: "Parent or guardian names",
+          placeholder: "Juan & Maria Santos",
         },
         {
+          colSpan: "full",
           id: "displayAs",
           label: "Display As",
           maxLength: 80,
-          placeholder: "e.g. Sofia's Christening",
+          type: "select",
         },
         ...baseHostMessage,
       ],
@@ -1365,6 +1395,26 @@ export function getBirthdayDisplayTemplate(
   milestone: string | undefined,
 ) {
   const options = getBirthdayDisplayOptions(celebrantName, milestone);
+  const index = options.indexOf(displayAs ?? "");
+  return index >= 0 ? index : null;
+}
+
+export function getBaptismDisplayOptions(childName?: string): string[] {
+  const name = childName?.trim() || "Liam";
+  return [
+    `${name}'s Christening`,
+    `${name}'s Baptism`,
+    `The Holy Baptism of ${name}`,
+    `Blessings for ${name}`,
+    `${name} · Holy Baptism`,
+  ];
+}
+
+export function getBaptismDisplayTemplate(
+  displayAs: string | undefined,
+  childName: string | undefined,
+) {
+  const options = getBaptismDisplayOptions(childName);
   const index = options.indexOf(displayAs ?? "");
   return index >= 0 ? index : null;
 }

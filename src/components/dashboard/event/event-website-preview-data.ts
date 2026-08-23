@@ -451,8 +451,181 @@ export function getPreviewDefaultDraft(eventType?: string | null): EventWebsiteP
     return defaultBirthdayPreviewDraft;
   }
 
+  if (normalizedType === "baptism") {
+    return defaultBaptismPreviewDraft;
+  }
+
   return defaultWeddingPreviewDraft;
 }
+
+export const defaultBaptismPreviewDraft: EventWebsitePreviewDraft = {
+  ...defaultWeddingPreviewDraft,
+  hostInfo: {
+    kind: "baptism",
+    childName: "Liam",
+    displayAs: "Liam's Christening",
+    hostLine: "Liam Santos Holy Baptism",
+    parentNames: "Juan & Maria Santos",
+    shortHostMessage:
+      "With joyful hearts, Juan and Maria invite you to witness and celebrate the Holy Baptism of their beloved child, Liam.",
+  },
+  attireDressCode: {
+    colorMotifNote: "All-white, pastels, or soft cream colors.",
+    dressCodeNote: "Modest church attire / Sunday best.",
+    sectionIntro: "We request guests to wear light and modest attire for the church ceremony.",
+  },
+  ceremony: {
+    endTime: "11:30",
+    eventDate: "2026-08-15",
+    eventLabel: "Christening Ceremony",
+    eventTime: "10:00",
+    rsvpDeadline: "2026-08-01T18:00",
+    scheduleNote: "Please arrive at the church 15 minutes before the baptismal rites begin.",
+  },
+  contactSocials: {
+    contactNumber: "+63 917 123 4567",
+    contactPerson: "Juan Santos (Father)",
+    email: "juan.santos@example.com",
+    facebookUrl: "https://facebook.com",
+    instagramUrl: "https://instagram.com",
+    tikTokUrl: "",
+  },
+  countdown: {
+    shortNote: "We look forward to welcoming Liam into the Christian faith.",
+    title: "Counting down to Liam's Christening",
+  },
+  coupleInfo: {
+    brideName: "",
+    displayAs: "Liam's Christening",
+    groomName: "",
+    hostLine: "Liam Santos Holy Baptism",
+    shortHostMessage: "Witness the Holy Baptism of Liam Santos.",
+  },
+  debutCourt: { groups: [] },
+  eighteenRosesCandles: { groups: [] },
+  entourage: { groups: [], introLine: "" },
+  extraInfo: {
+    items: [
+      {
+        details: "Designated parking is available beside the church plaza.",
+        id: "extra-info-1",
+        title: "Church Parking",
+      },
+      {
+        details: "Lunch banquet will follow immediately at the reception venue.",
+        id: "extra-info-2",
+        title: "Reception Banquet",
+      },
+    ],
+    sectionIntro: "Helpful reminders for our guests and godparents.",
+    sectionTitle: "Ceremony & Reception Notes",
+  },
+  giftDetails: {
+    giftNote:
+      "Your presence and prayers are our greatest blessings. If you wish to give a gift, monetary gifts for Liam's future are warmly appreciated.",
+    options: [
+      { file: null, id: "gift-option-1", image: null, title: "GCash" },
+      { file: null, id: "gift-option-2", image: null, title: "Bank Transfer" },
+    ],
+    sectionIntro: "Your prayers and blessings are our greatest gift.",
+  },
+  godparents: {
+    groups: [
+      {
+        id: "group-ninongs",
+        names: [
+          { id: "ninong-1", name: "Alexander Morales" },
+          { id: "ninong-2", name: "Mateo Garcia" },
+          { id: "ninong-3", name: "Roberto Reyes" },
+        ],
+        title: "Ninongs (Godfathers)",
+      },
+      {
+        id: "group-ninangs",
+        names: [
+          { id: "ninang-1", name: "Elena Santos" },
+          { id: "ninang-2", name: "Maria Dela Cruz" },
+          { id: "ninang-3", name: "Carmen Lim" },
+        ],
+        title: "Ninangs (Godmothers)",
+      },
+    ],
+  },
+  guestbook: {
+    emptyStateMessage: "Be the first to leave a prayer or blessing for Liam.",
+    sectionIntro: "Leave your warm blessings and prayers for Liam.",
+    sectionTitle: "Prayers & Blessings",
+  },
+  loveStory: {
+    sectionIntro: "A prayer and thanksgiving from Liam's parents.",
+    storyBody:
+      "A precious blessing from God, Liam has brought immense joy and love into our lives. We dedicate his life to the Lord and pray for his continuous guidance, health, and grace.",
+    storyTitle: "Welcoming Liam into Faith",
+  },
+  musicEffects: {
+    musicLink: "",
+    musicTitle: "Baptismal Hymns & Songs",
+    playButtonLabel: "Play music",
+    shortNote: "Gentle instrumental hymns curated for this holy milestone.",
+  },
+  principalSponsors: { introLine: "", names: "" },
+  reception: {
+    address: "Intramuros, Manila, Metro Manila",
+    endTime: "15:00",
+    mapsLink: "#",
+    note: "Lunch banquet and fellowship following the church ceremony.",
+    startTime: "12:00",
+    title: "Reception Banquet",
+    venueName: "La Cocina de San Agustin",
+  },
+  rsvpForm: {
+    companionAgeEnabled: false,
+    companionLimit: "2",
+    companionNameEnabled: true,
+    customQuestions: [],
+    emailEnabled: true,
+    emailRequired: true,
+    foodAllergiesEnabled: false,
+    messageToHostEnabled: true,
+    phoneEnabled: false,
+    phoneRequired: false,
+    plusOneEnabled: false,
+  },
+  timelineProgram: {
+    items: [
+      {
+        description: "Guests and godparents assemble at the church.",
+        id: "timeline-1",
+        time: "09:45",
+        title: "Assembly & Welcome",
+      },
+      {
+        description: "The official sacrament of Holy Baptism.",
+        id: "timeline-2",
+        time: "10:00",
+        title: "Baptismal Ceremony",
+      },
+      {
+        description: "Commemorative photos with family and godparents.",
+        id: "timeline-3",
+        time: "11:00",
+        title: "Blessings & Photo Session",
+      },
+      {
+        description: "Celebration banquet, lunch, and fellowship.",
+        id: "timeline-4",
+        time: "12:00",
+        title: "Reception & Fellowship",
+      },
+    ],
+  },
+  venue: {
+    address: "General Luna St, Intramuros, Manila, Metro Manila",
+    arrivalNote: "Please proceed to the main baptismal font area.",
+    mapsLink: "#",
+    venueName: "San Agustin Church, Intramuros",
+  },
+};
 
 export const defaultBirthdayPreviewDraft: EventWebsitePreviewDraft = {
   ...defaultWeddingPreviewDraft,
