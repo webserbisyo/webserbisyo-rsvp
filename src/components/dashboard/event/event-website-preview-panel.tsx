@@ -3,6 +3,7 @@
 import { ExternalLink, Monitor, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EventWebsiteRenderer } from "@/components/event-website/event-website-renderer";
+import { CustomPreviewPlaceholder } from "./custom-preview-placeholder";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   EventWebsiteSectionDefinition,
@@ -202,12 +203,7 @@ export function EventWebsitePreviewPanel({
                 title="Custom website preview"
               />
             ) : showCustomPreview ? (
-              <div className="event-preview-empty-state">
-                <h3 className="event-preview-empty-title">Custom preview is not enabled yet.</h3>
-                <p className="event-preview-empty-desc">
-                  Save and enable a custom frontend from Super Admin to preview it here.
-                </p>
-              </div>
+              <CustomPreviewPlaceholder onSwitchToPlatform={() => setPreviewMode("platform")} />
             ) : (
               <EventWebsiteRenderer
                 draft={previewDraft}
