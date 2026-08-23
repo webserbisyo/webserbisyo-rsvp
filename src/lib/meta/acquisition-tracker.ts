@@ -89,7 +89,11 @@ export function trackCompleteRegistrationOccurrence(referenceCode: string) {
   window.sessionStorage.setItem(storageKey, "1");
   trackMetaPixelEvent(
     "CompleteRegistration",
-    { source_route: "/apply/success" },
+    {
+      content_category: "webserbisyo_application",
+      content_name: "Application completed",
+      source_route: "/apply/success",
+    },
     { eventID: eventId },
   );
   sendMetaAcquisitionOccurrence({

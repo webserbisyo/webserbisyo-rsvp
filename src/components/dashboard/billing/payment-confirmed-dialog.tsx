@@ -23,6 +23,7 @@ type PaymentConfirmedDialogProps = {
   paidAt: string | null;
   paymentId: string;
   paymentStatus: "confirmed" | string;
+  planType?: string | null;
 };
 
 const STORAGE_PREFIX = "webserbisyo:meta:purchase-confirmed:";
@@ -100,6 +101,7 @@ async function firePurchasePixelWithRetry(params: {
   customerPhone?: string | null;
   externalId?: string | null;
   paymentId: string;
+  planType?: string | null;
 }) {
   const nameParts = params.customerFullName?.trim().split(/\s+/) ?? [];
   const firstName = nameParts[0] ?? null;
@@ -118,7 +120,15 @@ async function firePurchasePixelWithRetry(params: {
     if (typeof window !== "undefined" && typeof window.fbq === "function") {
       trackMetaPixelEvent(
         "Purchase",
-        { value: params.amountPaid, currency: params.currency },
+        {
+          content_category: "webserbisyo_subscription",
+          content_name:
+            params.planType === "max" ? "MAX Plan Subscription" : "PRO Plan Subscription",
+          content_type: "product",
+          currency: params.currency,
+          order_id: `Purchase:${params.paymentId}`,
+          value: params.amountPaid,
+        },
         {
           eventID: `Purchase:${params.paymentId}`,
           ...(em ? { em } : {}),
@@ -145,6 +155,7 @@ export function PaymentConfirmedDialog({
   paidAt,
   paymentId,
   paymentStatus,
+  planType,
 }: PaymentConfirmedDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const hasTriggeredRef = useRef(false);
@@ -185,6 +196,7 @@ export function PaymentConfirmedDialog({
       customerPhone,
       externalId,
       paymentId,
+      planType,
     });
   }, [
     amountPaid,
@@ -196,6 +208,7 @@ export function PaymentConfirmedDialog({
     paidAt,
     paymentId,
     paymentStatus,
+    planType,
   ]);
 
   return (

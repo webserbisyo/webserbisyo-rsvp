@@ -45,6 +45,7 @@ function DashboardHomeContent({ summary }: { summary: DashboardHomeDto }) {
           paidAt={summary.payment.paidAt}
           paymentId={summary.payment.paymentId}
           paymentStatus={summary.payment.isConfirmed ? "confirmed" : summary.payment.status}
+          planType={summary.client.planType}
         />
       ) : null}
       <section className="ws-intro">

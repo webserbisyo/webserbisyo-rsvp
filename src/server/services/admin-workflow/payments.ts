@@ -171,6 +171,7 @@ export async function confirmManualPayment(
       fbp: application.fb_fbp,
       paymentId: updatedPayment.id,
       paidAt: updatedPayment.paid_at,
+      planType: payment.plan_type,
     });
   } catch {
     // CAPI telemetry must never fail the payment confirmation.

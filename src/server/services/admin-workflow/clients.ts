@@ -242,6 +242,7 @@ export async function markClientAsPaid(
     fbp: application.fb_fbp,
     paymentId: payment.id,
     paidAt: payment.paid_at,
+    planType: payment.plan_type,
   });
 
   if (capiWarning) {

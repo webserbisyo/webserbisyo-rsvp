@@ -29,6 +29,7 @@ export type SendMetaCapiPurchaseInput = {
   fbp?: string | null;
   paymentId: string;
   paidAt?: string | null;
+  planType?: string | null;
 };
 
 export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
@@ -82,6 +83,15 @@ export async function sendMetaCapiPurchase(input: SendMetaCapiPurchaseInput) {
     clientIpAddress: input.clientIpAddress,
     clientUserAgent: input.clientUserAgent,
     currency: input.currency,
+    customData: {
+      content_category: "webserbisyo_subscription",
+      content_name:
+        input.planType === "max" ? "MAX Plan Subscription" : "PRO Plan Subscription",
+      content_type: "product",
+      currency: input.currency,
+      order_id: eventId,
+      value: input.amount,
+    },
     email: input.customerEmail,
     eventId,
     eventName: "Purchase",
