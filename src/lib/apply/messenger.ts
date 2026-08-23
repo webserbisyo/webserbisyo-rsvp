@@ -121,3 +121,14 @@ export function buildReferenceOnlyFollowupMessage(referenceCode: string) {
 export function buildMessengerContinueUrl(baseUrl: string | null | undefined) {
   return baseUrl?.trim() || null;
 }
+
+export const DEFAULT_WEBSERBISYO_MESSENGER_URL = "https://m.me/webserbisyo";
+
+export function resolveMessengerUrl(url?: string | null): string {
+  const trimmed = url?.trim();
+  if (!trimmed) {
+    return DEFAULT_WEBSERBISYO_MESSENGER_URL;
+  }
+  return trimmed;
+}
+

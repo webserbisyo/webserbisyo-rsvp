@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { resolveMessengerUrl } from "@/lib/apply/messenger";
+import { useDashboardSettingsQuery } from "@/lib/dashboard/dashboard-queries";
+import { Button } from "@/components/ui/button";
 import { EventWebsiteGiftUploadCard } from "@/components/dashboard/event/event-website-gift-upload-card";
 import type {
   EventWebsiteEntourageGroupDraft,
@@ -1848,6 +1851,8 @@ export function OptionalGalleryPanel({
   previewDraft,
   saveButtonProps,
 }: SharedOptionalPanelProps) {
+  const settingsQuery = useDashboardSettingsQuery();
+  const messengerUrl = resolveMessengerUrl(settingsQuery.data?.support?.messengerUrl);
   const values = previewDraft.gallery || { sectionIntro: "", sectionTitle: "" };
 
   function updateValues(fieldId: keyof EventWebsitePreviewDraft["gallery"], value: string) {
@@ -1913,16 +1918,16 @@ export function OptionalGalleryPanel({
           </div>
 
           <div className="mt-4 pt-1">
-            <a
-              href="https://m.me/webserbisyo"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0084FF] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0074E4]"
+            <Button
+              asChild
+              className="bg-[#0084FF] hover:bg-[#0074E4] text-white font-medium text-xs shadow-sm"
             >
-              <MessageCircle className="size-4" />
-              Send Photos via Messenger
-              <ArrowUpRight className="size-3.5" />
-            </a>
+              <a href={messengerUrl} target="_blank" rel="noreferrer">
+                <MessageCircle className="size-3.5 mr-1.5" />
+                Send Photos via Messenger
+                <ArrowUpRight className="size-3.5 ml-1" />
+              </a>
+            </Button>
           </div>
         </div>
       </EditorGroup>
