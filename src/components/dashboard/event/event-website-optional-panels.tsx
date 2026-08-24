@@ -290,6 +290,7 @@ export function OptionalEntouragePanel({
   previewDraft,
   saveButtonProps,
 }: SharedOptionalPanelProps) {
+  const isWedding = previewDraft.hostInfo.kind === "wedding" || !previewDraft.hostInfo.kind;
   const values = previewDraft.entourage;
   const groups = values.groups;
 
@@ -332,7 +333,11 @@ export function OptionalEntouragePanel({
   return (
     <EditorShell
       title="Entourage"
-      description="List the wedding party and ceremony participants, grouped by role."
+      description={
+        isWedding
+          ? "List the wedding party and ceremony participants, grouped by role."
+          : "List the court, entourage, and participants, grouped by role."
+      }
     >
       <EditorGroup title="Section Intro">
         <TextAreaField
@@ -347,7 +352,7 @@ export function OptionalEntouragePanel({
         />
       </EditorGroup>
 
-      <EditorGroup title="Wedding Party Groups">
+      <EditorGroup title={isWedding ? "Wedding Party Groups" : "Participant Groups"}>
         <ListBuilder addLabel="Add entourage group" onAdd={addGroup}>
           {groups.map((group, index) => (
             <ListBuilderRow
@@ -817,7 +822,7 @@ export function OptionalGiftDetailsPanel({
   return (
     <EditorShell
       title="Gift Details"
-      description="Add a gift note and up to two display-only gift options for the wedding website."
+      description="Add a gift note and up to two display-only gift options for the website."
     >
       <EditorGroup title="Gift Message">
         <TextAreaField
@@ -1049,7 +1054,10 @@ export function OptionalMusicEffectsPanel({
   }
 
   return (
-    <EditorShell title="Music & Effects" description="Add a music link for the wedding website.">
+    <EditorShell
+      title="Music & Effects"
+      description="Add a background music or soundtrack link for the website."
+    >
       <EditorGroup title="Background Music">
         <TextField
           field={{ id: "musicEffectsTitle", label: "Music Title", maxLength: 80 }}
@@ -1061,7 +1069,7 @@ export function OptionalMusicEffectsPanel({
             id: "musicEffectsLink",
             label: "Music Link / Audio URL",
             maxLength: 240,
-            placeholder: "Paste YouTube, Spotify, SoundCloud, or audio link",
+            placeholder: "Paste direct audio (.mp3) or YouTube link",
           }}
           inputType="url"
           value={values.musicLink}

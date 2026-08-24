@@ -154,7 +154,7 @@ export function EventWebsiteWorkspace({
           lockedTitle={eventTypeAvailability?.lockedTitle ?? "This Event Website is in development"}
           lockedDescription={
             eventTypeAvailability?.lockedDescription ??
-            "Wedding websites are available now. This event type is already supported in our system, but its dedicated website builder is still being prepared."
+            "Wedding, Birthday, and Debut websites are available now. This event type is already supported in our system, but its dedicated website builder is still being prepared."
           }
         />
       </div>
@@ -887,7 +887,7 @@ function LockedEventWebsiteWorkspace({
               {eventTypeLabel} Event Website
             </h2>
             <p className="text-xs leading-5 text-[--dash-muted]">
-              Wedding websites are available now. Other event website builders stay locked on this
+              Wedding, Birthday, and Debut websites are available now. Other event website builders stay locked on this
               page for now.
             </p>
           </div>
@@ -955,7 +955,7 @@ function LockedEventWebsiteWorkspace({
                   {eventTypeLabel} preview is not available yet
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  The Wedding preview stays live in production. Other event website previews remain
+                  Supported event previews stay live in production. Other event website previews remain
                   unavailable on this page until their dedicated builder is ready.
                 </p>
               </div>

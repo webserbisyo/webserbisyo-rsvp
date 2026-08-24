@@ -488,7 +488,7 @@ export function buildDefaultBirthdayEventWebsiteContent(
     guestbookTitle: "Birthday Wishes",
     mainEventLabel: "Birthday Celebration",
     sectionOrder: getDefaultBirthdaySectionOrder(),
-    storyTitle: "A Special Celebration",
+    storyTitle: "Celebrant's Story",
     enabled: [
       "host_info",
       "countdown",
@@ -644,7 +644,14 @@ function buildNeutralTargetContent(
         title: eventType === "baptism" ? "Reception" : "",
         venueName: "",
       },
-      attire_motif: { colorMotifNote: "", dressCodeNote: "", sectionIntro: "" },
+      attire_motif:
+        eventType === "birthday"
+          ? {
+              colorMotifNote: "",
+              dressCodeNote: "Smart casual or party attire.",
+              sectionIntro: "Wear something comfortable and celebratory!",
+            }
+          : { colorMotifNote: "", dressCodeNote: "", sectionIntro: "" },
       contact_socials: {
         contactNumber: "",
         contactPerson: "",
@@ -655,20 +662,71 @@ function buildNeutralTargetContent(
       },
       extra_info: { items: [], sectionIntro: "", sectionTitle: "Additional Details" },
       gallery: { sectionIntro: "", sectionTitle: "Gallery" },
-      gift_details: {
-        giftNote: "",
-        options: [],
-        sectionIntro: "Your presence is the greatest gift.",
-      },
+      gift_details:
+        eventType === "birthday"
+          ? {
+              giftNote:
+                "Your presence is the greatest gift. If you wish to send a monetary gift, details are provided below.",
+              options: [
+                { id: "gift-option-1", image: null, title: "GCash" },
+                { id: "gift-option-2", image: null, title: "Bank Transfer" },
+              ],
+              sectionIntro: "Your presence is the greatest gift.",
+            }
+          : {
+              giftNote: "",
+              options: [],
+              sectionIntro: "Your presence is the greatest gift.",
+            },
       guestbook: {
         emptyStateMessage: DEFAULT_EVENT_WEBSITE_GUESTBOOK_EMPTY_STATE,
         sectionIntro: "Messages shared by family and friends.",
         sectionTitle: options.guestbookTitle,
       },
-      music_effects: { musicLink: "", musicTitle: "", playButtonLabel: "", shortNote: "" },
+      music_effects:
+        eventType === "birthday"
+          ? {
+              musicLink: "",
+              musicTitle: "Party Playlist",
+              playButtonLabel: "Play party mix",
+              shortNote: "Upbeat tracks curated for the birthday celebration.",
+            }
+          : { musicLink: "", musicTitle: "", playButtonLabel: "", shortNote: "" },
       principal_sponsors: { introLine: "", names: "" },
-      story_message: { sectionIntro: "", storyBody: "", storyTitle: options.storyTitle },
-      timeline_program: { items: [] },
+      story_message:
+        eventType === "birthday"
+          ? {
+              sectionIntro: "",
+              storyBody:
+                "We are thrilled to celebrate this special milestone together with family and friends.",
+              storyTitle: options.storyTitle,
+            }
+          : { sectionIntro: "", storyBody: "", storyTitle: options.storyTitle },
+      timeline_program:
+        eventType === "birthday"
+          ? {
+              items: [
+                {
+                  description: "Guests arrive and enjoy welcome refreshments.",
+                  id: "timeline-guest-arrival",
+                  time: "18:00",
+                  title: "Guest Arrival & Welcome Drinks",
+                },
+                {
+                  description: "Fun games, presentations, and dinner.",
+                  id: "timeline-party-program",
+                  time: "19:00",
+                  title: "Dinner & Party Program",
+                },
+                {
+                  description: "Birthday toast, cake cutting, and wishes.",
+                  id: "timeline-cake-cutting",
+                  time: "20:30",
+                  title: "Birthday Toast & Cake Cutting",
+                },
+              ],
+            }
+          : { items: [] },
       entourage: { groups: [], introLine: "" },
       eighteen_roses_candles: { groups: [] },
       debut_court: { groups: [] },
