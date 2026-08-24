@@ -660,7 +660,27 @@ function buildNeutralTargetContent(
         instagramUrl: "",
         tikTokUrl: "",
       },
-      extra_info: { items: [], sectionIntro: "", sectionTitle: "Additional Details" },
+      extra_info:
+        eventType === "birthday"
+          ? {
+              items: [
+                {
+                  details:
+                    "Ample guest parking is available near the venue entrance. Follow directional signs upon arrival.",
+                  id: "extra-info-parking",
+                  title: "Parking & Access",
+                },
+                {
+                  details:
+                    "Refreshments and snacks will be served prior to the start of the party program.",
+                  id: "extra-info-welcome",
+                  title: "Welcome Drinks & Mingling",
+                },
+              ],
+              sectionIntro: "A few helpful notes for our party guests.",
+              sectionTitle: "Celebration Notes",
+            }
+          : { items: [], sectionIntro: "", sectionTitle: "Additional Details" },
       gallery: { sectionIntro: "", sectionTitle: "Gallery" },
       gift_details:
         eventType === "birthday"
