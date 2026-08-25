@@ -163,14 +163,11 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
   const fallbackDraft = getDraftFallback(draft);
 
   if (hostInfo.kind !== "wedding") {
-    const fallbackHost = fallbackDraft.hostInfo;
-    const rawPrimary =
-      hostInfo.kind === "birthday"
-        ? hostInfo.celebrantName
-        : hostInfo.kind === "debut"
-          ? hostInfo.debutantName
-          : hostInfo.childName;
+    const isBirthday = hostInfo.kind === "birthday";
+    const isDebut = hostInfo.kind === "debut";
+    const isBaptism = hostInfo.kind === "baptism";
 
+    const fallbackHost = fallbackDraft.hostInfo;
     const fallbackPrimary =
       fallbackHost.kind === "birthday"
         ? fallbackHost.celebrantName
@@ -180,15 +177,17 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
             ? fallbackHost.childName
             : "Celebrant";
 
-    const primary = withFallback(rawPrimary, fallbackPrimary);
-    const label =
-      hostInfo.kind === "birthday"
-        ? "Celebrant Info"
-        : hostInfo.kind === "debut"
-          ? "Debutant Info"
-          : "Child & Parents";
+    const rawPrimary =
+      isBirthday
+        ? hostInfo.celebrantName
+        : isDebut
+          ? hostInfo.debutantName
+          : hostInfo.childName;
 
-    const rawSupporting = hostInfo.kind === "baptism" ? hostInfo.parentNames : hostInfo.milestone;
+    const primary = withFallback(rawPrimary, fallbackPrimary);
+    const label = isBirthday ? "Celebrant Info" : isDebut ? "Debutant Info" : "Child & Parents";
+
+    const rawSupporting = isBaptism ? hostInfo.parentNames : hostInfo.milestone;
     const fallbackSupporting =
       fallbackHost.kind === "baptism"
         ? fallbackHost.parentNames
@@ -198,29 +197,31 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
     const supporting = withFallback(rawSupporting, fallbackSupporting);
 
     const isStaleName =
-      hostInfo.kind === "birthday" &&
+      isBirthday &&
       hostInfo.displayAs.includes("'s") &&
       !hostInfo.displayAs.toLowerCase().includes(primary.toLowerCase());
 
-    const displayAs =
+    const milestoneDisplay =
       hostInfo.displayAs.trim() && !isStaleName
         ? hostInfo.displayAs.trim()
-        : hostInfo.kind === "birthday"
-          ? (supporting ? `⚡ ${supporting} ⚡` : `${primary}'s Birthday`)
-          : primary;
+        : supporting || (isBirthday ? "Birthday Celebration" : "Special Day");
 
     return (
-      <section className="event-preview-section event-preview-section--hero">
-        <Badge variant="outline" className="event-preview-section-label">
+      <section className="event-preview-section event-preview-section--hero text-center space-y-1">
+        <Badge className="event-preview-section-label" variant="outline">
           {label}
         </Badge>
-        {hostInfo.hostLine.trim() ? (
-          <p className="event-preview-host-line">{hostInfo.hostLine}</p>
+        {hostInfo.hostLine?.trim() ? (
+          <p className="event-preview-host-line text-xs uppercase tracking-widest text-amber-600 font-bold">
+            {hostInfo.hostLine.trim()}
+          </p>
         ) : null}
-        <h2>{displayAs}</h2>
-        {supporting ? <p className="event-preview-copy">{supporting}</p> : null}
-        {hostInfo.shortHostMessage.trim() ? (
-          <p className="event-preview-copy">{hostInfo.shortHostMessage}</p>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900">{primary}</h2>
+        <p className="event-preview-copy font-medium text-slate-700">{milestoneDisplay}</p>
+        {hostInfo.shortHostMessage?.trim() ? (
+          <p className="event-preview-copy text-xs italic text-slate-500 pt-1">
+            &ldquo;{hostInfo.shortHostMessage.trim()}&rdquo;
+          </p>
         ) : null}
       </section>
     );
