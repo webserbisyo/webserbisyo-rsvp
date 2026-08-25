@@ -509,17 +509,7 @@ function HostInfoForm({
       }
 
       if (isBirthday && (fieldId === "celebrantName" || fieldId === "milestone")) {
-        const currentTemplate = getBirthdayDisplayTemplate(
-          current.displayAs,
-          current.celebrantName,
-          current.milestone,
-        );
-        const nextOptions = getBirthdayDisplayOptions(next.celebrantName, next.milestone);
-
-        next.displayAs =
-          currentTemplate !== null
-            ? (nextOptions[currentTemplate] ?? nextOptions[0] ?? "")
-            : next.displayAs || nextOptions[0] || "";
+        next.displayAs = next.celebrantName || "";
       }
 
       if (isBaptism && fieldId === "childName") {
@@ -1171,10 +1161,8 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
   }
 
   if (currentEventType === "birthday") {
-    const celebrant = "Marco";
     return {
       description: "Set the celebrant name and short host message shown on the RSVP website.",
-      displayOptions: getBirthdayDisplayOptions(celebrant, "30th Birthday"),
       fields: [
         {
           id: "celebrantName",
@@ -1189,11 +1177,10 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
           optional: true,
           placeholder: "30th Birthday",
         },
-        { colSpan: "full", id: "displayAs", label: "Display As", maxLength: 80, type: "select" },
         ...baseHostMessage,
       ],
       groups: [
-        { title: "Celebrant", fields: ["celebrantName", "milestone", "displayAs"] },
+        { title: "Celebrant", fields: ["celebrantName", "milestone"] },
         { title: "Host Message", fields: ["hostLine", "shortHostMessage"] },
       ],
       title: "Celebrant Info",
