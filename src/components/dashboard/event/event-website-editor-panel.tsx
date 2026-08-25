@@ -1394,16 +1394,14 @@ export function getDebutDisplayTemplate(
   return index >= 0 ? index : null;
 }
 
-export function getBirthdayDisplayOptions(celebrantName?: string, milestone?: string): string[] {
-  const name = celebrantName?.trim() || "Marco";
+export function getBirthdayDisplayOptions(_celebrantName?: string, milestone?: string): string[] {
   const age = milestone?.trim() || "30th Birthday";
   return [
-    `${age}`,                      // Option 1: Plain / Exact
-    `⚡ ${age} ⚡`,                // Option 2: Lightning / Action Default
-    `🎉 ${age} 🎉`,                // Option 3: Celebration Party
-    `★ ${age} ★`,                  // Option 4: Hero Star
-    `🔥 ${age} 🔥`,                // Option 5: Fire / Hype
-    `${name}'s ${age}`,            // Option 6: Celebrant + Milestone
+    `${age}`,           // 1. Raw / Exact as typed (e.g., "30th birthday")
+    `⚡ ${age} ⚡`,     // 2. Lightning / Action
+    `🎉 ${age} 🎉`,     // 3. Celebration
+    `★ ${age} ★`,       // 4. Hero Star
+    `🔥 ${age} 🔥`,     // 5. Fire
   ];
 }
 
