@@ -197,15 +197,17 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
           : "";
     const supporting = withFallback(rawSupporting, fallbackSupporting);
 
+    const isStaleName =
+      hostInfo.kind === "birthday" &&
+      hostInfo.displayAs.includes("'s") &&
+      !hostInfo.displayAs.toLowerCase().includes(primary.toLowerCase());
+
     const displayAs =
-      hostInfo.displayAs.trim() ||
-      (hostInfo.kind === "debut"
-        ? `${primary}'s ${supporting || "18th Birthday"}`
+      hostInfo.displayAs.trim() && !isStaleName
+        ? hostInfo.displayAs.trim()
         : hostInfo.kind === "birthday"
-          ? `${primary}'s Birthday`
-          : hostInfo.kind === "baptism"
-            ? `${primary}'s Christening`
-            : primary);
+          ? (supporting ? `⚡ ${supporting} ⚡` : `${primary}'s Birthday`)
+          : primary;
 
     return (
       <section className="event-preview-section event-preview-section--hero">

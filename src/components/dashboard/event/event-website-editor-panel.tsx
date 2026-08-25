@@ -509,17 +509,19 @@ function HostInfoForm({
       }
 
       if (isBirthday && (fieldId === "celebrantName" || fieldId === "milestone")) {
+        const nextCelebrant = fieldId === "celebrantName" ? value : current.celebrantName;
+        const nextMilestone = fieldId === "milestone" ? value : current.milestone;
         const currentTemplate = getBirthdayDisplayTemplate(
           current.displayAs,
           current.celebrantName,
           current.milestone,
         );
-        const nextOptions = getBirthdayDisplayOptions(next.celebrantName, next.milestone);
+        const nextOptions = getBirthdayDisplayOptions(nextCelebrant, nextMilestone);
 
         next.displayAs =
           currentTemplate !== null
-            ? (nextOptions[currentTemplate] ?? nextOptions[1] ?? nextOptions[0] ?? "")
-            : next.displayAs || nextOptions[1] || nextOptions[0] || "";
+            ? (nextOptions[currentTemplate] ?? nextOptions[0] ?? "")
+            : (nextOptions[0] ?? "");
       }
 
       if (isBaptism && fieldId === "childName") {
