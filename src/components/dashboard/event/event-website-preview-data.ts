@@ -944,8 +944,8 @@ export function buildEventWebsiteContentFromPreviewDraft({
         sectionTitle: previewDraft.extraInfo.sectionTitle,
       },
       gallery: {
-        sectionIntro: savedContent.sections.gallery.sectionIntro,
-        sectionTitle: savedContent.sections.gallery.sectionTitle,
+        sectionIntro: previewDraft.gallery?.sectionIntro ?? "",
+        sectionTitle: previewDraft.gallery?.sectionTitle ?? "",
       },
       gift_details: {
         giftNote: previewDraft.giftDetails.giftNote,
