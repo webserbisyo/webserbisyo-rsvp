@@ -509,7 +509,17 @@ function HostInfoForm({
       }
 
       if (isBirthday && (fieldId === "celebrantName" || fieldId === "milestone")) {
-        next.displayAs = next.celebrantName || "";
+        const currentTemplate = getBirthdayDisplayTemplate(
+          current.displayAs,
+          current.celebrantName,
+          current.milestone,
+        );
+        const nextOptions = getBirthdayDisplayOptions(next.celebrantName, next.milestone);
+
+        next.displayAs =
+          currentTemplate !== null
+            ? (nextOptions[currentTemplate] ?? nextOptions[1] ?? nextOptions[0] ?? "")
+            : next.displayAs || nextOptions[1] || nextOptions[0] || "";
       }
 
       if (isBaptism && fieldId === "childName") {
@@ -1161,8 +1171,11 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
   }
 
   if (currentEventType === "birthday") {
+    const celebrant = "Marco";
     return {
-      description: "Set the celebrant name and short host message shown on the RSVP website.",
+      description:
+        "Set the celebrant name, milestone display style, and host message shown on the RSVP website.",
+      displayOptions: getBirthdayDisplayOptions(celebrant, "30th Birthday"),
       fields: [
         {
           id: "celebrantName",
@@ -1177,10 +1190,17 @@ function getHostInfoModel(eventType: EventWebsiteEventType | "generic"): HostInf
           optional: true,
           placeholder: "30th Birthday",
         },
+        {
+          colSpan: "full",
+          id: "displayAs",
+          label: "Display As (Style / Emojis)",
+          maxLength: 80,
+          type: "select",
+        },
         ...baseHostMessage,
       ],
       groups: [
-        { title: "Celebrant", fields: ["celebrantName", "milestone"] },
+        { title: "Celebrant & Title", fields: ["celebrantName", "milestone", "displayAs"] },
         { title: "Host Message", fields: ["hostLine", "shortHostMessage"] },
       ],
       title: "Celebrant Info",
@@ -1377,13 +1397,13 @@ export function getDebutDisplayTemplate(
 export function getBirthdayDisplayOptions(celebrantName?: string, milestone?: string): string[] {
   const name = celebrantName?.trim() || "Marco";
   const age = milestone?.trim() || "30th Birthday";
-  const numericAge = age.replace(/[^0-9]/g, "");
   return [
-    `${name}'s ${age}`,
-    `${name}'s Birthday Celebration`,
-    `🎉 Celebrating ${name}`,
-    numericAge ? `${name} @ ${numericAge}` : `${name}'s Birthday`,
-    `The Birthday Party of ${name}`,
+    `${age}`,                      // Option 1: Plain / Exact
+    `⚡ ${age} ⚡`,                // Option 2: Lightning / Action Default
+    `🎉 ${age} 🎉`,                // Option 3: Celebration Party
+    `★ ${age} ★`,                  // Option 4: Hero Star
+    `🔥 ${age} 🔥`,                // Option 5: Fire / Hype
+    `${name}'s ${age}`,            // Option 6: Celebrant + Milestone
   ];
 }
 
