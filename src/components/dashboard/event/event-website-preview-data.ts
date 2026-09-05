@@ -955,12 +955,13 @@ export function buildEventWebsiteContentFromPreviewDraft({
             savedContent.sections.gift_details.options[index]?.id ||
             createEventWebsiteDraftItemId("gift-option"),
           image:
-            option.image ??
-            savedContent.sections.gift_details.options.find(
-              (savedOption) => savedOption.id === option.id,
-            )?.image ??
-            savedContent.sections.gift_details.options[index]?.image ??
-            null,
+            option.image !== undefined
+              ? option.image
+              : (savedContent.sections.gift_details.options.find(
+                  (savedOption) => savedOption.id === option.id,
+                )?.image ??
+                savedContent.sections.gift_details.options[index]?.image ??
+                null),
           title: option.title,
         })),
         sectionIntro: previewDraft.giftDetails.sectionIntro,
