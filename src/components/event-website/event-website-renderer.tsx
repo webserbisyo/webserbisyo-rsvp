@@ -197,7 +197,7 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
     const supporting = withFallback(rawSupporting, fallbackSupporting);
 
     const hasPossessiveOrCelebrantName =
-      (isBirthday || isDebut) &&
+      (isBirthday || isDebut || isBaptism) &&
       (hostInfo.displayAs.includes("'s") ||
         (primary.trim().length > 0 &&
           hostInfo.displayAs.toLowerCase().includes(primary.trim().toLowerCase())));
@@ -207,7 +207,11 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
     const milestoneDisplay =
       hostInfo.displayAs.trim() && !isStaleName
         ? hostInfo.displayAs.trim()
-        : supporting || (isDebut ? "18th Birthday" : isBirthday ? "Birthday Celebration" : "Special Day");
+        : isBaptism
+          ? "Holy Baptism"
+          : isDebut
+            ? "18th Birthday"
+            : supporting || (isBirthday ? "Birthday Celebration" : "Special Day");
 
     return (
       <section className="event-preview-section event-preview-section--hero text-center space-y-1">
@@ -221,6 +225,11 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
         ) : null}
         <h2 className="text-xl font-bold tracking-tight text-slate-900">{primary}</h2>
         <p className="event-preview-copy font-medium text-slate-700">{milestoneDisplay}</p>
+        {isBaptism && hostInfo.parentNames?.trim() ? (
+          <p className="event-preview-copy text-xs text-slate-600 font-medium">
+            Parents: {hostInfo.parentNames.trim()}
+          </p>
+        ) : null}
         {hostInfo.shortHostMessage?.trim() ? (
           <p className="event-preview-copy text-xs italic text-slate-500 pt-1">
             &ldquo;{hostInfo.shortHostMessage.trim()}&rdquo;
@@ -1169,7 +1178,7 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
       : hostInfo.kind === "birthday"
         ? `${hostInfo.displayAs || "Celebrant's Birthday"}`
         : hostInfo.kind === "baptism"
-          ? `${hostInfo.displayAs || "Liam's Christening"}`
+          ? `${hostInfo.childName.trim() || "Liam"}'s Christening`
           : withFallback(
               draft.coupleInfo.displayAs,
               fallbackDraft.coupleInfo.displayAs,

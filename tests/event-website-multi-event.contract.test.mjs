@@ -356,7 +356,7 @@ test("debut milestone display presets contract isolates pure milestone and avoid
   );
 
   // Preview renderer sanitizes legacy redundant strings for debut and updates footer brandline
-  assert.match(renderer, /\(isBirthday \|\| isDebut\) &&/);
+  assert.match(renderer, /\(isBirthday \|\| isDebut \|\| isBaptism\) &&/);
   assert.match(renderer, /hostInfo\.debutantName\.trim\(\) \|\| "Sofia"/);
 });
 
@@ -403,3 +403,75 @@ test("debut display options generator produces pure milestone presets without ce
   const unknownTemplate = getDebutDisplayTemplate("Sofia's Debut", "Mikaela", "18th Birthday");
   assert.equal(unknownTemplate, null);
 });
+
+test("baptism sacramental display presets contract isolates pure milestone and avoids child name", () => {
+  const editor = source("src/components/dashboard/event/event-website-editor-panel.tsx");
+  const renderer = source("src/components/event-website/event-website-renderer.tsx");
+
+  // getBaptismDisplayOptions exports pure sacramental options with Option 0 raw guarantee
+  assert.match(editor, /export function getBaptismDisplayOptions/);
+  assert.match(editor, /"Holy Baptism",\s*\/\/\s*1\.\s*Raw/);
+  assert.match(editor, /"🕊️ Holy Baptism 🕊️",\s*\/\/\s*2\.\s*Dove of Peace/);
+  assert.match(editor, /"Christening Celebration",\s*\/\/\s*3\.\s*Celebration/);
+  assert.match(editor, /"✨ Holy Baptism ✨",\s*\/\/\s*4\.\s*Sacred Light/);
+  assert.match(editor, /"🤍 Blessed Christening 🤍",\s*\/\/\s*5\.\s*Pure Devotion/);
+  assert.match(editor, /"🌿 Blessed Baptism 🌿",\s*\/\/\s*6\.\s*Olive Branch/);
+
+  // Template preservation on childName update
+  assert.match(editor, /const currentTemplate = getBaptismDisplayTemplate\(/);
+  assert.match(
+    editor,
+    /next\.displayAs =\s*currentTemplate !== null\s*\?\s*\(nextOptions\[currentTemplate\] \?\? nextOptions\[0\] \?\? ""\)\s*:\s*\(nextOptions\[0\] \?\? ""\);/,
+  );
+
+  // Preview renderer sanitizes legacy redundant strings for baptism and renders parent names
+  assert.match(renderer, /\(isBirthday \|\| isDebut \|\| isBaptism\) &&/);
+  assert.match(renderer, /isBaptism\s*\?\s*"Holy Baptism"/);
+  assert.match(renderer, /isBaptism && hostInfo\.parentNames\?\.trim\(\)/);
+  assert.match(renderer, /Parents: \{hostInfo\.parentNames\.trim\(\)\}/);
+  assert.match(renderer, /hostInfo\.childName\.trim\(\) \|\| "Liam"/);
+});
+
+test("baptism display options generator produces pure sacramental presets without child name", () => {
+  function getBaptismDisplayOptions(_childName) {
+    return [
+      "Holy Baptism",
+      "🕊️ Holy Baptism 🕊️",
+      "Christening Celebration",
+      "✨ Holy Baptism ✨",
+      "🤍 Blessed Christening 🤍",
+      "🌿 Blessed Baptism 🌿",
+    ];
+  }
+
+  function getBaptismDisplayTemplate(displayAs, childName) {
+    const options = getBaptismDisplayOptions(childName);
+    const index = options.indexOf(displayAs ?? "");
+    return index >= 0 ? index : null;
+  }
+
+  const options = getBaptismDisplayOptions("Liam");
+  assert.equal(options.length, 6);
+  assert.equal(options[0], "Holy Baptism"); // Option 0 As-Is Raw Guarantee
+  assert.equal(options[1], "🕊️ Holy Baptism 🕊️"); // Dove of Peace
+  assert.equal(options[2], "Christening Celebration"); // Celebration / Festive
+  assert.equal(options[3], "✨ Holy Baptism ✨"); // Sacred Light
+  assert.equal(options[4], "🤍 Blessed Christening 🤍"); // Pure Devotion
+  assert.equal(options[5], "🌿 Blessed Baptism 🌿"); // Olive Branch
+
+  // Strict check: No option should contain the child's name
+  for (const opt of options) {
+    assert.equal(opt.includes("Liam"), false);
+  }
+
+  // Template index preservation when child name changes
+  const templateIdx = getBaptismDisplayTemplate("🕊️ Holy Baptism 🕊️", "Liam");
+  assert.equal(templateIdx, 1);
+  const nextOptions = getBaptismDisplayOptions("Lucas");
+  assert.equal(nextOptions[templateIdx], "🕊️ Holy Baptism 🕊️");
+
+  // Fallback if legacy template not found
+  const unknownTemplate = getBaptismDisplayTemplate("Liam's Christening", "Liam");
+  assert.equal(unknownTemplate, null);
+});
+

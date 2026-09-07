@@ -471,7 +471,7 @@ export const defaultBaptismPreviewDraft: EventWebsitePreviewDraft = {
   hostInfo: {
     kind: "baptism",
     childName: "Liam",
-    displayAs: "Liam's Christening",
+    displayAs: "Holy Baptism",
     hostLine: "Liam Santos Holy Baptism",
     parentNames: "Juan & Maria Santos",
     shortHostMessage:

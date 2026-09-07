@@ -535,7 +535,7 @@ function HostInfoForm({
         next.displayAs =
           currentTemplate !== null
             ? (nextOptions[currentTemplate] ?? nextOptions[0] ?? "")
-            : next.displayAs || nextOptions[0] || "";
+            : (nextOptions[0] ?? "");
       }
 
       return next;
@@ -1418,14 +1418,14 @@ export function getBirthdayDisplayTemplate(
   return index >= 0 ? index : null;
 }
 
-export function getBaptismDisplayOptions(childName?: string): string[] {
-  const name = childName?.trim() || "Liam";
+export function getBaptismDisplayOptions(_childName?: string): string[] {
   return [
-    `${name}'s Christening`,
-    `${name}'s Baptism`,
-    `The Holy Baptism of ${name}`,
-    `Blessings for ${name}`,
-    `${name} · Holy Baptism`,
+    "Holy Baptism",              // 1. Raw / Minimalist
+    "🕊️ Holy Baptism 🕊️",        // 2. Dove of Peace / Holy Spirit
+    "Christening Celebration",   // 3. Celebration / Festive
+    "✨ Holy Baptism ✨",        // 4. Sacred Light / Angelic Grace
+    "🤍 Blessed Christening 🤍", // 5. Pure Devotion
+    "🌿 Blessed Baptism 🌿",     // 6. Olive Branch / New Life
   ];
 }
 
