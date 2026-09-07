@@ -495,17 +495,18 @@ function HostInfoForm({
       }
 
       if (isDebut && (fieldId === "debutantName" || fieldId === "milestone")) {
+        const nextMilestone = fieldId === "milestone" ? value : current.milestone;
         const currentTemplate = getDebutDisplayTemplate(
           current.displayAs,
           current.debutantName,
           current.milestone,
         );
-        const nextOptions = getDebutDisplayOptions(next.debutantName, next.milestone);
+        const nextOptions = getDebutDisplayOptions(next.debutantName, nextMilestone);
 
         next.displayAs =
           currentTemplate !== null
             ? (nextOptions[currentTemplate] ?? nextOptions[0] ?? "")
-            : next.displayAs || nextOptions[0] || "";
+            : (nextOptions[0] ?? "");
       }
 
       if (isBirthday && (fieldId === "celebrantName" || fieldId === "milestone")) {
@@ -1322,7 +1323,7 @@ function buildInitialHostValues(model: HostInfoModel, eventData: EventWebsiteEdi
     if (field.id === "displayAs") {
       initialValues[field.id] = model.displayOptions?.[0] ?? names;
     } else if (field.id === "milestone" && model.title === "Debutant Info") {
-      initialValues[field.id] = "18";
+      initialValues[field.id] = "18th Birthday";
     } else if (field.id === "hostLine") {
       initialValues[field.id] = eventData.eventContent?.heroTitle ?? "";
     } else if (field.id === "shortHostMessage") {
@@ -1373,15 +1374,15 @@ function getWeddingDisplayTemplate(
   return index >= 0 ? index : null;
 }
 
-export function getDebutDisplayOptions(debutantName?: string, milestone?: string): string[] {
-  const name = debutantName?.trim() || "Sofia";
+export function getDebutDisplayOptions(_debutantName?: string, milestone?: string): string[] {
   const age = milestone?.trim() || "18th Birthday";
   return [
-    `${name}'s ${age}`,
-    `${name}'s Debut`,
-    `👑 ${name}'s Debut`,
-    `${name} @ 18`,
-    `The Debut of ${name}`,
+    `${age}`,           // 1. Raw / Exact as typed (e.g., "18th Birthday")
+    `🌹 ${age} 🌹`,     // 2. Rose Romance
+    `👑 ${age} 👑`,     // 3. Royal Crown
+    `✨ ${age} ✨`,     // 4. Stardust Sparkle
+    `✦ ${age} ✦`,       // 5. Classic Glamour
+    `⚜️ ${age} ⚜️`,     // 6. Cotillion Royale
   ];
 }
 

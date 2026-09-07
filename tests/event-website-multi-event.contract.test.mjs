@@ -334,3 +334,72 @@ test("autosave canonical validation rejects rsvp deadline after ceremony start",
     "RSVP deadline must be on or before the ceremony start.",
   );
 });
+
+test("debut milestone display presets contract isolates pure milestone and avoids celebrant name", () => {
+  const editor = source("src/components/dashboard/event/event-website-editor-panel.tsx");
+  const renderer = source("src/components/event-website/event-website-renderer.tsx");
+
+  // getDebutDisplayOptions exports pure milestone options with Option 0 raw guarantee
+  assert.match(editor, /export function getDebutDisplayOptions/);
+  assert.match(editor, /`\$\{age\}`,\s*\/\/\s*1\.\s*Raw/);
+  assert.match(editor, /`🌹 \$\{age\} 🌹`,\s*\/\/\s*2\.\s*Rose Romance/);
+  assert.match(editor, /`👑 \$\{age\} 👑`,\s*\/\/\s*3\.\s*Royal Crown/);
+  assert.match(editor, /`✨ \$\{age\} ✨`,\s*\/\/\s*4\.\s*Stardust Sparkle/);
+  assert.match(editor, /`✦ \$\{age\} ✦`,\s*\/\/\s*5\.\s*Classic Glamour/);
+  assert.match(editor, /`⚜️ \$\{age\} ⚜️`,\s*\/\/\s*6\.\s*Cotillion Royale/);
+
+  // Template preservation on milestone update
+  assert.match(editor, /const currentTemplate = getDebutDisplayTemplate\(/);
+  assert.match(
+    editor,
+    /next\.displayAs =\s*currentTemplate !== null\s*\?\s*\(nextOptions\[currentTemplate\] \?\? nextOptions\[0\] \?\? ""\)\s*:\s*\(nextOptions\[0\] \?\? ""\);/,
+  );
+
+  // Preview renderer sanitizes legacy redundant strings for debut and updates footer brandline
+  assert.match(renderer, /\(isBirthday \|\| isDebut\) &&/);
+  assert.match(renderer, /hostInfo\.debutantName\.trim\(\) \|\| "Sofia"/);
+});
+
+test("debut display options generator produces pure milestone presets without celebrant name", () => {
+  function getDebutDisplayOptions(_debutantName, milestone) {
+    const age = milestone?.trim() || "18th Birthday";
+    return [
+      `${age}`,
+      `🌹 ${age} 🌹`,
+      `👑 ${age} 👑`,
+      `✨ ${age} ✨`,
+      `✦ ${age} ✦`,
+      `⚜️ ${age} ⚜️`,
+    ];
+  }
+
+  function getDebutDisplayTemplate(displayAs, debutantName, milestone) {
+    const options = getDebutDisplayOptions(debutantName, milestone);
+    const index = options.indexOf(displayAs ?? "");
+    return index >= 0 ? index : null;
+  }
+
+  const options = getDebutDisplayOptions("Mikaela", "18th Birthday");
+  assert.equal(options.length, 6);
+  assert.equal(options[0], "18th Birthday"); // Option 0 As-Is Raw Guarantee
+  assert.equal(options[1], "🌹 18th Birthday 🌹"); // Rose Romance
+  assert.equal(options[2], "👑 18th Birthday 👑"); // Royal Crown
+  assert.equal(options[3], "✨ 18th Birthday ✨"); // Stardust Sparkle
+  assert.equal(options[4], "✦ 18th Birthday ✦"); // Classic Glamour
+  assert.equal(options[5], "⚜️ 18th Birthday ⚜️"); // Cotillion Royale
+
+  // Strict check: No option should contain the celebrant's name
+  for (const opt of options) {
+    assert.equal(opt.includes("Mikaela"), false);
+  }
+
+  // Template index preservation when typing milestone
+  const templateIdx = getDebutDisplayTemplate("🌹 18th Birthday 🌹", "Mikaela", "18th Birthday");
+  assert.equal(templateIdx, 1);
+  const nextOptions = getDebutDisplayOptions("Mikaela", "Eighteenth Birthday");
+  assert.equal(nextOptions[templateIdx], "🌹 Eighteenth Birthday 🌹");
+
+  // Fallback if template not found
+  const unknownTemplate = getDebutDisplayTemplate("Sofia's Debut", "Mikaela", "18th Birthday");
+  assert.equal(unknownTemplate, null);
+});

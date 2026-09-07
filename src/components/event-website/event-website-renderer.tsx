@@ -196,15 +196,18 @@ function HostInfoSection({ draft }: { draft: EventWebsiteRenderModel }) {
           : "";
     const supporting = withFallback(rawSupporting, fallbackSupporting);
 
-    const isStaleName =
-      isBirthday &&
-      hostInfo.displayAs.includes("'s") &&
-      !hostInfo.displayAs.toLowerCase().includes(primary.toLowerCase());
+    const hasPossessiveOrCelebrantName =
+      (isBirthday || isDebut) &&
+      (hostInfo.displayAs.includes("'s") ||
+        (primary.trim().length > 0 &&
+          hostInfo.displayAs.toLowerCase().includes(primary.trim().toLowerCase())));
+
+    const isStaleName = hasPossessiveOrCelebrantName;
 
     const milestoneDisplay =
       hostInfo.displayAs.trim() && !isStaleName
         ? hostInfo.displayAs.trim()
-        : supporting || (isBirthday ? "Birthday Celebration" : "Special Day");
+        : supporting || (isDebut ? "18th Birthday" : isBirthday ? "Birthday Celebration" : "Special Day");
 
     return (
       <section className="event-preview-section event-preview-section--hero text-center space-y-1">
@@ -1159,19 +1162,18 @@ function ContactSocialsSection({ draft }: { draft: EventWebsiteRenderModel }) {
     { label: "Instagram", value: values.instagramUrl.trim() },
     { label: "TikTok", value: values.tikTokUrl.trim() },
   ].filter((item) => item.value);
-  const isDebut = draft.hostInfo.kind === "debut";
-  const isBirthday = draft.hostInfo.kind === "birthday";
-  const isBaptism = draft.hostInfo.kind === "baptism";
-  const brandLine = isDebut
-    ? `${draft.hostInfo.displayAs || "Debutant"}'s 18th Birthday`
-    : isBirthday
-      ? `${draft.hostInfo.displayAs || "Celebrant's Birthday"}`
-      : isBaptism
-        ? `${draft.hostInfo.displayAs || "Liam's Christening"}`
-        : withFallback(
-            draft.coupleInfo.displayAs,
-            fallbackDraft.coupleInfo.displayAs,
-          );
+  const hostInfo = draft.hostInfo;
+  const brandLine =
+    hostInfo.kind === "debut"
+      ? `${hostInfo.debutantName.trim() || "Sofia"}'s ${hostInfo.milestone.trim() || "18th Birthday"}`
+      : hostInfo.kind === "birthday"
+        ? `${hostInfo.displayAs || "Celebrant's Birthday"}`
+        : hostInfo.kind === "baptism"
+          ? `${hostInfo.displayAs || "Liam's Christening"}`
+          : withFallback(
+              draft.coupleInfo.displayAs,
+              fallbackDraft.coupleInfo.displayAs,
+            );
 
   return (
     <footer className="event-preview-section event-preview-section--footer">

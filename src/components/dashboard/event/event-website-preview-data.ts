@@ -304,7 +304,7 @@ export function getPreviewDefaultDraft(eventType?: string | null): EventWebsiteP
       hostInfo: {
         kind: "debut",
         debutantName: "Sofia",
-        displayAs: "Sofia's 18th Birthday",
+        displayAs: "18th Birthday",
         hostLine: "Sofia Morales Debut RSVP",
         milestone: "18th Birthday",
         shortHostMessage:
