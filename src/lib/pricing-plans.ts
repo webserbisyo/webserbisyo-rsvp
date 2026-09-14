@@ -30,12 +30,12 @@ export const PRO_PRICING_PLAN = {
   ],
   name: "PRO",
   price: 1599,
-  priceLabel: "₱1,599",
-  regularPriceLabel: "₱3,200",
+  priceLabel: "₱999",
+  regularPriceLabel: "₱2,000",
 } as const satisfies PricingPlan;
 
 export const MAX_PRICING_PLAN = {
-  description: "For couples who want a more premium and memorable guest experience.",
+  description: "Designed to impress your guests with a premium animated experience.",
   features: [
     { label: "Everything in PRO", emphasis: "standard" },
     { label: "Advanced custom animations", emphasis: "exclusive" },
@@ -47,12 +47,10 @@ export const MAX_PRICING_PLAN = {
       emphasis: "featured",
       badge: "Included",
     },
-    { label: "Couple Alignment Kit included", emphasis: "exclusive" },
     {
-      label:
-        "E-book resources for conversations, budgeting, newlywed planning, date night ideas, and more — ₱10,000 bonus value",
+      label: "50 printed invitation cards with QR for scanning RSVP",
       emphasis: "featured",
-      badge: "Bonus",
+      badge: "Included",
     },
     { label: "Priority creative refinement", emphasis: "exclusive" },
     { label: "Priority setup", emphasis: "exclusive" },

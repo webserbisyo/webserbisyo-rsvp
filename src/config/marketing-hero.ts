@@ -2,17 +2,20 @@ import { PROMO_CONFIG } from "@/lib/promotion-config";
 import { SOCIAL_PREVIEWS } from "@/config/social-previews";
 
 export const marketingHero = {
-  artwork: "/images/rsvp.webp",
   brand: "WebSerbisyo RSVP",
-  cta: "Create my wedding website",
-  headline: "Beautiful RSVP websites for Filipino weddings",
+  cta: "Start your free website preview",
+  headline: "The Modern RSVP Website for Every Celebration",
+  pricing: {
+    regularPrice: "₱2,000",
+    startingAt: "₱999",
+  },
   promotion: PROMO_CONFIG,
   proof: {
     rating: "★★★★★",
     summary: "100+ websites created",
-    supportingText: "happy couples",
+    supportingText: "happy celebrants",
   },
-  reassurance: ["No payment required upon application", "No monthly website subscription"],
+  reassurance: ["Website muna, bago bayad", "GCash & Maya Payment", "One time payment"],
   social: {
     ...SOCIAL_PREVIEWS.marketing,
     artwork: "/images/landing/rsvp-og-artwork.png",

@@ -5,7 +5,7 @@ import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { MaxPlanFeatureList } from "@/components/pricing/max-plan-feature-list";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { MAX_PRICING_PLAN, PRO_PRICING_PLAN } from "@/lib/pricing-plans";
-import { PROMO_CONFIG } from "@/lib/promotion-config";
+import { ApplyPromoBanner } from "./apply-promo-banner";
 
 type ApplyLandingProps = {
   config: {
@@ -19,16 +19,8 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
       data-config-ready={!!config.messengerPageUrl}
       className="landing-theme-dark relative isolate min-h-screen w-full overflow-x-hidden bg-[var(--landing-bg)] pt-12 pb-20"
     >
-      {/* Sticky Top Promo Bar */}
-      {PROMO_CONFIG.isActive && (
-        <div className="fixed top-0 right-0 left-0 z-50 w-full border-b border-[#ff8a5c]/15 bg-[#050505]/85 shadow-[0_4px_20px_rgba(255,138,92,0.08)] backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center font-sans text-sm font-medium tracking-wide text-white sm:py-2.5 sm:text-base">
-            <span className="font-bold text-[#ff8a5c]">{PROMO_CONFIG.discountLabel}</span>
-            <span className="text-white/40">·</span>
-            <span className="text-white/95">{PROMO_CONFIG.offerLabel}</span>
-          </div>
-        </div>
-      )}
+      {/* Evergreen 3-Day Looping Countdown Banner */}
+      <ApplyPromoBanner />
 
       {/* Background Dashed Grid with Fade (seamlessly continues Features/FAQ visual styling) */}
       <div
@@ -54,18 +46,17 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-4 py-20 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-4 pt-4 sm:pt-6 pb-6 sm:px-6 lg:px-8">
         {/* Hero Header */}
-        <div className="mb-16 flex flex-col items-center gap-4 text-center">
-          <h1 className="max-w-3xl text-3xl leading-tight font-extrabold tracking-tight text-white sm:text-5xl sm:leading-none lg:text-6xl">
-            Choose Your Plan —<br />
-            <span className="bg-gradient-to-r from-[#ff8a5c] via-[#ff6b3b] to-yellow-500 bg-clip-text text-transparent">
-              Launch Your RSVP Website Faster
-            </span>
+        <div className="mb-6 sm:mb-8 flex flex-col items-center text-center">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white/90">
+            Choose Your Plan
           </h1>
-          <p className="max-w-2xl text-sm text-white/70 sm:text-base md:text-lg">
-            Start with the complete PRO website, or upgrade to MAX for a more premium animated guest
-            experience.
+          <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[#ff5a1f] mt-1">
+            Launch Your RSVP Website Faster
+          </span>
+          <p className="text-xs sm:text-sm text-stone-400 max-w-md mx-auto mt-2 leading-relaxed">
+            Start with the complete PRO website, or upgrade to MAX for a more premium animated guest experience.
           </p>
         </div>
 
@@ -106,14 +97,24 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                   </p>
 
                   {/* Pricing Representation */}
-                  <div className="mb-8 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-white">
-                      {PRO_PRICING_PLAN.priceLabel}
-                    </span>
-                    <span className="text-sm text-white/40 line-through">
-                      {PRO_PRICING_PLAN.regularPriceLabel}
-                    </span>
-                    <span className="text-xs font-medium text-white/50">regular</span>
+                  <div className="mb-6 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-[#ff5a1f]/45 bg-gradient-to-r from-[#ff5a1f]/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black tracking-wider text-[#ff8a5c] shadow-[0_0_12px_rgba(255,90,31,0.35)]">
+                        50% OFF
+                      </span>
+                      <span className="relative inline-block text-stone-400 font-semibold text-base sm:text-lg">
+                        <span>{PRO_PRICING_PLAN.regularPriceLabel}</span>
+                        <span
+                          className="pointer-events-none absolute inset-x-[-2px] top-1/2 h-[2px] -translate-y-1/2 -rotate-14 rounded-full bg-[#ef4444]/60 shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        {PRO_PRICING_PLAN.priceLabel}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Feature Divider */}
@@ -149,7 +150,7 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                     Select PRO <ArrowRight className="size-4" />
                   </TrackedLink>
                   <p className="mt-3 text-center text-xs font-medium text-white/45">
-                    Perfect for most couples.
+                    Perfect for most celebrations.
                   </p>
                 </div>
               </div>
@@ -188,14 +189,24 @@ export function ApplyLanding({ config }: ApplyLandingProps) {
                   </p>
 
                   {/* Pricing Representation */}
-                  <div className="mb-8 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-white">
-                      {MAX_PRICING_PLAN.priceLabel}
-                    </span>
-                    <span className="text-sm text-white/40 line-through">
-                      {MAX_PRICING_PLAN.regularPriceLabel}
-                    </span>
-                    <span className="text-xs font-medium text-white/50">regular</span>
+                  <div className="mb-6 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-[#ff8a5c]/45 bg-gradient-to-r from-[#ff8a5c]/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black tracking-wider text-[#ff8a5c] shadow-[0_0_12px_rgba(255,138,92,0.35)]">
+                        50% OFF
+                      </span>
+                      <span className="relative inline-block text-stone-400 font-semibold text-base sm:text-lg">
+                        <span>{MAX_PRICING_PLAN.regularPriceLabel}</span>
+                        <span
+                          className="pointer-events-none absolute inset-x-[-2px] top-1/2 h-[2px] -translate-y-1/2 -rotate-14 rounded-full bg-[#ef4444]/60 shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        {MAX_PRICING_PLAN.priceLabel}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Feature Divider */}

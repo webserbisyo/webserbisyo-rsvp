@@ -47,10 +47,10 @@ test.describe("Payment UX Enhancement", () => {
 
     // Verify headline contrast text
     const heading = heroSection.locator("h1");
-    await expect(heading).toContainText("Beautiful RSVP websites for Filipino weddings");
+    await expect(heading).toContainText("The Modern RSVP Website for Every Celebration");
 
     // Verify primary CTA is clickable over background layers
-    const heroCta = heroSection.locator('a[href="/apply"]').first();
+    const heroCta = heroSection.locator('a[href^="/apply"]').first();
     await expect(heroCta).toBeVisible();
   });
 

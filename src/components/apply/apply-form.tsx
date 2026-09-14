@@ -53,8 +53,8 @@ const applicationEventTypeOptions = getApplicationEventTypeOptions();
 const PLAN_DETAILS = {
   pro: {
     label: "PRO Plan",
-    price: "₱1,599",
-    originalPrice: "₱3,200",
+    price: "₱999",
+    originalPrice: "₱2,000",
     description: "Everything you need for a beautiful RSVP website.",
     features: [
       "Premium mobile-friendly RSVP website",
@@ -80,7 +80,7 @@ const PLAN_DETAILS = {
       "Premium motion and interaction polish",
       "Enhanced visual personalization",
       "More immersive section transitions",
-      "Couple Alignment Kit included",
+      "50 printed invitation cards with QR for scanning RSVP",
       "Priority creative refinement",
       "Priority setup",
     ],
@@ -365,8 +365,12 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
             {planDetails.label} ·{" "}
             <span className="font-bold text-[#ff8a5c]">{planDetails.price}</span>
           </span>
-          <span className="ml-1 text-[10px] text-white/40 line-through">
-            {planDetails.originalPrice}
+          <span className="relative ml-1 inline-block text-[10px] text-white/40">
+            <span>{planDetails.originalPrice}</span>
+            <span
+              className="pointer-events-none absolute inset-x-[-1px] top-1/2 h-[1.5px] -translate-y-1/2 -rotate-12 bg-[#ef4444]/60"
+              aria-hidden="true"
+            />
           </span>
         </div>
       </header>
@@ -767,16 +771,25 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                       <PlanIcon className="size-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black tracking-widest text-[#ff8a5c] uppercase">
-                        {planDetails.label}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-black tracking-widest text-[#ff8a5c] uppercase">
+                          {planDetails.label}
+                        </p>
+                        <span className="inline-flex items-center rounded-full border border-[#ff8a5c]/40 bg-[#ff8a5c]/15 px-1.5 py-0.5 text-[9px] font-black text-[#ff8a5c]">
+                          50% OFF
+                        </span>
+                      </div>
                       <p className="mt-0.5 text-sm text-white/70">{planDetails.description}</p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-baseline gap-2 sm:flex-col sm:gap-0 sm:text-right">
+                  <div className="flex shrink-0 items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0 sm:text-right">
                     <span className="text-2xl font-extrabold text-white">{planDetails.price}</span>
-                    <span className="text-sm text-white/40 line-through">
-                      {planDetails.originalPrice}
+                    <span className="relative inline-block text-sm text-white/40">
+                      <span>{planDetails.originalPrice}</span>
+                      <span
+                        className="pointer-events-none absolute inset-x-[-2px] top-1/2 h-[1.5px] -translate-y-1/2 -rotate-12 bg-[#ef4444]/60"
+                        aria-hidden="true"
+                      />
                     </span>
                   </div>
                 </div>

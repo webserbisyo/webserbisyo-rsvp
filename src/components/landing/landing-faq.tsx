@@ -18,11 +18,13 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What is included in the PRO package?",
-    answer: "PRO includes a premium mobile-friendly RSVP website, event details, RSVP form, guest response tracking, gallery/story sections, hosting, guest response export, and 1-year support and maintenance. It is the complete package for most couples.",
+    answer:
+      "PRO includes a premium mobile-friendly RSVP website, event details, RSVP form, guest response tracking, gallery/story sections, hosting, guest response export, and 1-year support and maintenance. It is the complete package for most celebrations.",
   },
   {
     question: "What makes MAX different from PRO?",
-    answer: "MAX includes everything in PRO, plus advanced custom animations, more premium interaction polish, enhanced visual personalization, and the Couple Alignment Kit with bonus guides for conversations, budgeting, newlywed planning, and date night ideas.",
+    answer:
+      "MAX includes everything in PRO, plus advanced custom animations, more premium interaction polish, enhanced visual personalization, and 50 printed invitation cards with QR for scanning RSVP.",
   },
   {
     question: "Can I request changes before going live?",

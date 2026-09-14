@@ -5,13 +5,13 @@ import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { MaxPlanFeatureList } from "@/components/pricing/max-plan-feature-list";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { MAX_PRICING_PLAN, PRO_PRICING_PLAN } from "@/lib/pricing-plans";
-import { PROMO_CONFIG } from "@/lib/promotion-config";
+import { ApplyPromoBanner } from "@/components/apply/apply-promo-banner";
 
 export function LandingPricing() {
   return (
     <section
       id="pricing"
-      className="landing-theme-dark relative isolate w-full scroll-mt-28 overflow-hidden bg-[var(--landing-bg)] py-24 sm:py-32"
+      className="landing-theme-dark relative isolate w-full scroll-mt-28 overflow-hidden bg-[var(--landing-bg)] py-16 sm:py-20"
     >
       {/* Background Dashed Grid with Fade */}
       <div
@@ -39,31 +39,20 @@ export function LandingPricing() {
 
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="mb-6 flex flex-col items-center gap-4 text-center">
-          <h2 className="max-w-3xl text-3xl leading-tight font-extrabold tracking-tight text-white sm:text-5xl sm:leading-none lg:text-6xl">
-            Choose Your Plan —<br />
-            <span className="bg-gradient-to-r from-[#ff8a5c] via-[#ff6b3b] to-yellow-500 bg-clip-text text-transparent">
-              Launch Your RSVP Website Faster
-            </span>
+        <div className="mb-6 sm:mb-8 flex flex-col items-center text-center">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white/90">
+            Choose Your Plan
           </h2>
-          <p className="mt-4 max-w-2xl text-sm text-white/70 sm:text-base md:text-lg">
-            Start with the complete PRO website, or upgrade to MAX for a more premium animated guest
-            experience.
+          <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[#ff5a1f] mt-1">
+            Launch Your RSVP Website Faster
+          </span>
+          <p className="text-xs sm:text-sm text-stone-400 max-w-md mx-auto mt-2 leading-relaxed">
+            Start with the complete PRO website, or upgrade to MAX for a more premium animated guest experience.
           </p>
         </div>
 
-        {/* Highlighted Promotion Badge */}
-        {PROMO_CONFIG.isActive && (
-          <div className="mb-14 inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ff8a5c]/20 bg-white/[0.02] px-6 py-2.5 shadow-lg shadow-orange-950/5 backdrop-blur-md">
-            <span className="bg-gradient-to-r from-[#ff8a5c] to-amber-500 bg-clip-text text-xs font-black tracking-widest text-transparent uppercase">
-              {PROMO_CONFIG.discountLabel}
-            </span>
-            <span className="text-white/30">·</span>
-            <span className="text-xs font-medium tracking-wide text-white/90 sm:text-sm">
-              {PROMO_CONFIG.offerLabel}
-            </span>
-          </div>
-        )}
+        {/* Evergreen 3-Day Looping Countdown Timer */}
+        <ApplyPromoBanner variant="inline" />
 
         {/* Pricing Cards Grid */}
         <div className="grid w-full max-w-5xl grid-cols-1 items-stretch gap-8 px-2 sm:px-4 md:grid-cols-2">
@@ -99,14 +88,24 @@ export function LandingPricing() {
                   </p>
 
                   {/* Pricing Representation */}
-                  <div className="mb-8 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-white">
-                      {PRO_PRICING_PLAN.priceLabel}
-                    </span>
-                    <span className="text-sm text-white/40 line-through">
-                      {PRO_PRICING_PLAN.regularPriceLabel}
-                    </span>
-                    <span className="text-xs font-medium text-white/50">regular</span>
+                  <div className="mb-6 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-[#ff5a1f]/45 bg-gradient-to-r from-[#ff5a1f]/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black tracking-wider text-[#ff8a5c] shadow-[0_0_12px_rgba(255,90,31,0.35)]">
+                        50% OFF
+                      </span>
+                      <span className="relative inline-block text-stone-400 font-semibold text-base sm:text-lg">
+                        <span>{PRO_PRICING_PLAN.regularPriceLabel}</span>
+                        <span
+                          className="pointer-events-none absolute inset-x-[-2px] top-1/2 h-[2px] -translate-y-1/2 -rotate-14 rounded-full bg-[#ef4444]/60 shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        {PRO_PRICING_PLAN.priceLabel}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Feature Divider */}
@@ -142,7 +141,7 @@ export function LandingPricing() {
                     Select PRO <ArrowRight className="size-4" />
                   </TrackedLink>
                   <p className="mt-3 text-center text-xs font-medium text-white/45">
-                    Perfect for most couples.
+                    Perfect for most celebrations.
                   </p>
                 </div>
               </div>
@@ -181,14 +180,24 @@ export function LandingPricing() {
                   </p>
 
                   {/* Pricing Representation */}
-                  <div className="mb-8 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-white">
-                      {MAX_PRICING_PLAN.priceLabel}
-                    </span>
-                    <span className="text-sm text-white/40 line-through">
-                      {MAX_PRICING_PLAN.regularPriceLabel}
-                    </span>
-                    <span className="text-xs font-medium text-white/50">regular</span>
+                  <div className="mb-6 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-[#ff8a5c]/45 bg-gradient-to-r from-[#ff8a5c]/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black tracking-wider text-[#ff8a5c] shadow-[0_0_12px_rgba(255,138,92,0.35)]">
+                        50% OFF
+                      </span>
+                      <span className="relative inline-block text-stone-400 font-semibold text-base sm:text-lg">
+                        <span>{MAX_PRICING_PLAN.regularPriceLabel}</span>
+                        <span
+                          className="pointer-events-none absolute inset-x-[-2px] top-1/2 h-[2px] -translate-y-1/2 -rotate-14 rounded-full bg-[#ef4444]/60 shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        {MAX_PRICING_PLAN.priceLabel}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Feature Divider */}
