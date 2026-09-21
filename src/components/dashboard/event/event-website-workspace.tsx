@@ -70,7 +70,16 @@ import { dashboardKeys } from "@/lib/dashboard/dashboard-query-keys";
 import { useEventWebsiteRevisionCoordinator } from "@/lib/dashboard/event-website-revision-coordinator";
 import { cn } from "@/lib/utils";
 import type { DashboardEventWebsiteData } from "@/server/queries/dashboard-event";
-import { ArrowUpRight, Eye, Layers3, LockKeyhole, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowUpRight,
+  Check,
+  Eye,
+  Layers3,
+  LockKeyhole,
+  RefreshCw,
+  X,
+} from "lucide-react";
 
 const DESKTOP_LAYOUT_QUERY = "(min-width: 1200px)";
 const TABLET_LAYOUT_QUERY = "(min-width: 768px)";
@@ -636,13 +645,13 @@ function EnabledEventWebsiteWorkspace({
       </Tabs>
 
       <ResponsiveSectionEditorSurface
+        autosave={autosave}
         eventData={eventWebsiteData}
         isOpen={responsiveEditorIsOpen}
         isTabletLayout={isTabletLayout}
         onOpenChange={setIsResponsiveEditorOpen}
         onPreviewDraftChange={updatePreviewDraft}
         previewDraft={previewDraft}
-        persistenceStatusPill={statusPill}
         onRetry={autosave.persistenceState === "failed" ? () => void autosave.retry() : undefined}
         resolvedSections={resolvedSections}
         saveButtonProps={saveButtonProps}
@@ -739,26 +748,26 @@ function invalidateEventWebsiteQueries(queryClient: ReturnType<typeof useQueryCl
 }
 
 function ResponsiveSectionEditorSurface({
+  autosave,
   eventData,
   isOpen,
   isTabletLayout,
   onOpenChange,
   onPreviewDraftChange,
   onRetry,
-  persistenceStatusPill,
   previewDraft,
   resolvedSections,
   saveButtonProps,
   selectedSection,
   selectedSectionId,
 }: {
+  autosave: ReturnType<typeof useEventWebsiteAutosave>;
   eventData: ValidDashboardEventWebsiteData;
   isOpen: boolean;
   isTabletLayout: boolean;
   onOpenChange: (open: boolean) => void;
   onPreviewDraftChange: (draft: EventWebsitePreviewDraft) => void;
   onRetry?: () => void;
-  persistenceStatusPill: EventWebsiteStatusPill;
   previewDraft: EventWebsitePreviewDraft;
   resolvedSections: ReturnType<typeof resolveEventWebsiteSections>;
   saveButtonProps: EventWebsiteSaveButtonProps;
@@ -792,14 +801,42 @@ function ResponsiveSectionEditorSurface({
           <h2 className="event-website-mobile-editor-shell__title">
             {selectedSection?.label ?? "Edit section"}
           </h2>
-          <span className="event-status-badge is-neutral" aria-live="polite">
-            {persistenceStatusPill.label}
-          </span>
-          {onRetry ? (
-            <Button type="button" variant="link" size="sm" onClick={onRetry}>
-              Retry
-            </Button>
-          ) : null}
+          {/* Dynamic Autosave Status Pill */}
+          <div className="flex items-center gap-1.5 shrink-0" aria-live="polite">
+            {autosave.persistenceState === "saving" || autosave.persistenceState === "debounce-pending" ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 transition-all duration-200">
+                <RefreshCw className="size-3 animate-spin text-amber-600" />
+                <span className="hidden sm:inline">Saving…</span>
+                <span className="sr-only sm:hidden">Saving…</span>
+              </div>
+            ) : autosave.persistenceState === "failed" || autosave.persistenceState === "conflict" ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 transition-all duration-200">
+                <AlertCircle className="size-3 text-rose-600" />
+                <span>Save failed</span>
+                {onRetry && (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="ml-1 underline font-bold hover:text-rose-800 cursor-pointer"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            ) : autosave.isDirty || autosave.persistenceState === "dirty" ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50/60 text-amber-800/90 border border-amber-200/50 transition-all duration-200">
+                <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="hidden sm:inline">Unsaved</span>
+                <span className="sr-only sm:hidden">Unsaved</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 transition-all duration-200">
+                <Check className="size-3 text-emerald-600" />
+                <span className="hidden sm:inline">Saved</span>
+                <span className="sr-only sm:hidden">Saved</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="event-website-mobile-editor-scroll">
