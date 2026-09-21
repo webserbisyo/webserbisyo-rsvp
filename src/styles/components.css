@@ -7298,6 +7298,66 @@
   text-overflow: ellipsis;
 }
 
+.event-website-mobile-editor-pill,
+[data-dashboard] .event-website-mobile-editor-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 24px;
+  padding: 0 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.event-website-mobile-editor-pill--saving,
+[data-dashboard] .event-website-mobile-editor-pill--saving {
+  background-color: var(--dash-warning-subtle, #faeeda);
+  color: color-mix(in srgb, var(--dash-warning, #ba7517) 86%, var(--dash-foreground, #1d1b18));
+  border-color: color-mix(in srgb, var(--dash-warning, #ba7517) 30%, var(--dash-border, #e8e0d6));
+}
+
+.event-website-mobile-editor-pill--saving .event-website-mobile-editor-pill__icon,
+[data-dashboard] .event-website-mobile-editor-pill--saving .event-website-mobile-editor-pill__icon {
+  color: var(--dash-warning, #ba7517);
+}
+
+.event-website-mobile-editor-pill--saved,
+[data-dashboard] .event-website-mobile-editor-pill--saved {
+  background-color: var(--dash-success-subtle, #eaf3de);
+  color: color-mix(in srgb, var(--dash-success, #639922) 86%, var(--dash-foreground, #1d1b18));
+  border-color: color-mix(in srgb, var(--dash-success, #639922) 28%, var(--dash-border, #e8e0d6));
+}
+
+.event-website-mobile-editor-pill--saved .event-website-mobile-editor-pill__icon,
+[data-dashboard] .event-website-mobile-editor-pill--saved .event-website-mobile-editor-pill__icon {
+  color: var(--dash-success, #639922);
+}
+
+.event-website-mobile-editor-pill--unsaved,
+[data-dashboard] .event-website-mobile-editor-pill--unsaved {
+  background-color: color-mix(in srgb, var(--dash-surface-hover, #ede5da) 92%, white);
+  color: color-mix(in srgb, var(--dash-muted, #6b6560) 90%, var(--dash-foreground, #1d1b18));
+  border-color: color-mix(in srgb, var(--dash-border, #e8e0d6) 90%, transparent);
+}
+
+.event-website-mobile-editor-pill--failed,
+[data-dashboard] .event-website-mobile-editor-pill--failed {
+  background-color: var(--dash-destructive-subtle, #fcebeb);
+  color: color-mix(in srgb, var(--dash-destructive, #a32d2d) 88%, var(--dash-foreground, #1d1b18));
+  border-color: color-mix(in srgb, var(--dash-destructive, #a32d2d) 28%, var(--dash-border, #e8e0d6));
+}
+
+.event-website-mobile-editor-pill--failed .event-website-mobile-editor-pill__icon,
+[data-dashboard] .event-website-mobile-editor-pill--failed .event-website-mobile-editor-pill__icon {
+  color: var(--dash-destructive, #a32d2d);
+}
+
 [data-dashboard] .event-website-mobile-editor-shell__close {
   position: absolute;
   top: 10px;

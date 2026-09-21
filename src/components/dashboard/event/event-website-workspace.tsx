@@ -804,36 +804,33 @@ function ResponsiveSectionEditorSurface({
           {/* Dynamic Autosave Status Pill */}
           <div className="flex items-center gap-1.5 shrink-0" aria-live="polite">
             {autosave.persistenceState === "saving" || autosave.persistenceState === "debounce-pending" ? (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 transition-all duration-200">
-                <RefreshCw className="size-3 animate-spin text-amber-600" />
-                <span className="hidden sm:inline">Saving…</span>
-                <span className="sr-only sm:hidden">Saving…</span>
+              <div className="event-website-mobile-editor-pill event-website-mobile-editor-pill--saving">
+                <RefreshCw className="size-3 animate-spin event-website-mobile-editor-pill__icon" />
+                <span>saving...</span>
               </div>
             ) : autosave.persistenceState === "failed" || autosave.persistenceState === "conflict" ? (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 transition-all duration-200">
-                <AlertCircle className="size-3 text-rose-600" />
+              <div className="event-website-mobile-editor-pill event-website-mobile-editor-pill--failed">
+                <AlertCircle className="size-3 event-website-mobile-editor-pill__icon" />
                 <span>Save failed</span>
                 {onRetry && (
                   <button
                     type="button"
                     onClick={onRetry}
-                    className="ml-1 underline font-bold hover:text-rose-800 cursor-pointer"
+                    className="ml-1 underline font-bold hover:opacity-80 cursor-pointer"
                   >
                     Retry
                   </button>
                 )}
               </div>
             ) : autosave.isDirty || autosave.persistenceState === "dirty" ? (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50/60 text-amber-800/90 border border-amber-200/50 transition-all duration-200">
+              <div className="event-website-mobile-editor-pill event-website-mobile-editor-pill--unsaved">
                 <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span className="hidden sm:inline">Unsaved</span>
-                <span className="sr-only sm:hidden">Unsaved</span>
+                <span>unsaved</span>
               </div>
             ) : (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 transition-all duration-200">
-                <Check className="size-3 text-emerald-600" />
-                <span className="hidden sm:inline">Saved</span>
-                <span className="sr-only sm:hidden">Saved</span>
+              <div className="event-website-mobile-editor-pill event-website-mobile-editor-pill--saved">
+                <Check className="size-3 event-website-mobile-editor-pill__icon" />
+                <span>saved</span>
               </div>
             )}
           </div>
