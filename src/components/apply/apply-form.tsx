@@ -493,7 +493,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                   <Input
                     id="fullName"
                     placeholder="e.g. Maria & Juan Santos"
-                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("fullName")}
                     disabled={isPending}
                   />
@@ -518,7 +518,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     placeholder="you@example.com"
                     autoComplete="email"
                     inputMode="email"
-                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("email")}
                     disabled={isPending}
                   />
@@ -540,7 +540,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     autoComplete="tel"
                     inputMode="tel"
                     placeholder="09171234567"
-                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("phone")}
                     disabled={isPending}
                   />
@@ -618,7 +618,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                   <Input
                     id="eventDate"
                     type="date"
-                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 [color-scheme:dark] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 [color-scheme:dark] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("eventDate")}
                     disabled={isPending}
                   />
@@ -651,7 +651,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     id="eventLocation"
                     placeholder="e.g. Batangas, Philippines"
                     maxLength={300}
-                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("eventLocation")}
                     disabled={isPending}
                   />
@@ -678,7 +678,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     max={1000}
                     step={1}
                     placeholder="e.g. 150"
-                    className="h-11 max-w-[200px] rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="h-11 max-w-[200px] rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("estimatedGuestCount")}
                     disabled={isPending}
                   />
@@ -712,7 +712,7 @@ export function ApplyForm({ config, initialPlan }: ApplyFormProps) {
                     rows={4}
                     placeholder="e.g. Romantic garden theme, champagne and gold motif, minimalist layout, timing notes, or special requests..."
                     maxLength={500}
-                    className="resize-y rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
+                    className="resize-y rounded-xl border border-white/[0.08] bg-white/[0.03] text-base md:text-sm text-white placeholder-white/20 transition-all duration-200 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#ff8a5c]/50 focus-visible:outline-none"
                     {...register("message")}
                     disabled={isPending}
                   />

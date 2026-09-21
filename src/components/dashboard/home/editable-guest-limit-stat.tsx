@@ -126,7 +126,7 @@ export function EditableGuestLimitStat({
                 aria-invalid={validationError || serverError ? "true" : "false"}
                 aria-describedby={validationError || serverError ? errorId : undefined}
                 aria-label="Guest limit"
-                className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-ring/20 h-11 w-full rounded-2xl border px-3 text-sm font-semibold shadow-sm transition outline-none focus:ring-2"
+                className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-ring/20 h-11 w-full rounded-2xl border px-3 text-base md:text-sm font-semibold shadow-sm transition outline-none focus:ring-2"
                 placeholder="Enter guest limit"
               />
               <div className="flex flex-wrap gap-2">

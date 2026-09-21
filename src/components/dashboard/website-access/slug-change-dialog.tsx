@@ -121,7 +121,7 @@ function SlugChangeBody({
             aria-invalid={errorMessage ? "true" : "false"}
             onChange={(event) => onValueChange(event.target.value)}
             placeholder="your-name"
-            className="h-auto flex-1 border-0 bg-transparent px-0 py-0 font-mono text-sm font-bold text-[#2D1F1A] shadow-none focus-visible:ring-0 sm:text-base"
+            className="h-auto flex-1 border-0 bg-transparent px-0 py-0 font-mono text-base md:text-sm font-bold text-[#2D1F1A] shadow-none focus-visible:ring-0"
           />
           <span className="shrink-0 font-mono text-xs font-semibold text-[#A38376] sm:text-sm">
             .{suffix}

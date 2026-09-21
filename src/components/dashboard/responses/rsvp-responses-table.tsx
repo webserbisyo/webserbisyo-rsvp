@@ -175,7 +175,7 @@ export function RsvpResponsesTable({
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search name, email, or phone"
-              className="h-11 w-full rounded-2xl border border-[#eadbd0] bg-white px-10 text-sm font-medium text-[#2b2521] outline-none placeholder:text-[#a88d7f] focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
+              className="h-11 w-full rounded-2xl border border-[#eadbd0] bg-white px-10 text-base md:text-sm font-medium text-[#2b2521] outline-none placeholder:text-[#a88d7f] focus:border-[#d9896c] focus:ring-4 focus:ring-[#d9896c]/10"
               aria-label="Search responses by guest name, email, or phone"
             />
           </div>

@@ -4834,9 +4834,17 @@
   border-radius: 10px;
   background: #ffffff;
   color: #3d3935;
-  font-size: 12px;
+  font-size: 16px;
   outline: none;
   padding: 8px 10px;
+}
+
+@media (min-width: 768px) {
+  [data-dashboard] .event-website-page .event-preview-field input,
+  [data-dashboard] .event-website-page .event-preview-field select,
+  [data-dashboard] .event-website-page .event-preview-field textarea {
+    font-size: 12px;
+  }
 }
 
 [data-dashboard] .event-website-page .event-preview-select-shell,
@@ -5063,8 +5071,15 @@
   border-color: color-mix(in srgb, var(--dash-border) 88%, var(--dash-brand) 12%);
   background: color-mix(in srgb, var(--dash-surface-glass) 96%, transparent);
   color: var(--dash-foreground);
-  font-size: 14px;
+  font-size: 16px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+@media (min-width: 768px) {
+  [data-dashboard] .event-editor-input,
+  [data-dashboard] .event-editor-select-trigger {
+    font-size: 14px;
+  }
 }
 
 [data-dashboard] .event-editor-input::placeholder,
@@ -5078,9 +5093,15 @@
   border-color: color-mix(in srgb, var(--dash-border) 88%, var(--dash-brand) 12%);
   background: color-mix(in srgb, var(--dash-surface-glass) 96%, transparent);
   color: var(--dash-foreground);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+@media (min-width: 768px) {
+  [data-dashboard] .event-editor-textarea {
+    font-size: 14px;
+  }
 }
 
 [data-dashboard] .event-editor-helper {
@@ -5404,8 +5425,14 @@
   border-radius: 14px;
   background: color-mix(in srgb, var(--modal-surface) 78%, #fffdfa);
   color: var(--modal-foreground);
-  font-size: 14px;
+  font-size: 16px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+@media (min-width: 768px) {
+  .event-custom-question-dialog .event-editor-input {
+    font-size: 14px;
+  }
 }
 
 .event-custom-question-dialog .event-editor-input::placeholder {
@@ -6817,10 +6844,19 @@
   border-radius: 12px;
   background: #ffffff;
   color: #3d3a37;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.45;
   padding: 10px 12px;
   outline: none;
+}
+
+@media (min-width: 768px) {
+  .event-website-public-page .event-preview-field input,
+  .event-website-public-page .event-preview-field select,
+  .event-website-public-page .event-preview-field textarea,
+  .event-website-public-page .event-preview-companion-input {
+    font-size: 14px;
+  }
 }
 
 .event-website-public-page .event-preview-field select {

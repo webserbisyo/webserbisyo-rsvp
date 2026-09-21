@@ -197,7 +197,7 @@ export function WebsiteLinkCard({
                     : "Editable before your first publish."}
                 </span>
               </div>
-              <div className="flex h-11 items-center gap-2 rounded-xl border-2 border-[#EADBD0] bg-[#FFFDFC] px-3.5 font-mono text-sm font-semibold text-[#2D1F1A] focus-within:border-[#C96B48]">
+              <div className="flex h-11 items-center gap-2 rounded-xl border-2 border-[#EADBD0] bg-[#FFFDFC] px-3.5 font-mono text-base md:text-sm font-semibold text-[#2D1F1A] focus-within:border-[#C96B48]">
                 <Input
                   id="website-slug-preview"
                   value={slugDraft}
@@ -205,7 +205,7 @@ export function WebsiteLinkCard({
                   aria-invalid={slugDraftError ? "true" : "false"}
                   onChange={(event) => onDraftSlugInput(event.target.value)}
                   placeholder="your-name"
-                  className="h-auto border-0 bg-transparent px-0 py-0 text-sm font-semibold text-[#2D1F1A] shadow-none focus-visible:ring-0"
+                  className="h-auto border-0 bg-transparent px-0 py-0 text-base md:text-sm font-semibold text-[#2D1F1A] shadow-none focus-visible:ring-0"
                 />
                 <span className="ml-auto shrink-0 text-xs font-medium text-[#A38376]">
                   .{subdomainBaseDomain}
