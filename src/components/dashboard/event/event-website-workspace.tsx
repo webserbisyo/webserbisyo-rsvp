@@ -886,7 +886,7 @@ function ResponsiveSectionEditorSurface({
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange}>
+    <Drawer open={isOpen} onOpenChange={onOpenChange} repositionInputs={false}>
       <DrawerContent data-dashboard className="event-website-mobile-editor-drawer">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{selectedSection?.label ?? "Edit section"}</DrawerTitle>

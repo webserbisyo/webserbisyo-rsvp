@@ -7280,6 +7280,20 @@
   overflow: hidden;
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
+  position: relative;
+}
+
+/* Seamless bottom extension: guarantees zero gap during keyboard shifts or rubber-band scrolling */
+.event-website-mobile-editor-drawer::after,
+[data-dashboard].event-website-mobile-editor-drawer::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 100dvh;
+  background-color: var(--dash-surface, #fffaf6);
+  pointer-events: none;
 }
 
 [data-dashboard] .event-website-mobile-editor-sheet {
@@ -7413,7 +7427,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
 }
 
 [data-dashboard] .event-website-mobile-editor-body {
