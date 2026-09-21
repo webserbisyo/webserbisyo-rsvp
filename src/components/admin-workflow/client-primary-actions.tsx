@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { ClientDetailView } from "@/server/queries/admin-clients";
 import type { AdminPackageSettingsView } from "@/server/queries/platform-package-settings";
 import { cancelClientAction, markClientPaidAction } from "@/server/actions/admin-clients";
+import { startClientImpersonationAction } from "@/server/actions/admin-impersonation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -160,6 +161,19 @@ export function ClientPrimaryActions({ client, packageSettings }: ClientPrimaryA
   return (
     <>
       <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-amber-500/40 bg-amber-50/60 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200 font-semibold"
+          onClick={() => {
+            void startClientImpersonationAction(client.id).catch(() => {
+              toast.error("Failed to start client impersonation.");
+            });
+          }}
+        >
+          <UserCheck className="mr-2 size-4 text-amber-600" />
+          Log in as Client
+        </Button>
         <Button
           type="button"
           disabled={!canMarkPaid}

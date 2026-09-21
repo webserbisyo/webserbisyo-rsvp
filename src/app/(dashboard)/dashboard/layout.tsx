@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  let profile: Awaited<ReturnType<typeof requireTenantMember>>;
+  let profile: Awaited<ReturnType<typeof requireTenantMember>> | undefined;
   let planType: string | null = null;
   const loginRedirectPath = await getDashboardLoginRedirectPath();
 
@@ -52,10 +52,18 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         );
       }
 
+      if (profile?.isImpersonating) {
+        throw error;
+      }
+
       redirect("/admin");
     }
 
     throw error;
+  }
+
+  if (!profile) {
+    throw new Error("Authenticated profile could not be loaded.");
   }
 
   const clientId = profile.client_id;
@@ -68,13 +76,15 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   const [{ data: clientData }, pixels] = await Promise.all([
     supabase
       .from("clients")
-      .select("plan_type")
+      .select("plan_type, name")
       .eq("id", clientId)
       .single(),
     getPublicMetaPixelsForRoute({ route: "application" }).catch(() => []),
   ]);
 
   planType = clientData?.plan_type ?? null;
+  const isImpersonating = Boolean(profile.isImpersonating);
+  const impersonatedClientName = isImpersonating ? (clientData?.name ?? "Client") : undefined;
 
   return (
     <>
@@ -84,6 +94,9 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         displayName={profile.full_name ?? undefined}
         planType={planType}
         profileId={profile.id}
+        isImpersonating={isImpersonating}
+        impersonatedClientId={isImpersonating ? clientId : undefined}
+        impersonatedClientName={impersonatedClientName}
       >
         {children}
       </DashboardShell>

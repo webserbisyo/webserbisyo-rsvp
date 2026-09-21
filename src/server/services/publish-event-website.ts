@@ -13,6 +13,10 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import { ensurePrivateAccessToken, rotatePrivateAccessToken } from "./private-access-token";
+import {
+  logImpersonatedAction,
+  resolveRpcActorForClient,
+} from "./resolve-impersonation-actor";
 import { assertServiceData, ServiceError } from "./service-error";
 import { writeAuditLog } from "./write-audit-log";
 
@@ -90,6 +94,10 @@ export type PublishEventWebsiteInput = {
   clientId: string;
   confirmWarnings?: boolean;
   eventId: string;
+  /** Set when a Super Admin is masquerading as this client. */
+  isImpersonating?: boolean;
+  /** The real admin profile ID (only when masquerading). */
+  realAdminUserId?: string;
 };
 
 export type PublishEventWebsiteResult = {
@@ -361,10 +369,19 @@ export async function publishEventWebsite(
           eventId: input.eventId,
         })
       : null;
+
+  // Resolve the correct RPC actor for impersonation delegation
+  const resolvedActor = await resolveRpcActorForClient(
+    input.actorUserId,
+    input.clientId,
+    input.isImpersonating,
+    input.realAdminUserId,
+  );
+
   const { data: publishResult, error: publishError } = await supabase.rpc(
     "publish_event_website_revision",
     {
-      p_actor_user_id: input.actorUserId,
+      p_actor_user_id: resolvedActor.rpcActorUserId,
       p_client_id: input.clientId,
       p_event_id: input.eventId,
       p_expected_saved_revision: expectedSavedRevision,
@@ -381,6 +398,17 @@ export async function publishEventWebsite(
   }
 
   assertServiceData(publishResult, "Publish operation returned no result.");
+
+  // Log the impersonated publish operation for the audit trail
+  await logImpersonatedAction("event_website_published_impersonated", resolvedActor, {
+    clientId: input.clientId,
+    entityType: "event_content",
+    eventId: input.eventId,
+    extraMetadata: {
+      expected_saved_revision: expectedSavedRevision,
+    },
+  });
+
   return parsePublishResult(publishResult, privateAccessToken);
 }
 

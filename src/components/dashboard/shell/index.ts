@@ -5,3 +5,4 @@ export { DashboardMobileBottomNav } from "./dashboard-mobile-bottom-nav";
 export { DashboardShell } from "./dashboard-shell";
 export { DashboardSidebar } from "./dashboard-sidebar";
 export { DashboardTopHeader } from "./dashboard-top-header";
+export { ImpersonationBanner } from "./impersonation-banner";

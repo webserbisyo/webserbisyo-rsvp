@@ -170,6 +170,8 @@ export async function publishEventWebsiteAction(input: unknown) {
       clientId: profile.client_id ?? "",
       confirmWarnings: payload.confirmWarnings,
       eventId: event.id,
+      isImpersonating: profile.isImpersonating,
+      realAdminUserId: profile.realAdminUserId,
     });
 
     revalidatePath("/dashboard/website-access");

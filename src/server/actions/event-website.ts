@@ -81,6 +81,8 @@ export async function saveEventWebsiteAction(input: unknown) {
       content: normalizedContent,
       eventId: event.id,
       expectedRevision,
+      isImpersonating: profile.isImpersonating,
+      realAdminUserId: profile.realAdminUserId,
     });
 
     if (result.status === "conflict") {

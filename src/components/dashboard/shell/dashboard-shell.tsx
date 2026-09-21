@@ -6,6 +6,7 @@ import { DashboardRealtimeNotifications } from "@/components/dashboard/notificat
 import { DashboardMobileBottomNav } from "./dashboard-mobile-bottom-nav";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopHeader } from "./dashboard-top-header";
+import { ImpersonationBanner } from "./impersonation-banner";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -14,6 +15,9 @@ type DashboardShellProps = {
   displayName?: string;
   planType?: string | null;
   profileId: string;
+  isImpersonating?: boolean;
+  impersonatedClientId?: string;
+  impersonatedClientName?: string;
 };
 
 export function DashboardShell({
@@ -23,6 +27,9 @@ export function DashboardShell({
   displayName,
   planType,
   profileId,
+  isImpersonating,
+  impersonatedClientId,
+  impersonatedClientName,
 }: DashboardShellProps) {
   return (
     <DashboardQueryProvider>
@@ -41,6 +48,12 @@ export function DashboardShell({
           </div>
 
           <SidebarInset className="min-h-screen">
+            {isImpersonating ? (
+              <ImpersonationBanner
+                clientId={impersonatedClientId ?? clientId}
+                clientName={impersonatedClientName ?? "Client"}
+              />
+            ) : null}
             <DashboardTopHeader email={email} displayName={displayName} planType={planType} />
             <main className="dash-page-bg flex-1 p-4 pb-20 sm:p-6 md:pb-6">{children}</main>
           </SidebarInset>

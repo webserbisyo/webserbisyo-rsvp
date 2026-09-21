@@ -13,6 +13,10 @@ import {
 } from "@/lib/validations/event-website.schema";
 import type { Json } from "@/lib/supabase/types";
 import { logEventWebsiteOperation } from "./event-website-operation-log";
+import {
+  logImpersonatedAction,
+  resolveRpcActorForClient,
+} from "./resolve-impersonation-actor";
 import { assertServiceData, ServiceError } from "./service-error";
 
 export type SaveEventWebsiteDraftInput = {
@@ -22,6 +26,10 @@ export type SaveEventWebsiteDraftInput = {
   content: EventWebsiteContent;
   eventId: string;
   expectedRevision: number;
+  /** Set when a Super Admin is masquerading as this client. */
+  isImpersonating?: boolean;
+  /** The real admin profile ID (only when masquerading). */
+  realAdminUserId?: string;
 };
 
 export type SaveEventWebsiteDraftResult =
@@ -86,8 +94,17 @@ export async function saveEventWebsiteDraft(
     throw new ServiceError(getCanonicalPatchErrorMessage(canonicalPatchResult.error));
   }
 
+  // Resolve the correct RPC actor: when an admin is masquerading, delegate
+  // to the client's primary owner so the Postgres tenant check passes.
+  const resolvedActor = await resolveRpcActorForClient(
+    input.actorUserId,
+    input.clientId,
+    input.isImpersonating,
+    input.realAdminUserId,
+  );
+
   const { data, error } = await supabase.rpc("save_event_website_draft_revision", {
-    p_actor_user_id: input.actorUserId,
+    p_actor_user_id: resolvedActor.rpcActorUserId,
     p_canonical_event_patch: canonicalPatchResult.data as unknown as Json,
     p_client_id: input.clientId,
     p_client_sequence: input.clientSequence,
@@ -104,6 +121,18 @@ export async function saveEventWebsiteDraft(
   }
 
   assertServiceData(data, "Event Website draft save returned no result.");
+
+  // Log the impersonated write operation for the audit trail
+  await logImpersonatedAction("event_website_draft_saved_impersonated", resolvedActor, {
+    clientId: input.clientId,
+    entityType: "event_content",
+    eventId: input.eventId,
+    extraMetadata: {
+      client_sequence: input.clientSequence,
+      expected_revision: input.expectedRevision,
+    },
+  });
+
   return parseDraftSaveResult(data, { ...input, content: validatedContent.data });
 }
 
