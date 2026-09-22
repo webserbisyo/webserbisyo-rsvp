@@ -51,6 +51,7 @@ export function ClientPrimaryActions({ client, packageSettings }: ClientPrimaryA
   );
   const [markPaidOpen, setMarkPaidOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [isImpersonatingLoading, setIsImpersonatingLoading] = useState(false);
   const [amountDue, setAmountDue] = useState(
     formatMoneyInput(client.payment.amountDue ?? packageDefaultAmount),
   );
@@ -164,14 +165,29 @@ export function ClientPrimaryActions({ client, packageSettings }: ClientPrimaryA
         <Button
           type="button"
           variant="outline"
+          disabled={isImpersonatingLoading}
           className="border-amber-500/40 bg-amber-50/60 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200 font-semibold"
-          onClick={() => {
-            void startClientImpersonationAction(client.id).catch(() => {
+          onClick={async () => {
+            try {
+              setIsImpersonatingLoading(true);
+              const result = await startClientImpersonationAction(client.id);
+              if (!result.ok) {
+                toast.error(result.error);
+                setIsImpersonatingLoading(false);
+                return;
+              }
+              window.location.href = result.redirectUrl;
+            } catch {
               toast.error("Failed to start client impersonation.");
-            });
+              setIsImpersonatingLoading(false);
+            }
           }}
         >
-          <UserCheck className="mr-2 size-4 text-amber-600" />
+          {isImpersonatingLoading ? (
+            <Loader2 className="mr-2 size-4 animate-spin text-amber-600" />
+          ) : (
+            <UserCheck className="mr-2 size-4 text-amber-600" />
+          )}
           Log in as Client
         </Button>
         <Button
