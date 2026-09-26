@@ -18,6 +18,7 @@ import {
   approveApplicationForPayment,
   cancelApplication,
   markApplicationReviewing,
+  purgeOrphanedApplications,
   rejectAndDeleteApplication,
   rejectAndDeleteApplicationsBulk,
   rejectApplication,
@@ -150,6 +151,19 @@ export async function rejectAndDeleteApplicationsBulkAction(input: unknown) {
     const admin = await requireAdmin();
     const payload = parseActionInput(BulkRejectAndDeleteApplicationsSchema, input);
     const result = await rejectAndDeleteApplicationsBulk(payload, admin.id);
+
+    revalidateWorkflowCollectionRoutes();
+
+    return actionSuccess(result);
+  } catch (error) {
+    return actionFailure(error);
+  }
+}
+
+export async function purgeOrphanedApplicationsAction() {
+  try {
+    const admin = await requireAdmin();
+    const result = await purgeOrphanedApplications(admin.id);
 
     revalidateWorkflowCollectionRoutes();
 

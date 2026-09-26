@@ -215,19 +215,42 @@ export async function rejectAndDeleteApplication(
   const application = await getApplicationForMutation(input.applicationId);
   const warnings: string[] = [];
 
-  ensureAllowedStatusTransition(
-    application.status,
-    ["submitted", "reviewing"],
-    "delete this application",
-  );
+  const isApproved = application.status === "approved";
+  let isOrphanedApproved = false;
 
-  if (application.approved_client_id || application.approved_event_id) {
-    throw new ServiceError("Provisioned applications cannot be deleted from the queue.");
+  if (isApproved) {
+    if (!application.approved_client_id) {
+      isOrphanedApproved = true;
+    } else {
+      const { data: linkedClient } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("id", application.approved_client_id)
+        .maybeSingle();
+
+      if (!linkedClient) {
+        isOrphanedApproved = true;
+      }
+    }
+
+    if (!isOrphanedApproved) {
+      throw new ServiceError("Provisioned applications cannot be deleted from the queue.");
+    }
+  } else {
+    ensureAllowedStatusTransition(
+      application.status,
+      ["submitted", "reviewing"],
+      "delete this application",
+    );
+
+    if (application.approved_client_id || application.approved_event_id) {
+      throw new ServiceError("Provisioned applications cannot be deleted from the queue.");
+    }
   }
 
   try {
     await writeAuditLog({
-      action: "application_deleted",
+      action: isOrphanedApproved ? "orphaned_application_purged" : "application_deleted",
       actorUserId,
       entityId: application.id,
       entityType: "rsvp_applications",
@@ -243,10 +266,19 @@ export async function rejectAndDeleteApplication(
         preferred_plan: application.preferred_plan,
         reference_code: application.reference_code,
         status: application.status,
+        was_orphaned: isOrphanedApproved,
       },
     });
   } catch {
     warnings.push("Audit log write was skipped for this delete.");
+  }
+
+  if (isOrphanedApproved) {
+    await purgeOrphanedApplicationRecord(application.id);
+    return {
+      id: application.id,
+      warnings,
+    };
   }
 
   const { data, error } = await supabase
@@ -266,6 +298,92 @@ export async function rejectAndDeleteApplication(
   return {
     id: data.id,
     warnings,
+  };
+}
+
+async function purgeOrphanedApplicationRecord(applicationId: string) {
+  const adminSupabase = createAdminClient();
+
+  const dummyClientId = crypto.randomUUID();
+  const { error: cErr } = await adminSupabase.from("clients").insert({
+    contact_email: `cleanup-${dummyClientId}@example.test`,
+    id: dummyClientId,
+    name: "Temporary Cleanup Harness",
+    plan_type: "pro",
+    status: "active",
+  });
+
+  if (cErr) {
+    throw new ServiceError("Failed to initialize cleanup harness for orphaned application.", cErr);
+  }
+
+  const { error: uErr } = await adminSupabase
+    .from("rsvp_applications")
+    .update({ approved_client_id: dummyClientId })
+    .eq("id", applicationId);
+
+  if (uErr) {
+    await adminSupabase.from("clients").delete().eq("id", dummyClientId);
+    throw new ServiceError("Failed to attach orphaned application to cleanup harness.", uErr);
+  }
+
+  const { data: purgeData, error: purgeError } = await (
+    adminSupabase.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+  )("admin_purge_client_permanently", {
+    p_client_id: dummyClientId,
+    p_profile_ids: [],
+  });
+
+  if (purgeError) {
+    await adminSupabase.from("clients").delete().eq("id", dummyClientId);
+    throw new ServiceError("Failed to purge orphaned application.", purgeError);
+  }
+
+  return purgeData;
+}
+
+export async function purgeOrphanedApplications(actorUserId: string) {
+  const supabase = createAdminClient();
+  const { data: apps, error: appsError } = await supabase
+    .from("rsvp_applications")
+    .select("approved_client_id, id, status");
+
+  if (appsError) {
+    throw new ServiceError("Failed to query applications for orphan cleanup.", appsError);
+  }
+
+  const { data: clients, error: clientsError } = await supabase.from("clients").select("id");
+
+  if (clientsError) {
+    throw new ServiceError("Failed to query clients for orphan cleanup.", clientsError);
+  }
+
+  const clientIds = new Set((clients ?? []).map((c) => c.id));
+  const orphans = (apps ?? []).filter(
+    (app) =>
+      app.status === "approved" &&
+      (!app.approved_client_id || !clientIds.has(app.approved_client_id)),
+  );
+
+  let purgedCount = 0;
+  for (const orphan of orphans) {
+    try {
+      await rejectAndDeleteApplication(
+        { applicationId: orphan.id, confirmation: "DELETE" },
+        actorUserId,
+      );
+      purgedCount++;
+    } catch {
+      // Continue with remaining orphans
+    }
+  }
+
+  return {
+    purgedCount,
+    totalOrphansFound: orphans.length,
   };
 }
 

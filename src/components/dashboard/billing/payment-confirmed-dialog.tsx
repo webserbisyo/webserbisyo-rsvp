@@ -186,6 +186,7 @@ export function PaymentConfirmedDialog({
     // Latch immediately (synchronous) before async operations to guarantee idempotency.
     hasTriggeredRef.current = true;
     markAsAcknowledged(paymentId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(true);
 
     void firePurchasePixelWithRetry({

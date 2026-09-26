@@ -104,6 +104,11 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
     application !== null &&
     (application.review.status === "submitted" || application.review.status === "reviewing");
 
+  const isOrphanedApproved =
+    application !== null &&
+    application.review.status === "approved" &&
+    (!application.linkedRecords.clientId || !application.linkedRecords.clientName);
+
   function handleApprove() {
     if (!application) {
       return;
@@ -191,6 +196,26 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
                         Reject
                       </Button>
                     </div>
+                  ) : isOrphanedApproved ? (
+                    <div className="space-y-3">
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                        <p className="font-semibold">Orphaned Approved Application</p>
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          The client workspace associated with this application no longer exists. You can safely purge this record from the queue.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={rejectMutation.isPending}
+                        onClick={() => setRejectDialogOpen(true)}
+                      >
+                        {rejectMutation.isPending ? (
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : null}
+                        Purge Orphaned Application
+                      </Button>
+                    </div>
                   ) : application.linkedRecords.clientId ? (
                     <div className="space-y-3">
                       <p className="text-muted-foreground text-sm leading-6">
@@ -273,9 +298,15 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
       <AlertDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reject and delete application?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isOrphanedApproved
+                ? "Purge orphaned application?"
+                : "Reject and delete application?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove this application from the queue.
+              {isOrphanedApproved
+                ? "This will permanently purge this orphaned application and any lingering payment or email references from the queue."
+                : "This will permanently remove this application from the queue."}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -304,7 +335,7 @@ export function ApplicationDetailSheet({ application, open }: ApplicationDetailS
               }}
             >
               {rejectMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Delete application
+              {isOrphanedApproved ? "Purge application" : "Delete application"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

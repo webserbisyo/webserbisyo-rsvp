@@ -64,6 +64,7 @@ export function ApplyPromoBanner({ className, variant = "banner" }: ApplyPromoBa
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     let deadline = getOrInitDeadline();
 

@@ -56,7 +56,7 @@ async function deleteClientPermanently(clientId: string) {
   const supabase = createAdminClient();
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id")
+    .select("contact_email, id")
     .eq("id", clientId)
     .maybeSingle();
 
@@ -113,6 +113,24 @@ async function deleteClientPermanently(clientId: string) {
         ? "Client no longer exists."
         : "Client database cleanup did not complete.",
     );
+  }
+
+  // Fallback safeguard: scrub any lingering rsvp_applications records for this client
+  const clientEmail = client.contact_email?.trim().toLowerCase();
+  const orFilter = clientEmail
+    ? `approved_client_id.eq.${clientId},email.ilike.${clientEmail}`
+    : `approved_client_id.eq.${clientId}`;
+
+  const { data: lingeringApps } = await supabase
+    .from("rsvp_applications")
+    .select("id")
+    .or(orFilter);
+
+  if (lingeringApps && lingeringApps.length > 0) {
+    const lingeringAppIds = lingeringApps.map((app) => app.id);
+    await supabase.from("payments").delete().in("application_id", lingeringAppIds);
+    await supabase.from("email_logs").delete().in("application_id", lingeringAppIds);
+    await supabase.from("rsvp_applications").delete().in("id", lingeringAppIds);
   }
 
   const verificationError = await verifyPermanentDeletion(clientId, profileIds);
@@ -176,6 +194,10 @@ async function verifyPermanentDeletion(clientId: string, profileIds: string[]) {
       .from("profiles")
       .select("id", { count: "exact", head: true })
       .eq("client_id", clientId),
+    supabase
+      .from("rsvp_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("approved_client_id", clientId),
   ]);
 
   if (checks.some((check) => check.error || (check.count ?? 0) > 0)) {
