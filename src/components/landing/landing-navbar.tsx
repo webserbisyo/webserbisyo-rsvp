@@ -9,8 +9,14 @@ import { Button } from "@/components/ui/button";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { cn } from "@/lib/utils/index";
 
-const NAV_LINKS = [
-  { label: "Templates", href: "/#templates", soon: true },
+type NavLink = {
+  label: string;
+  href: string;
+  soon?: boolean;
+};
+
+const NAV_LINKS: NavLink[] = [
+  { label: "Templates", href: "/#templates" },
   { label: "Features", href: "/#features" },
   { label: "How it works", href: "/#how-it-works" },
   { label: "Pricing", href: "/#pricing" },

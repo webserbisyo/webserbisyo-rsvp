@@ -8,6 +8,7 @@ import {
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingVisualHero } from "@/components/landing/landing-visual-hero";
 import { LandingTrustBar } from "@/components/landing/landing-trust-bar";
+import { LandingTemplates } from "@/components/landing/landing-templates";
 import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
 import { LandingFeatures } from "@/components/landing/landing-features";
 import { LandingTrustPromise } from "@/components/landing/landing-trust-promise";
@@ -113,6 +114,7 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
       <main>
         <LandingVisualHero />
         <LandingTrustBar />
+        <LandingTemplates />
         <LandingHowItWorks messengerPageUrl={applyConfig.messengerPageUrl} />
         <LandingFeatures messengerPageUrl={applyConfig.messengerPageUrl} />
         <LandingTrustPromise />
