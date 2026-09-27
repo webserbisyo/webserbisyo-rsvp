@@ -158,7 +158,7 @@ export function LandingVisualHero() {
                     preload="metadata"
                     loop={false}
                     onEnded={triggerYouTubePlay}
-                    onError={() => setVideoError(true)}
+                    onError={triggerYouTubePlay}
                     className="absolute inset-0 size-full object-cover rounded-2xl"
                   />
 
