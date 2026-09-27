@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, Play } from "lucide-react";
+import { ArrowRight, Check, VolumeX } from "lucide-react";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { marketingHero } from "@/config/marketing-hero";
 import SideRays from "./effects/SideRays";
@@ -99,8 +99,8 @@ export function LandingVisualHero() {
           {marketingHero.headline}
         </h1>
 
-        {/* 3. Dedicated 16:9 Video Canvas (Sits directly below subtitle, fake chrome purged) */}
-        <div className="mt-5 w-full max-w-2xl sm:mt-6 sm:max-w-3xl lg:max-w-[760px] xl:max-w-[840px]">
+        {/* 3. Dedicated 16:9 Video Canvas (Expanded fluid responsive container, zero dead gutters) */}
+        <div className="mt-5 w-full max-w-2xl px-2 sm:mt-6 sm:max-w-3xl sm:px-4 lg:max-w-4xl xl:max-w-5xl">
           <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/80 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85),0_0_40px_rgba(255,90,31,0.08)] backdrop-blur-xl">
             {videoError ? (
               <HeroVideoFrameFallback archetype={selectedMilestone ?? "event"} />
@@ -124,7 +124,7 @@ export function LandingVisualHero() {
                     setIsPlayingFull(true);
                   }
                 }}
-                aria-label="Play full video walkthrough"
+                aria-label="Play full video walkthrough with sound"
                 className="group relative size-full cursor-pointer select-none"
               >
                 <video
@@ -139,17 +139,14 @@ export function LandingVisualHero() {
                   className="absolute inset-0 size-full object-cover rounded-2xl"
                 />
 
-                {/* Interactive Play Trigger Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors duration-300 group-hover:bg-black/35">
-                  <div className="relative flex items-center justify-center">
-                    <div className="absolute size-16 rounded-full bg-[#ff5a1f]/30 blur-md transition-transform duration-300 group-hover:scale-125" />
-                    <div className="relative flex size-12 items-center justify-center rounded-full border border-[#ff5a1f]/80 bg-stone-950/85 text-white shadow-[0_0_20px_rgba(255,90,31,0.4)] transition-all duration-300 group-hover:scale-110 group-hover:border-[#ff5a1f] group-hover:shadow-[0_0_30px_rgba(255,90,31,0.6)]">
-                      <Play className="ml-0.5 size-5 fill-white text-white" />
-                    </div>
-                  </div>
+                {/* Subtle Ambient Bottom Scrim for Contrast */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
 
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-medium tracking-wide text-white/80 backdrop-blur-md transition-opacity duration-300 group-hover:text-white sm:text-xs">
-                    Click to watch full video
+                {/* Non-Blocking Glassmorphic Audio & Walkthrough Trigger Pill */}
+                <div className="absolute bottom-3 right-3 z-20 sm:bottom-4 sm:right-4">
+                  <div className="flex items-center gap-2 rounded-full border border-white/20 bg-stone-950/80 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-300 group-hover:border-[#ff5a1f]/80 group-hover:bg-stone-900/95 group-hover:shadow-[0_0_25px_rgba(255,90,31,0.4)] sm:px-3.5 sm:py-2 sm:text-xs">
+                    <VolumeX className="size-3.5 text-[#ff8a5c] sm:size-4" />
+                    <span>Unmute / Watch with Sound</span>
                   </div>
                 </div>
               </div>
