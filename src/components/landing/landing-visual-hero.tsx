@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Play } from "lucide-react";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { marketingHero } from "@/config/marketing-hero";
 import SideRays from "./effects/SideRays";
@@ -23,9 +23,15 @@ const MILESTONES: readonly MilestoneOption[] = [
   { id: "baptism", label: "🕊️ Baptisms", ctaText: "Start your free baptism website preview" },
 ] as const;
 
+const CLOUDINARY_TEASER_URL =
+  "https://res.cloudinary.com/dg7spmujw/video/upload/f_auto,q_auto/hero-hook-teaser.mp4";
+const YOUTUBE_FULL_EMBED_URL =
+  "https://www.youtube-nocookie.com/embed/m03hBAcVjUw?autoplay=1&rel=0&playsinline=1";
+
 export function LandingVisualHero() {
   const [selectedMilestone, setSelectedMilestone] = useState<MilestoneId | null>(null);
-  const [videoUrl] = useState<string>("");
+  const [isPlayingFull, setIsPlayingFull] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   const activeMilestone = selectedMilestone
     ? MILESTONES.find((item) => item.id === selectedMilestone) ?? null
@@ -96,17 +102,57 @@ export function LandingVisualHero() {
         {/* 3. Dedicated 16:9 Video Canvas (Sits directly below subtitle, fake chrome purged) */}
         <div className="mt-5 w-full max-w-2xl sm:mt-6 sm:max-w-3xl lg:max-w-[760px] xl:max-w-[840px]">
           <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/80 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85),0_0_40px_rgba(255,90,31,0.08)] backdrop-blur-xl">
-            {videoUrl ? (
+            {videoError ? (
+              <HeroVideoFrameFallback archetype={selectedMilestone ?? "event"} />
+            ) : isPlayingFull ? (
               <iframe
-                src={videoUrl}
-                title="WebSerbisyo RSVP Website Showcase"
+                src={YOUTUBE_FULL_EMBED_URL}
+                title="WebSerbisyo RSVP Website Full Walkthrough"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
-                className="absolute inset-0 size-full border-0"
+                className="absolute inset-0 size-full border-0 rounded-2xl"
               />
             ) : (
-              <HeroVideoFrameFallback archetype={selectedMilestone ?? "event"} />
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setIsPlayingFull(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setIsPlayingFull(true);
+                  }
+                }}
+                aria-label="Play full video walkthrough"
+                className="group relative size-full cursor-pointer select-none"
+              >
+                <video
+                  src={CLOUDINARY_TEASER_URL}
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="metadata"
+                  loop={false}
+                  onEnded={() => setIsPlayingFull(true)}
+                  onError={() => setVideoError(true)}
+                  className="absolute inset-0 size-full object-cover rounded-2xl"
+                />
+
+                {/* Interactive Play Trigger Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors duration-300 group-hover:bg-black/35">
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute size-16 rounded-full bg-[#ff5a1f]/30 blur-md transition-transform duration-300 group-hover:scale-125" />
+                    <div className="relative flex size-12 items-center justify-center rounded-full border border-[#ff5a1f]/80 bg-stone-950/85 text-white shadow-[0_0_20px_rgba(255,90,31,0.4)] transition-all duration-300 group-hover:scale-110 group-hover:border-[#ff5a1f] group-hover:shadow-[0_0_30px_rgba(255,90,31,0.6)]">
+                      <Play className="ml-0.5 size-5 fill-white text-white" />
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] font-medium tracking-wide text-white/80 backdrop-blur-md transition-opacity duration-300 group-hover:text-white sm:text-xs">
+                    Click to watch full video
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
