@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Check, VolumeX } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowRight, Check, Play, Volume2, VolumeX } from "lucide-react";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { marketingHero } from "@/config/marketing-hero";
 import SideRays from "./effects/SideRays";
@@ -25,13 +25,39 @@ const MILESTONES: readonly MilestoneOption[] = [
 
 const CLOUDINARY_TEASER_URL =
   "https://res.cloudinary.com/dg7spmujw/video/upload/f_auto,q_auto/hero-hook-teaser.mp4";
-const YOUTUBE_FULL_EMBED_URL =
-  "https://www.youtube-nocookie.com/embed/m03hBAcVjUw?autoplay=1&rel=0&playsinline=1";
+const YOUTUBE_ID = "m03hBAcVjUw";
 
 export function LandingVisualHero() {
   const [selectedMilestone, setSelectedMilestone] = useState<MilestoneId | null>(null);
-  const [isPlayingFull, setIsPlayingFull] = useState(false);
+  const [hasTransitioned, setHasTransitioned] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [videoError, setVideoError] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Dispatches play command to the preloaded background YouTube player
+  const triggerYouTubePlay = () => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "playVideo" }),
+        "*",
+      );
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "unMute" }),
+        "*",
+      );
+    }
+    setHasTransitioned(true);
+  };
+
+  const toggleTeaserSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const nextMuted = !videoRef.current.muted;
+    videoRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
+  };
 
   const activeMilestone = selectedMilestone
     ? MILESTONES.find((item) => item.id === selectedMilestone) ?? null
@@ -99,54 +125,78 @@ export function LandingVisualHero() {
           {marketingHero.headline}
         </h1>
 
-        {/* 3. Dedicated 16:9 Video Canvas (Expanded fluid responsive container, zero dead gutters) */}
+        {/* 3. Dedicated 16:9 Video Canvas (Fluid responsive container, zero dead gutters) */}
         <div className="mt-5 w-full max-w-2xl px-2 sm:mt-6 sm:max-w-3xl sm:px-4 lg:max-w-4xl xl:max-w-5xl">
-          <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/80 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85),0_0_40px_rgba(255,90,31,0.08)] backdrop-blur-xl">
+          <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-stone-800 bg-stone-950 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85),0_0_40px_rgba(255,90,31,0.08)] backdrop-blur-xl">
             {videoError ? (
               <HeroVideoFrameFallback archetype={selectedMilestone ?? "event"} />
-            ) : isPlayingFull ? (
-              <iframe
-                src={YOUTUBE_FULL_EMBED_URL}
-                title="WebSerbisyo RSVP Website Full Walkthrough"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                className="absolute inset-0 size-full border-0 rounded-2xl"
-              />
             ) : (
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setIsPlayingFull(true)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setIsPlayingFull(true);
-                  }
-                }}
-                aria-label="Play full video walkthrough with sound"
-                className="group relative size-full cursor-pointer select-none"
-              >
-                <video
-                  src={CLOUDINARY_TEASER_URL}
-                  autoPlay
-                  muted
-                  playsInline
-                  preload="metadata"
-                  loop={false}
-                  onEnded={() => setIsPlayingFull(true)}
-                  onError={() => setVideoError(true)}
-                  className="absolute inset-0 size-full object-cover rounded-2xl"
+              <div className="relative size-full">
+                {/* LAYER 0: Preloaded Background YouTube Player (Warm, buffered & ready) */}
+                <iframe
+                  ref={iframeRef}
+                  src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}?enablejsapi=1&autoplay=0&rel=0&playsinline=1`}
+                  title="WebSerbisyo RSVP Full Walkthrough"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="absolute inset-0 size-full border-0 rounded-2xl"
                 />
 
-                {/* Subtle Ambient Bottom Scrim for Contrast */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
+                {/* LAYER 1: Cloudinary Teaser Overlay (Fades out seamlessly when finished) */}
+                <div
+                  className={`absolute inset-0 z-10 size-full transition-opacity duration-700 ${
+                    hasTransitioned ? "pointer-events-none opacity-0" : "opacity-100"
+                  }`}
+                >
+                  <video
+                    ref={videoRef}
+                    src={CLOUDINARY_TEASER_URL}
+                    autoPlay
+                    muted
+                    playsInline
+                    preload="metadata"
+                    loop={false}
+                    onEnded={triggerYouTubePlay}
+                    onError={() => setVideoError(true)}
+                    className="absolute inset-0 size-full object-cover rounded-2xl"
+                  />
 
-                {/* Non-Blocking Glassmorphic Audio & Walkthrough Trigger Pill */}
-                <div className="absolute bottom-3 right-3 z-20 sm:bottom-4 sm:right-4">
-                  <div className="flex items-center gap-2 rounded-full border border-white/20 bg-stone-950/80 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-300 group-hover:border-[#ff5a1f]/80 group-hover:bg-stone-900/95 group-hover:shadow-[0_0_25px_rgba(255,90,31,0.4)] sm:px-3.5 sm:py-2 sm:text-xs">
-                    <VolumeX className="size-3.5 text-[#ff8a5c] sm:size-4" />
-                    <span>Unmute / Watch with Sound</span>
+                  {/* Ambient Gradient Scrim */}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                  {/* Teaser Interactive Overlay Controls */}
+                  <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between sm:inset-x-4 sm:bottom-4">
+                    {/* Left: Immediate Switch to Full Walkthrough */}
+                    <button
+                      type="button"
+                      onClick={triggerYouTubePlay}
+                      aria-label="Watch full 1:08 video walkthrough"
+                      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-[#ff5a1f]/80 hover:bg-stone-900/95 hover:shadow-[0_0_20px_rgba(255,90,31,0.35)] sm:px-3.5 sm:py-2 sm:text-xs"
+                    >
+                      <Play className="size-3 fill-[#ff8a5c] text-[#ff8a5c] sm:size-3.5" />
+                      <span>Watch Full Video (1:08)</span>
+                    </button>
+
+                    {/* Right: Unmute Teaser Audio Directly */}
+                    <button
+                      type="button"
+                      onClick={toggleTeaserSound}
+                      aria-label={isMuted ? "Unmute video teaser" : "Mute video teaser"}
+                      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-stone-900/95 sm:px-3.5 sm:py-2 sm:text-xs"
+                    >
+                      {isMuted ? (
+                        <>
+                          <VolumeX className="size-3.5 text-stone-400 sm:size-4" />
+                          <span>Unmute Teaser</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="size-3.5 text-[#ff8a5c] sm:size-4" />
+                          <span>Mute</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
