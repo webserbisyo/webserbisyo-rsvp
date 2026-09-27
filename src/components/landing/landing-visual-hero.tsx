@@ -161,47 +161,46 @@ export function LandingVisualHero() {
                     onError={triggerYouTubePlay}
                     className="absolute inset-0 size-full object-cover rounded-2xl"
                   />
-
-                  {/* Ambient Gradient Scrim */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-
-                  {/* Teaser Interactive Overlay Controls */}
-                  <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between sm:inset-x-4 sm:bottom-4">
-                    {/* Left: Immediate Switch to Full Walkthrough */}
-                    <button
-                      type="button"
-                      onClick={triggerYouTubePlay}
-                      aria-label="Watch full 1:08 video walkthrough"
-                      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-[#ff5a1f]/80 hover:bg-stone-900/95 hover:shadow-[0_0_20px_rgba(255,90,31,0.35)] sm:px-3.5 sm:py-2 sm:text-xs"
-                    >
-                      <Play className="size-3 fill-[#ff8a5c] text-[#ff8a5c] sm:size-3.5" />
-                      <span>Watch Full Video (1:08)</span>
-                    </button>
-
-                    {/* Right: Unmute Teaser Audio Directly */}
-                    <button
-                      type="button"
-                      onClick={toggleTeaserSound}
-                      aria-label={isMuted ? "Unmute video teaser" : "Mute video teaser"}
-                      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-stone-900/95 sm:px-3.5 sm:py-2 sm:text-xs"
-                    >
-                      {isMuted ? (
-                        <>
-                          <VolumeX className="size-3.5 text-stone-400 sm:size-4" />
-                          <span>Unmute Teaser</span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="size-3.5 text-[#ff8a5c] sm:size-4" />
-                          <span>Mute</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Action Controls Bar (Positioned cleanly below the video container) */}
+          {!hasTransitioned && (
+            <div className="mt-3 flex items-center justify-between px-1 transition-all duration-300 sm:mt-4 sm:px-2">
+              {/* Left: Watch Full Video Trigger */}
+              <button
+                type="button"
+                onClick={triggerYouTubePlay}
+                aria-label="Watch full 1:08 video walkthrough"
+                className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-[#ff5a1f]/80 hover:bg-stone-900/95 hover:shadow-[0_0_20px_rgba(255,90,31,0.35)] sm:px-3.5 sm:py-2 sm:text-xs"
+              >
+                <Play className="size-3 fill-[#ff8a5c] text-[#ff8a5c] sm:size-3.5" />
+                <span>Watch Full Video (1:08)</span>
+              </button>
+
+              {/* Right: Native Teaser Sound Toggle */}
+              <button
+                type="button"
+                onClick={toggleTeaserSound}
+                aria-label={isMuted ? "Unmute video teaser" : "Mute video teaser"}
+                className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-stone-900/95 sm:px-3.5 sm:py-2 sm:text-xs"
+              >
+                {isMuted ? (
+                  <>
+                    <VolumeX className="size-3.5 text-stone-400 sm:size-4" />
+                    <span>Unmute Teaser</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="size-3.5 text-[#ff8a5c] sm:size-4" />
+                    <span>Mute</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 4. Objection Buster Kicker (Straight horizontally, scaled up & bold) */}
