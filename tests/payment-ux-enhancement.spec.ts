@@ -1,43 +1,6 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Payment UX Enhancement", () => {
-  test("landing page renders streamlined payment section and navbar link correctly", async ({ page }) => {
-    await page.goto("/");
-
-    // Verify navbar link
-    const paymentNavLink = page.locator('nav a[href="/#payment"]');
-    await expect(paymentNavLink).toBeVisible();
-
-    // Verify #payment section exists
-    const paymentSection = page.locator("section#payment");
-    await expect(paymentSection).toBeVisible();
-
-    // Verify eyebrow & title
-    await expect(paymentSection).toContainText("PAYMENT OPTIONS");
-    await expect(paymentSection).toContainText("Flexible Payment Options");
-
-    // Verify main trust callout badge
-    await expect(paymentSection).toContainText("Website muna, bago bayad.");
-
-    // Verify application matching helper
-    await expect(paymentSection).toContainText("Already submitted your application?");
-    await expect(paymentSection).toContainText("Choose your preferred payment method below. Use the same email from your application so we can correctly match your payment.");
-
-    // Verify provider titles above QR codes
-    const gcashTitle = paymentSection.locator('h4:has-text("GCash")');
-    await expect(gcashTitle).toBeVisible();
-
-    const mayaTitle = paymentSection.locator('h4:has-text("Maya")');
-    await expect(mayaTitle).toBeVisible();
-
-    // Verify proof instructions
-    await expect(paymentSection).toContainText("After paying, send us your proof of payment on Messenger together with your application email, reference code, and selected package.");
-
-    // Verify CTAs
-    const applyCta = paymentSection.locator('a[href="/apply"]');
-    await expect(applyCta).toBeVisible();
-    await expect(applyCta).toContainText("Start Application");
-  });
 
   test("hero section renders constrained decorative light and pointer-events-none overlay", async ({ page }) => {
     await page.goto("/");

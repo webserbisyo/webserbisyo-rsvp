@@ -13,7 +13,6 @@ import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
 import { LandingFeatures } from "@/components/landing/landing-features";
 import { LandingTrustPromise } from "@/components/landing/landing-trust-promise";
 import { LandingPricing } from "@/components/landing/landing-pricing";
-import { LandingPayment } from "@/components/landing/landing-payment";
 import { LandingFAQ } from "@/components/landing/landing-faq";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { PublicMetaPixelScripts } from "@/components/meta-pixels/public-meta-pixel-scripts";
@@ -119,10 +118,6 @@ export default async function PublicLandingPage({ searchParams }: PublicLandingP
         <LandingFeatures messengerPageUrl={applyConfig.messengerPageUrl} />
         <LandingTrustPromise />
         <LandingPricing />
-        <LandingPayment
-          messengerPageUrl={applyConfig.messengerPageUrl}
-          paymentOptions={applyConfig.paymentOptions}
-        />
         <LandingFAQ messengerPageUrl={applyConfig.messengerPageUrl} />
       </main>
       <LandingFooter messengerPageUrl={applyConfig.messengerPageUrl} />

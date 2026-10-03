@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { ArrowRight, Check, Play, Volume2, VolumeX } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Check } from "lucide-react";
 import { TrackedLink } from "@/components/meta-pixels/tracked-link";
 import { marketingHero } from "@/config/marketing-hero";
 import SideRays from "./effects/SideRays";
 import { MarkerBrushUnderline } from "./effects/marker-brush-underline";
-import { HeroVideoFrameFallback } from "./hero-video-frame-fallback";
 
 type MilestoneId = "wedding" | "debut" | "birthday" | "baptism";
 
@@ -23,41 +22,8 @@ const MILESTONES: readonly MilestoneOption[] = [
   { id: "baptism", label: "🕊️ Baptisms", ctaText: "Start your free baptism website preview" },
 ] as const;
 
-const CLOUDINARY_TEASER_URL =
-  "https://res.cloudinary.com/dg7spmujw/video/upload/f_auto,q_auto/hero-hook-teaser.mp4";
-const YOUTUBE_ID = "m03hBAcVjUw";
-
 export function LandingVisualHero() {
   const [selectedMilestone, setSelectedMilestone] = useState<MilestoneId | null>(null);
-  const [hasTransitioned, setHasTransitioned] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [videoError, setVideoError] = useState(false);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Dispatches play command to the preloaded background YouTube player
-  const triggerYouTubePlay = () => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: "playVideo" }),
-        "*",
-      );
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: "unMute" }),
-        "*",
-      );
-    }
-    setHasTransitioned(true);
-  };
-
-  const toggleTeaserSound = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!videoRef.current) return;
-    const nextMuted = !videoRef.current.muted;
-    videoRef.current.muted = nextMuted;
-    setIsMuted(nextMuted);
-  };
 
   const activeMilestone = selectedMilestone
     ? MILESTONES.find((item) => item.id === selectedMilestone) ?? null
@@ -69,7 +35,7 @@ export function LandingVisualHero() {
   return (
     <section
       aria-label="WebSerbisyo RSVP visual introduction"
-      className="landing-theme-dark relative isolate min-h-[100svh] w-full overflow-hidden bg-[var(--landing-bg)]"
+      className="landing-theme-dark relative isolate flex min-h-[100svh] w-full items-center justify-center overflow-hidden bg-[var(--landing-bg)] py-16 sm:py-20"
     >
       {/* SideRays: WebGL background layer */}
       <div
@@ -93,7 +59,7 @@ export function LandingVisualHero() {
       </div>
 
       {/* Hero content: Single-column centered visual stack with zero-scroll clearance */}
-      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pt-20 pb-12 text-center sm:px-6 sm:pt-24 sm:pb-16 lg:px-8">
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pt-16 pb-12 text-center sm:px-6 sm:pt-20 sm:pb-16 lg:px-8">
         {/* 1. Pricing Anchor Eyebrow: 50% OFF Badge + Slashed ₱2,000 */}
         <div className="flex flex-col items-center">
           <div className="mb-1 flex items-center justify-center gap-2 sm:mb-1.5 sm:gap-2.5">
@@ -125,86 +91,8 @@ export function LandingVisualHero() {
           {marketingHero.headline}
         </h1>
 
-        {/* 3. Dedicated 16:9 Video Canvas (Fluid responsive container, zero dead gutters) */}
-        <div className="mt-5 w-full max-w-2xl px-2 sm:mt-6 sm:max-w-3xl sm:px-4 lg:max-w-4xl xl:max-w-5xl">
-          <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-stone-800 bg-stone-950 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85),0_0_40px_rgba(255,90,31,0.08)] backdrop-blur-xl">
-            {videoError ? (
-              <HeroVideoFrameFallback archetype={selectedMilestone ?? "event"} />
-            ) : (
-              <div className="relative size-full">
-                {/* LAYER 0: Preloaded Background YouTube Player (Warm, buffered & ready) */}
-                <iframe
-                  ref={iframeRef}
-                  src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_ID}?enablejsapi=1&autoplay=0&rel=0&playsinline=1`}
-                  title="WebSerbisyo RSVP Full Walkthrough"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                  className="absolute inset-0 size-full border-0 rounded-2xl"
-                />
-
-                {/* LAYER 1: Cloudinary Teaser Overlay (Fades out seamlessly when finished) */}
-                <div
-                  className={`absolute inset-0 z-10 size-full transition-opacity duration-700 ${
-                    hasTransitioned ? "pointer-events-none opacity-0" : "opacity-100"
-                  }`}
-                >
-                  <video
-                    ref={videoRef}
-                    src={CLOUDINARY_TEASER_URL}
-                    autoPlay
-                    muted
-                    playsInline
-                    preload="metadata"
-                    loop={false}
-                    onEnded={triggerYouTubePlay}
-                    onError={triggerYouTubePlay}
-                    className="absolute inset-0 size-full object-cover rounded-2xl"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Controls Bar (Positioned cleanly below the video container) */}
-          {!hasTransitioned && (
-            <div className="mt-3 flex items-center justify-between px-1 transition-all duration-300 sm:mt-4 sm:px-2">
-              {/* Left: Watch Full Video Trigger */}
-              <button
-                type="button"
-                onClick={triggerYouTubePlay}
-                aria-label="Watch full 1:08 video walkthrough"
-                className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-[#ff5a1f]/80 hover:bg-stone-900/95 hover:shadow-[0_0_20px_rgba(255,90,31,0.35)] sm:px-3.5 sm:py-2 sm:text-xs"
-              >
-                <Play className="size-3 fill-[#ff8a5c] text-[#ff8a5c] sm:size-3.5" />
-                <span>Watch Full Video (1:08)</span>
-              </button>
-
-              {/* Right: Native Teaser Sound Toggle */}
-              <button
-                type="button"
-                onClick={toggleTeaserSound}
-                aria-label={isMuted ? "Unmute video teaser" : "Mute video teaser"}
-                className="flex items-center gap-1.5 rounded-full border border-white/20 bg-stone-950/85 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-stone-900/95 sm:px-3.5 sm:py-2 sm:text-xs"
-              >
-                {isMuted ? (
-                  <>
-                    <VolumeX className="size-3.5 text-stone-400 sm:size-4" />
-                    <span>Unmute Teaser</span>
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="size-3.5 text-[#ff8a5c] sm:size-4" />
-                    <span>Mute</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 4. Objection Buster Kicker (Straight horizontally, scaled up & bold) */}
-        <div className="mt-6 rotate-0 select-none sm:mt-8">
+        {/* 3. Objection Buster Kicker (Straight horizontally, scaled up & bold) */}
+        <div className="mt-8 rotate-0 select-none sm:mt-10">
           <span className="font-script text-xl font-extrabold tracking-wide text-amber-400 sm:text-2xl md:text-3xl [font-family:var(--font-caveat,'Caveat','Comic_Sans_MS',cursive)]">
             &ldquo;No downpayment needed!&rdquo;
           </span>
